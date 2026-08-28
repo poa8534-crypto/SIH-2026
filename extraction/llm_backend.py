@@ -333,9 +333,11 @@ class OllamaBackend(LLMBackend):
         schema = LLMEventOutput.model_json_schema()
         results: list[LLMEventOutput] = []
 
+        # schedule_context is accepted for interface compatibility and is
+        # deliberately not sent -- see _generate for why.
         for i, (span, hint) in enumerate(zip(text_spans, prepass_hints)):
             try:
-                raw = self._generate(span, schedule_context, hint, schema)
+                raw = self._generate(span, hint, schema)
                 results.append(self._parse(raw, span))
             except Exception as e:
                 logger.warning("Ollama call failed for span %d: %s", i, e)
@@ -343,13 +345,22 @@ class OllamaBackend(LLMBackend):
 
         return results
 
-    def _generate(
-        self, span: str, schedule_context: str, hint: dict, schema: dict
-    ) -> str:
+    def _generate(self, span: str, hint: dict, schema: dict) -> str:
+        """Build and send one request.
+
+        The ~3,000-token baseline schedule is deliberately NOT included. It
+        existed only so the model could populate `alternatives` with
+        plausible activity_ids, and nothing downstream reads that field:
+        matching/ never references it, and server.main overwrites
+        LinkedEvent.alternatives with the matcher's own candidates.
+        Re-sending it per span cost more than the inference itself - the
+        first call of every run stalled past its timeout on prefill - to
+        produce information no consumer uses. Linking is the matcher's job,
+        not the model's.
+        """
         import urllib.request
 
         prompt = (
-            f"SCHEDULE CONTEXT (reference only):\n{schedule_context}\n\n"
             f"Text: {span}\n"
             f"Deterministic pre-extracted hints: {json.dumps(hint, default=str)}\n\n"
             "Produce one structured event for this text."
