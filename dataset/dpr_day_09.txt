@@ -1,0 +1,36 @@
+DAILY PROGRESS REPORT
+Date: 08/09/2026  |  Weather: Partly cloudy, pleasant
+Contractor: ABC Infra Pvt Ltd
+Prepared by: Vikram Saikia
+
+1. PIPING
+   - Pipe insulation 24 inch P-1001: ALL 120 m2 complete. Mineral wool + aluminium cladding.
+   - Pipe insulation 12 inch P-1002: ALL 65 m2 complete.
+   - Pipe insulation 8 inch P-1003: 50 of 80 m2 done.
+   - Paint coating pipe rack: 400 of 850 m2 done. 3-coat epoxy system. Slow progress due to humidity — drying time between coats increased.
+   - P&ID punch list walkdown: started on 7 Sep. Identified 12 Category A items and 28 Category B items across piping and instrument disciplines.
+   - Line isolation for TK-1 paint work area — bleeder valves installed.
+   - Pipe support marking on ground for Tier 2 — layout marking for remaining 3 supports.
+
+2. EQUIPMENT
+   - TK-1 internal coating: ALL 420 m2 complete. Curing 48 hours. Visual inspection passed.
+
+3. ELECTRICAL
+   - Cable termination LT: ALL 48 ends complete.
+   - Control cable termination: ALL 186 terminations complete.
+   - Insulation resistance testing LT: ALL 48 cables tested, passed.
+   - Lighting circuit testing: 14 of 16 done.
+   - Area lighting installation: 24 of 32 lights installed. Working on east pipe rack section.
+
+4. INSTRUMENTATION
+   - Marshalling cabinet wiring: ALL 186 terminations complete.
+   - DCS panel integration: started 5 Sep. Signal mapping in progress. 40% done.
+   - Loop check: 38 of 62 loops done.
+   - Control valve loop check from DCS: 4 of 8 CVs looped and verified.
+   - As-built datasheets: drafting started for instrument data sheets. 40% complete.
+   - Insulation on 12 inch P-1015 — heat tracing for freeze protection, not insulation per spec.
+   - Spool marking and numbering in workshop — new batch of spools tagged for next project phase.
+
+5. HSE
+   - Emergency drill live: conducted 5 Sep. Evacuation time 4 min 20 sec. Improvement needed.
+   - BBS observations: 26 this week. Trending up — good.

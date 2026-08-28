@@ -1,0 +1,51 @@
+# Project Context: SIH26122 — Oil India Limited
+
+Use this as background context for any prompt written for this project. It captures the problem statement, constraints, known risks, and competitive landscape already researched, so future prompts don't have to rediscover them and don't make avoidable mistakes.
+
+## The Problem Statement
+
+**SIH26122 (Oil India Limited):** A tool that captures site photos or WhatsApp text updates and automatically links them to the live project schedule, updating the Gantt chart accordingly.
+
+**Core mechanic to build toward:**
+1. Field staff send informal updates — a photo of completed work, or a WhatsApp-style text message ("foundation done Zone 3").
+2. The system maps that update to the correct task in an existing project schedule (not a trivial keyword match — needs to handle ambiguous/informal phrasing).
+3. It marks the matched task as progressed/complete and recalculates dependent downstream tasks in the Gantt chart automatically.
+
+## Team constraints (apply to every prompt)
+
+- **Zero manual coding on our side.** Solutions must be achievable via AI app builders, no-code/low-code platforms, or AI-assisted generation — not custom backend engineering.
+- **Timeline: 10+ days before the hackathon**, not a 24-hour sprint. Ambitious, multi-step, or polished builds are fine as long as they stay zero-code.
+- **Team of 6.** Prompts should assume the output will be divided into workable chunks for a team, not a single monolithic build.
+
+## Known technical realities — don't let a prompt gloss over these
+
+- **No real Oil India data or system access.** We will not get live access to their actual project schedules or internal PM software (likely Primavera P6, MS Project, or SAP PS). Any prompt should explicitly ask for a **realistic synthetic project schedule** (a plausible EPC/oil-field project with dozens of interdependent tasks) to demo against — and the pitch should be upfront that this is simulated data, not real Oil India data.
+- **WhatsApp integration is not "just read the chat."** Real WhatsApp Business use requires the official WhatsApp Business API (Meta approval, per-message costs, opt-in). For a hackathon demo, treat WhatsApp-style text input as a **simulated input format** (e.g., a text box styled like a chat), not a claim of live WhatsApp scraping.
+- **Photos should be supporting evidence, not the sole source of truth.** Verifying that a photo *actually shows* a completed task is a hard vision problem. Safer design: the AI reads the accompanying text/caption to identify the likely task, and the photo is attached as human-reviewable evidence — don't over-promise autonomous visual verification of task completion.
+- **Accuracy has real stakes.** A wrongly-marked "complete" task could trigger downstream decisions (crew dispatch, material orders) or, in a safety-critical context like oil field construction, premature progression to the next phase. Any design should include a human-confirmation step before a status change is finalized, not fully autonomous updates.
+- **Dependency recalculation isn't something to build from scratch.** Standard project-management logic/libraries already handle "if task X slips, push dependent tasks" — the value-add here is the *automated ingestion* of informal updates into that existing kind of engine, not reinventing scheduling logic.
+
+## Competitive landscape (so prompts push for real differentiation)
+
+This category already has real, funded competitors — this is not a green field:
+- **OpenSpace, Buildots** — AI-driven site imagery analysis with direct integration into P6, MS Project, and Excel; typically rely on dedicated 360° camera capture, not casual phone photos or chat messages.
+- **ALICE Technologies** — AI-based schedule optimization.
+- **Track3D, Banamind** — AI progress classification against schedule/BIM models.
+- **India-specific:** Xpedeon (AI progress tracking + resource allocation, ~₹5–20L/year), Concord ERP, and others already market AI-assisted construction tracking with Indian GST/compliance features.
+
+**Our differentiation angle to keep emphasizing:** informal, low-friction input (a text update or a phone photo, no dedicated capture hardware) plus specific fit to Indian PSU/EPC project conditions — this is the gap existing tools (built around dedicated camera rigs) don't fully cover. Prompts should keep steering toward this angle rather than a generic "AI + photos + Gantt chart" pitch that reads like existing products.
+
+## Monetization framing (for later-stage prompts, not the hackathon demo itself)
+
+- Under SIH rules, our team keeps the IP, but Oil India (as sponsor) gets **free lifetime access** to whatever we build — so Oil India itself isn't a future paying customer for this exact build.
+- Realistic path to revenue: **B2B SaaS sold to other EPC/infrastructure companies** (other PSUs, private construction firms) who aren't bound by that free-access clause — likely as a per-project subscription or as an "informal-update ingestion" add-on layered on top of whatever PM software a customer already uses.
+- This is a proven, already-monetized software category globally, so the business model itself doesn't need justifying — only our specific angle does.
+
+## How to write prompts for this project going forward
+
+When drafting a prompt for the friend's Claude chat, include:
+1. **Explicit scope**: what's being demoed vs. simulated (e.g., "assume synthetic data, real WhatsApp API is out of scope for the demo").
+2. **Output format wanted**: architecture outline, working prototype spec, pitch deck content, demo dataset, etc. — pick one per prompt rather than asking for everything at once.
+3. **Audience**: hackathon judges (persuasion + feasibility framing) vs. an internal working doc (technical depth) — these need different tones.
+4. **A request to flag risks/gaps explicitly** rather than presenting an idealized version — this project has consistently benefited from surfacing what's fake/simulated vs. real up front.
+5. If the prompt references anything that could have changed recently (competitor products, WhatsApp Business API policies, Legal Metrology-style regulatory specifics if relevant later), ask Claude to verify current information rather than rely on memory.

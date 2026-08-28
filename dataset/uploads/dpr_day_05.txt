@@ -1,0 +1,38 @@
+DAILY PROGRESS REPORT
+Date: 19/08/2026  |  Weather: Light rain in morning, humid
+Contractor: ABC Infra Pvt Ltd
+Prepared by: Vikram Saikia
+
+1. CIVIL
+   - Cable tray buried Zone A+B: 180 lm installed out of 280 lm. Trench backfilling done in sections where trays placed.
+   - Grade beams P8-P12 pour completed 17 Aug. Full pipe rack grade beam line now complete.
+   - Plastering MCC room walls — shuru ho gaya. One coat done on 2 walls out of 4.
+
+2. PIPING
+   - 24 inch P-1001 flange management: 28 of 36 flanges bolted up. Torque readings recorded. 8 flanges in welding area still pending.
+   - 12 inch P-1002 flange bolt-up complete — all 24 flanges done. Ready for hydrotest.
+   - 12 inch P-1002 hydrotest done today — 4 sections, all passed at 1.5x design. No leakage observed.
+   - Pipe support Tier 2: all 88 supports installed. QC check: 3 rejected for incorrect elevation. Rectification in progress.
+   - Line erected for 8 inch flare header — 10 of 14 spools up.
+   - Pipe rack column steel placed for Tier 1 — final section completed.
+
+3. EQUIPMENT
+   - CS-01 compressor skid set on foundation 18 Aug. Level check: within 0.5 mm tolerance. Epoxy grouting scheduled.
+   - HS-01 header skid: jacking complete. Setting on foundation — anchor bolt tightening in progress.
+   - Pump alignment P-101A: laser alignment done, readings within tolerance. P-101B alignment next.
+   - TK-1 shell: 8th course completed! Roof ring level reached. Roof installation to start.
+
+4. ELECTRICAL
+   - HT cable laying complete — full 1.2 km from substation to MCC trench. Backfilled.
+   - LT cable laying started — 200 m of 660V cable laid for pump connections.
+   - Lightning protection pipe rack: 12 of 18 air terminals installed.
+
+5. INSTRUMENTATION
+   - All 14 temperature transmitters calibrated and certified. Reports filed.
+   - 8 pressure transmitters calibrated. 10 more to go.
+   - Transmitter mounting on V-102: all 4 level instruments installed.
+   - Junction box JB-04 and JB-05 installed in field. JB-06 next.
+
+6. HSE
+   - Near-miss: scaffold platform board loose at Zone B. Area cordoned, board replaced. JSA updated.
+   - Weekly stats: 0 LTI, 1 near-miss. BBS observations 22 this week (improvement from last week's 18).

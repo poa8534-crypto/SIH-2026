@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project Name="OIL Well-Site Duliajan" StartDate="2026-06-01" FinishDate="2026-09-30">
+  <WBS />
+  <Activities>
+    <Activity ActivityID="CIV-APN-1022" ActivityName="Cable Tray Buried — Zone A+B" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-10</FinishDate>
+      <Predecessor ActivityID="CIV-BKL-1011" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-BKL-1011" ActivityName="Backfilling — Pipe Rack Trenches" Status="NotStarted">
+      <StartDate>2026-07-22</StartDate>
+      <FinishDate>2026-07-28</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1007" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-BKL-1012" ActivityName="Backfilling — Equipment Pads" Status="NotStarted">
+      <StartDate>2026-07-21</StartDate>
+      <FinishDate>2026-07-28</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1008" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-BND-1013" ActivityName="Containment Bund Wall — Zone A" Status="NotStarted">
+      <StartDate>2026-07-26</StartDate>
+      <FinishDate>2026-08-08</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1009" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-DWG-1015" ActivityName="Drainage Channels — Perimeter" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FDN-1007" ActivityName="Pedestal Concreting — Pipe Rack P1–P12" Status="NotStarted">
+      <StartDate>2026-07-02</StartDate>
+      <FinishDate>2026-07-12</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1004" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FDN-1008" ActivityName="Equipment Foundation Concreting — EF-1 to EF-4" Status="NotStarted">
+      <StartDate>2026-07-06</StartDate>
+      <FinishDate>2026-07-20</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1005" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FDN-1009" ActivityName="Tank Foundation Ringwall — TK-1" Status="NotStarted">
+      <StartDate>2026-07-13</StartDate>
+      <FinishDate>2026-07-25</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1006" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FDN-1010" ActivityName="Slab-on-Grade — Pump House" Status="NotStarted">
+      <StartDate>2026-07-14</StartDate>
+      <FinishDate>2026-07-21</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1005" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FLR-1020" ActivityName="Flooring — MCC Room" Status="NotStarted">
+      <StartDate>2026-07-28</StartDate>
+      <FinishDate>2026-08-03</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1005" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FNC-1016" ActivityName="Fence &amp;amp; Gate — Plot Boundary" Status="NotStarted">
+      <StartDate>2026-08-10</StartDate>
+      <FinishDate>2026-08-18</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FND-1018" ActivityName="Foundation — Compressor Skid CS-01" Status="NotStarted">
+      <StartDate>2026-07-08</StartDate>
+      <FinishDate>2026-07-16</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1005" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-FND-1019" ActivityName="Foundation — Header Skid HS-01" Status="NotStarted">
+      <StartDate>2026-07-10</StartDate>
+      <FinishDate>2026-07-17</FinishDate>
+      <Predecessor ActivityID="CIV-PLY-1004" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-GBM-1014" ActivityName="Grade Beams — Pipe Rack" Status="NotStarted">
+      <StartDate>2026-07-15</StartDate>
+      <FinishDate>2026-07-22</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1007" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-PLG-1017" ActivityName="Firewater Pit — Zone B" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1002" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-PLT-1021" ActivityName="Plastering &amp;amp; Painting — MCC Room" Status="NotStarted">
+      <StartDate>2026-08-04</StartDate>
+      <FinishDate>2026-08-10</FinishDate>
+      <Predecessor ActivityID="CIV-FLR-1020" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-PLY-1004" ActivityName="Bored Piling — Pipe Rack P1–P12" Status="NotStarted">
+      <StartDate>2026-06-18</StartDate>
+      <FinishDate>2026-07-01</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-PLY-1005" ActivityName="Bored Piling — Equipment Foundation EF-1 to EF-4" Status="NotStarted">
+      <StartDate>2026-06-20</StartDate>
+      <FinishDate>2026-07-05</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-PLY-1006" ActivityName="Bored Piling — Tank Foundation TK-1" Status="NotStarted">
+      <StartDate>2026-06-25</StartDate>
+      <FinishDate>2026-07-12</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-SIT-1001" ActivityName="Site Clearing &amp;amp; Grubbing — Zone A" Status="NotStarted">
+      <StartDate>2026-06-01</StartDate>
+      <FinishDate>2026-06-07</FinishDate>
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-SIT-1002" ActivityName="Site Clearing &amp;amp; Grubbing — Zone B" Status="NotStarted">
+      <StartDate>2026-06-03</StartDate>
+      <FinishDate>2026-06-10</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1001" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="CIV-SIT-1003" ActivityName="Site Grading &amp;amp; Compaction — Zone A+B" Status="NotStarted">
+      <StartDate>2026-06-11</StartDate>
+      <FinishDate>2026-06-17</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1001" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="CIV-SIT-1002" Type="FS" Lag="0d" />
+      <ResourceID>civil</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-CBL-1076" ActivityName="HT Cable Laying — Substation to MCC" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-18</FinishDate>
+      <Predecessor ActivityID="CIV-APN-1022" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-CBL-1077" ActivityName="LT Cable Laying — MCC to Pumps" Status="NotStarted">
+      <StartDate>2026-08-15</StartDate>
+      <FinishDate>2026-08-25</FinishDate>
+      <Predecessor ActivityID="CIV-APN-1022" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="CIV-FLR-1020" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-CBL-1078" ActivityName="Control Cable Laying — Field to MCC" Status="NotStarted">
+      <StartDate>2026-08-18</StartDate>
+      <FinishDate>2026-09-01</FinishDate>
+      <Predecessor ActivityID="CIV-APN-1022" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-ENG-1092" ActivityName="Energisation — SWGR 6.6kV" Status="NotStarted">
+      <StartDate>2026-09-06</StartDate>
+      <FinishDate>2026-09-10</FinishDate>
+      <Predecessor ActivityID="ELE-IGT-1090" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="ELE-TRF-1080" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="ELE-SWG-1081" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-ENG-1093" ActivityName="Energisation — MCC" Status="NotStarted">
+      <StartDate>2026-09-11</StartDate>
+      <FinishDate>2026-09-14</FinishDate>
+      <Predecessor ActivityID="ELE-ENG-1092" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="ELE-SWG-1082" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-FLT-1083" ActivityName="Cable Termination — HT" Status="NotStarted">
+      <StartDate>2026-08-19</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="ELE-CBL-1076" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-FLT-1084" ActivityName="Cable Termination — LT" Status="NotStarted">
+      <StartDate>2026-08-26</StartDate>
+      <FinishDate>2026-09-04</FinishDate>
+      <Predecessor ActivityID="ELE-CBL-1077" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-FLT-1085" ActivityName="Cable Termination — Control" Status="NotStarted">
+      <StartDate>2026-09-02</StartDate>
+      <FinishDate>2026-09-14</FinishDate>
+      <Predecessor ActivityID="ELE-CBL-1078" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-GRD-1086" ActivityName="Earthing System — Grid" Status="NotStarted">
+      <StartDate>2026-07-25</StartDate>
+      <FinishDate>2026-08-10</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-GRD-1087" ActivityName="Lightning Protection — Pipe Rack" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-15</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-IGT-1090" ActivityName="Insulation Resistance Testing — HT" Status="NotStarted">
+      <StartDate>2026-08-29</StartDate>
+      <FinishDate>2026-09-05</FinishDate>
+      <Predecessor ActivityID="ELE-FLT-1083" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-IGT-1091" ActivityName="Insulation Resistance Testing — LT" Status="NotStarted">
+      <StartDate>2026-09-05</StartDate>
+      <FinishDate>2026-09-12</FinishDate>
+      <Predecessor ActivityID="ELE-FLT-1084" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-LIG-1088" ActivityName="Area Lighting Installation" Status="NotStarted">
+      <StartDate>2026-08-20</StartDate>
+      <FinishDate>2026-09-01</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-LIG-1089" ActivityName="Lighting Circuit Testing" Status="NotStarted">
+      <StartDate>2026-09-02</StartDate>
+      <FinishDate>2026-09-06</FinishDate>
+      <Predecessor ActivityID="ELE-LIG-1088" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-MTR-1094" ActivityName="Motor Start-up — P-101A/B" Status="NotStarted">
+      <StartDate>2026-09-15</StartDate>
+      <FinishDate>2026-09-18</FinishDate>
+      <Predecessor ActivityID="ELE-ENG-1093" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-PMP-1061" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-MTR-1095" ActivityName="Motor Start-up — CS-01" Status="NotStarted">
+      <StartDate>2026-09-15</StartDate>
+      <FinishDate>2026-09-18</FinishDate>
+      <Predecessor ActivityID="ELE-ENG-1093" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-SKD-1063" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-SWG-1081" ActivityName="SWGR Erection — 6.6kV" Status="NotStarted">
+      <StartDate>2026-07-20</StartDate>
+      <FinishDate>2026-08-01</FinishDate>
+      <Predecessor ActivityID="CIV-FLR-1020" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-SWG-1082" ActivityName="MCC Panel Installation" Status="NotStarted">
+      <StartDate>2026-08-02</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <Predecessor ActivityID="CIV-FLR-1020" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="ELE-SWG-1081" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-TRF-1079" ActivityName="Transformer Installation — TR-01" Status="NotStarted">
+      <StartDate>2026-07-15</StartDate>
+      <FinishDate>2026-07-28</FinishDate>
+      <Predecessor ActivityID="CIV-SIT-1003" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="ELE-TRF-1080" ActivityName="Transformer Oil Filling &amp;amp; Testing — TR-01" Status="NotStarted">
+      <StartDate>2026-07-29</StartDate>
+      <FinishDate>2026-08-03</FinishDate>
+      <Predecessor ActivityID="ELE-TRF-1079" Type="FS" Lag="0d" />
+      <ResourceID>electrical</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-BBS-1113" ActivityName="BBS Observation Programme Launch" Status="NotStarted">
+      <StartDate>2026-06-02</StartDate>
+      <FinishDate>2026-06-08</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-DSH-1121" ActivityName="Site Safety Statistics Report" Status="NotStarted">
+      <StartDate>2026-06-01</StartDate>
+      <FinishDate>2026-09-28</FinishDate>
+      <Predecessor ActivityID="HSE-BBS-1113" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-EMG-1120" ActivityName="Emergency Drill — Tank Fire" Status="NotStarted">
+      <StartDate>2026-09-05</StartDate>
+      <FinishDate>2026-09-08</FinishDate>
+      <Predecessor ActivityID="SEQ-TKN-1068" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-FRE-1119" ActivityName="Fire Extinguisher Audit" Status="NotStarted">
+      <StartDate>2026-08-15</StartDate>
+      <FinishDate>2026-08-18</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-IND-1112" ActivityName="Pre-Mobilisation Safety Induction" Status="NotStarted">
+      <StartDate>2026-05-28</StartDate>
+      <FinishDate>2026-06-01</FinishDate>
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-JSA-1114" ActivityName="JSA — Piling Operations" Status="NotStarted">
+      <StartDate>2026-06-12</StartDate>
+      <FinishDate>2026-06-14</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-JSA-1115" ActivityName="JSA — Heavy Lifting" Status="NotStarted">
+      <StartDate>2026-06-15</StartDate>
+      <FinishDate>2026-06-18</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-NCR-1117" ActivityName="NCR Register &amp;amp; Close-out Process" Status="NotStarted">
+      <StartDate>2026-06-10</StartDate>
+      <FinishDate>2026-06-15</FinishDate>
+      <Predecessor ActivityID="HSE-PMT-1116" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-PMT-1116" ActivityName="Work Permit System Activation" Status="NotStarted">
+      <StartDate>2026-06-05</StartDate>
+      <FinishDate>2026-06-10</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="HSE-SPC-1118" ActivityName="Scaffolding Inspection Programme" Status="NotStarted">
+      <StartDate>2026-07-01</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="HSE-IND-1112" Type="FS" Lag="0d" />
+      <ResourceID>hse</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-DOC-1111" ActivityName="As-Built Instrument Datasheets" Status="NotStarted">
+      <StartDate>2026-09-20</StartDate>
+      <FinishDate>2026-09-28</FinishDate>
+      <Predecessor ActivityID="INS-LOOP-1107" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-FLD-1099" ActivityName="Field Instrument Installation — Level" Status="NotStarted">
+      <StartDate>2026-08-15</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="INS-TRN-1096" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-VSL-1055" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-VSL-1057" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-TKN-1066" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-FLD-1100" ActivityName="Field Instrument Installation — Pressure" Status="NotStarted">
+      <StartDate>2026-08-18</StartDate>
+      <FinishDate>2026-09-01</FinishDate>
+      <Predecessor ActivityID="INS-TRN-1097" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-ERC-1030" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-FLD-1101" ActivityName="Field Instrument Installation — Temperature" Status="NotStarted">
+      <StartDate>2026-08-20</StartDate>
+      <FinishDate>2026-09-03</FinishDate>
+      <Predecessor ActivityID="INS-TRN-1098" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-EXC-1059" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-FND-1102" ActivityName="Control Valve Installation" Status="NotStarted">
+      <StartDate>2026-08-25</StartDate>
+      <FinishDate>2026-09-08</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1030" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-ERC-1031" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-FND-1103" ActivityName="Safety Valve Installation" Status="NotStarted">
+      <StartDate>2026-08-25</StartDate>
+      <FinishDate>2026-09-05</FinishDate>
+      <Predecessor ActivityID="SEQ-VSL-1055" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="SEQ-TKN-1066" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-ICS-1104" ActivityName="Junction Box Installation" Status="NotStarted">
+      <StartDate>2026-08-20</StartDate>
+      <FinishDate>2026-09-01</FinishDate>
+      <Predecessor ActivityID="CIV-APN-1022" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-ICS-1105" ActivityName="Marshalling Cabinet Wiring" Status="NotStarted">
+      <StartDate>2026-09-03</StartDate>
+      <FinishDate>2026-09-12</FinishDate>
+      <Predecessor ActivityID="ELE-FLT-1085" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-ICS-1104" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-ICS-1106" ActivityName="DCS Panel Integration" Status="NotStarted">
+      <StartDate>2026-09-13</StartDate>
+      <FinishDate>2026-09-18</FinishDate>
+      <Predecessor ActivityID="INS-ICS-1105" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-LOOP-1107" ActivityName="Loop Check — All Instruments" Status="NotStarted">
+      <StartDate>2026-09-14</StartDate>
+      <FinishDate>2026-09-22</FinishDate>
+      <Predecessor ActivityID="INS-FLD-1099" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-FLD-1100" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-FLD-1101" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-ICS-1106" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-LOOP-1108" ActivityName="Control Valve Loop Check" Status="NotStarted">
+      <StartDate>2026-09-18</StartDate>
+      <FinishDate>2026-09-22</FinishDate>
+      <Predecessor ActivityID="INS-FND-1102" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-ICS-1106" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-SFT-1109" ActivityName="SIS Logic Test" Status="NotStarted">
+      <StartDate>2026-09-20</StartDate>
+      <FinishDate>2026-09-25</FinishDate>
+      <Predecessor ActivityID="INS-LOOP-1107" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="INS-FND-1103" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-SFT-1110" ActivityName="ESD System Functional Test" Status="NotStarted">
+      <StartDate>2026-09-23</StartDate>
+      <FinishDate>2026-09-26</FinishDate>
+      <Predecessor ActivityID="INS-SFT-1109" Type="FS" Lag="0d" />
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-TRN-1096" ActivityName="Transmitter Calibration — Level" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-10</FinishDate>
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-TRN-1097" ActivityName="Transmitter Calibration — Pressure" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="INS-TRN-1098" ActivityName="Transmitter Calibration — Temperature" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-14</FinishDate>
+      <ResourceID>instrumentation</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-ERC-1030" ActivityName="Spool Erection — 24&amp;quot;-P-1001-A1A" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-18</FinishDate>
+      <Predecessor ActivityID="PIP-SPL-1025" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-ERC-1031" ActivityName="Spool Erection — 12&amp;quot;-P-1002-B1A" Status="NotStarted">
+      <StartDate>2026-08-02</StartDate>
+      <FinishDate>2026-08-15</FinishDate>
+      <Predecessor ActivityID="PIP-SPL-1026" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-ERC-1032" ActivityName="Spool Erection — 8&amp;quot;-P-1003-A1B" Status="NotStarted">
+      <StartDate>2026-08-06</StartDate>
+      <FinishDate>2026-08-22</FinishDate>
+      <Predecessor ActivityID="PIP-SPL-1027" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-ERC-1033" ActivityName="Spool Erection — 4&amp;quot;-P-1010-C1A" Status="NotStarted">
+      <StartDate>2026-08-11</StartDate>
+      <FinishDate>2026-08-22</FinishDate>
+      <Predecessor ActivityID="PIP-SPL-1028" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-ERC-1034" ActivityName="Spool Erection — 6&amp;quot;-P-1015-A1A" Status="NotStarted">
+      <StartDate>2026-08-13</StartDate>
+      <FinishDate>2026-08-25</FinishDate>
+      <Predecessor ActivityID="PIP-SPL-1029" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-FLG-1035" ActivityName="Flange Management — 24&amp;quot;-P-1001-A1A" Status="NotStarted">
+      <StartDate>2026-08-19</StartDate>
+      <FinishDate>2026-08-26</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1030" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-FLG-1036" ActivityName="Flange Management — 12&amp;quot;-P-1002-B1A" Status="NotStarted">
+      <StartDate>2026-08-16</StartDate>
+      <FinishDate>2026-08-22</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1031" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-FLG-1037" ActivityName="Flange Management — 8&amp;quot;-P-1003-A1B" Status="NotStarted">
+      <StartDate>2026-08-23</StartDate>
+      <FinishDate>2026-08-30</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1032" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-FLG-1038" ActivityName="Flange Management — 4&amp;quot;-P-1010-C1A" Status="NotStarted">
+      <StartDate>2026-08-23</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1033" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-FLG-1039" ActivityName="Flange Management — 6&amp;quot;-P-1015-A1A" Status="NotStarted">
+      <StartDate>2026-08-26</StartDate>
+      <FinishDate>2026-09-02</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1034" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-HYT-1040" ActivityName="Hydrotest — 24&amp;quot;-P-1001-A1A" Status="NotStarted">
+      <StartDate>2026-08-27</StartDate>
+      <FinishDate>2026-09-03</FinishDate>
+      <Predecessor ActivityID="PIP-FLG-1035" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-HYT-1041" ActivityName="Hydrotest — 12&amp;quot;-P-1002-B1A" Status="NotStarted">
+      <StartDate>2026-08-23</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="PIP-FLG-1036" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-HYT-1042" ActivityName="Hydrotest — 8&amp;quot;-P-1003-A1B" Status="NotStarted">
+      <StartDate>2026-08-31</StartDate>
+      <FinishDate>2026-09-06</FinishDate>
+      <Predecessor ActivityID="PIP-FLG-1037" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-HYT-1043" ActivityName="Hydrotest — 4&amp;quot;-P-1010-C1A" Status="NotStarted">
+      <StartDate>2026-08-29</StartDate>
+      <FinishDate>2026-09-03</FinishDate>
+      <Predecessor ActivityID="PIP-FLG-1038" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-HYT-1044" ActivityName="Hydrotest — 6&amp;quot;-P-1015-A1A" Status="NotStarted">
+      <StartDate>2026-09-03</StartDate>
+      <FinishDate>2026-09-08</FinishDate>
+      <Predecessor ActivityID="PIP-FLG-1039" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-INS-1045" ActivityName="Insulation — 24&amp;quot;-P-1001-A1A" Status="NotStarted">
+      <StartDate>2026-09-04</StartDate>
+      <FinishDate>2026-09-14</FinishDate>
+      <Predecessor ActivityID="PIP-HYT-1040" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-INS-1046" ActivityName="Insulation — 12&amp;quot;-P-1002-B1A" Status="NotStarted">
+      <StartDate>2026-08-29</StartDate>
+      <FinishDate>2026-09-06</FinishDate>
+      <Predecessor ActivityID="PIP-HYT-1041" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-INS-1047" ActivityName="Insulation — 8&amp;quot;-P-1003-A1B" Status="NotStarted">
+      <StartDate>2026-09-07</StartDate>
+      <FinishDate>2026-09-15</FinishDate>
+      <Predecessor ActivityID="PIP-HYT-1042" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-PAI-1048" ActivityName="Painting &amp;amp; Coating — Pipe Rack" Status="NotStarted">
+      <StartDate>2026-09-01</StartDate>
+      <FinishDate>2026-09-12</FinishDate>
+      <Predecessor ActivityID="PIP-ERC-1030" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-ERC-1031" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-PCD-1053" ActivityName="P&amp;amp;ID Punch List Close-out" Status="NotStarted">
+      <StartDate>2026-09-15</StartDate>
+      <FinishDate>2026-09-22</FinishDate>
+      <Predecessor ActivityID="PIP-HYT-1040" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-HYT-1041" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="PIP-HYT-1042" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-RCK-1023" ActivityName="Pipe Rack Steel Erection — Tier 1" Status="NotStarted">
+      <StartDate>2026-07-13</StartDate>
+      <FinishDate>2026-07-25</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1007" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-RCK-1024" ActivityName="Pipe Rack Steel Erection — Tier 2" Status="NotStarted">
+      <StartDate>2026-07-22</StartDate>
+      <FinishDate>2026-08-02</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SKN-1051" ActivityName="Skid Piping — CS-01" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-20</FinishDate>
+      <Predecessor ActivityID="CIV-FND-1018" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SPL-1025" ActivityName="Spool Fabrication — 24&amp;quot;-P-1001-A1A" Status="NotStarted">
+      <StartDate>2026-07-15</StartDate>
+      <FinishDate>2026-08-05</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SPL-1026" ActivityName="Spool Fabrication — 12&amp;quot;-P-1002-B1A" Status="NotStarted">
+      <StartDate>2026-07-18</StartDate>
+      <FinishDate>2026-08-01</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SPL-1027" ActivityName="Spool Fabrication — 8&amp;quot;-P-1003-A1B" Status="NotStarted">
+      <StartDate>2026-07-20</StartDate>
+      <FinishDate>2026-08-08</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SPL-1028" ActivityName="Spool Fabrication — 4&amp;quot;-P-1010-C1A" Status="NotStarted">
+      <StartDate>2026-07-25</StartDate>
+      <FinishDate>2026-08-10</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SPL-1029" ActivityName="Spool Fabrication — 6&amp;quot;-P-1015-A1A" Status="NotStarted">
+      <StartDate>2026-07-28</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SUP-1049" ActivityName="Pipe Support Installation — Tier 1" Status="NotStarted">
+      <StartDate>2026-08-10</StartDate>
+      <FinishDate>2026-08-25</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1023" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="PIP-SUP-1050" ActivityName="Pipe Support Installation — Tier 2" Status="NotStarted">
+      <StartDate>2026-08-15</StartDate>
+      <FinishDate>2026-08-28</FinishDate>
+      <Predecessor ActivityID="PIP-RCK-1024" Type="FS" Lag="0d" />
+      <ResourceID>piping</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-ALN-1070" ActivityName="Equipment Alignment Check — Rotating" Status="NotStarted">
+      <StartDate>2026-08-13</StartDate>
+      <FinishDate>2026-08-17</FinishDate>
+      <Predecessor ActivityID="SEQ-PMP-1061" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-ALN-1071" ActivityName="Grouting — Compressor Skid CS-01" Status="NotStarted">
+      <StartDate>2026-08-21</StartDate>
+      <FinishDate>2026-08-25</FinishDate>
+      <Predecessor ActivityID="SEQ-SKD-1063" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-ALN-1072" ActivityName="Grouting — Header Skid HS-01" Status="NotStarted">
+      <StartDate>2026-08-21</StartDate>
+      <FinishDate>2026-08-24</FinishDate>
+      <Predecessor ActivityID="SEQ-SKD-1065" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-CMN-1075" ActivityName="Equipment Foundation Settlement Monitoring" Status="NotStarted">
+      <StartDate>2026-07-14</StartDate>
+      <FinishDate>2026-09-15</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1008" Type="FS" Lag="0d" />
+      <Predecessor ActivityID="CIV-FDN-1010" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-EXC-1058" ActivityName="Exchanger Delivery — E-101" Status="NotStarted">
+      <StartDate>2026-07-25</StartDate>
+      <FinishDate>2026-07-28</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1008" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-EXC-1059" ActivityName="Exchanger Setting — E-101" Status="NotStarted">
+      <StartDate>2026-07-29</StartDate>
+      <FinishDate>2026-08-02</FinishDate>
+      <Predecessor ActivityID="SEQ-EXC-1058" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-PIP-1073" ActivityName="Nozzle-Ready Inspection — V-101" Status="NotStarted">
+      <StartDate>2026-07-31</StartDate>
+      <FinishDate>2026-08-02</FinishDate>
+      <Predecessor ActivityID="SEQ-VSL-1055" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-PIP-1074" ActivityName="Nozzle-Ready Inspection — E-101" Status="NotStarted">
+      <StartDate>2026-08-03</StartDate>
+      <FinishDate>2026-08-05</FinishDate>
+      <Predecessor ActivityID="SEQ-EXC-1059" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-PMP-1060" ActivityName="Pump Delivery — P-101A/B" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-04</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1010" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-PMP-1061" ActivityName="Pump Setting &amp;amp; Alignment — P-101A/B" Status="NotStarted">
+      <StartDate>2026-08-05</StartDate>
+      <FinishDate>2026-08-12</FinishDate>
+      <Predecessor ActivityID="SEQ-PMP-1060" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-SKD-1062" ActivityName="Compressor Skid CS-01 Delivery" Status="NotStarted">
+      <StartDate>2026-08-10</StartDate>
+      <FinishDate>2026-08-14</FinishDate>
+      <Predecessor ActivityID="CIV-FND-1018" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-SKD-1063" ActivityName="Compressor Skid CS-01 Setting" Status="NotStarted">
+      <StartDate>2026-08-15</StartDate>
+      <FinishDate>2026-08-20</FinishDate>
+      <Predecessor ActivityID="SEQ-SKD-1062" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-SKD-1064" ActivityName="Header Skid HS-01 Delivery" Status="NotStarted">
+      <StartDate>2026-08-12</StartDate>
+      <FinishDate>2026-08-15</FinishDate>
+      <Predecessor ActivityID="CIV-FND-1019" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-SKD-1065" ActivityName="Header Skid HS-01 Setting" Status="NotStarted">
+      <StartDate>2026-08-16</StartDate>
+      <FinishDate>2026-08-20</FinishDate>
+      <Predecessor ActivityID="SEQ-SKD-1064" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-TKN-1066" ActivityName="Tank TK-1 Shell Erection" Status="NotStarted">
+      <StartDate>2026-07-26</StartDate>
+      <FinishDate>2026-08-15</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1009" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-TKN-1067" ActivityName="Tank TK-1 Roof Installation" Status="NotStarted">
+      <StartDate>2026-08-16</StartDate>
+      <FinishDate>2026-08-22</FinishDate>
+      <Predecessor ActivityID="SEQ-TKN-1066" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-TKN-1068" ActivityName="Tank TK-1 Hydrotest" Status="NotStarted">
+      <StartDate>2026-08-23</StartDate>
+      <FinishDate>2026-08-27</FinishDate>
+      <Predecessor ActivityID="SEQ-TKN-1067" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-TKN-1069" ActivityName="Tank TK-1 Internal Coating" Status="NotStarted">
+      <StartDate>2026-08-28</StartDate>
+      <FinishDate>2026-09-08</FinishDate>
+      <Predecessor ActivityID="SEQ-TKN-1068" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-VSL-1054" ActivityName="Vessel Delivery — V-101 separator" Status="NotStarted">
+      <StartDate>2026-07-20</StartDate>
+      <FinishDate>2026-07-25</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1008" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-VSL-1055" ActivityName="Vessel Setting — V-101 separator" Status="NotStarted">
+      <StartDate>2026-07-26</StartDate>
+      <FinishDate>2026-07-30</FinishDate>
+      <Predecessor ActivityID="SEQ-VSL-1054" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-VSL-1056" ActivityName="Vessel Delivery — V-102 filter" Status="NotStarted">
+      <StartDate>2026-07-28</StartDate>
+      <FinishDate>2026-07-31</FinishDate>
+      <Predecessor ActivityID="CIV-FDN-1008" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+    <Activity ActivityID="SEQ-VSL-1057" ActivityName="Vessel Setting — V-102 filter" Status="NotStarted">
+      <StartDate>2026-08-01</StartDate>
+      <FinishDate>2026-08-03</FinishDate>
+      <Predecessor ActivityID="SEQ-VSL-1056" Type="FS" Lag="0d" />
+      <ResourceID>static_equipment</ResourceID>
+    </Activity>
+  </Activities>
+</Project>

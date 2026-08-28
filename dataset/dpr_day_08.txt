@@ -1,0 +1,47 @@
+DAILY PROGRESS REPORT
+Date: 02/09/2026  |  Weather: Rain since morning, intermittent
+Contractor: ABC Infra Pvt Ltd
+Prepared by: Rajesh Phukan
+
+1. CIVIL
+   - Drainage channels: ALL 160 lm complete. Grating installed at 8 points.
+   - Plot boundary fencing: FULLY COMPLETE. 480 lm with 3 gates, all locked.
+   - Plastering MCC room: second coat done. Painting to start.
+
+2. PIPING
+   - 24 inch P-1001 hydrotest: ALL 6 sections passed. Full line hydro complete.
+   - 8 inch P-1003 hydrotest: ALL 5 sections passed.
+   - 6 inch P-1015 drain header: all 10 spools erected. 20 of 20 flanges bolted.
+   - 6 inch P-1015 hydrotest: all 3 sections passed.
+   - 4 inch P-1010 hydro: already complete (done earlier).
+   - Pipe insulation 24 inch P-1001 started — mineral wool wrapping on 40 m2 done. Aluminium cladding next.
+   - Pipe insulation 12 inch P-1002 started — 20 m2 done.
+   - Skid piping CS-01: all 6 spools fabricated and erected. Flange management complete.
+   - P&ID punch list close-out: 8 of 12 Cat A closed. 20 of 28 Cat B closed.
+
+3. EQUIPMENT
+   - TK-1 internal coating: epoxy lining application started. 120 m2 done out of 420 m2.
+   - Pump run-in test P-101A: vibration readings within limits. Current draw normal.
+
+4. ELECTRICAL
+   - Cable termination HT: ALL 24 ends complete.
+   - Cable termination LT: 44 of 48 ends. 4 remaining at motor side P-102A.
+   - Cable termination control: 120 of 186 terminations done.
+   - Insulation resistance testing HT: all 24 cables tested, ALL PASSED.
+   - LT cable laying fully complete — confirmed.
+   - Insulation resistance testing LT started: 20 of 48 tested, all OK.
+   - Lighting circuit testing: 8 of 16 circuits done.
+   - Cable tray 6.6kV from substation — buried routing verified.
+
+5. INSTRUMENTATION
+   - Marshalling cabinet wiring: 140 of 186 terminations.
+   - Loop check started: 15 of 62 loops completed from field to DCS.
+   - Control valve installation: ALL 8 CVs installed and stroke-tested.
+   - All 14 RTDs mounted on exchangers and vessels.
+   - Valve set pressure verified on PSV-03.
+
+6. HSE
+   - Emergency drill TK-1 fire scenario: tabletop conducted 1 Sep, live drill planned 5 Sep.
+   - Fire extinguisher audit: 24 of 24 complete. 2 refilled cylinders returned.
+   - Safety induction for new batch of 30 workers completed.
+   - Scaffold dismantling at Zone A: lower tiers removed after bund wall completion. Upper tier remains.

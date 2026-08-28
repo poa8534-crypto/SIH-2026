@@ -1,0 +1,33 @@
+DAILY PROGRESS REPORT
+Date: 03/08/2026  |  Weather: Hot, 38C  |  Wind: 12 km/h SW
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: Vikram Saikia, Site Engineer
+
+1. CIVIL WORKS
+   a) Foundation concreting for pipe rack pedestals P7 to P12 completed yesterday (2 Aug). Total 24 m3 poured. Cubes taken for compressive strength test.
+   b) Tank TK-1 shell erection going good — currently on 4th course (lower courses 1-3 completed). Crew working 12-hr shift.
+   c) Backfilling around equipment foundation EF-2 and EF-3 started today. Using roller compactor, about 40% done.
+   d) Equipment foundation for CS-01 concreting — pour completed on 30 Jul, curing ongoing. Water ponding observed on site.
+
+2. PIPING
+   a) 24 inch main header P-1001 spool erection — 6 nos spools erected on Tier 1 rack. 12 more remaining. Fit-up quality good.
+   b) Pipe rack Tier 2 steel erection delayed by 2 days due to crane breakdown. Erection of 12 MT done out of 28 MT planned.
+   c) 12 inch transfer line spool fabrication — 8 nos completed in shop, 4 more to go.
+
+3. EQUIPMENT
+   a) Vessel V-101 separator arrived from Kolkata by trailer today. Unloading planned tomorrow.
+   b) Exchanger E-101 setting on foundation completed 31 Jul. Alignment check pending.
+
+4. ELECTRICAL
+   a) Earthing grid installation — about 60% of total conductor laid. Working near pipe rack area.
+
+5. HSE
+   a) Weekly safety stats — 0 LTI, 2 near-miss reported (both at height work). BBS observations: 18 this week.
+   b) NCR opened for improper scaffolding tag near Zone B. Corrective action taken same day.
+
+6. MATERIALS
+   a) Material delivery status report — 3 truckloads received today (rebar, cement, angle iron). GRN pending.
+
+REMARKS:
+- Crane rental company asked to expedite crane repair — expected back by 5 Aug.
+- TK-1 hydrotest now scheduled 25 Aug instead of 23 Aug due to shell erection delay.

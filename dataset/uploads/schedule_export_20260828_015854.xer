@@ -1,0 +1,1600 @@
+ER!!!	ER 22.12	XER Export
+T	PROJECT	PRJ	PROJID	prj-001
+T	PROJECT	PRJ	proj_short_name	OIL-DULIAJAN
+T	PROJECT	PRJ	proj_name	OIL Well-Site Duliajan
+
+T	ACTIVITY	ACT	act_id	CIV-APN-1022
+T	ACTIVITY	ACT	activity_name	Cable Tray Buried — Zone A+B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	10-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-BKL-1011
+T	FUNCDD	REL	successor_act_id	CIV-APN-1022
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-BKL-1011
+T	ACTIVITY	ACT	activity_name	Backfilling — Pipe Rack Trenches
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	22-JUL-26
+T	ACTIVITY	ACT	target_end_date	28-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1007
+T	FUNCDD	REL	successor_act_id	CIV-BKL-1011
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-BKL-1012
+T	ACTIVITY	ACT	activity_name	Backfilling — Equipment Pads
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	21-JUL-26
+T	ACTIVITY	ACT	target_end_date	28-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	successor_act_id	CIV-BKL-1012
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-BND-1013
+T	ACTIVITY	ACT	activity_name	Containment Bund Wall — Zone A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	26-JUL-26
+T	ACTIVITY	ACT	target_end_date	08-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1009
+T	FUNCDD	REL	successor_act_id	CIV-BND-1013
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-DWG-1015
+T	ACTIVITY	ACT	activity_name	Drainage Channels — Perimeter
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	CIV-DWG-1015
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FDN-1007
+T	ACTIVITY	ACT	activity_name	Pedestal Concreting — Pipe Rack P1–P12
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-JUL-26
+T	ACTIVITY	ACT	target_end_date	12-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1004
+T	FUNCDD	REL	successor_act_id	CIV-FDN-1007
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FDN-1008
+T	ACTIVITY	ACT	activity_name	Equipment Foundation Concreting — EF-1 to EF-4
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	06-JUL-26
+T	ACTIVITY	ACT	target_end_date	20-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1005
+T	FUNCDD	REL	successor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FDN-1009
+T	ACTIVITY	ACT	activity_name	Tank Foundation Ringwall — TK-1
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	13-JUL-26
+T	ACTIVITY	ACT	target_end_date	25-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1006
+T	FUNCDD	REL	successor_act_id	CIV-FDN-1009
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FDN-1010
+T	ACTIVITY	ACT	activity_name	Slab-on-Grade — Pump House
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	14-JUL-26
+T	ACTIVITY	ACT	target_end_date	21-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1005
+T	FUNCDD	REL	successor_act_id	CIV-FDN-1010
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FLR-1020
+T	ACTIVITY	ACT	activity_name	Flooring — MCC Room
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	28-JUL-26
+T	ACTIVITY	ACT	target_end_date	03-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1005
+T	FUNCDD	REL	successor_act_id	CIV-FLR-1020
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FNC-1016
+T	ACTIVITY	ACT	activity_name	Fence & Gate — Plot Boundary
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	10-AUG-26
+T	ACTIVITY	ACT	target_end_date	18-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	CIV-FNC-1016
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FND-1018
+T	ACTIVITY	ACT	activity_name	Foundation — Compressor Skid CS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	08-JUL-26
+T	ACTIVITY	ACT	target_end_date	16-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1005
+T	FUNCDD	REL	successor_act_id	CIV-FND-1018
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-FND-1019
+T	ACTIVITY	ACT	activity_name	Foundation — Header Skid HS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	10-JUL-26
+T	ACTIVITY	ACT	target_end_date	17-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-PLY-1004
+T	FUNCDD	REL	successor_act_id	CIV-FND-1019
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-GBM-1014
+T	ACTIVITY	ACT	activity_name	Grade Beams — Pipe Rack
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-JUL-26
+T	ACTIVITY	ACT	target_end_date	22-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1007
+T	FUNCDD	REL	successor_act_id	CIV-GBM-1014
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-PLG-1017
+T	ACTIVITY	ACT	activity_name	Firewater Pit — Zone B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1002
+T	FUNCDD	REL	successor_act_id	CIV-PLG-1017
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-PLT-1021
+T	ACTIVITY	ACT	activity_name	Plastering & Painting — MCC Room
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	04-AUG-26
+T	ACTIVITY	ACT	target_end_date	10-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FLR-1020
+T	FUNCDD	REL	successor_act_id	CIV-PLT-1021
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-PLY-1004
+T	ACTIVITY	ACT	activity_name	Bored Piling — Pipe Rack P1–P12
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	18-JUN-26
+T	ACTIVITY	ACT	target_end_date	01-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	CIV-PLY-1004
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-PLY-1005
+T	ACTIVITY	ACT	activity_name	Bored Piling — Equipment Foundation EF-1 to EF-4
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-JUN-26
+T	ACTIVITY	ACT	target_end_date	05-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	CIV-PLY-1005
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-PLY-1006
+T	ACTIVITY	ACT	activity_name	Bored Piling — Tank Foundation TK-1
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-JUN-26
+T	ACTIVITY	ACT	target_end_date	12-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	CIV-PLY-1006
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-SIT-1001
+T	ACTIVITY	ACT	activity_name	Site Clearing & Grubbing — Zone A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-JUN-26
+T	ACTIVITY	ACT	target_end_date	07-JUN-26
+
+T	ACTIVITY	ACT	act_id	CIV-SIT-1002
+T	ACTIVITY	ACT	activity_name	Site Clearing & Grubbing — Zone B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	03-JUN-26
+T	ACTIVITY	ACT	target_end_date	10-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1001
+T	FUNCDD	REL	successor_act_id	CIV-SIT-1002
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	CIV-SIT-1003
+T	ACTIVITY	ACT	activity_name	Site Grading & Compaction — Zone A+B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	11-JUN-26
+T	ACTIVITY	ACT	target_end_date	17-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1001
+T	FUNCDD	REL	successor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1002
+T	FUNCDD	REL	successor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-CBL-1076
+T	ACTIVITY	ACT	activity_name	HT Cable Laying — Substation to MCC
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	18-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-APN-1022
+T	FUNCDD	REL	successor_act_id	ELE-CBL-1076
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-CBL-1077
+T	ACTIVITY	ACT	activity_name	LT Cable Laying — MCC to Pumps
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-AUG-26
+T	ACTIVITY	ACT	target_end_date	25-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-APN-1022
+T	FUNCDD	REL	successor_act_id	ELE-CBL-1077
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FLR-1020
+T	FUNCDD	REL	successor_act_id	ELE-CBL-1077
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-CBL-1078
+T	ACTIVITY	ACT	activity_name	Control Cable Laying — Field to MCC
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	18-AUG-26
+T	ACTIVITY	ACT	target_end_date	01-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-APN-1022
+T	FUNCDD	REL	successor_act_id	ELE-CBL-1078
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-ENG-1092
+T	ACTIVITY	ACT	activity_name	Energisation — SWGR 6.6kV
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	06-SEP-26
+T	ACTIVITY	ACT	target_end_date	10-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-IGT-1090
+T	FUNCDD	REL	successor_act_id	ELE-ENG-1092
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-TRF-1080
+T	FUNCDD	REL	successor_act_id	ELE-ENG-1092
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-SWG-1081
+T	FUNCDD	REL	successor_act_id	ELE-ENG-1092
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-ENG-1093
+T	ACTIVITY	ACT	activity_name	Energisation — MCC
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	11-SEP-26
+T	ACTIVITY	ACT	target_end_date	14-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-ENG-1092
+T	FUNCDD	REL	successor_act_id	ELE-ENG-1093
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-SWG-1082
+T	FUNCDD	REL	successor_act_id	ELE-ENG-1093
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-FLT-1083
+T	ACTIVITY	ACT	activity_name	Cable Termination — HT
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	19-AUG-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-CBL-1076
+T	FUNCDD	REL	successor_act_id	ELE-FLT-1083
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-FLT-1084
+T	ACTIVITY	ACT	activity_name	Cable Termination — LT
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	26-AUG-26
+T	ACTIVITY	ACT	target_end_date	04-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-CBL-1077
+T	FUNCDD	REL	successor_act_id	ELE-FLT-1084
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-FLT-1085
+T	ACTIVITY	ACT	activity_name	Cable Termination — Control
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-SEP-26
+T	ACTIVITY	ACT	target_end_date	14-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-CBL-1078
+T	FUNCDD	REL	successor_act_id	ELE-FLT-1085
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-GRD-1086
+T	ACTIVITY	ACT	activity_name	Earthing System — Grid
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-JUL-26
+T	ACTIVITY	ACT	target_end_date	10-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	ELE-GRD-1086
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-GRD-1087
+T	ACTIVITY	ACT	activity_name	Lightning Protection — Pipe Rack
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	15-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	ELE-GRD-1087
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-IGT-1090
+T	ACTIVITY	ACT	activity_name	Insulation Resistance Testing — HT
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	29-AUG-26
+T	ACTIVITY	ACT	target_end_date	05-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-FLT-1083
+T	FUNCDD	REL	successor_act_id	ELE-IGT-1090
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-IGT-1091
+T	ACTIVITY	ACT	activity_name	Insulation Resistance Testing — LT
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-SEP-26
+T	ACTIVITY	ACT	target_end_date	12-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-FLT-1084
+T	FUNCDD	REL	successor_act_id	ELE-IGT-1091
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-LIG-1088
+T	ACTIVITY	ACT	activity_name	Area Lighting Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-AUG-26
+T	ACTIVITY	ACT	target_end_date	01-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	ELE-LIG-1088
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	ELE-LIG-1088
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-LIG-1089
+T	ACTIVITY	ACT	activity_name	Lighting Circuit Testing
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-SEP-26
+T	ACTIVITY	ACT	target_end_date	06-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-LIG-1088
+T	FUNCDD	REL	successor_act_id	ELE-LIG-1089
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-MTR-1094
+T	ACTIVITY	ACT	activity_name	Motor Start-up — P-101A/B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-SEP-26
+T	ACTIVITY	ACT	target_end_date	18-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-ENG-1093
+T	FUNCDD	REL	successor_act_id	ELE-MTR-1094
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-PMP-1061
+T	FUNCDD	REL	successor_act_id	ELE-MTR-1094
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-MTR-1095
+T	ACTIVITY	ACT	activity_name	Motor Start-up — CS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-SEP-26
+T	ACTIVITY	ACT	target_end_date	18-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-ENG-1093
+T	FUNCDD	REL	successor_act_id	ELE-MTR-1095
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-SKD-1063
+T	FUNCDD	REL	successor_act_id	ELE-MTR-1095
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-SWG-1081
+T	ACTIVITY	ACT	activity_name	SWGR Erection — 6.6kV
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-JUL-26
+T	ACTIVITY	ACT	target_end_date	01-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FLR-1020
+T	FUNCDD	REL	successor_act_id	ELE-SWG-1081
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-SWG-1082
+T	ACTIVITY	ACT	activity_name	MCC Panel Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-AUG-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FLR-1020
+T	FUNCDD	REL	successor_act_id	ELE-SWG-1082
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-SWG-1081
+T	FUNCDD	REL	successor_act_id	ELE-SWG-1082
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-TRF-1079
+T	ACTIVITY	ACT	activity_name	Transformer Installation — TR-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-JUL-26
+T	ACTIVITY	ACT	target_end_date	28-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-SIT-1003
+T	FUNCDD	REL	successor_act_id	ELE-TRF-1079
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	ELE-TRF-1080
+T	ACTIVITY	ACT	activity_name	Transformer Oil Filling & Testing — TR-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	29-JUL-26
+T	ACTIVITY	ACT	target_end_date	03-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-TRF-1079
+T	FUNCDD	REL	successor_act_id	ELE-TRF-1080
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-BBS-1113
+T	ACTIVITY	ACT	activity_name	BBS Observation Programme Launch
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-JUN-26
+T	ACTIVITY	ACT	target_end_date	08-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-BBS-1113
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-DSH-1121
+T	ACTIVITY	ACT	activity_name	Site Safety Statistics Report
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-JUN-26
+T	ACTIVITY	ACT	target_end_date	28-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-BBS-1113
+T	FUNCDD	REL	successor_act_id	HSE-DSH-1121
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-EMG-1120
+T	ACTIVITY	ACT	activity_name	Emergency Drill — Tank Fire
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-SEP-26
+T	ACTIVITY	ACT	target_end_date	08-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1068
+T	FUNCDD	REL	successor_act_id	HSE-EMG-1120
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-FRE-1119
+T	ACTIVITY	ACT	activity_name	Fire Extinguisher Audit
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-AUG-26
+T	ACTIVITY	ACT	target_end_date	18-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-FRE-1119
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-IND-1112
+T	ACTIVITY	ACT	activity_name	Pre-Mobilisation Safety Induction
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	28-MAY-26
+T	ACTIVITY	ACT	target_end_date	01-JUN-26
+
+T	ACTIVITY	ACT	act_id	HSE-JSA-1114
+T	ACTIVITY	ACT	activity_name	JSA — Piling Operations
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	12-JUN-26
+T	ACTIVITY	ACT	target_end_date	14-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-JSA-1114
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-JSA-1115
+T	ACTIVITY	ACT	activity_name	JSA — Heavy Lifting
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-JUN-26
+T	ACTIVITY	ACT	target_end_date	18-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-JSA-1115
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-NCR-1117
+T	ACTIVITY	ACT	activity_name	NCR Register & Close-out Process
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	10-JUN-26
+T	ACTIVITY	ACT	target_end_date	15-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-PMT-1116
+T	FUNCDD	REL	successor_act_id	HSE-NCR-1117
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-PMT-1116
+T	ACTIVITY	ACT	activity_name	Work Permit System Activation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-JUN-26
+T	ACTIVITY	ACT	target_end_date	10-JUN-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-PMT-1116
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	HSE-SPC-1118
+T	ACTIVITY	ACT	activity_name	Scaffolding Inspection Programme
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-JUL-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	HSE-IND-1112
+T	FUNCDD	REL	successor_act_id	HSE-SPC-1118
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-DOC-1111
+T	ACTIVITY	ACT	activity_name	As-Built Instrument Datasheets
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-SEP-26
+T	ACTIVITY	ACT	target_end_date	28-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	successor_act_id	INS-DOC-1111
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-FLD-1099
+T	ACTIVITY	ACT	activity_name	Field Instrument Installation — Level
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-AUG-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-TRN-1096
+T	FUNCDD	REL	successor_act_id	INS-FLD-1099
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1055
+T	FUNCDD	REL	successor_act_id	INS-FLD-1099
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1057
+T	FUNCDD	REL	successor_act_id	INS-FLD-1099
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1066
+T	FUNCDD	REL	successor_act_id	INS-FLD-1099
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-FLD-1100
+T	ACTIVITY	ACT	activity_name	Field Instrument Installation — Pressure
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	18-AUG-26
+T	ACTIVITY	ACT	target_end_date	01-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-TRN-1097
+T	FUNCDD	REL	successor_act_id	INS-FLD-1100
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	successor_act_id	INS-FLD-1100
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-FLD-1101
+T	ACTIVITY	ACT	activity_name	Field Instrument Installation — Temperature
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-AUG-26
+T	ACTIVITY	ACT	target_end_date	03-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-TRN-1098
+T	FUNCDD	REL	successor_act_id	INS-FLD-1101
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-EXC-1059
+T	FUNCDD	REL	successor_act_id	INS-FLD-1101
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-FND-1102
+T	ACTIVITY	ACT	activity_name	Control Valve Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-AUG-26
+T	ACTIVITY	ACT	target_end_date	08-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	successor_act_id	INS-FND-1102
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1031
+T	FUNCDD	REL	successor_act_id	INS-FND-1102
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-FND-1103
+T	ACTIVITY	ACT	activity_name	Safety Valve Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-AUG-26
+T	ACTIVITY	ACT	target_end_date	05-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1055
+T	FUNCDD	REL	successor_act_id	INS-FND-1103
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1066
+T	FUNCDD	REL	successor_act_id	INS-FND-1103
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-ICS-1104
+T	ACTIVITY	ACT	activity_name	Junction Box Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-AUG-26
+T	ACTIVITY	ACT	target_end_date	01-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-APN-1022
+T	FUNCDD	REL	successor_act_id	INS-ICS-1104
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-ICS-1105
+T	ACTIVITY	ACT	activity_name	Marshalling Cabinet Wiring
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	03-SEP-26
+T	ACTIVITY	ACT	target_end_date	12-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	ELE-FLT-1085
+T	FUNCDD	REL	successor_act_id	INS-ICS-1105
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-ICS-1104
+T	FUNCDD	REL	successor_act_id	INS-ICS-1105
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-ICS-1106
+T	ACTIVITY	ACT	activity_name	DCS Panel Integration
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	13-SEP-26
+T	ACTIVITY	ACT	target_end_date	18-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-ICS-1105
+T	FUNCDD	REL	successor_act_id	INS-ICS-1106
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-LOOP-1107
+T	ACTIVITY	ACT	activity_name	Loop Check — All Instruments
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	14-SEP-26
+T	ACTIVITY	ACT	target_end_date	22-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-FLD-1099
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-FLD-1100
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-FLD-1101
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-ICS-1106
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-LOOP-1108
+T	ACTIVITY	ACT	activity_name	Control Valve Loop Check
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	18-SEP-26
+T	ACTIVITY	ACT	target_end_date	22-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-FND-1102
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1108
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-ICS-1106
+T	FUNCDD	REL	successor_act_id	INS-LOOP-1108
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-SFT-1109
+T	ACTIVITY	ACT	activity_name	SIS Logic Test
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-SEP-26
+T	ACTIVITY	ACT	target_end_date	25-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-LOOP-1107
+T	FUNCDD	REL	successor_act_id	INS-SFT-1109
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-FND-1103
+T	FUNCDD	REL	successor_act_id	INS-SFT-1109
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-SFT-1110
+T	ACTIVITY	ACT	activity_name	ESD System Functional Test
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	23-SEP-26
+T	ACTIVITY	ACT	target_end_date	26-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	INS-SFT-1109
+T	FUNCDD	REL	successor_act_id	INS-SFT-1110
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	INS-TRN-1096
+T	ACTIVITY	ACT	activity_name	Transmitter Calibration — Level
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	10-AUG-26
+
+T	ACTIVITY	ACT	act_id	INS-TRN-1097
+T	ACTIVITY	ACT	activity_name	Transmitter Calibration — Pressure
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	ACTIVITY	ACT	act_id	INS-TRN-1098
+T	ACTIVITY	ACT	activity_name	Transmitter Calibration — Temperature
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	14-AUG-26
+
+T	ACTIVITY	ACT	act_id	PIP-ERC-1030
+T	ACTIVITY	ACT	activity_name	Spool Erection — 24"-P-1001-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	18-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-SPL-1025
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-ERC-1031
+T	ACTIVITY	ACT	activity_name	Spool Erection — 12"-P-1002-B1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	02-AUG-26
+T	ACTIVITY	ACT	target_end_date	15-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-SPL-1026
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1031
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1031
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-ERC-1032
+T	ACTIVITY	ACT	activity_name	Spool Erection — 8"-P-1003-A1B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	06-AUG-26
+T	ACTIVITY	ACT	target_end_date	22-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-SPL-1027
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1032
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1032
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-ERC-1033
+T	ACTIVITY	ACT	activity_name	Spool Erection — 4"-P-1010-C1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	11-AUG-26
+T	ACTIVITY	ACT	target_end_date	22-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-SPL-1028
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1033
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1033
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-ERC-1034
+T	ACTIVITY	ACT	activity_name	Spool Erection — 6"-P-1015-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	13-AUG-26
+T	ACTIVITY	ACT	target_end_date	25-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-SPL-1029
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1034
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-ERC-1034
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-FLG-1035
+T	ACTIVITY	ACT	activity_name	Flange Management — 24"-P-1001-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	19-AUG-26
+T	ACTIVITY	ACT	target_end_date	26-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	successor_act_id	PIP-FLG-1035
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-FLG-1036
+T	ACTIVITY	ACT	activity_name	Flange Management — 12"-P-1002-B1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	16-AUG-26
+T	ACTIVITY	ACT	target_end_date	22-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1031
+T	FUNCDD	REL	successor_act_id	PIP-FLG-1036
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-FLG-1037
+T	ACTIVITY	ACT	activity_name	Flange Management — 8"-P-1003-A1B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	23-AUG-26
+T	ACTIVITY	ACT	target_end_date	30-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1032
+T	FUNCDD	REL	successor_act_id	PIP-FLG-1037
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-FLG-1038
+T	ACTIVITY	ACT	activity_name	Flange Management — 4"-P-1010-C1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	23-AUG-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1033
+T	FUNCDD	REL	successor_act_id	PIP-FLG-1038
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-FLG-1039
+T	ACTIVITY	ACT	activity_name	Flange Management — 6"-P-1015-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	26-AUG-26
+T	ACTIVITY	ACT	target_end_date	02-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1034
+T	FUNCDD	REL	successor_act_id	PIP-FLG-1039
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-HYT-1040
+T	ACTIVITY	ACT	activity_name	Hydrotest — 24"-P-1001-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	27-AUG-26
+T	ACTIVITY	ACT	target_end_date	03-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-FLG-1035
+T	FUNCDD	REL	successor_act_id	PIP-HYT-1040
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-HYT-1041
+T	ACTIVITY	ACT	activity_name	Hydrotest — 12"-P-1002-B1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	23-AUG-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-FLG-1036
+T	FUNCDD	REL	successor_act_id	PIP-HYT-1041
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-HYT-1042
+T	ACTIVITY	ACT	activity_name	Hydrotest — 8"-P-1003-A1B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	31-AUG-26
+T	ACTIVITY	ACT	target_end_date	06-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-FLG-1037
+T	FUNCDD	REL	successor_act_id	PIP-HYT-1042
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-HYT-1043
+T	ACTIVITY	ACT	activity_name	Hydrotest — 4"-P-1010-C1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	29-AUG-26
+T	ACTIVITY	ACT	target_end_date	03-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-FLG-1038
+T	FUNCDD	REL	successor_act_id	PIP-HYT-1043
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-HYT-1044
+T	ACTIVITY	ACT	activity_name	Hydrotest — 6"-P-1015-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	03-SEP-26
+T	ACTIVITY	ACT	target_end_date	08-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-FLG-1039
+T	FUNCDD	REL	successor_act_id	PIP-HYT-1044
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-INS-1045
+T	ACTIVITY	ACT	activity_name	Insulation — 24"-P-1001-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	04-SEP-26
+T	ACTIVITY	ACT	target_end_date	14-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1040
+T	FUNCDD	REL	successor_act_id	PIP-INS-1045
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-INS-1046
+T	ACTIVITY	ACT	activity_name	Insulation — 12"-P-1002-B1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	29-AUG-26
+T	ACTIVITY	ACT	target_end_date	06-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1041
+T	FUNCDD	REL	successor_act_id	PIP-INS-1046
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-INS-1047
+T	ACTIVITY	ACT	activity_name	Insulation — 8"-P-1003-A1B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	07-SEP-26
+T	ACTIVITY	ACT	target_end_date	15-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1042
+T	FUNCDD	REL	successor_act_id	PIP-INS-1047
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-PAI-1048
+T	ACTIVITY	ACT	activity_name	Painting & Coating — Pipe Rack
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-SEP-26
+T	ACTIVITY	ACT	target_end_date	12-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1030
+T	FUNCDD	REL	successor_act_id	PIP-PAI-1048
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-ERC-1031
+T	FUNCDD	REL	successor_act_id	PIP-PAI-1048
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-PCD-1053
+T	ACTIVITY	ACT	activity_name	P&ID Punch List Close-out
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-SEP-26
+T	ACTIVITY	ACT	target_end_date	22-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1040
+T	FUNCDD	REL	successor_act_id	PIP-PCD-1053
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1041
+T	FUNCDD	REL	successor_act_id	PIP-PCD-1053
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-HYT-1042
+T	FUNCDD	REL	successor_act_id	PIP-PCD-1053
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-RCK-1023
+T	ACTIVITY	ACT	activity_name	Pipe Rack Steel Erection — Tier 1
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	13-JUL-26
+T	ACTIVITY	ACT	target_end_date	25-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1007
+T	FUNCDD	REL	successor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-RCK-1024
+T	ACTIVITY	ACT	activity_name	Pipe Rack Steel Erection — Tier 2
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	22-JUL-26
+T	ACTIVITY	ACT	target_end_date	02-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SKN-1051
+T	ACTIVITY	ACT	activity_name	Skid Piping — CS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	20-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FND-1018
+T	FUNCDD	REL	successor_act_id	PIP-SKN-1051
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SPL-1025
+T	ACTIVITY	ACT	activity_name	Spool Fabrication — 24"-P-1001-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-JUL-26
+T	ACTIVITY	ACT	target_end_date	05-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	PIP-SPL-1025
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SPL-1026
+T	ACTIVITY	ACT	activity_name	Spool Fabrication — 12"-P-1002-B1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	18-JUL-26
+T	ACTIVITY	ACT	target_end_date	01-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	PIP-SPL-1026
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SPL-1027
+T	ACTIVITY	ACT	activity_name	Spool Fabrication — 8"-P-1003-A1B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-JUL-26
+T	ACTIVITY	ACT	target_end_date	08-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	PIP-SPL-1027
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SPL-1028
+T	ACTIVITY	ACT	activity_name	Spool Fabrication — 4"-P-1010-C1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-JUL-26
+T	ACTIVITY	ACT	target_end_date	10-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-SPL-1028
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SPL-1029
+T	ACTIVITY	ACT	activity_name	Spool Fabrication — 6"-P-1015-A1A
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	28-JUL-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-SPL-1029
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SUP-1049
+T	ACTIVITY	ACT	activity_name	Pipe Support Installation — Tier 1
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	10-AUG-26
+T	ACTIVITY	ACT	target_end_date	25-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1023
+T	FUNCDD	REL	successor_act_id	PIP-SUP-1049
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	PIP-SUP-1050
+T	ACTIVITY	ACT	activity_name	Pipe Support Installation — Tier 2
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-AUG-26
+T	ACTIVITY	ACT	target_end_date	28-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	PIP-RCK-1024
+T	FUNCDD	REL	successor_act_id	PIP-SUP-1050
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-ALN-1070
+T	ACTIVITY	ACT	activity_name	Equipment Alignment Check — Rotating
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	13-AUG-26
+T	ACTIVITY	ACT	target_end_date	17-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-PMP-1061
+T	FUNCDD	REL	successor_act_id	SEQ-ALN-1070
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-ALN-1071
+T	ACTIVITY	ACT	activity_name	Grouting — Compressor Skid CS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	21-AUG-26
+T	ACTIVITY	ACT	target_end_date	25-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-SKD-1063
+T	FUNCDD	REL	successor_act_id	SEQ-ALN-1071
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-ALN-1072
+T	ACTIVITY	ACT	activity_name	Grouting — Header Skid HS-01
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	21-AUG-26
+T	ACTIVITY	ACT	target_end_date	24-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-SKD-1065
+T	FUNCDD	REL	successor_act_id	SEQ-ALN-1072
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-CMN-1075
+T	ACTIVITY	ACT	activity_name	Equipment Foundation Settlement Monitoring
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	14-JUL-26
+T	ACTIVITY	ACT	target_end_date	15-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	successor_act_id	SEQ-CMN-1075
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1010
+T	FUNCDD	REL	successor_act_id	SEQ-CMN-1075
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-EXC-1058
+T	ACTIVITY	ACT	activity_name	Exchanger Delivery — E-101
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	25-JUL-26
+T	ACTIVITY	ACT	target_end_date	28-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	successor_act_id	SEQ-EXC-1058
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-EXC-1059
+T	ACTIVITY	ACT	activity_name	Exchanger Setting — E-101
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	29-JUL-26
+T	ACTIVITY	ACT	target_end_date	02-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-EXC-1058
+T	FUNCDD	REL	successor_act_id	SEQ-EXC-1059
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-PIP-1073
+T	ACTIVITY	ACT	activity_name	Nozzle-Ready Inspection — V-101
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	31-JUL-26
+T	ACTIVITY	ACT	target_end_date	02-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1055
+T	FUNCDD	REL	successor_act_id	SEQ-PIP-1073
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-PIP-1074
+T	ACTIVITY	ACT	activity_name	Nozzle-Ready Inspection — E-101
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	03-AUG-26
+T	ACTIVITY	ACT	target_end_date	05-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-EXC-1059
+T	FUNCDD	REL	successor_act_id	SEQ-PIP-1074
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-PMP-1060
+T	ACTIVITY	ACT	activity_name	Pump Delivery — P-101A/B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	04-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1010
+T	FUNCDD	REL	successor_act_id	SEQ-PMP-1060
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-PMP-1061
+T	ACTIVITY	ACT	activity_name	Pump Setting & Alignment — P-101A/B
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	05-AUG-26
+T	ACTIVITY	ACT	target_end_date	12-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-PMP-1060
+T	FUNCDD	REL	successor_act_id	SEQ-PMP-1061
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-SKD-1062
+T	ACTIVITY	ACT	activity_name	Compressor Skid CS-01 Delivery
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	10-AUG-26
+T	ACTIVITY	ACT	target_end_date	14-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FND-1018
+T	FUNCDD	REL	successor_act_id	SEQ-SKD-1062
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-SKD-1063
+T	ACTIVITY	ACT	activity_name	Compressor Skid CS-01 Setting
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	15-AUG-26
+T	ACTIVITY	ACT	target_end_date	20-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-SKD-1062
+T	FUNCDD	REL	successor_act_id	SEQ-SKD-1063
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-SKD-1064
+T	ACTIVITY	ACT	activity_name	Header Skid HS-01 Delivery
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	12-AUG-26
+T	ACTIVITY	ACT	target_end_date	15-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FND-1019
+T	FUNCDD	REL	successor_act_id	SEQ-SKD-1064
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-SKD-1065
+T	ACTIVITY	ACT	activity_name	Header Skid HS-01 Setting
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	16-AUG-26
+T	ACTIVITY	ACT	target_end_date	20-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-SKD-1064
+T	FUNCDD	REL	successor_act_id	SEQ-SKD-1065
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-TKN-1066
+T	ACTIVITY	ACT	activity_name	Tank TK-1 Shell Erection
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	26-JUL-26
+T	ACTIVITY	ACT	target_end_date	15-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1009
+T	FUNCDD	REL	successor_act_id	SEQ-TKN-1066
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-TKN-1067
+T	ACTIVITY	ACT	activity_name	Tank TK-1 Roof Installation
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	16-AUG-26
+T	ACTIVITY	ACT	target_end_date	22-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1066
+T	FUNCDD	REL	successor_act_id	SEQ-TKN-1067
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-TKN-1068
+T	ACTIVITY	ACT	activity_name	Tank TK-1 Hydrotest
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	23-AUG-26
+T	ACTIVITY	ACT	target_end_date	27-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1067
+T	FUNCDD	REL	successor_act_id	SEQ-TKN-1068
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-TKN-1069
+T	ACTIVITY	ACT	activity_name	Tank TK-1 Internal Coating
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	28-AUG-26
+T	ACTIVITY	ACT	target_end_date	08-SEP-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-TKN-1068
+T	FUNCDD	REL	successor_act_id	SEQ-TKN-1069
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-VSL-1054
+T	ACTIVITY	ACT	activity_name	Vessel Delivery — V-101 separator
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	20-JUL-26
+T	ACTIVITY	ACT	target_end_date	25-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	successor_act_id	SEQ-VSL-1054
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-VSL-1055
+T	ACTIVITY	ACT	activity_name	Vessel Setting — V-101 separator
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	26-JUL-26
+T	ACTIVITY	ACT	target_end_date	30-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1054
+T	FUNCDD	REL	successor_act_id	SEQ-VSL-1055
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-VSL-1056
+T	ACTIVITY	ACT	activity_name	Vessel Delivery — V-102 filter
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	28-JUL-26
+T	ACTIVITY	ACT	target_end_date	31-JUL-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	CIV-FDN-1008
+T	FUNCDD	REL	successor_act_id	SEQ-VSL-1056
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d
+
+T	ACTIVITY	ACT	act_id	SEQ-VSL-1057
+T	ACTIVITY	ACT	activity_name	Vessel Setting — V-102 filter
+T	ACTIVITY	ACT	status	TK Not Started
+T	ACTIVITY	ACT	target_start_date	01-AUG-26
+T	ACTIVITY	ACT	target_end_date	03-AUG-26
+
+T	FUNCDD	REL	project_id	prj-001
+T	FUNCDD	REL	predecessor_act_id	SEQ-VSL-1056
+T	FUNCDD	REL	successor_act_id	SEQ-VSL-1057
+T	FUNCDD	REL	relationship_type	SS
+T	FUNCDD	REL	lag	0d

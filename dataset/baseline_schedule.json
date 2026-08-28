@@ -1,0 +1,1823 @@
+[
+  {
+    "activity_id": "CIV-SIT-1001",
+    "wbs_path": "1.1.1.1",
+    "description": "Site Clearing & Grubbing \u2014 Zone A",
+    "detail": "Clear vegetation and topsoil from Zone A; grub roots to 300 mm depth",
+    "discipline": "civil",
+    "planned_start": "2026-06-01",
+    "planned_finish": "2026-06-07",
+    "planned_qty": 1200,
+    "uom": "m2",
+    "predecessors": [],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-SIT-1002",
+    "wbs_path": "1.1.1.2",
+    "description": "Site Clearing & Grubbing \u2014 Zone B",
+    "detail": "Clear vegetation and topsoil from Zone B; grub roots to 300 mm depth",
+    "discipline": "civil",
+    "planned_start": "2026-06-03",
+    "planned_finish": "2026-06-10",
+    "planned_qty": 1200,
+    "uom": "m2",
+    "predecessors": [
+      "CIV-SIT-1001"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-SIT-1003",
+    "wbs_path": "1.1.1.3",
+    "description": "Site Grading & Compaction \u2014 Zone A+B",
+    "detail": "Machine grade to design levels, compact subgrade to 95% MDD",
+    "discipline": "civil",
+    "planned_start": "2026-06-11",
+    "planned_finish": "2026-06-17",
+    "planned_qty": 2400,
+    "uom": "m2",
+    "predecessors": [
+      "CIV-SIT-1001",
+      "CIV-SIT-1002"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-PLY-1004",
+    "wbs_path": "1.1.2.1",
+    "description": "Bored Piling \u2014 Pipe Rack P1\u2013P12",
+    "detail": "Bore 600 mm dia CFA piles to 12 m depth, 16 nos",
+    "discipline": "civil",
+    "planned_start": "2026-06-18",
+    "planned_finish": "2026-07-01",
+    "planned_qty": 16,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-PLY-1005",
+    "wbs_path": "1.1.2.2",
+    "description": "Bored Piling \u2014 Equipment Foundation EF-1 to EF-4",
+    "detail": "Bore 800 mm dia CFA piles to 15 m depth, 24 nos",
+    "discipline": "civil",
+    "planned_start": "2026-06-20",
+    "planned_finish": "2026-07-05",
+    "planned_qty": 24,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-PLY-1006",
+    "wbs_path": "1.1.2.3",
+    "description": "Bored Piling \u2014 Tank Foundation TK-1",
+    "detail": "Bore 600 mm dia bored piles to 18 m depth, 32 nos",
+    "discipline": "civil",
+    "planned_start": "2026-06-25",
+    "planned_finish": "2026-07-12",
+    "planned_qty": 32,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FDN-1007",
+    "wbs_path": "1.1.3.1",
+    "description": "Pedestal Concreting \u2014 Pipe Rack P1\u2013P12",
+    "detail": "Cast M30 concrete pedestals for pipe rack columns, 48 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-02",
+    "planned_finish": "2026-07-12",
+    "planned_qty": 48,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-PLY-1004"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FDN-1008",
+    "wbs_path": "1.1.3.2",
+    "description": "Equipment Foundation Concreting \u2014 EF-1 to EF-4",
+    "detail": "Cast M35 RC foundations for rotating equipment, 120 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-06",
+    "planned_finish": "2026-07-20",
+    "planned_qty": 120,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-PLY-1005"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FDN-1009",
+    "wbs_path": "1.1.3.3",
+    "description": "Tank Foundation Ringwall \u2014 TK-1",
+    "detail": "Cast M30 ringwall foundation for TK-1, 65 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-13",
+    "planned_finish": "2026-07-25",
+    "planned_qty": 65,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-PLY-1006"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FDN-1010",
+    "wbs_path": "1.1.3.4",
+    "description": "Slab-on-Grade \u2014 Pump House",
+    "detail": "Cast M30 slab-on-grade 200 mm thk, 180 m2",
+    "discipline": "civil",
+    "planned_start": "2026-07-14",
+    "planned_finish": "2026-07-21",
+    "planned_qty": 180,
+    "uom": "m2",
+    "predecessors": [
+      "CIV-PLY-1005"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-BKL-1011",
+    "wbs_path": "1.1.4.1",
+    "description": "Backfilling \u2014 Pipe Rack Trenches",
+    "detail": "Backfill pipe rack trench with compacted sand, 320 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-22",
+    "planned_finish": "2026-07-28",
+    "planned_qty": 320,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-FDN-1007"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-BKL-1012",
+    "wbs_path": "1.1.4.2",
+    "description": "Backfilling \u2014 Equipment Pads",
+    "detail": "Backfill around equipment foundations, 180 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-21",
+    "planned_finish": "2026-07-28",
+    "planned_qty": 180,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-FDN-1008"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-BND-1013",
+    "wbs_path": "1.1.5.1",
+    "description": "Containment Bund Wall \u2014 Zone A",
+    "detail": "Construct 600 mm thk RC bund wall around tank battery, 85 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-26",
+    "planned_finish": "2026-08-08",
+    "planned_qty": 85,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-FDN-1009"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-GBM-1014",
+    "wbs_path": "1.1.5.2",
+    "description": "Grade Beams \u2014 Pipe Rack",
+    "detail": "Cast M30 grade beams between pipe rack pedestals, 42 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-15",
+    "planned_finish": "2026-07-22",
+    "planned_qty": 42,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-FDN-1007"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-DWG-1015",
+    "wbs_path": "1.1.5.3",
+    "description": "Drainage Channels \u2014 Perimeter",
+    "detail": "Construct RC drainage channels around plot perimeter, 160 lm",
+    "discipline": "civil",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 160,
+    "uom": "lm",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FNC-1016",
+    "wbs_path": "1.1.6.1",
+    "description": "Fence & Gate \u2014 Plot Boundary",
+    "detail": "Install chain-link fence 2.4 m ht with 3 gates, 480 lm",
+    "discipline": "civil",
+    "planned_start": "2026-08-10",
+    "planned_finish": "2026-08-18",
+    "planned_qty": 480,
+    "uom": "lm",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-PLG-1017",
+    "wbs_path": "1.1.6.2",
+    "description": "Firewater Pit \u2014 Zone B",
+    "detail": "Excavate and line firewater collection pit, 45 m3",
+    "discipline": "civil",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 45,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-SIT-1002"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FND-1018",
+    "wbs_path": "1.1.7.1",
+    "description": "Foundation \u2014 Compressor Skid CS-01",
+    "detail": "Cast M35 foundation block for CS-01, 35 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-08",
+    "planned_finish": "2026-07-16",
+    "planned_qty": 35,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-PLY-1005"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FND-1019",
+    "wbs_path": "1.1.7.2",
+    "description": "Foundation \u2014 Header Skid HS-01",
+    "detail": "Cast M30 foundation block for HS-01, 28 m3",
+    "discipline": "civil",
+    "planned_start": "2026-07-10",
+    "planned_finish": "2026-07-17",
+    "planned_qty": 28,
+    "uom": "m3",
+    "predecessors": [
+      "CIV-PLY-1004"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-FLR-1020",
+    "wbs_path": "1.1.8.1",
+    "description": "Flooring \u2014 MCC Room",
+    "detail": "Vitrified tile flooring in MCC room, 95 m2",
+    "discipline": "civil",
+    "planned_start": "2026-07-28",
+    "planned_finish": "2026-08-03",
+    "planned_qty": 95,
+    "uom": "m2",
+    "predecessors": [
+      "CIV-PLY-1005"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-PLT-1021",
+    "wbs_path": "1.1.8.2",
+    "description": "Plastering & Painting \u2014 MCC Room",
+    "detail": "Internal plaster and distemper for MCC room walls, 220 m2",
+    "discipline": "civil",
+    "planned_start": "2026-08-04",
+    "planned_finish": "2026-08-10",
+    "planned_qty": 220,
+    "uom": "m2",
+    "predecessors": [
+      "CIV-FLR-1020"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "CIV-APN-1022",
+    "wbs_path": "1.1.8.3",
+    "description": "Cable Tray Buried \u2014 Zone A+B",
+    "detail": "Install buried cable tray in trenches, 280 lm",
+    "discipline": "civil",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-10",
+    "planned_qty": 280,
+    "uom": "lm",
+    "predecessors": [
+      "CIV-BKL-1011"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-RCK-1023",
+    "wbs_path": "1.2.1.1",
+    "description": "Pipe Rack Steel Erection \u2014 Tier 1",
+    "detail": "Erect W-section columns and beams for Tier 1 pipe rack, 42 MT",
+    "discipline": "piping",
+    "planned_start": "2026-07-13",
+    "planned_finish": "2026-07-25",
+    "planned_qty": 42,
+    "uom": "MT",
+    "predecessors": [
+      "CIV-FDN-1007"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-RCK-1024",
+    "wbs_path": "1.2.1.2",
+    "description": "Pipe Rack Steel Erection \u2014 Tier 2",
+    "detail": "Erect W-section beams for Tier 2 pipe rack, 28 MT",
+    "discipline": "piping",
+    "planned_start": "2026-07-22",
+    "planned_finish": "2026-08-02",
+    "planned_qty": 28,
+    "uom": "MT",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-SPL-1025",
+    "wbs_path": "1.2.2.1",
+    "description": "Spool Fabrication \u2014 24\"-P-1001-A1A",
+    "detail": "Fabricate spools for 24\" main header, 18 spools",
+    "discipline": "piping",
+    "planned_start": "2026-07-15",
+    "planned_finish": "2026-08-05",
+    "planned_qty": 18,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": "24\"-P-1001-A1A"
+  },
+  {
+    "activity_id": "PIP-SPL-1026",
+    "wbs_path": "1.2.2.2",
+    "description": "Spool Fabrication \u2014 12\"-P-1002-B1A",
+    "detail": "Fabricate spools for 12\" transfer line, 12 spools",
+    "discipline": "piping",
+    "planned_start": "2026-07-18",
+    "planned_finish": "2026-08-01",
+    "planned_qty": 12,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": "12\"-P-1002-B1A"
+  },
+  {
+    "activity_id": "PIP-SPL-1027",
+    "wbs_path": "1.2.2.3",
+    "description": "Spool Fabrication \u2014 8\"-P-1003-A1B",
+    "detail": "Fabricate spools for 8\" flare header, 14 spools",
+    "discipline": "piping",
+    "planned_start": "2026-07-20",
+    "planned_finish": "2026-08-08",
+    "planned_qty": 14,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": "8\"-P-1003-A1B"
+  },
+  {
+    "activity_id": "PIP-SPL-1028",
+    "wbs_path": "1.2.2.4",
+    "description": "Spool Fabrication \u2014 4\"-P-1010-C1A",
+    "detail": "Fabricate spools for 4\" utility water, 8 spools",
+    "discipline": "piping",
+    "planned_start": "2026-07-25",
+    "planned_finish": "2026-08-10",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1024"
+    ],
+    "tag": "4\"-P-1010-C1A"
+  },
+  {
+    "activity_id": "PIP-SPL-1029",
+    "wbs_path": "1.2.2.5",
+    "description": "Spool Fabrication \u2014 6\"-P-1015-A1A",
+    "detail": "Fabricate spools for 6\" drain header, 10 spools",
+    "discipline": "piping",
+    "planned_start": "2026-07-28",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 10,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1024"
+    ],
+    "tag": "6\"-P-1015-A1A"
+  },
+  {
+    "activity_id": "PIP-ERC-1030",
+    "wbs_path": "1.2.3.1",
+    "description": "Spool Erection \u2014 24\"-P-1001-A1A",
+    "detail": "Erect and fit-up spools for 24\" main header, 18 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-18",
+    "planned_qty": 18,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-SPL-1025",
+      "PIP-RCK-1024"
+    ],
+    "tag": "24\"-P-1001-A1A"
+  },
+  {
+    "activity_id": "PIP-ERC-1031",
+    "wbs_path": "1.2.3.2",
+    "description": "Spool Erection \u2014 12\"-P-1002-B1A",
+    "detail": "Erect spools for 12\" transfer line, 12 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-02",
+    "planned_finish": "2026-08-15",
+    "planned_qty": 12,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-SPL-1026",
+      "PIP-RCK-1024"
+    ],
+    "tag": "12\"-P-1002-B1A"
+  },
+  {
+    "activity_id": "PIP-ERC-1032",
+    "wbs_path": "1.2.3.3",
+    "description": "Spool Erection \u2014 8\"-P-1003-A1B",
+    "detail": "Erect spools for 8\" flare header, 14 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-06",
+    "planned_finish": "2026-08-22",
+    "planned_qty": 14,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-SPL-1027",
+      "PIP-RCK-1024"
+    ],
+    "tag": "8\"-P-1003-A1B"
+  },
+  {
+    "activity_id": "PIP-ERC-1033",
+    "wbs_path": "1.2.3.4",
+    "description": "Spool Erection \u2014 4\"-P-1010-C1A",
+    "detail": "Erect spools for 4\" utility water, 8 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-11",
+    "planned_finish": "2026-08-22",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-SPL-1028",
+      "PIP-RCK-1024"
+    ],
+    "tag": "4\"-P-1010-C1A"
+  },
+  {
+    "activity_id": "PIP-ERC-1034",
+    "wbs_path": "1.2.3.5",
+    "description": "Spool Erection \u2014 6\"-P-1015-A1A",
+    "detail": "Erect spools for 6\" drain header, 10 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-13",
+    "planned_finish": "2026-08-25",
+    "planned_qty": 10,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-SPL-1029",
+      "PIP-RCK-1024"
+    ],
+    "tag": "6\"-P-1015-A1A"
+  },
+  {
+    "activity_id": "PIP-FLG-1035",
+    "wbs_path": "1.2.4.1",
+    "description": "Flange Management \u2014 24\"-P-1001-A1A",
+    "detail": "Flange bolt-up for 24\" main header, 36 flanges",
+    "discipline": "piping",
+    "planned_start": "2026-08-19",
+    "planned_finish": "2026-08-26",
+    "planned_qty": 36,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1030"
+    ],
+    "tag": "24\"-P-1001-A1A"
+  },
+  {
+    "activity_id": "PIP-FLG-1036",
+    "wbs_path": "1.2.4.2",
+    "description": "Flange Management \u2014 12\"-P-1002-B1A",
+    "detail": "Flange bolt-up for 12\" transfer, 24 flanges",
+    "discipline": "piping",
+    "planned_start": "2026-08-16",
+    "planned_finish": "2026-08-22",
+    "planned_qty": 24,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1031"
+    ],
+    "tag": "12\"-P-1002-B1A"
+  },
+  {
+    "activity_id": "PIP-FLG-1037",
+    "wbs_path": "1.2.4.3",
+    "description": "Flange Management \u2014 8\"-P-1003-A1B",
+    "detail": "Flange bolt-up for 8\" flare header, 28 flanges",
+    "discipline": "piping",
+    "planned_start": "2026-08-23",
+    "planned_finish": "2026-08-30",
+    "planned_qty": 28,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1032"
+    ],
+    "tag": "8\"-P-1003-A1B"
+  },
+  {
+    "activity_id": "PIP-FLG-1038",
+    "wbs_path": "1.2.4.4",
+    "description": "Flange Management \u2014 4\"-P-1010-C1A",
+    "detail": "Flange bolt-up for 4\" utility water, 16 flanges",
+    "discipline": "piping",
+    "planned_start": "2026-08-23",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 16,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1033"
+    ],
+    "tag": "4\"-P-1010-C1A"
+  },
+  {
+    "activity_id": "PIP-FLG-1039",
+    "wbs_path": "1.2.4.5",
+    "description": "Flange Management \u2014 6\"-P-1015-A1A",
+    "detail": "Flange bolt-up for 6\" drain header, 20 flanges",
+    "discipline": "piping",
+    "planned_start": "2026-08-26",
+    "planned_finish": "2026-09-02",
+    "planned_qty": 20,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1034"
+    ],
+    "tag": "6\"-P-1015-A1A"
+  },
+  {
+    "activity_id": "PIP-HYT-1040",
+    "wbs_path": "1.2.5.1",
+    "description": "Hydrotest \u2014 24\"-P-1001-A1A",
+    "detail": "Hydrotest 24\" main header at 1.5x design, 6 sections",
+    "discipline": "piping",
+    "planned_start": "2026-08-27",
+    "planned_finish": "2026-09-03",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-FLG-1035"
+    ],
+    "tag": "24\"-P-1001-A1A"
+  },
+  {
+    "activity_id": "PIP-HYT-1041",
+    "wbs_path": "1.2.5.2",
+    "description": "Hydrotest \u2014 12\"-P-1002-B1A",
+    "detail": "Hydrotest 12\" transfer, 4 sections",
+    "discipline": "piping",
+    "planned_start": "2026-08-23",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 4,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-FLG-1036"
+    ],
+    "tag": "12\"-P-1002-B1A"
+  },
+  {
+    "activity_id": "PIP-HYT-1042",
+    "wbs_path": "1.2.5.3",
+    "description": "Hydrotest \u2014 8\"-P-1003-A1B",
+    "detail": "Hydrotest 8\" flare header, 5 sections",
+    "discipline": "piping",
+    "planned_start": "2026-08-31",
+    "planned_finish": "2026-09-06",
+    "planned_qty": 5,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-FLG-1037"
+    ],
+    "tag": "8\"-P-1003-A1B"
+  },
+  {
+    "activity_id": "PIP-HYT-1043",
+    "wbs_path": "1.2.5.4",
+    "description": "Hydrotest \u2014 4\"-P-1010-C1A",
+    "detail": "Hydrotest 4\" utility water, 3 sections",
+    "discipline": "piping",
+    "planned_start": "2026-08-29",
+    "planned_finish": "2026-09-03",
+    "planned_qty": 3,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-FLG-1038"
+    ],
+    "tag": "4\"-P-1010-C1A"
+  },
+  {
+    "activity_id": "PIP-HYT-1044",
+    "wbs_path": "1.2.5.5",
+    "description": "Hydrotest \u2014 6\"-P-1015-A1A",
+    "detail": "Hydrotest 6\" drain header, 3 sections",
+    "discipline": "piping",
+    "planned_start": "2026-09-03",
+    "planned_finish": "2026-09-08",
+    "planned_qty": 3,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-FLG-1039"
+    ],
+    "tag": "6\"-P-1015-A1A"
+  },
+  {
+    "activity_id": "PIP-INS-1045",
+    "wbs_path": "1.2.6.1",
+    "description": "Insulation \u2014 24\"-P-1001-A1A",
+    "detail": "50 mm mineral wool + aluminium cladding, 120 m2",
+    "discipline": "piping",
+    "planned_start": "2026-09-04",
+    "planned_finish": "2026-09-14",
+    "planned_qty": 120,
+    "uom": "m2",
+    "predecessors": [
+      "PIP-HYT-1040"
+    ],
+    "tag": "24\"-P-1001-A1A"
+  },
+  {
+    "activity_id": "PIP-INS-1046",
+    "wbs_path": "1.2.6.2",
+    "description": "Insulation \u2014 12\"-P-1002-B1A",
+    "detail": "50 mm mineral wool insulation, 65 m2",
+    "discipline": "piping",
+    "planned_start": "2026-08-29",
+    "planned_finish": "2026-09-06",
+    "planned_qty": 65,
+    "uom": "m2",
+    "predecessors": [
+      "PIP-HYT-1041"
+    ],
+    "tag": "12\"-P-1002-B1A"
+  },
+  {
+    "activity_id": "PIP-INS-1047",
+    "wbs_path": "1.2.6.3",
+    "description": "Insulation \u2014 8\"-P-1003-A1B",
+    "detail": "50 mm mineral wool insulation, 80 m2",
+    "discipline": "piping",
+    "planned_start": "2026-09-07",
+    "planned_finish": "2026-09-15",
+    "planned_qty": 80,
+    "uom": "m2",
+    "predecessors": [
+      "PIP-HYT-1042"
+    ],
+    "tag": "8\"-P-1003-A1B"
+  },
+  {
+    "activity_id": "PIP-PAI-1048",
+    "wbs_path": "1.2.7.1",
+    "description": "Painting & Coating \u2014 Pipe Rack",
+    "detail": "3-coat epoxy paint system, 850 m2",
+    "discipline": "piping",
+    "planned_start": "2026-09-01",
+    "planned_finish": "2026-09-12",
+    "planned_qty": 850,
+    "uom": "m2",
+    "predecessors": [
+      "PIP-ERC-1030",
+      "PIP-ERC-1031"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-SUP-1049",
+    "wbs_path": "1.2.7.2",
+    "description": "Pipe Support Installation \u2014 Tier 1",
+    "detail": "Spring hangers and rest supports, 145 nos",
+    "discipline": "piping",
+    "planned_start": "2026-08-10",
+    "planned_finish": "2026-08-25",
+    "planned_qty": 145,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-SUP-1050",
+    "wbs_path": "1.2.7.3",
+    "description": "Pipe Support Installation \u2014 Tier 2",
+    "detail": "Variable spring supports, 88 nos",
+    "discipline": "piping",
+    "planned_start": "2026-08-15",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 88,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1024"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "PIP-SKN-1051",
+    "wbs_path": "1.2.8.1",
+    "description": "Skid Piping \u2014 CS-01",
+    "detail": "Fabricate and erect piping on CS-01, 6 spools",
+    "discipline": "piping",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-20",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FND-1018"
+    ],
+    "tag": "CS-01"
+  },
+  {
+    "activity_id": "PIP-PCD-1053",
+    "wbs_path": "1.2.8.2",
+    "description": "P&ID Punch List Close-out",
+    "detail": "Close all Cat A and B punch list items",
+    "discipline": "piping",
+    "planned_start": "2026-09-15",
+    "planned_finish": "2026-09-22",
+    "planned_qty": 0,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-HYT-1040",
+      "PIP-HYT-1041",
+      "PIP-HYT-1042"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "SEQ-VSL-1054",
+    "wbs_path": "1.3.1.1",
+    "description": "Vessel Delivery \u2014 V-101 separator",
+    "detail": "Transport V-101 from laydown to pad, 28 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-20",
+    "planned_finish": "2026-07-25",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FDN-1008"
+    ],
+    "tag": "V-101"
+  },
+  {
+    "activity_id": "SEQ-VSL-1055",
+    "wbs_path": "1.3.1.2",
+    "description": "Vessel Setting \u2014 V-101 separator",
+    "detail": "Hydraulic jacking and setting V-101, 28 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-26",
+    "planned_finish": "2026-07-30",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-VSL-1054"
+    ],
+    "tag": "V-101"
+  },
+  {
+    "activity_id": "SEQ-VSL-1056",
+    "wbs_path": "1.3.1.3",
+    "description": "Vessel Delivery \u2014 V-102 filter",
+    "detail": "Transport V-102 cartridge filter, 8 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-28",
+    "planned_finish": "2026-07-31",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FDN-1008"
+    ],
+    "tag": "V-102"
+  },
+  {
+    "activity_id": "SEQ-VSL-1057",
+    "wbs_path": "1.3.1.4",
+    "description": "Vessel Setting \u2014 V-102 filter",
+    "detail": "Set V-102 on foundation pad, 8 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-03",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-VSL-1056"
+    ],
+    "tag": "V-102"
+  },
+  {
+    "activity_id": "SEQ-EXC-1058",
+    "wbs_path": "1.3.2.1",
+    "description": "Exchanger Delivery \u2014 E-101",
+    "detail": "Transport E-101 shell & tube exchanger, 12 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-25",
+    "planned_finish": "2026-07-28",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FDN-1008"
+    ],
+    "tag": "E-101"
+  },
+  {
+    "activity_id": "SEQ-EXC-1059",
+    "wbs_path": "1.3.2.2",
+    "description": "Exchanger Setting \u2014 E-101",
+    "detail": "Set E-101 on saddle supports, align and grout, 12 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-29",
+    "planned_finish": "2026-08-02",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-EXC-1058"
+    ],
+    "tag": "E-101"
+  },
+  {
+    "activity_id": "SEQ-PMP-1060",
+    "wbs_path": "1.3.3.1",
+    "description": "Pump Delivery \u2014 P-101A/B",
+    "detail": "Transport P-101A and P-101B pumps, 4 MT each",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-04",
+    "planned_qty": 2,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FDN-1010"
+    ],
+    "tag": "P-101A/B"
+  },
+  {
+    "activity_id": "SEQ-PMP-1061",
+    "wbs_path": "1.3.3.2",
+    "description": "Pump Setting & Alignment \u2014 P-101A/B",
+    "detail": "Set P-101A/B on baseplates, laser-align to motor, grout",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 2,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-PMP-1060"
+    ],
+    "tag": "P-101A/B"
+  },
+  {
+    "activity_id": "SEQ-SKD-1062",
+    "wbs_path": "1.3.4.1",
+    "description": "Compressor Skid CS-01 Delivery",
+    "detail": "Transport CS-01 from fabrication yard, 35 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-10",
+    "planned_finish": "2026-08-14",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FND-1018"
+    ],
+    "tag": "CS-01"
+  },
+  {
+    "activity_id": "SEQ-SKD-1063",
+    "wbs_path": "1.3.4.2",
+    "description": "Compressor Skid CS-01 Setting",
+    "detail": "Jack and slide CS-01 onto foundation, level and anchor",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-15",
+    "planned_finish": "2026-08-20",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-SKD-1062"
+    ],
+    "tag": "CS-01"
+  },
+  {
+    "activity_id": "SEQ-SKD-1064",
+    "wbs_path": "1.3.4.3",
+    "description": "Header Skid HS-01 Delivery",
+    "detail": "Transport HS-01 to site, 18 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-12",
+    "planned_finish": "2026-08-15",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FND-1019"
+    ],
+    "tag": "HS-01"
+  },
+  {
+    "activity_id": "SEQ-SKD-1065",
+    "wbs_path": "1.3.4.4",
+    "description": "Header Skid HS-01 Setting",
+    "detail": "Set HS-01 on foundation, align and anchor",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-16",
+    "planned_finish": "2026-08-20",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-SKD-1064"
+    ],
+    "tag": "HS-01"
+  },
+  {
+    "activity_id": "SEQ-TKN-1066",
+    "wbs_path": "1.3.5.1",
+    "description": "Tank TK-1 Shell Erection",
+    "detail": "Erect TK-1 CS storage tank by jacking method, 85 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-26",
+    "planned_finish": "2026-08-15",
+    "planned_qty": 85,
+    "uom": "MT",
+    "predecessors": [
+      "CIV-FDN-1009"
+    ],
+    "tag": "TK-1"
+  },
+  {
+    "activity_id": "SEQ-TKN-1067",
+    "wbs_path": "1.3.5.2",
+    "description": "Tank TK-1 Roof Installation",
+    "detail": "Install TK-1 pontoon roof and fittings, 12 MT",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-16",
+    "planned_finish": "2026-08-22",
+    "planned_qty": 12,
+    "uom": "MT",
+    "predecessors": [
+      "SEQ-TKN-1066"
+    ],
+    "tag": "TK-1"
+  },
+  {
+    "activity_id": "SEQ-TKN-1068",
+    "wbs_path": "1.3.5.3",
+    "description": "Tank TK-1 Hydrotest",
+    "detail": "Hydrotest TK-1 with fresh water, 48-hr retention",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-23",
+    "planned_finish": "2026-08-27",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-TKN-1067"
+    ],
+    "tag": "TK-1"
+  },
+  {
+    "activity_id": "SEQ-TKN-1069",
+    "wbs_path": "1.3.5.4",
+    "description": "Tank TK-1 Internal Coating",
+    "detail": "Apply epoxy lining to TK-1 interior, 420 m2",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-28",
+    "planned_finish": "2026-09-08",
+    "planned_qty": 420,
+    "uom": "m2",
+    "predecessors": [
+      "SEQ-TKN-1068"
+    ],
+    "tag": "TK-1"
+  },
+  {
+    "activity_id": "SEQ-ALN-1070",
+    "wbs_path": "1.3.6.1",
+    "description": "Equipment Alignment Check \u2014 Rotating",
+    "detail": "Laser alignment of P-101A/B, P-102A, record readings",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-13",
+    "planned_finish": "2026-08-17",
+    "planned_qty": 5,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-PMP-1061"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "SEQ-ALN-1071",
+    "wbs_path": "1.3.6.2",
+    "description": "Grouting \u2014 Compressor Skid CS-01",
+    "detail": "Inject epoxy grout under CS-01 baseplate, 0.8 m3",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-21",
+    "planned_finish": "2026-08-25",
+    "planned_qty": 0.8,
+    "uom": "m3",
+    "predecessors": [
+      "SEQ-SKD-1063"
+    ],
+    "tag": "CS-01"
+  },
+  {
+    "activity_id": "SEQ-ALN-1072",
+    "wbs_path": "1.3.6.3",
+    "description": "Grouting \u2014 Header Skid HS-01",
+    "detail": "Inject cementitious grout under HS-01, 0.5 m3",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-21",
+    "planned_finish": "2026-08-24",
+    "planned_qty": 0.5,
+    "uom": "m3",
+    "predecessors": [
+      "SEQ-SKD-1065"
+    ],
+    "tag": "HS-01"
+  },
+  {
+    "activity_id": "SEQ-PIP-1073",
+    "wbs_path": "1.3.7.1",
+    "description": "Nozzle-Ready Inspection \u2014 V-101",
+    "detail": "Verify V-101 nozzles flanged and capped before tie-in",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-31",
+    "planned_finish": "2026-08-02",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-VSL-1055"
+    ],
+    "tag": "V-101"
+  },
+  {
+    "activity_id": "SEQ-PIP-1074",
+    "wbs_path": "1.3.7.2",
+    "description": "Nozzle-Ready Inspection \u2014 E-101",
+    "detail": "Verify E-101 nozzle orientation and blind flanges",
+    "discipline": "static_equipment",
+    "planned_start": "2026-08-03",
+    "planned_finish": "2026-08-05",
+    "planned_qty": 4,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-EXC-1059"
+    ],
+    "tag": "E-101"
+  },
+  {
+    "activity_id": "SEQ-CMN-1075",
+    "wbs_path": "1.3.8.1",
+    "description": "Equipment Foundation Settlement Monitoring",
+    "detail": "Weekly settlement survey, 8 readings",
+    "discipline": "static_equipment",
+    "planned_start": "2026-07-14",
+    "planned_finish": "2026-09-15",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FDN-1008",
+      "CIV-FDN-1010"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-CBL-1076",
+    "wbs_path": "1.4.1.1",
+    "description": "HT Cable Laying \u2014 Substation to MCC",
+    "detail": "Lay 33kV XLPE cable, 1.2 km",
+    "discipline": "electrical",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-18",
+    "planned_qty": 1200,
+    "uom": "m",
+    "predecessors": [
+      "CIV-APN-1022"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-CBL-1077",
+    "wbs_path": "1.4.1.2",
+    "description": "LT Cable Laying \u2014 MCC to Pumps",
+    "detail": "Lay 660V cable from MCC to P-101A/B, 680 m",
+    "discipline": "electrical",
+    "planned_start": "2026-08-15",
+    "planned_finish": "2026-08-25",
+    "planned_qty": 680,
+    "uom": "m",
+    "predecessors": [
+      "CIV-APN-1022",
+      "CIV-FLR-1020"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-CBL-1078",
+    "wbs_path": "1.4.1.3",
+    "description": "Control Cable Laying \u2014 Field to MCC",
+    "detail": "Lay 1.5 kV control cables, 3.4 km",
+    "discipline": "electrical",
+    "planned_start": "2026-08-18",
+    "planned_finish": "2026-09-01",
+    "planned_qty": 3400,
+    "uom": "m",
+    "predecessors": [
+      "CIV-APN-1022"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-TRF-1079",
+    "wbs_path": "1.4.2.1",
+    "description": "Transformer Installation \u2014 TR-01",
+    "detail": "Set and connect 33/6.6kV transformer, 15 MVA",
+    "discipline": "electrical",
+    "planned_start": "2026-07-15",
+    "planned_finish": "2026-07-28",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-TRF-1080",
+    "wbs_path": "1.4.2.2",
+    "description": "Transformer Oil Filling & Testing \u2014 TR-01",
+    "detail": "Fill TR-01 with transformer oil, BDV and moisture tests",
+    "discipline": "electrical",
+    "planned_start": "2026-07-29",
+    "planned_finish": "2026-08-03",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-TRF-1079"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-SWG-1081",
+    "wbs_path": "1.4.2.3",
+    "description": "SWGR Erection \u2014 6.6kV",
+    "detail": "Erect 6.6kV switchgear panel, 8 panels",
+    "discipline": "electrical",
+    "planned_start": "2026-07-20",
+    "planned_finish": "2026-08-01",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FLR-1020"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-SWG-1082",
+    "wbs_path": "1.4.2.4",
+    "description": "MCC Panel Installation",
+    "detail": "Install motor control centre panels, 6 panels",
+    "discipline": "electrical",
+    "planned_start": "2026-08-02",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-FLR-1020",
+      "ELE-SWG-1081"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-FLT-1083",
+    "wbs_path": "1.4.3.1",
+    "description": "Cable Termination \u2014 HT",
+    "detail": "Terminate 33kV cable ends with heat-shrink kits, 24 ends",
+    "discipline": "electrical",
+    "planned_start": "2026-08-19",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 24,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-CBL-1076"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-FLT-1084",
+    "wbs_path": "1.4.3.2",
+    "description": "Cable Termination \u2014 LT",
+    "detail": "Terminate 660V motor cables, 48 ends",
+    "discipline": "electrical",
+    "planned_start": "2026-08-26",
+    "planned_finish": "2026-09-04",
+    "planned_qty": 48,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-CBL-1077"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-FLT-1085",
+    "wbs_path": "1.4.3.3",
+    "description": "Cable Termination \u2014 Control",
+    "detail": "Terminate control cables at marshalling and JBs, 186 ends",
+    "discipline": "electrical",
+    "planned_start": "2026-09-02",
+    "planned_finish": "2026-09-14",
+    "planned_qty": 186,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-CBL-1078"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-GRD-1086",
+    "wbs_path": "1.4.4.1",
+    "description": "Earthing System \u2014 Grid",
+    "detail": "Install copper earthing grid, 2.4 km conductor",
+    "discipline": "electrical",
+    "planned_start": "2026-07-25",
+    "planned_finish": "2026-08-10",
+    "planned_qty": 2400,
+    "uom": "m",
+    "predecessors": [
+      "CIV-SIT-1003"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-GRD-1087",
+    "wbs_path": "1.4.4.2",
+    "description": "Lightning Protection \u2014 Pipe Rack",
+    "detail": "Install down conductors and air terminals, 18 nos",
+    "discipline": "electrical",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-15",
+    "planned_qty": 18,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-LIG-1088",
+    "wbs_path": "1.4.5.1",
+    "description": "Area Lighting Installation",
+    "detail": "Install LED flood and area lights, 32 nos",
+    "discipline": "electrical",
+    "planned_start": "2026-08-20",
+    "planned_finish": "2026-09-01",
+    "planned_qty": 32,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-RCK-1023",
+      "PIP-RCK-1024"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-LIG-1089",
+    "wbs_path": "1.4.5.2",
+    "description": "Lighting Circuit Testing",
+    "detail": "Megger and functional test all lighting circuits, 16 nos",
+    "discipline": "electrical",
+    "planned_start": "2026-09-02",
+    "planned_finish": "2026-09-06",
+    "planned_qty": 16,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-LIG-1088"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-IGT-1090",
+    "wbs_path": "1.4.6.1",
+    "description": "Insulation Resistance Testing \u2014 HT",
+    "detail": "Megger test all 33kV cables at 1kV DC, 24 cables",
+    "discipline": "electrical",
+    "planned_start": "2026-08-29",
+    "planned_finish": "2026-09-05",
+    "planned_qty": 24,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-FLT-1083"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-IGT-1091",
+    "wbs_path": "1.4.6.2",
+    "description": "Insulation Resistance Testing \u2014 LT",
+    "detail": "Megger test all 660V cables at 500V DC, 48 cables",
+    "discipline": "electrical",
+    "planned_start": "2026-09-05",
+    "planned_finish": "2026-09-12",
+    "planned_qty": 48,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-FLT-1084"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-ENG-1092",
+    "wbs_path": "1.4.7.1",
+    "description": "Energisation \u2014 SWGR 6.6kV",
+    "detail": "Energise 6.6kV switchgear from transformer",
+    "discipline": "electrical",
+    "planned_start": "2026-09-06",
+    "planned_finish": "2026-09-10",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-IGT-1090",
+      "ELE-TRF-1080",
+      "ELE-SWG-1081"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-ENG-1093",
+    "wbs_path": "1.4.7.2",
+    "description": "Energisation \u2014 MCC",
+    "detail": "Energise MCC panels from SWGR, verify interlocks",
+    "discipline": "electrical",
+    "planned_start": "2026-09-11",
+    "planned_finish": "2026-09-14",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-ENG-1092",
+      "ELE-SWG-1082"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-MTR-1094",
+    "wbs_path": "1.4.8.1",
+    "description": "Motor Start-up \u2014 P-101A/B",
+    "detail": "Start and run-in P-101A/B, record vibration and current",
+    "discipline": "electrical",
+    "planned_start": "2026-09-15",
+    "planned_finish": "2026-09-18",
+    "planned_qty": 2,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-ENG-1093",
+      "SEQ-PMP-1061"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "ELE-MTR-1095",
+    "wbs_path": "1.4.8.2",
+    "description": "Motor Start-up \u2014 CS-01",
+    "detail": "Start and run-in CS-01 compressor, record vibration",
+    "discipline": "electrical",
+    "planned_start": "2026-09-15",
+    "planned_finish": "2026-09-18",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-ENG-1093",
+      "SEQ-SKD-1063"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-TRN-1096",
+    "wbs_path": "1.5.1.1",
+    "description": "Transmitter Calibration \u2014 Level",
+    "detail": "Calibrate all level transmitters, 12 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-10",
+    "planned_qty": 12,
+    "uom": "nos",
+    "predecessors": [],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-TRN-1097",
+    "wbs_path": "1.5.1.2",
+    "description": "Transmitter Calibration \u2014 Pressure",
+    "detail": "Calibrate all pressure transmitters, 18 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-01",
+    "planned_finish": "2026-08-12",
+    "planned_qty": 18,
+    "uom": "nos",
+    "predecessors": [],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-TRN-1098",
+    "wbs_path": "1.5.1.3",
+    "description": "Transmitter Calibration \u2014 Temperature",
+    "detail": "Calibrate all temperature transmitters, 14 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-05",
+    "planned_finish": "2026-08-14",
+    "planned_qty": 14,
+    "uom": "nos",
+    "predecessors": [],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-FLD-1099",
+    "wbs_path": "1.5.2.1",
+    "description": "Field Instrument Installation \u2014 Level",
+    "detail": "Mount level transmitters on vessels, 12 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-15",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 12,
+    "uom": "nos",
+    "predecessors": [
+      "INS-TRN-1096",
+      "SEQ-VSL-1055",
+      "SEQ-VSL-1057",
+      "SEQ-TKN-1066"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-FLD-1100",
+    "wbs_path": "1.5.2.2",
+    "description": "Field Instrument Installation \u2014 Pressure",
+    "detail": "Mount pressure transmitters on piping and vessels, 18 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-18",
+    "planned_finish": "2026-09-01",
+    "planned_qty": 18,
+    "uom": "nos",
+    "predecessors": [
+      "INS-TRN-1097",
+      "PIP-ERC-1030"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-FLD-1101",
+    "wbs_path": "1.5.2.3",
+    "description": "Field Instrument Installation \u2014 Temperature",
+    "detail": "Mount thermowells and RTDs, 14 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-20",
+    "planned_finish": "2026-09-03",
+    "planned_qty": 14,
+    "uom": "nos",
+    "predecessors": [
+      "INS-TRN-1098",
+      "SEQ-EXC-1059"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-FND-1102",
+    "wbs_path": "1.5.3.1",
+    "description": "Control Valve Installation",
+    "detail": "Install and stroke-test control valves, 8 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-25",
+    "planned_finish": "2026-09-08",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "PIP-ERC-1030",
+      "PIP-ERC-1031"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-FND-1103",
+    "wbs_path": "1.5.3.2",
+    "description": "Safety Valve Installation",
+    "detail": "Install and set PSVs on vessels and headers, 6 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-25",
+    "planned_finish": "2026-09-05",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-VSL-1055",
+      "SEQ-TKN-1066"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-ICS-1104",
+    "wbs_path": "1.5.4.1",
+    "description": "Junction Box Installation",
+    "detail": "Install JB-01 through JB-06 in field, 6 nos",
+    "discipline": "instrumentation",
+    "planned_start": "2026-08-20",
+    "planned_finish": "2026-09-01",
+    "planned_qty": 6,
+    "uom": "nos",
+    "predecessors": [
+      "CIV-APN-1022"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-ICS-1105",
+    "wbs_path": "1.5.4.2",
+    "description": "Marshalling Cabinet Wiring",
+    "detail": "Wire marshalling cabinet, 186 terminations",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-03",
+    "planned_finish": "2026-09-12",
+    "planned_qty": 186,
+    "uom": "nos",
+    "predecessors": [
+      "ELE-FLT-1085",
+      "INS-ICS-1104"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-ICS-1106",
+    "wbs_path": "1.5.4.3",
+    "description": "DCS Panel Integration",
+    "detail": "Integrate marshalling signals into DCS",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-13",
+    "planned_finish": "2026-09-18",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "INS-ICS-1105"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-LOOP-1107",
+    "wbs_path": "1.5.5.1",
+    "description": "Loop Check \u2014 All Instruments",
+    "detail": "Perform loop check field to DCS, 62 loops",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-14",
+    "planned_finish": "2026-09-22",
+    "planned_qty": 62,
+    "uom": "nos",
+    "predecessors": [
+      "INS-FLD-1099",
+      "INS-FLD-1100",
+      "INS-FLD-1101",
+      "INS-ICS-1106"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-LOOP-1108",
+    "wbs_path": "1.5.5.2",
+    "description": "Control Valve Loop Check",
+    "detail": "Full stroke test of CVs from DCS, 8 CVs",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-18",
+    "planned_finish": "2026-09-22",
+    "planned_qty": 8,
+    "uom": "nos",
+    "predecessors": [
+      "INS-FND-1102",
+      "INS-ICS-1106"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-SFT-1109",
+    "wbs_path": "1.5.6.1",
+    "description": "SIS Logic Test",
+    "detail": "Verify SIS logic for SIL-2 functions, 4 SIFs",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-20",
+    "planned_finish": "2026-09-25",
+    "planned_qty": 4,
+    "uom": "nos",
+    "predecessors": [
+      "INS-LOOP-1107",
+      "INS-FND-1103"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-SFT-1110",
+    "wbs_path": "1.5.6.2",
+    "description": "ESD System Functional Test",
+    "detail": "Full ESD functional test with cause & effect matrix",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-23",
+    "planned_finish": "2026-09-26",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "INS-SFT-1109"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "INS-DOC-1111",
+    "wbs_path": "1.5.7.1",
+    "description": "As-Built Instrument Datasheets",
+    "detail": "Issue final as-built datasheets and loop diagrams",
+    "discipline": "instrumentation",
+    "planned_start": "2026-09-20",
+    "planned_finish": "2026-09-28",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "INS-LOOP-1107"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-IND-1112",
+    "wbs_path": "1.6.1.1",
+    "description": "Pre-Mobilisation Safety Induction",
+    "detail": "Safety induction for all mobilised workforce, 120 nos",
+    "discipline": "hse",
+    "planned_start": "2026-05-28",
+    "planned_finish": "2026-06-01",
+    "planned_qty": 120,
+    "uom": "nos",
+    "predecessors": [],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-BBS-1113",
+    "wbs_path": "1.6.1.2",
+    "description": "BBS Observation Programme Launch",
+    "detail": "Implement BBS observation programme across site",
+    "discipline": "hse",
+    "planned_start": "2026-06-02",
+    "planned_finish": "2026-06-08",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-JSA-1114",
+    "wbs_path": "1.6.2.1",
+    "description": "JSA \u2014 Piling Operations",
+    "detail": "Job Safety Analysis for piling works",
+    "discipline": "hse",
+    "planned_start": "2026-06-12",
+    "planned_finish": "2026-06-14",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-JSA-1115",
+    "wbs_path": "1.6.2.2",
+    "description": "JSA \u2014 Heavy Lifting",
+    "detail": "Job Safety Analysis for all heavy lifts > 10 MT",
+    "discipline": "hse",
+    "planned_start": "2026-06-15",
+    "planned_finish": "2026-06-18",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-PMT-1116",
+    "wbs_path": "1.6.3.1",
+    "description": "Work Permit System Activation",
+    "detail": "Permit-to-Work system for hot work, confined space, height",
+    "discipline": "hse",
+    "planned_start": "2026-06-05",
+    "planned_finish": "2026-06-10",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-NCR-1117",
+    "wbs_path": "1.6.3.2",
+    "description": "NCR Register & Close-out Process",
+    "detail": "Non-Conformance Register with 15-day close-out target",
+    "discipline": "hse",
+    "planned_start": "2026-06-10",
+    "planned_finish": "2026-06-15",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-PMT-1116"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-SPC-1118",
+    "wbs_path": "1.6.4.1",
+    "description": "Scaffolding Inspection Programme",
+    "detail": "Weekly scaffolding inspection and tagging, 4 cycles",
+    "discipline": "hse",
+    "planned_start": "2026-07-01",
+    "planned_finish": "2026-08-28",
+    "planned_qty": 4,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-FRE-1119",
+    "wbs_path": "1.6.5.1",
+    "description": "Fire Extinguisher Audit",
+    "detail": "Verify all portable fire extinguishers, 24 nos",
+    "discipline": "hse",
+    "planned_start": "2026-08-15",
+    "planned_finish": "2026-08-18",
+    "planned_qty": 24,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-IND-1112"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-EMG-1120",
+    "wbs_path": "1.6.5.2",
+    "description": "Emergency Drill \u2014 Tank Fire",
+    "detail": "Tabletop and live drill for TK-1 fire scenario",
+    "discipline": "hse",
+    "planned_start": "2026-09-05",
+    "planned_finish": "2026-09-08",
+    "planned_qty": 1,
+    "uom": "nos",
+    "predecessors": [
+      "SEQ-TKN-1068"
+    ],
+    "tag": null
+  },
+  {
+    "activity_id": "HSE-DSH-1121",
+    "wbs_path": "1.6.6.1",
+    "description": "Site Safety Statistics Report",
+    "detail": "Monthly safety stats \u2014 LTI, near-miss, first-aid",
+    "discipline": "hse",
+    "planned_start": "2026-06-01",
+    "planned_finish": "2026-09-28",
+    "planned_qty": 4,
+    "uom": "nos",
+    "predecessors": [
+      "HSE-BBS-1113"
+    ],
+    "tag": null
+  }
+]
