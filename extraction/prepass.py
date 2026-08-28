@@ -137,6 +137,28 @@ COMPLETION_WITH_DATE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Language marking a FUTURE PLAN or a rescheduling rather than work done.
+# A line like "TK-1 hydrotest now scheduled 25 Aug instead of 23 Aug" carries
+# real dates, but they are forecast dates: writing either onto the schedule
+# as an actual would record a completed hydrotest for work that has not
+# happened. Any span matching this must not assert a start or a finish, no
+# matter what an LLM claims about it.
+FORECAST_RE = re.compile(
+    r'\b(now scheduled|rescheduled|re-scheduled|reschedul\w*|planned for|'
+    r'scheduled for|scheduled on|expected|expecting|instead of|postponed|'
+    r'pushed to|moved to|deferred|will (?:start|begin|commence|complete|finish)|'
+    r'to be (?:started|completed|done)|forecast\w*|anticipated|'
+    r'target(?:ed)? (?:date|completion)|upcoming|tomorrow|next week)\b',
+    re.IGNORECASE,
+)
+
+
+def is_forecast_language(text: str) -> bool:
+    """True when the span describes a plan or a schedule change rather than
+    work performed. Callers must refuse to assert actual dates from it."""
+    return bool(FORECAST_RE.search(text))
+
+
 # Verbs asserting that work BEGAN, as opposed to merely being under way.
 # Used to bind an extracted date to a start rather than a finish.
 STARTED_RE = re.compile(

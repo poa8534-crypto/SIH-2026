@@ -9,3 +9,6 @@ node_modules/
 
 # Generated export artifacts from POST /schedule/export
 dataset/uploads/
+
+# Local secrets and provider config (see .env.example)
+.env

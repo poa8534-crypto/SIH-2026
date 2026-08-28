@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -30,13 +32,32 @@ logger = logging.getLogger(__name__)
 # ── LLM output schema (what we ask the model to produce) ─────────────────────
 
 class LLMEventOutput(BaseModel):
-    """Structured output we request from the LLM."""
+    """Structured output we request from the LLM.
+
+    Deliberately asks for NO dates and NO tags-as-truth. Dates are resolved by
+    the deterministic pre-pass and bound to start/finish claims in
+    extractor._bind_assertion_dates; tags come from the regex pre-pass alone
+    (they feed the matcher's near-decisive tag_overlap feature). The model is
+    used for the things regex is bad at — reading intent out of informal
+    prose — and is kept away from the fields that reach the schedule.
+
+    `discipline` and `status` carry explicit enums so that Ollama's
+    grammar-constrained decoding cannot emit an out-of-vocabulary value.
+    """
 
     raw_text: str = Field(..., description="The progress text being analyzed")
     activity_description: str = Field(..., description="Formal description of the progress")
     tags: list[str] = Field(default_factory=list, description="Equipment/line tags mentioned")
-    discipline: str = Field(..., description="One of: civil, piping, static_equipment, electrical, instrumentation, hse, unknown")
-    status: str = Field(..., description="One of: completed, in_progress, not_started, delayed, unknown")
+    discipline: str = Field(
+        ...,
+        description="Discipline of the work described",
+        json_schema_extra={"enum": [d.value for d in Discipline]},
+    )
+    status: str = Field(
+        ...,
+        description="Progress status of the work described",
+        json_schema_extra={"enum": [s.value for s in EventStatus]},
+    )
     percentage: Optional[float] = Field(None, description="Percentage complete if mentioned")
     quantity: Optional[float] = Field(None, description="Quantity mentioned")
     uom: Optional[str] = Field(None, description="Unit of measurement")
@@ -249,25 +270,59 @@ class OpenAICompatibleBackend(LLMBackend):
 # ── Ollama backend ───────────────────────────────────────────────────────────
 
 class OllamaBackend(LLMBackend):
-    """Local Ollama backend for offline/demo mode."""
+    """Local Ollama backend for offline/demo mode.
+
+    Two things matter for correctness here:
+
+    * **Grammar-constrained decoding.** The `format` parameter is given the
+      full JSON Schema of LLMEventOutput, not the string "json". Ollama
+      compiles the schema to a grammar and constrains sampling to it, so the
+      response is structurally valid and enum fields cannot go out of
+      vocabulary. Asking for JSON in the prompt only makes it likely.
+    * **Thinking disabled.** qwen3 is a hybrid reasoning model. Its think
+      block is emitted before the JSON, which breaks structured output and
+      costs latency for a task that needs extraction, not deliberation.
+      `think: false` is sent explicitly rather than relying on the default.
+    """
 
     def __init__(
         self,
-        model: str = "llama3.1",
+        model: str = "qwen3:8b",
         base_url: str = "http://localhost:11434",
         temperature: float = 0.0,
+        think: bool = False,
+        timeout: int = 120,
+        num_ctx: int = 8192,
     ):
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.temperature = temperature
+        self.think = think
+        self.timeout = timeout
+        self.num_ctx = num_ctx
+
+    # ── availability ─────────────────────────────────────────────────────────
 
     def is_available(self) -> bool:
+        """Reachable AND actually serving the configured model."""
         try:
             import urllib.request
             with urllib.request.urlopen(f"{self.base_url}/api/tags", timeout=3) as resp:
-                return resp.status == 200
-        except Exception:
+                if resp.status != 200:
+                    return False
+                names = {m.get("name", "") for m in json.loads(resp.read()).get("models", [])}
+        except Exception as e:
+            logger.warning("Ollama unreachable at %s: %s", self.base_url, e)
             return False
+        if self.model not in names:
+            logger.warning(
+                "Ollama is up but model %r is not pulled (have: %s)",
+                self.model, ", ".join(sorted(names)) or "none",
+            )
+            return False
+        return True
+
+    # ── extraction ───────────────────────────────────────────────────────────
 
     def extract_events(
         self,
@@ -275,61 +330,146 @@ class OllamaBackend(LLMBackend):
         schedule_context: str,
         prepass_hints: list[dict],
     ) -> list[LLMEventOutput]:
-        import urllib.request
-
+        schema = LLMEventOutput.model_json_schema()
         results: list[LLMEventOutput] = []
 
         for i, (span, hint) in enumerate(zip(text_spans, prepass_hints)):
-            user_msg = (
-                f"{SYSTEM_PROMPT}\n\n"
-                f"SCHEDULE CONTEXT:\n{schedule_context}\n\n"
-                f"Text: {span}\n"
-                f"Hints: {json.dumps(hint, default=str)}\n\n"
-                f'Return JSON: {{"events": [LLMEventOutput]}}'
-            )
-
             try:
-                payload = json.dumps({
-                    "model": self.model,
-                    "prompt": user_msg,
-                    "stream": False,
-                    "format": "json",
-                    "options": {"temperature": self.temperature},
-                }).encode()
-
-                req = urllib.request.Request(
-                    f"{self.base_url}/api/generate",
-                    data=payload,
-                    headers={"Content-Type": "application/json"},
-                )
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    data = json.loads(resp.read())
-
-                response_text = data.get("response", "{}")
-                parsed = json.loads(response_text)
-                events_raw = parsed.get("events", [parsed])
-                for ev in events_raw:
-                    try:
-                        results.append(LLMEventOutput(**ev))
-                    except Exception:
-                        results.append(LLMEventOutput(
-                            raw_text=span,
-                            activity_description="",
-                            discipline="unknown",
-                            status="unknown",
-                            reasoning="Parse error from Ollama",
-                        ))
+                raw = self._generate(span, schedule_context, hint, schema)
+                results.append(self._parse(raw, span))
             except Exception as e:
-                logger.warning(f"Ollama call failed for span {i}: {e}")
-                results.append(LLMEventOutput(
-                    raw_text=span,
-                    activity_description="",
-                    discipline="unknown",
-                    status="unknown",
-                    reasoning=f"Ollama error: {e}",
-                ))
+                logger.warning("Ollama call failed for span %d: %s", i, e)
+                results.append(self._fallback(span, f"Ollama error: {e}"))
 
         return results
+
+    def _generate(
+        self, span: str, schedule_context: str, hint: dict, schema: dict
+    ) -> str:
+        import urllib.request
+
+        prompt = (
+            f"SCHEDULE CONTEXT (reference only):\n{schedule_context}\n\n"
+            f"Text: {span}\n"
+            f"Deterministic pre-extracted hints: {json.dumps(hint, default=str)}\n\n"
+            "Produce one structured event for this text."
+        )
+        payload = json.dumps({
+            "model": self.model,
+            "system": SYSTEM_PROMPT,
+            "prompt": prompt,
+            "stream": False,
+            # Hybrid reasoning off: the think block breaks structured output.
+            "think": self.think,
+            # Grammar-constrained decoding against our Pydantic schema.
+            "format": schema,
+            "options": {
+                "temperature": self.temperature,
+                "num_ctx": self.num_ctx,
+            },
+        }).encode()
+
+        req = urllib.request.Request(
+            f"{self.base_url}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            data = json.loads(resp.read())
+
+        if data.get("thinking"):
+            logger.warning(
+                "Model emitted a think block despite think=false (%d chars)",
+                len(data["thinking"]),
+            )
+        return data.get("response", "{}")
+
+    def _parse(self, raw: str, span: str) -> LLMEventOutput:
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as e:
+            return self._fallback(span, f"Non-JSON response: {e}")
+        if isinstance(parsed, dict) and "events" in parsed:
+            events = parsed["events"]
+            parsed = events[0] if events else {}
+        parsed.setdefault("raw_text", span)
+        try:
+            return LLMEventOutput(**parsed)
+        except Exception as e:
+            return self._fallback(span, f"Schema mismatch: {e}")
+
+    @staticmethod
+    def _fallback(span: str, reason: str) -> LLMEventOutput:
+        return LLMEventOutput(
+            raw_text=span,
+            activity_description="",
+            discipline="unknown",
+            status="unknown",
+            reasoning=reason,
+        )
+
+
+# ── Configuration (.env) ─────────────────────────────────────────────────────
+
+ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+
+
+def _env(key: str, default: str) -> str:
+    """Read config with precedence: real environment, then .env, then default.
+
+    The .env file is read on every call rather than cached, so the provider
+    can be switched between runs without restarting the server.
+    """
+    if key in os.environ:
+        return os.environ[key]
+    try:
+        from dotenv import dotenv_values
+        return dotenv_values(ENV_PATH).get(key) or default
+    except Exception:
+        return default
+
+
+def make_backend_from_env() -> LLMBackend:
+    """Build the extraction backend named by EXTRACTION_PROVIDER.
+
+    Defaults to rules-only. The LLM path is opt-in: an unset or unrecognised
+    provider, an unreachable Ollama, or a model that is not pulled all fall
+    back to NullBackend, so the deterministic pipeline is what runs unless
+    the LLM is explicitly configured AND actually working.
+    """
+    provider = _env("EXTRACTION_PROVIDER", "rules").strip().lower()
+
+    if provider in ("", "rules", "none", "null", "prepass"):
+        return NullBackend()
+
+    if provider == "ollama":
+        backend = OllamaBackend(
+            model=_env("OLLAMA_MODEL", "qwen3:8b"),
+            base_url=_env("OLLAMA_BASE_URL", "http://localhost:11434"),
+            temperature=float(_env("OLLAMA_TEMPERATURE", "0")),
+            think=_env("OLLAMA_THINK", "false").strip().lower() in ("1", "true", "yes"),
+            timeout=int(_env("OLLAMA_TIMEOUT", "120")),
+            num_ctx=int(_env("OLLAMA_NUM_CTX", "8192")),
+        )
+        if not backend.is_available():
+            logger.warning("EXTRACTION_PROVIDER=ollama but it is unusable; using rules-only")
+            return NullBackend()
+        return backend
+
+    if provider == "openai":
+        api_key = _env("OPENAI_API_KEY", "")
+        if not api_key:
+            logger.warning("EXTRACTION_PROVIDER=openai but OPENAI_API_KEY is unset; using rules-only")
+            return NullBackend()
+        return OpenAICompatibleBackend(
+            api_key=api_key,
+            model=_env("OPENAI_MODEL", "gpt-4o-mini"),
+            base_url=_env("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+            temperature=float(_env("OPENAI_TEMPERATURE", "0")),
+        )
+
+    logger.warning("Unknown EXTRACTION_PROVIDER %r; using rules-only", provider)
+    return NullBackend()
 
 
 # ── Null backend (prepass only, no LLM) ──────────────────────────────────────

@@ -21,7 +21,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from .llm_backend import LLMBackend, NullBackend
+from .llm_backend import LLMBackend, NullBackend, make_backend_from_env
 from .models import (
     Discipline,
     EventStatus,
@@ -34,6 +34,7 @@ from .prepass import (
     COMPLETED_RE,
     COMPLETION_WITH_DATE_RE,
     STARTED_RE,
+    is_forecast_language,
     extract_dates,
     extract_dates_with_flags,
     extract_fractions,
@@ -64,7 +65,9 @@ class Extractor:
         reference_date: Optional[date] = None,
     ):
         self.reference_date = reference_date or date(2026, 8, 15)  # midpoint of our DPR range
-        self.llm = llm_backend or NullBackend()
+        # An explicit backend always wins; otherwise EXTRACTION_PROVIDER
+        # decides, and it defaults to rules-only.
+        self.llm = llm_backend or make_backend_from_env()
 
         # Load schedule for context
         self.schedule: list[dict] = []
@@ -309,22 +312,28 @@ class Extractor:
         if llm_output:
             method = ExtractionMethod.HYBRID
 
-            # LLM can override discipline if prepass was unknown
+            # LLM can override discipline if prepass was unknown. The schema
+            # passed to Ollama constrains this to the enum during decoding;
+            # this is the belt-and-braces fallback for any other provider.
             if discipline == Discipline.UNKNOWN:
-                try:
-                    discipline = Discipline(llm_output.discipline)
-                except ValueError:
-                    pass
+                discipline = self._validated_discipline(llm_output.discipline)
 
-            # LLM can override status
-            if status == "unknown":
-                status = llm_output.status
+            # LLM can override status — but never on a forecast line. A
+            # model that reads "now scheduled 25 Aug" as a completion would
+            # complete an unquantified node through the rollup even with the
+            # date guard in place.
+            if status == "unknown" and not is_forecast_language(span_text):
+                status = self._validated_status(llm_output.status)
 
             # LLM enrichment
             activity_desc = llm_output.activity_description or None
             reasoning = llm_output.reasoning or None
             alternatives = llm_output.alternatives or []
-            tags = tags or llm_output.tags
+            # Tags are NOT taken from the LLM, even when the prepass found
+            # none. Tags feed the matcher's tag_overlap feature, which is
+            # near-decisive; a model returning description words like
+            # "steel erection" as a tag would corrupt linking. Tag extraction
+            # is owned by the deterministic regex pre-pass alone.
             if llm_output.quantity is not None and quantity is None:
                 quantity = llm_output.quantity
             if llm_output.uom and not uom:
@@ -386,6 +395,15 @@ class Extractor:
         positionally in the order the verbs appear. When a claim is made with
         no in-span date, the report's own date carries it.
         """
+        # GUARD: a forecast or a rescheduling is not an actual. "TK-1
+        # hydrotest now scheduled 25 Aug instead of 23 Aug" carries two real
+        # dates, but both are planned; writing either onto the schedule would
+        # record a completed hydrotest for work that has not happened. This
+        # lives in code rather than the prompt so it holds for every provider
+        # and cannot be talked out of by a model.
+        if is_forecast_language(text):
+            return None, None
+
         dates = [date.fromisoformat(d) for d in hints.get("dates", [])]
 
         claims_start = bool(STARTED_RE.search(text))
@@ -416,6 +434,30 @@ class Extractor:
         if claims_finish:
             return None, (dates[0] if dates else reported_date)
         return (dates[0] if dates else reported_date), None
+
+    @staticmethod
+    def _validated_discipline(value) -> Discipline:
+        """Coerce an LLM discipline to our enum, defaulting to UNKNOWN.
+
+        Ollama decodes against our JSON schema, whose discipline property
+        carries an explicit enum, so an out-of-vocabulary value like
+        "Structural" or "HT" cannot be generated there. Other providers offer
+        no such guarantee, so the value is validated here regardless.
+        """
+        try:
+            return Discipline(str(value).strip().lower())
+        except (ValueError, AttributeError):
+            logger.warning("LLM returned unknown discipline %r; using unknown", value)
+            return Discipline.UNKNOWN
+
+    @staticmethod
+    def _validated_status(value) -> str:
+        """Coerce an LLM status to our enum's values, defaulting to unknown."""
+        try:
+            return EventStatus(str(value).strip().lower()).value
+        except (ValueError, AttributeError):
+            logger.warning("LLM returned unknown status %r; using unknown", value)
+            return EventStatus.UNKNOWN.value
 
     def _compute_confidence(self, hints: dict, llm_output) -> float:
         """Estimate extraction confidence based on available signals."""
