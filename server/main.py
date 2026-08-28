@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -109,6 +110,44 @@ app = FastAPI(
     description="EPC field-report extraction, schedule tracking, and institutional memory",
     version="0.1.0",
 )
+
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# The React dev server runs on a different origin, so the browser preflights
+# every non-GET call. Credentials are off (the API has no cookie or session
+# auth), which is what allows a permissive origin policy here.
+
+# Vite's default port, named explicitly.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Everything else we need to reach during a demo, matched in full:
+#   * localhost / 127.0.0.1 on ANY port - Vite silently moves to 5174, 5175 ...
+#     when 5173 is already taken, and a hardcoded port makes that look like a
+#     backend failure.
+#   * the three private IPv4 ranges, so a second device on the same network
+#     can reach the API. 192.168/16 covers a normal LAN and an Android
+#     hotspot; 172.16/12 is included because an iOS personal hotspot hands
+#     out 172.20.10.x, and 10/8 covers the rest.
+CORS_ALLOWED_ORIGIN_REGEX = (
+    r"http://("
+    r"localhost|127\.0\.0\.1"
+    r"|192\.168\.\d{1,3}\.\d{1,3}"
+    r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    r"|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}"
+    r")(:\d+)?"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    allow_origin_regex=CORS_ALLOWED_ORIGIN_REGEX,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
+
 
 DATA_DATE = date(2026, 9, 15)  # Latest date in our dataset
 
