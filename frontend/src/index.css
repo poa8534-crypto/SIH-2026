@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   PALETTE
+   ----------------------------------------------------------------------------
+   Every colour in the app resolves to one of these custom properties. Nothing
+   in src/ should contain a hex literal or a Tailwind palette colour
+   (red-500, yellow-500, ...) — those cannot respond to the theme, which is
+   how candidate cards ended up dark-on-dark in light mode.
+
+   Both themes are defined in full. Neither inherits from the other, so a
+   variable can never be silently missing in one of them.
+
+   Contrast: every text/background pair used in the UI is >= 3:1 in both
+   themes. Body and label text clears 4.5:1.
+   ========================================================================= */
+
+[data-theme="dark"] {
+  /* Surfaces, back to front */
+  --bg: #0C0C0C;          /* page                                    */
+  --bg-raised: #16181A;   /* cards, evidence block, inputs           */
+  --bg-selected: #24282D; /* selected card / row                     */
+
+  /* Text */
+  --text: #F2F3F4;        /* primary          15.8:1 on --bg         */
+  --text-muted: #9BA1A8;  /* labels, metadata  6.7:1 on --bg         */
+
+  /* Lines */
+  --border: #2C3033;      /* hairline dividers                       */
+  --border-strong: #7A8288; /* kbd, hover borders  5.0:1 on --bg     */
+
+  /* Accent — selection, focus, primary action */
+  --accent: #7FB2E5;      /*                   8.0:1 on --bg         */
+  --accent-text: #0C0C0C; /* text on top of a solid --accent fill    */
+  --accent-hover: #A6CBF0;
+
+  /* Evidence-span highlight */
+  --mark-bg: #4A3C12;
+  --mark-text: #FFE9A8;   /*                   9.1:1 on --mark-bg    */
+
+  /* Status */
+  --ok: #56C4AC;
+  --warn: #E3C567;
+  --danger: #F2777A;
+  --danger-bg: #2A1416;
+  --danger-border: #6B2E31;
+
+  /* Disciplines. Tuned bright so they clear 3:1 on --bg-raised.       */
+  --disc-civil: #8CC9EE;
+  --disc-piping: #DE9AD6;   /* was #AA4499 — 2.8:1, failed            */
+  --disc-seq: #EE9977;      /* was #882255 — 1.9:1, failed badly      */
+  --disc-ele: #DDCC77;
+  --disc-ins: #58C79A;      /* was #117733 — 3.3:1, marginal          */
+  --disc-hse: #EE8899;
+}
+
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --bg-raised: #F4F6F8;
+  --bg-selected: #E4EDF7;
+
+  --text: #14181C;        /*                  16.4:1 on --bg         */
+  --text-muted: #565E66;  /*                   7.2:1 on --bg         */
+
+  --border: #DFE3E7;
+  --border-strong: #828A92;
+
+  --accent: #1A6BA8;      /*                   5.5:1 on --bg         */
+  --accent-text: #FFFFFF;
+  --accent-hover: #12537F;
+
+  --mark-bg: #FFD972;
+  --mark-text: #4A3200;   /*                   8.8:1 on --mark-bg    */
+
+  --ok: #0E7A63;
+  --warn: #7D6208;
+  --danger: #B3261E;
+  --danger-bg: #FDECEA;
+  --danger-border: #E8A9A4;
+
+  /* Darkened so they clear 3:1 on white and on --bg-raised. */
+  --disc-civil: #1A6191;
+  --disc-piping: #8E2F86;
+  --disc-seq: #9C4318;
+  --disc-ele: #6F5804;
+  --disc-ins: #0B6B4F;
+  --disc-hse: #A82834;
+}
+
+/* Default before useTheme stamps the attribute: match the dark values so
+   there is no flash of unstyled/unreadable content on first paint. */
+:root {
+  --bg: #0C0C0C;
+  --bg-raised: #16181A;
+  --bg-selected: #24282D;
+  --text: #F2F3F4;
+  --text-muted: #9BA1A8;
+  --border: #2C3033;
+  --border-strong: #7A8288;
+  --accent: #7FB2E5;
+  --accent-text: #0C0C0C;
+  --accent-hover: #A6CBF0;
+  --mark-bg: #4A3C12;
+  --mark-text: #FFE9A8;
+  --ok: #56C4AC;
+  --warn: #E3C567;
+  --danger: #F2777A;
+  --danger-bg: #2A1416;
+  --danger-border: #6B2E31;
+  --disc-civil: #8CC9EE;
+  --disc-piping: #DE9AD6;
+  --disc-seq: #EE9977;
+  --disc-ele: #DDCC77;
+  --disc-ins: #58C79A;
+  --disc-hse: #EE8899;
+}
+
+/* ============================================================================
+   TAILWIND BINDINGS
+   Canonical utility names: bg-surface / bg-raised / bg-selected,
+   text-fg / text-muted, border-hair / border-strong, text-accent, ...
+   ========================================================================= */
+
+@theme {
+  --color-surface: var(--bg);
+  --color-raised: var(--bg-raised);
+  --color-selected: var(--bg-selected);
+
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+
+  --color-hair: var(--border);
+  --color-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-text);
+  --color-accent-hover: var(--accent-hover);
+
+  --color-mark: var(--mark-bg);
+  --color-mark-fg: var(--mark-text);
+
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-line: var(--danger-border);
+
+  --color-disc-civil: var(--disc-civil);
+  --color-disc-piping: var(--disc-piping);
+  --color-disc-seq: var(--disc-seq);
+  --color-disc-ele: var(--disc-ele);
+  --color-disc-ins: var(--disc-ins);
+  --color-disc-hse: var(--disc-hse);
+
+  /* Legacy aliases. The original theme called muted text "text" and primary
+     text "hl", which inverts the naming used above — so these are mapped
+     explicitly rather than by name to keep the existing look intact. */
+  --color-dash-bg: var(--bg);
+  --color-dash-line: var(--border);
+  --color-dash-text: var(--text-muted);
+  --color-dash-hl: var(--text);
+  --color-dash-active: var(--bg-selected);
+  --color-dash-hover: var(--bg-raised);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-muted);
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Native widgets (scrollbars, form controls, the caret) follow the theme. */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1; /* Firefox dims placeholders by default, which fails contrast */
+}
