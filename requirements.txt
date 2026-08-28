@@ -1,0 +1,46 @@
+# SIH 26122 — runtime dependencies
+# Generated from what is actually imported across extraction/, matching/,
+# server/ and eval.py. Pinned to the versions this repo was developed and
+# tested against. Python 3.12.
+#
+#   python -m pip install -r requirements.txt
+#
+# Everything else the code imports (json, csv, sqlite3, urllib, pathlib,
+# dataclasses, xml.etree, hashlib, statistics, ...) is in the standard
+# library and needs no install.
+
+# ── API layer (server/) ──────────────────────────────────────────────────────
+fastapi==0.141.1
+uvicorn==0.52.4
+# Required by FastAPI to parse multipart uploads on POST /ingest. Imported by
+# FastAPI at request time, not by our code, so it will not show up in a
+# grep for imports — omitting it makes /ingest fail at runtime only.
+python-multipart==0.0.32
+
+# ── Contracts (extraction/, matching/, server/) ──────────────────────────────
+pydantic==2.13.4
+
+# ── Persistence (server/db.py) ───────────────────────────────────────────────
+SQLAlchemy==2.0.52
+
+# ── Spreadsheet parsing (extraction/spreadsheet.py) ──────────────────────────
+openpyxl==3.1.5
+
+# ── Matching pipeline (matching/) ────────────────────────────────────────────
+rank-bm25==0.2.2          # lexical retrieval
+rapidfuzz==3.14.5         # fuzzy token-set similarity
+numpy==2.5.2              # brute-force cosine over 120 x 384 vectors
+
+# Dense retrieval. This is the heavy one: it pulls torch (~2-3 GB).
+# matching/retrieval.py degrades to a hashed-ngram embedder if it is missing
+# or the model is not cached, so the system still runs without it — with
+# weaker dense recall. See SETUP.md.
+sentence-transformers==6.0.0
+
+# ── Optional LLM provider config (extraction/llm_backend.py) ─────────────────
+# Reads .env. The LLM path itself is OFF by default and needs no package:
+# Ollama is called over plain HTTP with urllib from the standard library.
+python-dotenv==1.2.3
+
+# ── Tests ────────────────────────────────────────────────────────────────────
+pytest==9.1.1

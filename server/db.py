@@ -7,8 +7,10 @@ for continuous matcher improvement.
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import date, datetime
+from pathlib import Path
 
 from sqlalchemy import (
     Boolean,
@@ -349,7 +351,13 @@ class MemoryCache(Base):
 
 # ── Engine setup ─────────────────────────────────────────────────────────────
 
-DATABASE_URL = "sqlite:///dataset/epc_progress.db"
+# Anchored to the repo root, not the working directory: the server is
+# launched from the project root but scripts and tests may run from anywhere,
+# and a CWD-relative URL silently creates a second, empty database.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DB_PATH = Path(os.environ.get("EPC_DB_PATH") or PROJECT_ROOT / "dataset" / "epc_progress.db")
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+DATABASE_URL = f"sqlite:///{DB_PATH.as_posix()}"
 
 engine = create_engine(
     DATABASE_URL,
