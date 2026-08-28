@@ -408,7 +408,13 @@ class Extractor:
 
         claims_start = bool(STARTED_RE.search(text))
         claims_finish = (
-            (status == "completed" and bool(COMPLETED_RE.search(text)))
+            # The inferred status is authoritative. When it comes from the
+            # pre-pass it already implies a COMPLETED_RE match, so requiring
+            # the regex again added nothing there — but it silently discarded
+            # every completion only an LLM could see. "Both pumps set and
+            # aligned. Alignment JMR signed 12 Sep" carries no completion
+            # keyword at all, and was losing its finish date.
+            status == "completed"
             # ... or a completion verb with a date bound directly to it, which
             # survives an unrelated open clause later in the same line.
             or bool(COMPLETION_WITH_DATE_RE.search(text))

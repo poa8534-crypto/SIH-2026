@@ -668,3 +668,58 @@ The practical consequences:
 Closing this would mean a second evaluation path that runs the real
 extractors over the source files and aligns their output to ground truth by
 provenance span. That is worthwhile but was not built.
+
+## C. On tag-free input the system degrades to planner-assist
+
+Equipment and line tags are the near-decisive matching feature. When a field
+report contains none, the system does not auto-update the schedule — it
+ranks candidates and asks a planner. This is a deliberate trade, and it is
+worth stating plainly before anyone finds it by accident.
+
+`dataset/dpr_day_11_messy.txt` was written specifically to test this: a DPR
+in the voice of a supervisor writing at 8pm, with Hindi/English code-mixing,
+heavy site abbreviation (w/o, RFI, JMR, BBS, NCR, u/g, F&G), delay causes
+buried in narrative, implicit status with no completion keyword, and — the
+point of the exercise — **no equipment tags at all**. Work is referred to as
+"the 24 inch line near rack 3", "the big tank", "pump house slab".
+
+Measured on that file, extraction is followed by the full hybrid matcher
+(exact tag, BM25, fuzzy, dense retrieval, RRF fusion, feature scoring,
+calibrated thresholds):
+
+| | rules-only | qwen3:8b |
+|---|---:|---:|
+| events extracted | 16 | 16 |
+| **auto-linked** | **0** | **0** |
+| **sent to review** | **16** | **16** |
+| mean match confidence | 0.630 | 0.627 |
+| status resolved | 6 | 14 |
+| quantity extracted | 4 | 9 |
+| extraction wall clock | 0.003 s | 64.5 s |
+
+The comparison is the informative part. The LLM understands this text far
+better than the regex pre-pass does — it more than doubles both status and
+quantity resolution, and it correctly reads "Both pumps at the pump house
+set and aligned" as a completion with no completion keyword present. **And
+it changes the linking outcome by exactly nothing**: zero auto-links and
+sixteen review items either way, with mean match confidence marginally
+*lower*. Text comprehension does not substitute for a tag. Understanding
+what a line says is a different problem from knowing which of 120 schedule
+nodes it refers to, and only the second one moves a date onto the schedule.
+
+For contrast, the same pipeline on `dpr_day_01.txt`, where tags are present,
+auto-links 4 of 13 mentions and reviews 9. Across the labelled corpus
+`eval.py` reports 100% auto-link precision at 50.4% coverage.
+
+**This is the precision-first trade, working as designed.** A wrong
+auto-link writes a false actual date onto a live schedule and is expensive
+to find and undo; a review item costs a planner about ten seconds. On
+tag-free input the honest output is sixteen ranked candidates with their
+evidence, not sixteen guessed dates. The system degrades to planner-assist
+rather than degrading into fabrication, and every one of those sixteen
+items arrives with its retrieval sources, feature scores and provenance
+span attached.
+
+The lever that would change this is retrieval strength on tag-free text —
+description-level embedding match weighted higher when no tag is present —
+which is matcher work, not extraction work, and has not been done.

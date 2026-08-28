@@ -196,3 +196,83 @@ def test_ollama_backend_defaults():
     assert backend.model == "qwen3:8b"
     assert backend.temperature == 0.0
     assert backend.think is False
+
+
+# ── (d) LLM quantities without a unit must not drive progress ────────────────
+
+def _rollup_one(event, activity_id):
+    """Roll one event onto one node and return the RollupResult."""
+    from matching import Decision, LinkDecision, MatchingEngine, RollupAccumulator
+    engine = MatchingEngine(SCHEDULE)
+    decision = LinkDecision(
+        event_index=0, raw_text=event.raw_text, source_file="test.txt",
+        outcome=Decision.AUTO_LINK, chosen_activity_id=activity_id,
+    )
+    acc = RollupAccumulator(engine)
+    acc.add(decision, event)
+    return acc.results()[0]
+
+
+def test_unitless_llm_quantity_excluded_from_percent_complete():
+    """The observed case: "All 12 pockets grouted" yields quantity 12 with no
+    uom. CIV-FDN-1007 is planned at 48 m3, so admitting it would silently
+    register 25% complete against a unit nobody checked."""
+    span = "Pedestal work near rack 3 - All 12 pockets grouted, JMR raised."
+    event = _extract_one(span, StubBackend(quantity=12.0))
+    assert event.quantity == 12.0, "quantity is still kept on the event for display"
+    assert event.uom is None
+
+    result = _rollup_one(event, "CIV-FDN-1007")
+    assert result.installed_qty == 0.0
+    assert result.percent_complete == 0.0
+    assert any("unitless" in n for n in result.notes), result.notes
+
+
+def test_quantity_with_matching_unit_still_counts():
+    """The guard must not block legitimate measured progress."""
+    event = _extract_one("Pedestal concreting, 24 m3 poured at the pipe rack.")
+    assert event.quantity == 24.0 and event.uom == "m3"
+    result = _rollup_one(event, "CIV-FDN-1007")
+    assert result.installed_qty == 24.0
+    assert result.percent_complete == 50.0
+
+
+def test_llm_quantity_with_a_unit_is_admitted():
+    event = _extract_one(
+        "Backfilling at the rack trenches progressing.",
+        StubBackend(quantity=200.0, uom="m3"),
+    )
+    assert event.quantity == 200.0 and event.uom == "m3"
+    result = _rollup_one(event, "CIV-BKL-1011")
+    assert result.installed_qty == 200.0
+
+
+# ── (e) LLM-supplied status may assert a date ────────────────────────────────
+
+IMPLICIT_COMPLETION = "Both pumps at the pump house set and aligned. Alignment JMR signed 12 Sep."
+
+
+def test_implicit_completion_has_no_regex_keyword():
+    """Precondition: neither completion regex fires on this line, so the only
+    route to a finish date is the LLM-supplied status."""
+    from extraction.prepass import COMPLETED_RE, COMPLETION_WITH_DATE_RE
+    assert not COMPLETED_RE.search(IMPLICIT_COMPLETION)
+    assert not COMPLETION_WITH_DATE_RE.search(IMPLICIT_COMPLETION)
+
+
+def test_rules_only_finds_no_finish_on_implicit_completion():
+    assert _extract_one(IMPLICIT_COMPLETION).asserted_finish is None
+
+
+def test_llm_status_completed_asserts_the_finish_date():
+    event = _extract_one(IMPLICIT_COMPLETION, StubBackend(status="completed"))
+    assert event.status is EventStatus.COMPLETED
+    assert event.asserted_finish == date(2026, 9, 12)
+
+
+def test_forecast_guard_still_beats_llm_completion():
+    """Fix 2 must not weaken the forecast guard: it runs first and wins."""
+    for span in FORECAST_SPANS:
+        event = _extract_one(span, StubBackend(status="completed"))
+        assert event.asserted_start is None, span
+        assert event.asserted_finish is None, span

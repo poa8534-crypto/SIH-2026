@@ -230,6 +230,19 @@ class RollupAccumulator:
             )
             qty = None
 
+        # A quantity with no unit cannot be measured against a planned
+        # quantity. The regex pre-pass always captures a unit alongside the
+        # number, so this filters LLM-supplied quantities: a model reading
+        # "All 12 pockets grouted" returns 12 with no uom, and against a
+        # 48 m3 node that would silently register 25% complete. The value
+        # stays on the event for display; it just cannot drive progress.
+        if qty is not None and not uom_ev:
+            acc["notes"].append(
+                f"unitless qty {qty:g} excluded from percent-complete "
+                f"(planned in {rec.uom or 'unknown units'})"
+            )
+            qty = None
+
         if qty is not None and rec.planned_qty > 0:
             acc["installed"] += qty
             acc["has_progress"] = True
