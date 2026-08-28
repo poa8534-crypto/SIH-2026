@@ -360,6 +360,9 @@ class SpreadsheetParser:
         return ExtractedEvent(
             raw_text=raw_text,
             tags=tags,
+            # Completion column first (these registers report finished work);
+            # commencement date is the fallback when it is blank.
+            reported_date=end_date or start_date,
             quantity=achieved_qty or planned_qty,
             uom=str(row_data.get("uom", "") or "").strip() or None,
             discipline=discipline,

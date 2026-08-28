@@ -146,7 +146,9 @@ class Extractor:
             hints = prepass_results[i]
             llm_out = llm_outputs[i] if i < len(llm_outputs) else None
 
-            event = self._merge_event(span_text, line_num, path.name, hints, llm_out)
+            event = self._merge_event(
+                span_text, line_num, path.name, hints, llm_out, report_date
+            )
             if event:
                 result.events.append(event)
 
@@ -277,6 +279,7 @@ class Extractor:
         filename: str,
         hints: dict,
         llm_output,
+        report_date: Optional[date] = None,
     ) -> Optional[ExtractedEvent]:
         """Merge prepass hints and LLM output into a final ExtractedEvent."""
         # Start with prepass data
@@ -321,12 +324,21 @@ class Extractor:
             if llm_output.percentage is not None and pct is None:
                 pct = llm_output.percentage
 
+        # Date this event asserts progress for: the first date resolved from
+        # the span itself, else the DPR header's report date.
+        reported_date = None
+        if hints.get("dates"):
+            reported_date = date.fromisoformat(hints["dates"][0])
+        if reported_date is None:
+            reported_date = report_date
+
         # Compute confidence based on signal strength
         confidence = self._compute_confidence(hints, llm_output)
 
         return ExtractedEvent(
             raw_text=span_text,
             tags=tags,
+            reported_date=reported_date,
             discipline=discipline,
             status=status,
             percentage=pct,

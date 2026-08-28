@@ -195,8 +195,7 @@ One progress assertion before linking.
     "raw_text": "spool erected for 24\"-P-1001 upto gridline 7, 40m done"
   },
   "event_type": "PROGRESS",
-  "asserted_date": "2026-03-10",
-  "date_basis": "RELATIVE_RESOLVED",
+  "reported_date": "2026-03-10",
   "description_text": "spool erected for line 24-P-1001 upto gridline 7",
   "tags_found": ["24\"-P-1001"],
   "discipline_inferred": "PIPING",
@@ -223,13 +222,10 @@ PROGRESS
 BLOCKED
 ```
 
-Allowed date basis values:
-
-```text
-EXPLICIT
-RELATIVE_RESOLVED
-DEFAULTED_TO_REPORT_DATE
-```
+The date is resolved from the span itself where the text carries one, and
+otherwise defaults to the source's report date (the DPR header date, or the
+completion column for a spreadsheet register). Recording *which* of those
+two produced the date — the `date_basis` provenance field — was deferred.
 
 **Provenance is non-negotiable.** It is the spine of the audit trail.
 
