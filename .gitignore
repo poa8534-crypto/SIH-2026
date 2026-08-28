@@ -6,3 +6,6 @@ __pycache__/
 .env
 venv/
 node_modules/
+
+# Generated export artifacts from POST /schedule/export
+dataset/uploads/
