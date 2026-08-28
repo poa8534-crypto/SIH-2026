@@ -44,8 +44,20 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from extraction.extractor import Extractor
+from extraction.models import (
+    Discipline,
+    EventStatus,
+    ExtractionMethod,
+    Provenance,
+)
 from extraction.models import ExtractedEvent as PydanticEvent
-from matching import Decision, MatchingEngine, RollupAccumulator, Thresholds
+from matching import (
+    Decision,
+    LinkDecision,
+    MatchingEngine,
+    RollupAccumulator,
+    Thresholds,
+)
 
 from .db import (
     Activity,
@@ -220,8 +232,16 @@ def _write_audit(
     confidence: Optional[float] = None,
     auto_applied: bool = False,
     model_version: str = "prepass-v1",
+    contributing_sources: Optional[list[str]] = None,
+    conflict: bool = False,
 ) -> AuditRecord:
-    """Create an immutable audit record. Called on EVERY actual-date write."""
+    """Create an immutable audit record. Called on EVERY actual-date write.
+
+    `contributing_sources` lists every source that asserted a value for this
+    field. It is recorded whenever more than one source contributed, so the
+    audit trail shows the disagreement and which source the written value
+    came from instead of one silently overwriting the other.
+    """
     record = AuditRecord(
         id=_uuid(),
         activity_id=activity_id,
@@ -235,6 +255,10 @@ def _write_audit(
         confidence=confidence,
         model_version=model_version,
         auto_applied=auto_applied,
+        contributing_sources=(
+            json.dumps(contributing_sources) if contributing_sources else None
+        ),
+        conflict=conflict,
     )
     db.add(record)
     return record
@@ -261,6 +285,28 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
         if act is None:
             continue
         span = r.event_texts[0] if r.event_texts else None
+        start_sources = [a.describe() for a in r.start_assertions]
+        finish_sources = [a.describe() for a in r.finish_assertions]
+
+        # Any disagreement between sources is recorded on the write it
+        # affects, and surfaced on GET /schedule.
+        for note in r.conflicts:
+            logger.warning("Source conflict on %s: %s", r.activity_id, note)
+            _write_audit(
+                db, r.activity_id,
+                field="source_conflict",
+                old_value=None,
+                new_value=note[:500],
+                source="matching",
+                source_file=None,
+                source_span=span,
+                confidence=None,
+                auto_applied=False,
+                model_version=MATCHING_MODEL_VERSION,
+                contributing_sources=start_sources + finish_sources,
+                conflict=True,
+            )
+            audits += 1
 
         # Actual Start — earliest evidence of work beginning
         if r.actual_start is not None and (
@@ -281,6 +327,8 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
                     confidence=1.0,
                     auto_applied=True,
                     model_version=MATCHING_MODEL_VERSION,
+                    contributing_sources=start_sources or None,
+                    conflict=len({a.value for a in r.start_assertions}) > 1,
                 )
                 act.actual_start = r.actual_start
                 audits += 1
@@ -323,6 +371,8 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
                         confidence=1.0,
                         auto_applied=True,
                         model_version=MATCHING_MODEL_VERSION,
+                        contributing_sources=finish_sources or None,
+                        conflict=len({a.value for a in r.finish_assertions}) > 1,
                     )
                     act.actual_finish = r.actual_finish
                     audits += 1
@@ -460,6 +510,8 @@ async def ingest_file(
                 raw_text=event.raw_text,
                 tags=json.dumps(event.tags),
                 reported_date=event.reported_date,
+                asserted_start=event.asserted_start,
+                asserted_finish=event.asserted_finish,
                 quantity=event.quantity,
                 uom=event.uom,
                 discipline=event.discipline.value,
@@ -588,6 +640,8 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
                 raw_text=le.raw_text,
                 tags=le.tag_list(),
                 reported_date=le.reported_date,
+                asserted_start=le.asserted_start,
+                asserted_finish=le.asserted_finish,
                 quantity=le.quantity,
                 uom=le.uom,
                 discipline=le.discipline,
@@ -709,6 +763,9 @@ def resolve_review_item(
         )
         audit_count += 1
 
+        # Commit the progress itself, not just the link.
+        audit_count += _apply_confirmed_event_to_schedule(db, le, target_activity_id)
+
         # Training signal
         alias_count = _upsert_alias(db, le.raw_text, target_activity_id, le.discipline, le.tag_list())
 
@@ -746,6 +803,9 @@ def resolve_review_item(
             confidence=le.confidence,
         )
         audit_count += 1
+
+        # Commit the progress onto the reassigned activity.
+        audit_count += _apply_confirmed_event_to_schedule(db, le, req.activity_id)
 
         # Training signal — strong signal from planner reassignment
         alias_count = _upsert_alias(db, le.raw_text, req.activity_id, le.discipline, le.tag_list())
@@ -823,6 +883,57 @@ def resolve_review_item(
         audit_records_created=audit_count,
         message=f"Review item resolved: {req.action}",
     )
+
+
+def _apply_confirmed_event_to_schedule(
+    db: Session, le: LinkedEvent, activity_id: str
+) -> int:
+    """Roll a planner-confirmed event onto the schedule.
+
+    A REVIEW item carries only a proposal, so nothing reaches the schedule
+    until the planner adjudicates. Once they do, the confirmed event has to
+    travel the same rollup + audit path an AUTO_LINK would have taken —
+    otherwise confirming a review item changes a link but never a date.
+
+    The event is replayed through the same RollupAccumulator used at ingest,
+    so quantity rollup, the partial-scope guard, earliest-start/latest-finish
+    precedence, and conflict capture all behave identically.
+    """
+    engine = get_matching_engine()
+    if activity_id not in engine.index.by_id:
+        return 0
+
+    event = PydanticEvent(
+        raw_text=le.raw_text,
+        tags=le.tag_list(),
+        reported_date=le.reported_date,
+        asserted_start=le.asserted_start,
+        asserted_finish=le.asserted_finish,
+        quantity=le.quantity,
+        uom=le.uom,
+        discipline=Discipline(le.discipline) if le.discipline else Discipline.UNKNOWN,
+        status=EventStatus(le.status) if le.status else EventStatus.UNKNOWN,
+        percentage=le.percentage,
+        provenance=Provenance(
+            source_file=le.source_file,
+            source_line=le.source_line,
+            source_row=le.source_row,
+            source_span=le.source_span or le.raw_text,
+            method=ExtractionMethod.PREPASS,
+        ),
+    )
+    decision = LinkDecision(
+        event_index=0,
+        raw_text=le.raw_text,
+        source_file=le.source_file,
+        outcome=Decision.AUTO_LINK,
+        chosen_activity_id=activity_id,
+        confidence=le.confidence,
+        thresholds=MATCHING_THRESHOLDS,
+    )
+    accumulator = RollupAccumulator(engine)
+    accumulator.add(decision, event)
+    return _apply_rollup_to_schedule(db, accumulator.results())
 
 
 def _upsert_alias(
@@ -917,6 +1028,22 @@ def get_schedule(
                 predecessors=act.predecessor_list(),
             )
         )
+
+        # Source conflicts recorded at write time — a planner has to see
+        # that two sources disagreed about this node's dates.
+        if include_warnings:
+            for rec in db.query(AuditRecord).filter(
+                AuditRecord.activity_id == act.activity_id,
+                AuditRecord.conflict.is_(True),
+            ).all():
+                warnings.append({
+                    "activity_id": act.activity_id,
+                    "field": rec.field_changed,
+                    "message": rec.new_value or "source conflict",
+                    "contributing_sources": json.loads(rec.contributing_sources)
+                    if rec.contributing_sources else [],
+                    "severity": "conflict",
+                })
 
         # Integrity warnings
         if include_warnings and act.actual_start:

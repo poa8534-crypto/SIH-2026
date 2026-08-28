@@ -31,6 +31,8 @@ class LinkedEventResponse(BaseModel):
     raw_text: str
     tags: list[str] = []
     reported_date: Optional[date] = None
+    asserted_start: Optional[date] = None
+    asserted_finish: Optional[date] = None
     quantity: Optional[float] = None
     uom: Optional[str] = None
     discipline: str = "unknown"

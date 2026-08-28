@@ -88,6 +88,22 @@ class LinkDecision(BaseModel):
 
 # ── Granularity: rollup result ───────────────────────────────────────────────
 
+class DateAssertion(BaseModel):
+    """One source's claim about when a node started or finished. Kept
+    individually rather than collapsed into a min/max so that a disagreement
+    between two sources stays visible in the audit trail."""
+
+    field: str          # actual_start | actual_finish
+    value: date
+    source_file: str = ""
+    source_span: str = ""
+
+    def describe(self) -> str:
+        where = self.source_file or "unknown source"
+        span = f' "{self.source_span[:80]}"' if self.source_span else ""
+        return f"{self.value.isoformat()} from {where}{span}"
+
+
 class RollupResult(BaseModel):
     """Aggregated progress for one schedule node from many field mentions."""
 
@@ -102,3 +118,12 @@ class RollupResult(BaseModel):
     is_complete: bool = False
     event_texts: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+
+    # Provenance for the two dates above: every contributing claim, plus any
+    # disagreement between sources. Both are surfaced rather than resolved
+    # silently - a planner has to be able to see that a 2 Aug finish came
+    # from a partial-scope DPR line while a 12 Jul finish came from a
+    # full-scope spreadsheet row.
+    start_assertions: list[DateAssertion] = Field(default_factory=list)
+    finish_assertions: list[DateAssertion] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)

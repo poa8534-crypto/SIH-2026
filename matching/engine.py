@@ -173,7 +173,7 @@ def _rationale(c: LinkCandidate) -> list[str]:
 # Granularity handling: many-to-one rollup
 # ══════════════════════════════════════════════════════════════════════════════
 
-from .models import RollupResult  # noqa: E402
+from .models import DateAssertion, RollupResult  # noqa: E402
 from .textutils import normalize_uom  # noqa: E402
 
 
@@ -182,10 +182,14 @@ class RollupAccumulator:
     schedule node.
 
     Supports:
-      * many-to-one rollup — several mentions contribute to one node
-      * quantity-based percent complete — 40 m of 120 m planned = 33%
+      * many-to-one rollup - several mentions contribute to one node
+      * quantity-based percent complete - 40 m of 120 m planned = 33%
       * explicit/fraction percentages when no quantity is given
-      * Actual Finish is set ONLY when the node is actually complete
+      * separate start and finish assertions, so a node gets DISTINCT actual
+        dates instead of one date standing in for both
+      * partial-scope protection - a completion mention covering part of a
+        node's scope must not finish the whole node
+      * conflict capture - when two sources disagree, both are recorded
     """
 
     def __init__(self, engine: MatchingEngine):
@@ -203,6 +207,8 @@ class RollupAccumulator:
             "installed": 0.0,
             "pct_events": [],
             "dates": [],
+            "starts": [],
+            "finishes": [],
             "texts": [],
             "notes": [],
             "has_progress": False,
@@ -214,7 +220,7 @@ class RollupAccumulator:
 
         if qty is not None and _qty_swallowed_by_tag(qty, event.tags):
             acc["notes"].append(
-                f"ignored qty {qty:g} — digits belong to a tag, not a quantity"
+                f"ignored qty {qty:g} - digits belong to a tag, not a quantity"
             )
             qty = None
 
@@ -233,12 +239,41 @@ class RollupAccumulator:
             acc["has_progress"] = True
             acc["notes"].append(f"+{event.percentage:g}%")
         elif event.status is not None and event.status.value == "completed":
-            # Completion asserted without quantity — treat as finishing the node
-            acc["pct_events"].append(100.0)
-            acc["has_progress"] = True
-            acc["notes"].append("completed (no qty)")
+            # Completion asserted without a quantity. On a node measured by
+            # quantity this is NOT evidence that the whole node is done - a
+            # DPR line covering pedestals P7-P12 completes only part of a
+            # P1-P12 node. Treat it as progress and let the quantity roll-up
+            # decide completion.
+            if rec.planned_qty > 0:
+                acc["has_progress"] = True
+                acc["notes"].append(
+                    "completion asserted without a quantity - not applied to "
+                    f"the node (planned {rec.planned_qty:g} {rec.uom}); scope "
+                    "may be partial"
+                )
+            else:
+                # Unquantified node (a milestone): a completion claim is all
+                # the evidence there is or ever will be.
+                acc["pct_events"].append(100.0)
+                acc["has_progress"] = True
+                acc["notes"].append("completed (unquantified node)")
         else:
             acc["notes"].append("no measurable progress signal")
+
+        prov = getattr(event, "provenance", None)
+        src_file = getattr(prov, "source_file", "") or decision.source_file or ""
+        src_span = getattr(prov, "source_span", "") or decision.raw_text or ""
+
+        if getattr(event, "asserted_start", None):
+            acc["starts"].append(DateAssertion(
+                field="actual_start", value=event.asserted_start,
+                source_file=src_file, source_span=src_span,
+            ))
+        if getattr(event, "asserted_finish", None):
+            acc["finishes"].append(DateAssertion(
+                field="actual_finish", value=event.asserted_finish,
+                source_file=src_file, source_span=src_span,
+            ))
 
         if event.reported_date:
             acc["dates"].append(event.reported_date)
@@ -255,11 +290,40 @@ class RollupAccumulator:
             else:
                 pct = 0.0
             is_complete = pct >= 100.0 - 1e-6
-            actual_start = min(acc["dates"]) if (acc["dates"] and pct > 0) else None
-            # Actual Finish only when the node is actually complete
-            actual_finish = (
-                max(acc["dates"]) if (is_complete and acc["dates"]) else None
-            )
+
+            starts, finishes = acc["starts"], acc["finishes"]
+            conflicts = _describe_conflicts(starts, finishes)
+
+            # Earliest start wins, latest finish wins. An explicit assertion
+            # always beats the bare reported date, which stays a fallback for
+            # events that made no start/finish claim of their own.
+            if starts:
+                actual_start = min(a.value for a in starts)
+            elif acc["dates"] and pct > 0:
+                actual_start = min(acc["dates"])
+            else:
+                actual_start = None
+
+            # Actual Finish only when the node is actually complete. A
+            # withheld finish assertion is reported, not applied.
+            if is_complete:
+                if finishes:
+                    actual_finish = max(a.value for a in finishes)
+                elif acc["dates"]:
+                    actual_finish = max(acc["dates"])
+                else:
+                    actual_finish = None
+            else:
+                actual_finish = None
+                if finishes:
+                    conflicts.append(
+                        "finish asserted, but the evidence accounts for only "
+                        f"{pct:.1f}% of the node's planned quantity "
+                        f"({rec.planned_qty:g} {rec.uom}) - Actual Finish "
+                        "withheld, scope is partial: "
+                        + "; ".join(a.describe() for a in finishes)
+                    )
+
             out.append(RollupResult(
                 activity_id=aid,
                 n_events=len(acc["texts"]),
@@ -272,9 +336,35 @@ class RollupAccumulator:
                 is_complete=is_complete,
                 event_texts=list(acc["texts"]),
                 notes=acc["notes"],
+                start_assertions=starts,
+                finish_assertions=finishes,
+                conflicts=conflicts,
             ))
         out.sort(key=lambda r: (-r.n_events, r.activity_id))
         return out
+
+
+def _describe_conflicts(
+    starts: list[DateAssertion], finishes: list[DateAssertion]
+) -> list[str]:
+    """Record, rather than silently resolve, disagreements between sources.
+
+    Earliest-start-wins and latest-finish-wins still decide what gets
+    written, but a planner has to be able to see that two sources disagreed
+    and which one the surviving date came from.
+    """
+    conflicts: list[str] = []
+    for label, group in (("actual_start", starts), ("actual_finish", finishes)):
+        distinct = {a.value for a in group}
+        if len(distinct) <= 1:
+            continue
+        chosen = min(distinct) if label == "actual_start" else max(distinct)
+        conflicts.append(
+            f"{label}: {len(distinct)} sources disagree - "
+            + "; ".join(a.describe() for a in group)
+            + f" - applied {chosen.isoformat()}"
+        )
+    return conflicts
 
 
 def _qty_swallowed_by_tag(qty: float, tags: list[str]) -> bool:

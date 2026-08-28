@@ -43,10 +43,19 @@ INSTRUMENT_TAG_RE = re.compile(
 # Explicit dates: 03/08/2026, 2026-08-03, 03/Aug/2026, 3 Aug 2026
 DATE_DMY_SLASH_RE = re.compile(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b')
 DATE_ISO_RE = re.compile(r'\b(\d{4})-(\d{1,2})-(\d{1,2})\b')
+# The year is OPTIONAL: DPR prose routinely writes "completed 30 Jul" with
+# no year. A year-less date is resolved against the report's own header
+# date -- see resolve_yearless_date().
 DATE_DMY_ALPHA_RE = re.compile(
-    r'\b(\d{1,2})\s*/?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*/?\s*(\d{4})\b',
+    r'\b(\d{1,2})\s*/?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*'
+    r'(?:\s*/?\s*(\d{4})\b)?',
     re.IGNORECASE,
 )
+
+# A year-less date further from its report date than this sits near the
+# midpoint between two candidate years, so it is flagged as ambiguous
+# rather than guessed.
+YEARLESS_AMBIGUITY_DAYS = 183
 MONTH_MAP = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
@@ -104,9 +113,35 @@ DISCIPLINE_KEYWORDS: dict[Discipline, list[re.Pattern]] = {
 # ── Status keywords ──────────────────────────────────────────────────────────
 
 COMPLETED_RE = re.compile(
-    r'\b(complet|done|finished|passed|closed|all passed|'
+    r'\b(complet\w*|done|finished|passed|closed|all passed|'
     r'all \d+ .* (?:done|passed|complete|erected)|'
     r'khotom|ho gaya|kaam khatom)\b',
+    re.IGNORECASE,
+)
+
+# A completion verb with a date bound directly to it ("pour completed on
+# 30 Jul") is a local finish assertion, and stays one even when a later
+# clause in the same line is still open ("curing ongoing", "alignment
+# check pending"). Without this, a line's overall status would suppress a
+# completion the source states explicitly.
+_DATE_TOKEN = (
+    r'(?:yesterday|today'
+    r'|\d{4}-\d{1,2}-\d{1,2}'
+    r'|\d{1,2}/\d{1,2}/\d{4}'
+    r'|\d{1,2}\s*/?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*'
+    r'(?:\s*/?\s*\d{4})?)'
+)
+COMPLETION_WITH_DATE_RE = re.compile(
+    r'\b(?:complet\w*|done|finished|erected|poured|passed|closed)\b'
+    r'[\s,]*(?:on|by|upto|up to)?[\s,]*\(?\s*' + _DATE_TOKEN,
+    re.IGNORECASE,
+)
+
+# Verbs asserting that work BEGAN, as opposed to merely being under way.
+# Used to bind an extracted date to a start rather than a finish.
+STARTED_RE = re.compile(
+    r'\b(started|commenced|began|begun|mobilis\w*|mobiliz\w*|kicked off|'
+    r'shuru|chalu)\b',
     re.IGNORECASE,
 )
 IN_PROGRESS_RE = re.compile(
@@ -156,10 +191,59 @@ def extract_tags(text: str) -> list[str]:
     return tags
 
 
-def extract_dates(text: str, reference_date: Optional[date] = None) -> list[date]:
-    """Extract all dates from free text. Returns them in encounter order."""
+def resolve_yearless_date(
+    day: int, month: int, reference_date: date
+) -> tuple[Optional[date], Optional[str]]:
+    """Resolve a year-less date ("30 Jul") against the report's header date.
+
+    DPR prose omits the year constantly. The correct year is almost always
+    the one that puts the date nearest the report date, so the candidate
+    years either side are tried and the nearest is taken. Field reports
+    describe work already done, so a past reading wins a near-tie.
+
+    Returns (resolved_date, warning). A date further than
+    YEARLESS_AMBIGUITY_DAYS from the report date sits near the midpoint
+    between two candidate years and cannot be resolved safely, so it is
+    returned as (None, warning) to be flagged rather than guessed.
+    """
+    candidates: list[date] = []
+    for year in (reference_date.year - 1, reference_date.year, reference_date.year + 1):
+        try:
+            candidates.append(date(year, month, day))
+        except ValueError:
+            continue  # e.g. 29 Feb in a non-leap year
+    if not candidates:
+        return None, f"unparseable date: day {day} of month {month}"
+
+    def distance(d: date) -> int:
+        return abs((d - reference_date).days)
+
+    nearest = min(candidates, key=distance)
+    # Prefer a past reading when a future one is not clearly nearer:
+    # a DPR reporting completion refers to work already done.
+    past = [c for c in candidates if c <= reference_date]
+    if past:
+        nearest_past = max(past)
+        if distance(nearest_past) <= distance(nearest) + 31:
+            nearest = nearest_past
+
+    if distance(nearest) > YEARLESS_AMBIGUITY_DAYS:
+        return None, (
+            f"ambiguous year-less date {day:02d}/{month:02d} in a report dated "
+            f"{reference_date.isoformat()} - nearest reading {nearest.isoformat()} "
+            f"is {distance(nearest)} days away; not resolved"
+        )
+    return nearest, None
+
+
+def extract_dates_with_flags(
+    text: str, reference_date: Optional[date] = None
+) -> tuple[list[date], list[str]]:
+    """Extract dates in encounter order, plus warnings for anything that
+    could not be resolved safely."""
     dates: list[date] = []
     seen: set[date] = set()
+    warnings: list[str] = []
 
     def _add(d: date) -> None:
         if d not in seen:
@@ -177,11 +261,19 @@ def extract_dates(text: str, reference_date: Optional[date] = None) -> list[date
     for m in DATE_DMY_ALPHA_RE.finditer(text):
         day, mon_str, year = m.groups()
         mon = MONTH_MAP.get(mon_str[:3].lower())
-        if mon:
+        if not mon:
+            continue
+        if year:
             try:
                 _add(date(int(year), mon, int(day)))
             except ValueError:
                 pass
+        else:
+            resolved, warning = resolve_yearless_date(int(day), mon, ref)
+            if resolved is not None:
+                _add(resolved)
+            elif warning:
+                warnings.append(warning)
 
     for m in DATE_DMY_SLASH_RE.finditer(text):
         d, mo, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -205,7 +297,12 @@ def extract_dates(text: str, reference_date: Optional[date] = None) -> list[date
             _add(ref + timedelta(days=1))
         # "last week", "this week", "next week" are too vague to resolve
 
-    return dates
+    return dates, warnings
+
+
+def extract_dates(text: str, reference_date: Optional[date] = None) -> list[date]:
+    """Extract all dates from free text. Returns them in encounter order."""
+    return extract_dates_with_flags(text, reference_date)[0]
 
 
 def extract_quantities(text: str) -> list[tuple[float, str]]:

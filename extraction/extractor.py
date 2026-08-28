@@ -31,7 +31,11 @@ from .models import (
     Provenance,
 )
 from .prepass import (
+    COMPLETED_RE,
+    COMPLETION_WITH_DATE_RE,
+    STARTED_RE,
     extract_dates,
+    extract_dates_with_flags,
     extract_fractions,
     extract_percentages,
     extract_quantities,
@@ -146,6 +150,9 @@ class Extractor:
             hints = prepass_results[i]
             llm_out = llm_outputs[i] if i < len(llm_outputs) else None
 
+            for warning in hints.get("date_warnings", []):
+                result.warnings.append(f"line:{line_num} {warning}")
+
             event = self._merge_event(
                 span_text, line_num, path.name, hints, llm_out, report_date
             )
@@ -246,7 +253,7 @@ class Extractor:
         ref = report_date or self.reference_date
 
         tags = extract_tags(text)
-        dates = extract_dates(text, ref)
+        dates, date_warnings = extract_dates_with_flags(text, ref)
         quantities = extract_quantities(text)
         percentages = extract_percentages(text)
         fractions = extract_fractions(text)
@@ -263,6 +270,7 @@ class Extractor:
         return {
             "tags": tags,
             "dates": [d.isoformat() for d in dates],
+            "date_warnings": date_warnings,
             "quantities": quantities,
             "percentages": percentages,
             "fractions": fractions,
@@ -332,6 +340,10 @@ class Extractor:
         if reported_date is None:
             reported_date = report_date
 
+        asserted_start, asserted_finish = self._bind_assertion_dates(
+            span_text, status, hints, reported_date
+        )
+
         # Compute confidence based on signal strength
         confidence = self._compute_confidence(hints, llm_output)
 
@@ -339,6 +351,8 @@ class Extractor:
             raw_text=span_text,
             tags=tags,
             reported_date=reported_date,
+            asserted_start=asserted_start,
+            asserted_finish=asserted_finish,
             discipline=discipline,
             status=status,
             percentage=pct,
@@ -355,6 +369,53 @@ class Extractor:
                 method=method,
             ),
         )
+
+    def _bind_assertion_dates(
+        self, text: str, status: str, hints: dict, reported_date: Optional[date]
+    ) -> tuple[Optional[date], Optional[date]]:
+        """Decide whether this line asserts a start date, a finish date, both,
+        or neither, and bind the extracted dates to those claims.
+
+        A start claim comes from an explicit start verb ("started today").
+        A finish claim comes from the inferred status rather than the raw
+        completion verb, because infer_status already resolves the common
+        ambiguity where a progress line reads "about 40% done" -- that leans
+        in_progress and must not be read as a completion.
+
+        When the line makes both claims and carries two dates, they bind
+        positionally in the order the verbs appear. When a claim is made with
+        no in-span date, the report's own date carries it.
+        """
+        dates = [date.fromisoformat(d) for d in hints.get("dates", [])]
+
+        claims_start = bool(STARTED_RE.search(text))
+        claims_finish = (
+            (status == "completed" and bool(COMPLETED_RE.search(text)))
+            # ... or a completion verb with a date bound directly to it, which
+            # survives an unrelated open clause later in the same line.
+            or bool(COMPLETION_WITH_DATE_RE.search(text))
+        )
+
+        if not claims_start and not claims_finish:
+            return None, None
+
+        if claims_start and claims_finish:
+            if len(dates) >= 2:
+                start_at = STARTED_RE.search(text)
+                finish_at = (
+                    COMPLETION_WITH_DATE_RE.search(text)
+                    or COMPLETED_RE.search(text)
+                )
+                if start_at and finish_at and start_at.start() > finish_at.start():
+                    return dates[1], dates[0]
+                return dates[0], dates[1]
+            # "started and completed on X" -- one date carries both claims
+            single = dates[0] if dates else reported_date
+            return single, single
+
+        if claims_finish:
+            return None, (dates[0] if dates else reported_date)
+        return (dates[0] if dates else reported_date), None
 
     def _compute_confidence(self, hints: dict, llm_output) -> float:
         """Estimate extraction confidence based on available signals."""

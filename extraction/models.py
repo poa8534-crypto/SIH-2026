@@ -90,6 +90,22 @@ class ExtractedEvent(BaseModel):
         None,
         description="Date mentioned in the text (yesterday, today, explicit)",
     )
+    asserted_start: Optional[date] = Field(
+        None,
+        description=(
+            "Date this event asserts work BEGAN on, when the source says so "
+            "(a start verb in free text, or a 'Commenced' column). None when "
+            "the event makes no start claim."
+        ),
+    )
+    asserted_finish: Optional[date] = Field(
+        None,
+        description=(
+            "Date this event asserts work COMPLETED on, when the source says "
+            "so. None when the event makes no completion claim - including a "
+            "forecast completion date for work still in progress."
+        ),
+    )
     quantity: Optional[float] = Field(None, description="Numeric quantity mentioned")
     uom: Optional[str] = Field(None, description="Unit of measurement")
     discipline: Discipline = Field(Discipline.UNKNOWN, description="Inferred discipline")

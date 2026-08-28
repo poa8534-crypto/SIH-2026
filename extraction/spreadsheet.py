@@ -341,15 +341,40 @@ class SpreadsheetParser:
             "delayed": "delayed",
         }
         status = status_map.get(status_str, "unknown")
+        if status == "unknown":
+            # Not every register has a Status column - the civil sheet carries
+            # its completion signal in Remarks ("Complete").
+            remarks_str = str(row_data.get("remarks", "") or "").strip().lower()
+            for key, mapped in status_map.items():
+                if key in remarks_str:
+                    status = mapped
+                    break
         if status == "unknown" and pct is not None:
             if pct >= 100:
                 status = "completed"
             elif pct > 0:
                 status = "in_progress"
 
-        # Date fields
+        # Date fields. One row asserts BOTH dates: the commencement column is
+        # an actual start, and the completion column is an actual finish --
+        # but ONLY for a row that is genuinely complete. These headers read
+        # "Actual / Est. Completion" and "End Date": for a row still in
+        # progress the value is a forecast, and writing a forecast as an
+        # actual finish would corrupt the schedule.
         start_date = coerce_date(row_data.get("start_date"))
         end_date = coerce_date(row_data.get("end_date"))
+
+        row_is_complete = (
+            status == "completed"
+            or (pct is not None and pct >= 100)
+            or (
+                achieved_qty is not None
+                and planned_qty is not None
+                and planned_qty > 0
+                and achieved_qty >= planned_qty
+            )
+        )
+        asserted_finish = end_date if row_is_complete else None
 
         # Tags from tag column
         tags = []
@@ -360,9 +385,12 @@ class SpreadsheetParser:
         return ExtractedEvent(
             raw_text=raw_text,
             tags=tags,
-            # Completion column first (these registers report finished work);
-            # commencement date is the fallback when it is blank.
+            # reported_date stays the single date the matcher scores against
+            # (see matching/features.py _date_proximity); the asserted pair
+            # below is what reaches the schedule.
             reported_date=end_date or start_date,
+            asserted_start=start_date,
+            asserted_finish=asserted_finish,
             quantity=achieved_qty or planned_qty,
             uom=str(row_data.get("uom", "") or "").strip() or None,
             discipline=discipline,

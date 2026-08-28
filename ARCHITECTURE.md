@@ -196,6 +196,8 @@ One progress assertion before linking.
   },
   "event_type": "PROGRESS",
   "reported_date": "2026-03-10",
+  "asserted_start": null,
+  "asserted_finish": "2026-03-10",
   "description_text": "spool erected for line 24-P-1001 upto gridline 7",
   "tags_found": ["24\"-P-1001"],
   "discipline_inferred": "PIPING",
@@ -222,10 +224,47 @@ PROGRESS
 BLOCKED
 ```
 
-The date is resolved from the span itself where the text carries one, and
-otherwise defaults to the source's report date (the DPR header date, or the
-completion column for a spreadsheet register). Recording *which* of those
-two produced the date — the `date_basis` provenance field — was deferred.
+### Dates: one reported, two asserted
+
+An event carries three dates, and they do different jobs.
+
+`reported_date` is the single date the **matcher** scores against (the
+`date_proximity` feature). It is resolved from the span itself where the text
+carries a date, and otherwise defaults to the source's report date — the DPR
+header date, or the completion column of a spreadsheet register. It is
+always populated. Recording *which* of those produced it — the `date_basis`
+provenance field — was deferred.
+
+`asserted_start` and `asserted_finish` are what reaches the **schedule**.
+Either may be null, and most events assert only one: a line reading
+"backfilling started today" asserts a start and no finish. They exist
+because a single date slot cannot express both ends of an activity, which
+left every activity with `actual_start == actual_finish` and a fictitious
+start variance.
+
+How the two are bound:
+
+- **Free text** binds by verb. An explicit start verb ("started",
+  "commenced", "mobilised") asserts a start. A completion is taken from the
+  line's inferred status, so that a progress line reading "about 40% done"
+  leans `in_progress` and is not misread as a completion. A completion verb
+  with a date bound directly to it ("pour completed on 30 Jul") asserts a
+  finish even when a later clause in the same line is still open ("curing
+  ongoing"). When a line makes both claims and carries two dates, they bind
+  positionally in the order the verbs appear. When a claim carries no
+  in-span date, the report's own date carries it.
+- **Spreadsheets** assert both from one row: the commencement column is an
+  actual start, and the completion column is an actual finish — but only for
+  a row that is genuinely complete. Headers like `Actual / Est. Completion`
+  and `End Date` hold a *forecast* for a row still in progress, and writing
+  a forecast as an actual finish would corrupt the schedule.
+
+Year-less dates ("completed 30 Jul") are resolved against the report's own
+header date by taking the candidate year that puts the date nearest that
+report date, preferring a past reading on a near-tie because field reports
+describe work already done. A date further than ~6 months from the report
+date sits near the midpoint between two candidate years, so it is flagged as
+ambiguous and left unresolved rather than guessed.
 
 **Provenance is non-negotiable.** It is the spine of the audit trail.
 
@@ -328,6 +367,11 @@ Append-only record created for every field mutation.
     "finish_ge_start",
     "predecessor_started"
   ],
+  "contributing_sources": [
+    "2026-07-12 from civil_progress.xlsx \"Pedestal Concreting P1-P12\"",
+    "2026-08-02 from dpr_day_01.txt \"pedestals P7 to P12 completed yesterday\""
+  ],
+  "conflict": true,
   "created_at": "2026-03-11T20:14:03+05:30"
 }
 ```
@@ -342,6 +386,28 @@ percent_complete
 ```
 
 The audit log has **no update path**. Corrections create a new record instead of mutating historical records.
+
+### Conflicting sources are recorded, never silently resolved
+
+Two sources routinely disagree about one node: a full-scope spreadsheet row
+says a node finished 12 Jul, while a partial-scope DPR line says pedestals
+P7–P12 completed 2 Aug. Precedence is **earliest start wins, latest finish
+wins**, but the losing claim is not discarded. Every source that asserted a
+value is listed in `contributing_sources`, `conflict` is set on the write it
+affects, and the disagreement surfaces on `GET /schedule` as an
+`integrity_warnings` entry with `severity: "conflict"`. A planner has to be
+able to see that the surviving date came from a partial-scope line.
+
+### Partial scope must not finish a whole node
+
+A completion mention that covers part of a node's scope must not set Actual
+Finish on the whole node. On a node measured by quantity, a completion
+asserted *without* a quantity is recorded as progress only — the quantity
+roll-up decides completion, and the finish assertion is withheld and
+reported. A DPR line completing pedestals P7–P12 therefore cannot finish a
+P1–P12 node on its own. Only an unquantified node (a milestone), where a
+completion claim is all the evidence there will ever be, completes on the
+claim alone.
 
 ---
 
@@ -543,3 +609,62 @@ Even under severe time pressure, keep:
 - at least one institutional-memory query
 
 Those five elements are the core pitch. Everything else is packaging.
+
+---
+
+# 7. Known Limitations
+
+Recorded deliberately, so they can be answered directly if asked rather
+than discovered during a demo. Both are known and understood, not
+undiscovered bugs.
+
+## A. A dateless completion in a mixed-status line registers no finish
+
+A finish is asserted either when the line's inferred status is `completed`,
+or when a completion verb has a date bound directly to it ("pour completed
+on 30 Jul"). A line whose overall status is *not* `completed`, and whose
+completion verb carries no date of its own, therefore asserts no finish.
+
+For example, "Tank TK-1 shell erection going good — currently on 4th course
+(lower courses 1-3 completed)" registers no finish date. The parenthetical
+completion refers to a sub-scope, the line as a whole reads `in_progress`,
+and no date is bound to the word "completed".
+
+This is a deliberate precision-first trade, not an oversight. The same rule
+is what stops "about 40% done" from being read as a completion — reading
+every stray completion verb as a finish would write false Actual Finish
+dates onto live schedule nodes, which is the more expensive error. The cost
+is that a completion stated without a date, in a line that is otherwise
+about work in progress, is missed. The quantity roll-up still captures the
+progress itself, so the node is not lost — only the finish date is.
+
+## B. `eval.py` measures the matcher, not the system end to end
+
+`eval.py` builds its `ExtractedEvent` objects directly from
+`dataset/ground_truth.csv` (`_build_event`), reading the labelled mention
+text and the `source_date` column. It does **not** call `Extractor` or
+`SpreadsheetParser`.
+
+So its metrics — top-1 accuracy, precision, coverage, auto-link precision —
+measure **retrieval, feature scoring, and the decision thresholds on clean,
+correctly-dated input**. They are honest numbers for the matcher. They are
+not end-to-end system numbers, and they will not move when extraction
+changes.
+
+This has already cost us once. Extraction was silently dropping every date
+on the real ingest path while `eval.py`, feeding the matcher dates straight
+from the ground-truth CSV, continued to report healthy figures. The bug was
+invisible to the metrics table and only surfaced through `GET /schedule`
+reporting `activities_with_actuals: 0`.
+
+The practical consequences:
+
+- A regression in `extraction/` will not show up in the metrics table.
+  Verify extraction changes against the API (`POST /ingest` then
+  `GET /schedule`), not against `eval.py`.
+- Quote these numbers as matcher performance. Describing them as end-to-end
+  accuracy would overstate what has been measured.
+
+Closing this would mean a second evaluation path that runs the real
+extractors over the source files and aligns their output to ground truth by
+provenance span. That is worthwhile but was not built.

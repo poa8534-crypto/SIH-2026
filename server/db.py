@@ -148,6 +148,10 @@ class LinkedEvent(Base):
     raw_text = Column(Text, nullable=False)
     tags = Column(Text, nullable=False, default="")  # JSON list
     reported_date = Column(Date, nullable=True)
+    # What this event actually claims about the activity's timeline. Either
+    # may be null: most lines assert only one of the two.
+    asserted_start = Column(Date, nullable=True)
+    asserted_finish = Column(Date, nullable=True)
     quantity = Column(Float, nullable=True)
     uom = Column(String, nullable=True)
     discipline = Column(String, nullable=False, default="unknown")
@@ -223,6 +227,13 @@ class AuditRecord(Base):
     # Provenance
     model_version = Column(String, nullable=False, default="prepass-v1")
     auto_applied = Column(Boolean, nullable=False, default=False)
+
+    # Every source that contributed a value for this field, as JSON. Populated
+    # when more than one source asserted the field so that a planner can see
+    # the disagreement and which source the written value came from, rather
+    # than one silently overwriting the other.
+    contributing_sources = Column(Text, nullable=True)
+    conflict = Column(Boolean, nullable=False, default=False)
 
     created_at = Column(DateTime, default=_now)
 
