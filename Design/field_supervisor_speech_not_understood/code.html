@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Supervisor — Speech Not Understood</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#722b00",
+                      "tertiary-container": "#983c00",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#f0f0f9",
+                      "secondary-container": "#98bcfe",
+                      "on-secondary-container": "#224b85",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed": "#001a40",
+                      "on-tertiary-container": "#ffc2a7",
+                      "primary-fixed-dim": "#acc7ff",
+                      "on-surface": "#191c21",
+                      "surface-container": "#ededf6",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface-bright": "#f9f9ff",
+                      "secondary-fixed-dim": "#aac7ff",
+                      "tertiary-fixed-dim": "#ffb694",
+                      "secondary": "#385e9a",
+                      "inverse-primary": "#acc7ff",
+                      "on-background": "#191c21",
+                      "primary-container": "#0056b3",
+                      "on-error-container": "#93000a",
+                      "on-primary-container": "#bbd0ff",
+                      "background": "#f9f9ff",
+                      "error-container": "#ffdad6",
+                      "inverse-surface": "#2e3037",
+                      "surface": "#f9f9ff",
+                      "error": "#ba1a1a",
+                      "on-tertiary": "#ffffff",
+                      "surface-dim": "#d9d9e2",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed-variant": "#1c4681",
+                      "on-secondary-fixed": "#001b3e",
+                      "tertiary-fixed": "#ffdbcc",
+                      "surface-tint": "#115cb9",
+                      "surface-variant": "#e1e2ea",
+                      "primary-fixed": "#d7e2ff",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#f2f3fc",
+                      "surface-container-highest": "#e1e2ea",
+                      "outline-variant": "#c2c6d4",
+                      "outline": "#727784",
+                      "secondary-fixed": "#d6e3ff",
+                      "on-tertiary-fixed": "#351000",
+                      "surface-container-high": "#e7e8f0",
+                      "on-surface-variant": "#424752",
+                      "primary": "#003f87",
+                      "on-primary-fixed-variant": "#004491"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "16px",
+                      "stack-lg": "32px",
+                      "unit": "4px",
+                      "stack-sm": "8px",
+                      "container-padding": "24px",
+                      "stack-md": "16px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen pb-24">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-on-background w-full h-16 border-b border-outline-variant flex justify-between items-center px-container-padding sticky top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">NAVIS</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Supervisor Profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A small circular profile picture of a construction site supervisor wearing a white hard hat. The supervisor is a middle-aged man with a short beard. The background is slightly blurred showing a busy construction site during daytime. The lighting is bright and natural." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmMRynZrJpmKZJCcOHDDLLb-6RXIUhNRiiUdnj9ORruQ0deJysDckoIZEPHTthQ8HcNImZlk9uAk7Tp3XMe2lInf5WOIQyvLq8EZikpUQBlW2rSu3xteUj66IHQ46MsKOgDGd3g105QIe7yD0KphCNLHKyv1u2BreXUUh_f0-lR59-RVnATdJDd9JLF_dgiIBz6FKRhQeto0V-IpwBa1OvmRqZ4A52FaONSG3KliDznAQpL8Tj_hYqEA"/>
+</div>
+</header>
+<main class="px-gutter pt-stack-md flex flex-col gap-stack-lg max-w-3xl mx-auto">
+<!-- Project Context Header -->
+<section class="flex justify-between items-end border-b border-outline-variant pb-stack-sm">
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-1">OIL Well-Site Duliajan</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Sector A · Digboi Well #4</p>
+</div>
+<div class="bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant">
+<span class="font-label-md text-label-md text-primary">Active</span>
+</div>
+</section>
+<!-- Speech Not Understood Panel -->
+<section class="bg-surface border border-outline-variant rounded-lg p-container-padding flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-outline text-4xl mb-stack-sm" data-icon="mic_off">mic_off</span>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-unit">We couldn’t understand that recording</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">Try speaking again, or type your response.</p>
+<div class="flex flex-col w-full gap-stack-sm">
+<button class="bg-primary text-on-primary font-label-md text-label-md py-3 px-6 rounded flex items-center justify-center gap-2 hover:opacity-90 transition-opacity w-full">
+<span class="material-symbols-outlined" data-icon="mic">mic</span>
+                    Record Again
+                </button>
+<button class="bg-surface text-primary border border-primary font-label-md text-label-md py-3 px-6 rounded flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors w-full">
+<span class="material-symbols-outlined" data-icon="keyboard">keyboard</span>
+                    Type Response
+                </button>
+</div>
+</section>
+<!-- Needs Your Response Section -->
+<section>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-md border-b border-outline-variant pb-unit">Needs Your Response</h3>
+<div class="flex flex-col gap-stack-md">
+<!-- Clarification Card -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md">
+<div class="flex justify-between items-start mb-stack-sm border-b border-outline-variant pb-unit">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">FR-2026-08-23-C</span>
+<span class="bg-surface-container-high text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">High Priority</span>
+</div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface mb-unit">Clarification on HVAC Duct Routing</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-sm">Structural beam interfering with planned duct path in Zone 3.</p>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+                        View Details <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Recent Updates Section -->
+<section>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-md border-b border-outline-variant pb-unit">Recent Updates</h3>
+<div class="flex flex-col gap-stack-md">
+<!-- Update Card -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex gap-stack-md">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="engineering">engineering</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-md text-label-md font-bold text-on-surface">Electrical</span>
+<span class="font-label-md text-label-md text-on-surface-variant text-[10px]">10:30 AM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Completed wiring for 3rd-floor server room. Moving to testing phase.</p>
+</div>
+</div>
+<!-- Update Card -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex gap-stack-md">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="valve">valve</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-md text-label-md font-bold text-on-surface">Piping</span>
+<span class="font-label-md text-label-md text-on-surface-variant text-[10px]">09:15 AM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Delayed start on main water line due to material delivery delay. Expected start 1 PM.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface dark:bg-on-background docked full-width bottom-0 md:hidden fixed left-0 w-full z-50 flex justify-around items-center h-16 px-2 border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl py-1 px-4 cursor-pointer tap-highlight-transparent">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md-mobile mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer tap-highlight-transparent active:bg-surface-container-high rounded-xl py-1 px-2">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-md text-label-md-mobile mt-1">Reports</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer tap-highlight-transparent active:bg-surface-container-high rounded-xl py-1 px-2">
+<span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+<span class="font-label-md text-label-md-mobile mt-1">Clarifications</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer tap-highlight-transparent active:bg-surface-container-high rounded-xl py-1 px-2">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md-mobile mt-1">Profile</span>
+</div>
+</nav>
+</body></html>

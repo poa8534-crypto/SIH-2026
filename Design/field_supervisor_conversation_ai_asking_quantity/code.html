@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NAVIS - Field Supervisor Conversation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 24px;
+        }
+        .bar {
+            width: 4px;
+            background-color: #003f87; /* primary */
+            border-radius: 2px;
+            animation: pulse 1s infinite ease-in-out;
+        }
+        .bar:nth-child(1) { animation-delay: 0.1s; height: 12px; }
+        .bar:nth-child(2) { animation-delay: 0.3s; height: 20px; }
+        .bar:nth-child(3) { animation-delay: 0.5s; height: 16px; }
+        .bar:nth-child(4) { animation-delay: 0.2s; height: 24px; }
+        .bar:nth-child(5) { animation-delay: 0.4s; height: 14px; }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.7; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#727784",
+                        "surface-bright": "#f9f9ff",
+                        "on-surface": "#191c21",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "surface-container-high": "#e7e8f0",
+                        "tertiary": "#722b00",
+                        "on-background": "#191c21",
+                        "on-secondary-fixed": "#001b3e",
+                        "primary-fixed-dim": "#acc7ff",
+                        "surface-tint": "#115cb9",
+                        "on-primary-container": "#bbd0ff",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-container": "#224b85",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-tertiary-container": "#ffc2a7",
+                        "surface": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "on-tertiary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#acc7ff",
+                        "surface-container-low": "#f2f3fc",
+                        "tertiary-fixed": "#ffdbcc",
+                        "primary-container": "#0056b3",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#983c00",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e2ea",
+                        "inverse-surface": "#2e3037",
+                        "surface-container-highest": "#e1e2ea",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "surface-dim": "#d9d9e2",
+                        "surface-container": "#ededf6",
+                        "secondary-container": "#98bcfe",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#d6e3ff",
+                        "primary": "#003f87",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#385e9a",
+                        "on-surface-variant": "#424752",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-primary-fixed": "#001a40",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "background": "#f9f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "stack-lg": "32px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background h-full w-full flex flex-col font-body-md text-body-md overflow-hidden max-w-[390px] mx-auto border-x border-outline-variant relative">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky border-b border-outline-variant bg-surface text-primary transition-colors duration-200 flex flex-col px-gutter pt-[44px] pb-stack-sm z-50">
+<div class="flex items-center justify-between w-full h-12">
+<button class="text-primary hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="construction">construction</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">NAVIS</span>
+</div>
+<button class="text-primary hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<div class="w-full flex justify-center mt-unit">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Data Entry Session</span>
+</div>
+</header>
+<!-- Canvas (Conversation Area) -->
+<main class="flex-1 overflow-y-auto px-gutter py-stack-md flex flex-col gap-stack-lg bg-background">
+<!-- Message Group: Supervisor Initial -->
+<div class="flex flex-col gap-stack-sm w-full items-end">
+<div class="flex items-center gap-2 mb-unit">
+<span class="font-label-md text-label-md text-on-surface-variant">Supervisor</span>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg rounded-tr-none px-stack-md py-stack-sm max-w-[85%] text-on-surface">
+<p class="font-body-md text-body-md">spool erection...</p>
+</div>
+</div>
+<!-- Message Group: Assistant -->
+<div class="flex flex-col gap-stack-sm w-full items-start">
+<div class="flex items-center gap-2 mb-unit">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-md text-label-md text-primary">NAVIS Assistant</span>
+</div>
+<div class="bg-surface-container-low border border-primary-fixed-dim rounded-lg rounded-tl-none px-stack-md py-stack-sm max-w-[85%] text-on-surface">
+<p class="font-body-md text-body-md">Which date was it completed?</p>
+</div>
+</div>
+<!-- Message Group: Supervisor Reply -->
+<div class="flex flex-col gap-stack-sm w-full items-end">
+<div class="flex items-center gap-2 mb-unit">
+<span class="font-label-md text-label-md text-on-surface-variant">Supervisor</span>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg rounded-tr-none px-stack-md py-stack-sm max-w-[85%] text-on-surface">
+<p class="font-body-md text-body-md">yesterday</p>
+</div>
+</div>
+<!-- Message Group: Assistant Current -->
+<div class="flex flex-col gap-stack-sm w-full items-start">
+<div class="flex items-center gap-2 mb-unit">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-md text-label-md text-primary">NAVIS Assistant</span>
+</div>
+<div class="bg-primary border border-primary rounded-lg rounded-tl-none px-stack-md py-stack-sm max-w-[85%] text-on-primary shadow-sm">
+<p class="font-body-md text-body-md">How many were completed out of the planned quantity?</p>
+</div>
+</div>
+<!-- Spacer for bottom controls -->
+<div class="h-32"></div>
+</main>
+<!-- Bottom Controls Area -->
+<div class="absolute bottom-0 w-full bg-surface border-t border-outline-variant px-gutter pt-stack-md pb-container-padding flex flex-col gap-stack-md z-40">
+<!-- Active Speaking Indicator -->
+<div class="flex items-center justify-center gap-stack-sm w-full">
+<div class="waveform">
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+<span class="font-label-md text-label-md text-primary animate-pulse">NAVIS Assistant is speaking...</span>
+</div>
+<!-- Input Actions -->
+<div class="flex flex-col gap-stack-sm w-full">
+<button class="w-full bg-primary text-on-primary py-3 rounded flex items-center justify-center gap-2 hover:bg-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 focus:ring-offset-surface">
+<span class="material-symbols-outlined" data-icon="mic">mic</span>
+<span class="font-label-md text-label-md font-semibold uppercase">Answer by Voice</span>
+</button>
+<div class="relative w-full">
+<input class="w-full border border-outline-variant rounded bg-surface px-stack-md py-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all pr-12" placeholder="Type your answer..." type="text"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 text-primary p-2 hover:bg-surface-container-low rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

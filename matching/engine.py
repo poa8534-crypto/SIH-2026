@@ -276,16 +276,20 @@ class RollupAccumulator:
         prov = getattr(event, "provenance", None)
         src_file = getattr(prov, "source_file", "") or decision.source_file or ""
         src_span = getattr(prov, "source_span", "") or decision.raw_text or ""
+        src_line = getattr(prov, "source_line", None)
+        src_row = getattr(prov, "source_row", None)
 
         if getattr(event, "asserted_start", None):
             acc["starts"].append(DateAssertion(
                 field="actual_start", value=event.asserted_start,
                 source_file=src_file, source_span=src_span,
+                source_line=src_line, source_row=src_row,
             ))
         if getattr(event, "asserted_finish", None):
             acc["finishes"].append(DateAssertion(
                 field="actual_finish", value=event.asserted_finish,
                 source_file=src_file, source_span=src_span,
+                source_line=src_line, source_row=src_row,
             ))
 
         if event.reported_date:

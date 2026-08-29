@@ -1,0 +1,326 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>NAVIS Field - Supervisor Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#acc7ff",
+                        "outline-variant": "#c2c6d4",
+                        "inverse-primary": "#acc7ff",
+                        "on-primary-container": "#bbd0ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary-fixed": "#001b3e",
+                        "secondary-container": "#98bcfe",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-tertiary-fixed": "#351000",
+                        "on-tertiary-container": "#ffc2a7",
+                        "on-surface-variant": "#424752",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "tertiary-container": "#983c00",
+                        "tertiary": "#722b00",
+                        "surface-container": "#ededf6",
+                        "on-secondary-container": "#224b85",
+                        "error": "#ba1a1a",
+                        "outline": "#727784",
+                        "surface-container-low": "#f2f3fc",
+                        "secondary-fixed": "#d6e3ff",
+                        "surface-container-high": "#e7e8f0",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#0056b3",
+                        "surface-dim": "#d9d9e2",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e1e2ea",
+                        "surface-variant": "#e1e2ea",
+                        "primary-fixed": "#d7e2ff",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c21",
+                        "primary": "#003f87",
+                        "secondary": "#385e9a",
+                        "on-surface": "#191c21",
+                        "surface": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#115cb9",
+                        "on-primary-fixed": "#001a40",
+                        "inverse-surface": "#2e3037"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-padding": "24px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="bg-surface dark:bg-background docked h-screen left-0 w-64 border-r border-outline-variant flat no shadows hidden lg:flex flex-col py-stack-lg z-20 shrink-0">
+<div class="px-container-padding mb-stack-md flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded flex items-center justify-center text-on-primary-container font-bold text-headline-md">
+                N
+            </div>
+<div>
+<h1 class="text-headline-md font-headline-md font-black text-primary dark:text-primary-fixed-dim">NAVIS Field</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">AI-Assisted Construction</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 mt-4 space-y-1">
+<!-- Home (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-surface-container-low text-primary dark:text-primary-fixed-dim font-bold border-r-4 border-primary duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined icon-filled">home</span>
+<span class="text-body-md font-body-md">Home</span>
+</a>
+<!-- New Report -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-dim transition-all duration-200 ease-in-out cursor-pointer" href="#"><span class="material-symbols-outlined">add_notes</span><span class="text-body-md font-body-md">Submit Update</span></a>
+<!-- My Reports -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-dim transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-body-md font-body-md">My Reports</span>
+</a>
+<!-- Clarifications -->
+<a class="flex items-center justify-between px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-dim transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">help_center</span>
+<span class="text-body-md font-body-md">Clarifications</span>
+</div>
+<span class="bg-error text-on-error text-[10px] font-bold px-2 py-0.5 rounded-full">1</span>
+</a>
+<!-- Profile -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-dim transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-body-md font-body-md">Profile</span>
+</a>
+</div>
+<div class="px-4 mt-auto mb-stack-md space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-container dark:hover:bg-surface-dim transition-all duration-200 ease-in-out cursor-pointer" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-body-md font-body-md">Logout</span>
+</a>
+</div>
+<div class="px-container-padding py-4 border-t border-outline-variant flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of an Indian male field supervisor in his late 30s wearing a high-visibility construction vest and hard hat. The lighting is bright and even, conveying a clean, modern corporate construction aesthetic. The background is a soft, out-of-focus white site trailer interior. Sharp focus on the face." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnPqifr6DHZgXE2lkYtXa4s4WQm69k8__LZ7A5kyZ40bd1FtyAgena85ClYePeHL3OFsZfEvGAvrc6fOQtcwesApuqGm16RiT2sJkLyESIWDiyMDEcuZf_xRZqnLOqCUuR11u9W6W9brhKZx6oNxCAWJ_xWpDgmcgFzdtFkoltrKqi_yvcPVmSDotKxN1sk2ko0NjhHVXnR_xf-KwZ-vibe4_TWE8rFjOamqEeapp_pBBtkJiynXO5Sg">
+</div>
+<div class="overflow-hidden">
+<p class="text-body-md font-bold text-on-surface truncate">Rajesh Kumar</p>
+<p class="text-label-md text-on-surface-variant truncate">FIELD SUPERVISOR</p>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-background docked full-width top-0 border-b border-outline-variant flat no shadows flex justify-between items-center w-full px-container-padding h-16 shrink-0 z-10">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="text-label-md font-label-md font-bold text-primary dark:text-primary-fixed-dim uppercase tracking-wider truncate hidden md:block">Well-Site Development &amp; Gathering Pipeline Project</span>
+<span class="text-outline-variant mx-2 hidden md:block">|</span>
+<span class="text-body-md font-body-md font-medium text-on-surface truncate">OIL-WSD-2026</span>
+<span class="material-symbols-outlined text-outline text-sm mx-1">chevron_right</span>
+<span class="text-body-md font-body-md font-medium text-on-surface truncate">Sector A · Digboi Well #4</span>
+</div>
+<div class="flex items-center gap-4 shrink-0 ml-4">
+<div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-label-md text-on-surface-variant font-medium">Connected</span>
+</div>
+<div class="hidden sm:flex items-center gap-1 cursor-pointer hover:bg-surface-container-low p-2 rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">language</span>
+<span class="text-label-md font-bold">EN</span>
+</div>
+</div>
+</header>
+<!-- Scrollable Canvas -->
+<div class="flex-1 overflow-y-auto p-4 md:p-container-padding">
+<div class="max-w-[1280px] mx-auto">
+<!-- Page Header -->
+<div class="mb-stack-lg">
+<h2 class="text-headline-lg md:text-display-lg font-headline-lg font-bold text-[#0B3B75] mb-2 tracking-tight">Good afternoon, Rajesh</h2>
+<p class="text-body-lg text-on-surface-variant">Report progress for the work fronts you supervise.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column (Primary Tasks) -->
+<div class="lg:col-span-8 flex flex-col gap-stack-md">
+<!-- Submit Update Card -->
+<div class="bg-surface rounded-xl border border-outline-variant overflow-hidden flex flex-col">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+<h3 class="text-headline-md font-bold text-[#0B3B75] flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">edit_document</span>
+                                    Submit an Update
+                                </h3>
+</div>
+<div class="p-6 flex-1 flex flex-col gap-5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="text-label-md font-bold text-on-surface-variant">Work-front</label>
+<select class="w-full bg-surface border border-outline-variant text-body-md rounded-md focus:ring-1 focus:ring-primary focus:border-primary p-2.5 h-10">
+<option>Sector A · Digboi Well #4</option>
+<option>Sector B · Pipeline Route</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-md font-bold text-on-surface-variant">Discipline</label>
+<select class="w-full bg-surface border border-outline-variant text-body-md rounded-md focus:ring-1 focus:ring-primary focus:border-primary p-2.5 h-10">
+<option>Civil</option>
+<option>Piping</option>
+<option>Static Equipment</option>
+<option>Electrical</option>
+<option>Instrumentation</option>
+<option>HSE</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<label class="text-label-md font-bold text-on-surface-variant">Update Narrative</label>
+<textarea class="w-full bg-surface border border-outline-variant text-body-md rounded-md focus:ring-1 focus:ring-primary focus:border-primary p-3 resize-none" placeholder="e.g. P-201 alignment completed today. Ready for bolting." rows="4"></textarea>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-md text-primary hover:bg-surface-container-low transition-colors text-body-md font-medium">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+                                            Record Voice
+                                        </button>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-bright flex flex-col sm:flex-row justify-between items-center gap-4">
+<span class="text-label-md text-outline italic">Nothing is added to the project schedule from this screen.</span>
+<button class="w-full sm:w-auto px-6 py-2.5 bg-primary-container text-on-primary-container rounded-md font-medium text-body-md hover:bg-primary transition-colors flex items-center justify-center gap-2">
+                                    Review Update
+                                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Recent Updates List -->
+<div class="bg-surface rounded-xl border border-outline-variant overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
+<h3 class="text-body-lg font-bold text-[#0B3B75]">Recent Updates</h3>
+<button class="text-primary text-body-md font-medium hover:underline">View All</button>
+</div>
+<div class="divide-y divide-outline-variant">
+<!-- Item 1 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-[#E8F0FF] flex items-center justify-center text-primary-container border border-[#bbd0ff]">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</div>
+<div>
+<p class="text-body-md font-bold text-on-surface">P-201 alignment update</p>
+<p class="text-label-md text-on-surface-variant">Static Equipment · Sector A • 2 hours ago</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-[#E8F0FF] text-primary-container text-label-md border border-[#bbd0ff] font-bold">Confirmed</span>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div>
+<p class="text-body-md font-bold text-on-surface">Zone 3 foundation update</p>
+<p class="text-label-md text-on-surface-variant">Civil · Sector A • 4 hours ago</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container text-secondary text-label-md border border-outline-variant font-bold">Processing</span>
+</div>
+<!-- Item 3 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-[#fff4e5] flex items-center justify-center text-[#983c00] border border-[#ffc2a7]">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</div>
+<div>
+<p class="text-body-md font-bold text-on-surface">Pier 18 concrete pour</p>
+<p class="text-label-md text-on-surface-variant">Civil · Sector A • Yesterday</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-[#fff4e5] text-[#983c00] text-label-md border border-[#ffc2a7] font-bold">Needs Information</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (Status & Secondary Actions) -->
+<div class="lg:col-span-4 flex flex-col gap-stack-md">
+<!-- Needs Your Response -->
+<div class="bg-surface rounded-xl border-2 border-primary-container overflow-hidden relative shadow-[0px_4px_12px_rgba(0,0,0,0.05)]">
+<div class="absolute top-0 right-0 px-3 py-1 bg-primary-container text-on-primary-container text-label-md font-bold rounded-bl-lg">
+                                1 Question
+                            </div>
+<div class="p-5">
+<div class="flex items-center gap-2 mb-3 mt-1">
+<span class="material-symbols-outlined text-primary-container">help_center</span>
+<h3 class="text-body-lg font-bold text-[#0B3B75]">Needs Your Response</h3>
+</div>
+<p class="text-label-md text-outline mb-2">Ref: FR-2026-08-23-C</p>
+<p class="text-body-md text-on-surface-variant mb-4 font-medium leading-relaxed bg-surface-container-low p-3 rounded border border-outline-variant border-l-4 border-l-primary-container">
+                                    "Please confirm the concrete pour location and attach the latest site photo."
+                                </p>
+<button class="w-full py-2 bg-surface border border-primary-container text-primary-container rounded-md font-medium text-body-md hover:bg-surface-container-low transition-colors">
+                                    Answer Question
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom spacer for scrolling comfort -->
+<div class="h-8 w-full"></div>
+</div>
+</div>
+</main>
+
+
+</body></html>

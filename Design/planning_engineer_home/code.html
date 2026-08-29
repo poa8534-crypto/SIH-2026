@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planning Engineer Home - NAVIS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#2e3037",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e1e2ea",
+                        "surface-container-highest": "#e1e2ea",
+                        "secondary-container": "#98bcfe",
+                        "on-primary-fixed": "#001a40",
+                        "surface-dim": "#d9d9e2",
+                        "on-background": "#191c21",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "tertiary": "#722b00",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-tertiary-container": "#ffc2a7",
+                        "surface-container": "#ededf6",
+                        "primary-fixed-dim": "#acc7ff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#001b3e",
+                        "tertiary-fixed": "#ffdbcc",
+                        "surface-container-low": "#f2f3fc",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d6e3ff",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e7e8f0",
+                        "on-tertiary-fixed": "#351000",
+                        "on-surface-variant": "#424752",
+                        "surface-tint": "#115cb9",
+                        "surface": "#f9f9ff",
+                        "outline": "#727784",
+                        "on-surface": "#191c21",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#d7e2ff",
+                        "primary-container": "#0056b3",
+                        "primary": "#003f87",
+                        "background": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "tertiary-container": "#983c00",
+                        "inverse-on-surface": "#f0f0f9",
+                        "secondary": "#385e9a",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#224b85",
+                        "on-primary-container": "#bbd0ff",
+                        "inverse-primary": "#acc7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "4px",
+                        "lg": "4px",
+                        "xl": "4px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "display-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        table { border-collapse: collapse; width: 100%; }
+        td, th { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e1e2ea; }
+        th { font-family: 'Inter'; font-size: 12px; font-weight: 500; color: #424752; text-transform: uppercase; letter-spacing: 0.05em; }
+        .row-40px { height: 40px; display: flex; align-items: center; border-bottom: 1px solid #e1e2ea; padding: 0 16px; }
+        .row-40px:last-child { border-bottom: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex">
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-0 h-full w-[200px] bg-surface-container-low border-r border-outline-variant flex flex-col justify-between py-stack-lg px-stack-md z-50">
+<div>
+<div class="mb-8 px-2">
+<h1 class="font-headline-md text-headline-md font-bold text-primary truncate">OIL Well-Site Duliajan</h1>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Planning Engineer</p>
+</div>
+<nav class="flex flex-col gap-stack-sm">
+<!-- Home (Active) -->
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-container text-on-primary-container font-bold rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span>Home</span>
+</a>
+<!-- Reconcile -->
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Reconcile</span>
+</a>
+<!-- Schedule -->
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Schedule</span>
+</a>
+<!-- Ingest -->
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+<span>Ingest</span>
+</a>
+<!-- Memory -->
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Memory</span>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-4 border-t border-outline-variant pt-4 mt-4">
+<div class="px-2">
+<div class="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">DATA DATE</div>
+<div class="font-mono text-sm text-on-background">2026-09-15</div>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+<div class="flex items-center gap-3 px-2 py-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a female engineer, Priya Das, looking confident against a clean, bright industrial backdrop. The lighting is high-key and modern, emphasizing clarity and competence in a corporate setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsJGkkWJMLq3FU3pAb1KCGo-IXzARBESBze5MCYWSWxRcRPKMCpetI7BxI7aj24roZ4j-Ktgwkmr9JXNYTKISF_6lIFC9bLLVDG_t3PULzEGgRvPYtPvb7jETXHMsZ5Fv9olwiy95h8JYcWih4Mr7u60PMtcKa8HHhfZ4Q-yyKycjPyT-vPlJk4whZl8HGYmunSm977opHb2KgTXpAkhmecmwpT4gTm40x8vUy-Pl5MV9YIJgKTv7epQ"/>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-sm font-medium truncate">Priya Das</span>
+<span class="text-xs text-on-surface-variant truncate">Planning Eng.</span>
+</div>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- MAIN CONTENT -->
+<main class="ml-[200px] flex-1 flex flex-col min-h-screen bg-background">
+<!-- Top Nav (Project Control Header) -->
+<header class="w-full h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-container-padding sticky top-0 z-40">
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Project Control</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Approved actuals compared with the locked baseline.</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Project: OIL-WSD-2026</span>
+<span class="text-sm text-on-background">Sector A · Digboi Well #4</span>
+</div>
+</header>
+<div class="p-container-padding flex flex-col gap-gutter max-w-7xl mx-auto w-full">
+<!-- Metric Row -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="bg-surface border border-outline-variant rounded p-4 flex flex-col justify-between h-24">
+<div class="font-label-md text-label-md text-on-surface-variant uppercase">ACTIVITIES IN BASELINE</div>
+<div class="font-mono text-3xl font-medium text-primary">120</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded p-4 flex flex-col justify-between h-24">
+<div class="font-label-md text-label-md text-on-surface-variant uppercase">WITH ACTUAL DATES</div>
+<div class="font-mono text-3xl font-medium text-primary">28</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded p-4 flex flex-col justify-between h-24 border-l-4 border-l-error">
+<div class="font-label-md text-label-md text-on-surface-variant uppercase">AWAITING YOUR REVIEW</div>
+<div class="font-mono text-3xl font-medium text-error">113</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded p-4 flex flex-col justify-between h-24">
+<div class="font-label-md text-label-md text-on-surface-variant uppercase">CONFIRMED LINK PRECISION</div>
+<div class="font-mono text-3xl font-medium text-secondary">100%</div>
+</div>
+</section>
+<!-- Second Row (60/40) -->
+<section class="grid grid-cols-1 lg:grid-cols-5 gap-gutter">
+<!-- Left: Needs Attention (60%) -->
+<div class="lg:col-span-3 bg-surface border border-outline-variant rounded flex flex-col">
+<div class="flex justify-between items-center p-4 border-b border-outline-variant bg-surface-container-lowest rounded-t">
+<h2 class="font-headline-md text-headline-md text-on-background">NEEDS YOUR ATTENTION</h2>
+<a class="text-sm font-medium text-primary hover:underline flex items-center gap-1" href="#">VIEW ALL <span class="material-symbols-outlined text-sm">arrow_forward</span></a>
+</div>
+<div class="flex flex-col">
+<div class="row-40px bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant bg-surface-variant px-1 py-0.5 rounded mr-3 text-center">CIV</span>
+<span class="font-mono text-sm flex-1 text-on-background">CIV-EXC-2001</span>
+<span class="text-sm text-on-surface-variant flex-1 truncate">Excavation Delay reported</span>
+<span class="font-mono text-sm text-error font-medium w-16 text-right">45%</span>
+</div>
+<div class="row-40px hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant bg-surface-variant px-1 py-0.5 rounded mr-3 text-center">PIP</span>
+<span class="font-mono text-sm flex-1 text-on-background">PIP-WLD-1045</span>
+<span class="text-sm text-on-surface-variant flex-1 truncate">Welding inspection failed</span>
+<span class="font-mono text-sm text-tertiary font-medium w-16 text-right">62%</span>
+</div>
+<div class="row-40px bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant bg-surface-variant px-1 py-0.5 rounded mr-3 text-center">SEQ</span>
+<span class="font-mono text-sm flex-1 text-on-background">SEQ-TKN-1066</span>
+<span class="text-sm text-on-surface-variant flex-1 truncate">Tank TK-1 shell erection now on 4th course, lower courses done</span>
+<span class="font-mono text-sm text-error font-medium w-16 text-right">38%</span>
+</div>
+<div class="row-40px hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant bg-surface-variant px-1 py-0.5 rounded mr-3 text-center">ELE</span>
+<span class="font-mono text-sm flex-1 text-on-background">ELE-CBL-442</span>
+<span class="text-sm text-on-surface-variant flex-1 truncate">Cable tray installation halted</span>
+<span class="font-mono text-sm text-tertiary font-medium w-16 text-right">71%</span>
+</div>
+<div class="row-40px bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant bg-surface-variant px-1 py-0.5 rounded mr-3 text-center">INS</span>
+<span class="font-mono text-sm flex-1 text-on-background">INS-LOOP-1107</span>
+<span class="text-sm text-on-surface-variant flex-1 truncate">Loop checking completed for 18 loops in Unit 2</span>
+<span class="font-mono text-sm text-error font-medium w-16 text-right">55%</span>
+</div>
+</div>
+</div>
+<!-- Right: Recent Activity (40%) -->
+<div class="lg:col-span-2 bg-surface border border-outline-variant rounded flex flex-col h-full">
+<div class="p-4 border-b border-outline-variant bg-surface-container-lowest rounded-t">
+<h2 class="font-headline-md text-headline-md text-on-background">RECENT ACTIVITY</h2>
+</div>
+<div class="p-4 flex flex-col gap-4 overflow-y-auto max-h-[200px]">
+<div class="flex gap-3 items-start border-b border-surface-variant pb-3 last:border-0 last:pb-0">
+<div class="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0"></div>
+<p class="text-sm text-on-background leading-relaxed">
+<span class="font-mono font-medium">PIP-ERC-1030</span> actual finish set to <span class="font-mono">14 Sep</span> · confirmed · <span class="font-mono text-secondary">91%</span>
+</p>
+</div>
+<div class="flex gap-3 items-start border-b border-surface-variant pb-3 last:border-0 last:pb-0">
+<div class="w-2 h-2 rounded-full bg-[#10b981] mt-1.5 flex-shrink-0"></div>
+<p class="text-sm text-on-background leading-relaxed">
+<span class="font-mono font-medium">CIV-FDN-1007</span> confirmed by you
+                            </p>
+</div>
+<div class="flex gap-3 items-start border-b border-surface-variant pb-3 last:border-0 last:pb-0">
+<div class="w-2 h-2 rounded-full bg-tertiary mt-1.5 flex-shrink-0"></div>
+<p class="text-sm text-on-background leading-relaxed">
+<span class="font-mono font-medium bg-surface-variant px-1 rounded">dpr_day_02.txt</span> ingested · 15 events · 10 proposed matches
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Third Row: Schedule Health -->
+<section class="bg-surface border border-outline-variant rounded">
+<div class="p-4 border-b border-outline-variant bg-surface-container-lowest rounded-t">
+<h2 class="font-headline-md text-headline-md text-on-background">SCHEDULE HEALTH</h2>
+</div>
+<div class="p-4 flex flex-col gap-3">
+<!-- Bar 1 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">CIV</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error w-[15%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-error text-right">+12d</span>
+</div>
+<!-- Bar 2 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">PIP</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[8%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-tertiary text-right">+5d</span>
+</div>
+<!-- Bar 3 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">SEQ</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[2%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-primary text-right">+1d</span>
+</div>
+<!-- Bar 4 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">ELE</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-[#10b981] w-[0%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-on-surface-variant text-right">0d</span>
+</div>
+<!-- Bar 5 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">INS</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error w-[22%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-error text-right">+18d</span>
+</div>
+<!-- Bar 6 -->
+<div class="flex items-center gap-4">
+<span class="w-12 text-xs font-mono font-medium text-on-surface-variant text-right">HSE</span>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[5%]"></div>
+</div>
+<span class="w-16 font-mono text-sm text-tertiary text-right">+3d</span>
+</div>
+</div>
+</section>
+<!-- Fourth Row: Source Conflicts -->
+<section class="bg-surface border border-outline-variant rounded">
+<div class="flex items-center gap-3 p-4 border-b border-outline-variant bg-surface-container-lowest rounded-t">
+<h2 class="font-headline-md text-headline-md text-on-background">SOURCE CONFLICTS</h2>
+<span class="bg-error text-on-error text-xs font-bold px-2 py-0.5 rounded-full">4</span>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr class="bg-surface-container-lowest">
+<th>Activity ID</th>
+<th>Field</th>
+<th>Spreadsheet</th>
+<th>Daily Report</th>
+<th>Source Files</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="hover:bg-surface-container-low">
+<td class="font-mono text-sm text-primary font-medium">CIV-EXC-2001</td>
+<td class="text-sm text-on-surface-variant">Actual Start</td>
+<td class="font-mono text-sm">2026-09-10</td>
+<td class="font-mono text-sm text-error">2026-09-12</td>
+<td class="text-[11px] font-mono text-on-surface-variant leading-tight">civil_progress.xlsx<br/>dpr_day_02.txt</td>
+<td><button class="text-xs font-medium text-primary border border-outline-variant px-3 py-1 rounded hover:bg-surface-container-high">Resolve</button></td>
+</tr>
+<tr class="hover:bg-surface-container-low">
+<td class="font-mono text-sm text-primary font-medium">PIP-WLD-1045</td>
+<td class="text-sm text-on-surface-variant">% Complete</td>
+<td class="font-mono text-sm">85%</td>
+<td class="font-mono text-sm text-tertiary">70%</td>
+<td class="text-[11px] font-mono text-on-surface-variant leading-tight">piping_progress.xlsx<br/>dpr_day_04.txt</td>
+<td><button class="text-xs font-medium text-primary border border-outline-variant px-3 py-1 rounded hover:bg-surface-container-high">Resolve</button></td>
+</tr>
+<tr class="hover:bg-surface-container-low">
+<td class="font-mono text-sm text-primary font-medium">ELE-CBL-442</td>
+<td class="text-sm text-on-surface-variant">Actual Finish</td>
+<td class="font-mono text-sm">NULL</td>
+<td class="font-mono text-sm text-secondary">2026-09-14</td>
+<td class="text-[11px] font-mono text-on-surface-variant leading-tight">electrical_progress.xlsx<br/>dpr_day_06.txt</td>
+<td><button class="text-xs font-medium text-primary border border-outline-variant px-3 py-1 rounded hover:bg-surface-container-high">Resolve</button></td>
+</tr>
+<tr class="hover:bg-surface-container-low">
+<td class="font-mono text-sm text-primary font-medium">INS-LOOP-1107</td>
+<td class="text-sm text-on-surface-variant">Status</td>
+<td class="font-mono text-sm">In Progress</td>
+<td class="font-mono text-sm text-error">Delayed</td>
+<td class="text-[11px] font-mono text-on-surface-variant leading-tight">instrument_progress.xlsx<br/>dpr_day_07.txt</td>
+<td><button class="text-xs font-medium text-primary border border-outline-variant px-3 py-1 rounded hover:bg-surface-container-high">Resolve</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Footer Note -->
+<div class="text-right text-xs text-on-surface-variant font-mono mt-2 mb-8">
+                Updates within seconds
+            </div>
+</div>
+</main>
+</body></html>

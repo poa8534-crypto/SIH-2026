@@ -1,0 +1,244 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>NAVIS | Update Submitted</title>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed": "#001a40",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed-dim": "#ffb694",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#bbd0ff",
+                      "on-surface-variant": "#424752",
+                      "primary-container": "#0056b3",
+                      "surface-dim": "#d9d9e2",
+                      "inverse-surface": "#2e3037",
+                      "on-tertiary-fixed": "#351000",
+                      "tertiary-fixed": "#ffdbcc",
+                      "on-tertiary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface-container-low": "#f2f3fc",
+                      "on-secondary-fixed-variant": "#1c4681",
+                      "primary": "#003f87",
+                      "outline": "#727784",
+                      "surface-container-high": "#e7e8f0",
+                      "inverse-on-surface": "#f0f0f9",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#004491",
+                      "surface": "#f9f9ff",
+                      "surface-tint": "#115cb9",
+                      "secondary-fixed": "#d6e3ff",
+                      "inverse-primary": "#acc7ff",
+                      "on-secondary-container": "#224b85",
+                      "on-secondary-fixed": "#001b3e",
+                      "on-surface": "#191c21",
+                      "primary-fixed": "#d7e2ff",
+                      "on-tertiary-container": "#ffc2a7",
+                      "secondary-fixed-dim": "#aac7ff",
+                      "tertiary-container": "#983c00",
+                      "tertiary": "#722b00",
+                      "error": "#ba1a1a",
+                      "on-primary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "outline-variant": "#c2c6d4",
+                      "surface-variant": "#e1e2ea",
+                      "surface-bright": "#f9f9ff",
+                      "background": "#f9f9ff",
+                      "surface-container": "#ededf6",
+                      "primary-fixed-dim": "#acc7ff",
+                      "on-background": "#191c21",
+                      "secondary-container": "#98bcfe",
+                      "secondary": "#385e9a",
+                      "surface-container-highest": "#e1e2ea",
+                      "on-secondary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-md": "16px",
+                      "stack-lg": "32px",
+                      "stack-sm": "8px",
+                      "container-padding": "24px",
+                      "gutter": "16px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Inter", "sans-serif"
+                      ],
+                      "display-lg": [
+                              "Inter", "sans-serif"
+                      ],
+                      "body-md": [
+                              "Inter", "sans-serif"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter", "sans-serif"
+                      ],
+                      "headline-md": [
+                              "Inter", "sans-serif"
+                      ],
+                      "label-md": [
+                              "Inter", "sans-serif"
+                      ],
+                      "headline-lg": [
+                              "Inter", "sans-serif"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F7F8FC; /* Fixed Grid Background */
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Device constraint for demo */
+        .device-wrapper {
+            width: 390px;
+            height: 844px;
+            margin: 0 auto;
+            position: relative;
+            background-color: #F7F8FC;
+            overflow: hidden;
+            border: 1px solid #D9E1EC;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex items-center justify-center min-h-screen">
+<div class="device-wrapper shadow-lg">
+<!-- TopAppBar (Transactional - Hidden or Minimal) -->
+<!-- Suppressed per rules for linear/transactional success screen -->
+<!-- Exception: Prompt asks to "Keep the NAVIS header", so rendering a minimal version -->
+<header class="flex justify-between items-center w-full px-container-padding h-16 bg-surface border-b border-outline-variant flat no shadows">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="menu">menu</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">NAVIS | Project Update</h1>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="settings">settings</span>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col justify-center items-center px-[16px] py-[24px]">
+<div class="bg-surface border border-outline-variant rounded-xl p-[24px] w-full max-w-[342px] flex flex-col items-center text-center">
+<!-- Confirmation Icon -->
+<span class="material-symbols-outlined text-primary text-[64px] mb-stack-md" data-icon="check_circle">check_circle</span>
+<!-- Headline -->
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-stack-sm">Update submitted</h2>
+<!-- Details -->
+<div class="w-full flex flex-col gap-unit mt-stack-md">
+<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-low px-stack-sm py-unit rounded border border-outline-variant">
+                        Report reference: FR-2026-09-15-001
+                    </p>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        Sent for Planning Engineer review.
+                    </p>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        The project schedule has not been changed.
+                    </p>
+</div>
+<!-- Action Button -->
+<button class="w-full mt-stack-lg bg-primary text-on-primary font-body-md text-body-md font-medium py-[12px] px-[24px] rounded hover:bg-primary-container transition-colors duration-200">Return Home</button>
+</div>
+</main>
+<!-- BottomNavBar (Suppressed for Transactional screens normally, but prompt asks to keep it with Home active) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-gutter bg-surface border-t border-outline-variant z-50 absolute">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1 transition-transform duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px] mb-[4px]" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a><a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95 rounded-xl" href="#"><span class="material-symbols-outlined text-[24px] mb-[4px]" data-icon="calendar_month">calendar_month</span><span class="font-label-md text-label-md">Schedule</span></a>
+<!-- Reports -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px] mb-[4px]" data-icon="analytics">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px] mb-[4px]" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+</div>
+
+
+</body></html>

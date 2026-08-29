@@ -1,0 +1,206 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>NAVIS Field Supervisor Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#ffdbcc",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c21",
+                        "surface-dim": "#d9d9e2",
+                        "on-primary-fixed": "#001a40",
+                        "error": "#ba1a1a",
+                        "surface": "#f9f9ff",
+                        "surface-variant": "#e1e2ea",
+                        "inverse-surface": "#2e3037",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed": "#001b3e",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#98bcfe",
+                        "surface-container-low": "#f2f3fc",
+                        "surface-tint": "#115cb9",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c6d4",
+                        "surface-container-highest": "#e1e2ea",
+                        "on-tertiary-container": "#ffc2a7",
+                        "tertiary": "#722b00",
+                        "secondary": "#385e9a",
+                        "outline": "#727784",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "primary": "#003f87",
+                        "surface-container-high": "#e7e8f0",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed": "#d7e2ff",
+                        "secondary-fixed": "#d6e3ff",
+                        "on-primary-fixed-variant": "#004491",
+                        "tertiary-container": "#983c00",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-primary-container": "#bbd0ff",
+                        "primary-container": "#0056b3",
+                        "inverse-primary": "#acc7ff",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "surface-container": "#ededf6",
+                        "on-secondary-container": "#224b85",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c21",
+                        "primary-fixed-dim": "#acc7ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-lg": "32px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col pb-24 md:max-w-[1280px] md:mx-auto">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-container-padding h-16 bg-surface dark:bg-surface-dim border-b border-outline-variant docked full-width top-0 sticky z-50">
+<div class="flex items-center gap-stack-md">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">menu</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary dark:text-primary-fixed">NAVIS | Profile</h1>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-md text-label-md text-primary">Connected</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 flex flex-col px-gutter py-stack-md gap-stack-md md:px-container-padding">
+<!-- Profile Identity Card -->
+<section class="bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col gap-stack-sm md:flex-row md:items-center md:gap-stack-lg">
+<div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant flex-shrink-0">
+<span class="font-headline-md text-headline-md text-primary font-bold">RK</span>
+</div>
+<div class="flex flex-col gap-unit">
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface">Rajesh Kumar</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Field Supervisor</p>
+<div class="flex flex-wrap items-center gap-stack-sm mt-stack-sm">
+<span class="bg-surface-container px-2 py-1 rounded font-label-md text-label-md text-on-surface">Employee ID: OIL-FS-014</span>
+<span class="bg-surface-container px-2 py-1 rounded font-label-md text-label-md text-on-surface">Sector A · Digboi Well #4</span>
+</div>
+</div>
+</section>
+<!-- Current Assignment Card -->
+<section class="bg-surface border border-outline-variant rounded-lg flex flex-col">
+<div class="p-stack-md border-b border-outline-variant flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary text-xl">assignment</span>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">Current Assignment</h3>
+</div>
+<div class="p-stack-md grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<div class="flex flex-col gap-unit">
+<span class="font-label-md text-label-md text-outline">Project Info</span>
+<span class="font-body-md text-body-md text-on-surface">Sector A · Static Equipment</span>
+</div>
+<div class="flex flex-col gap-unit">
+<span class="font-label-md text-label-md text-outline">Details</span>
+<span class="font-body-md text-body-md text-on-surface">Shift: Day · 07:00–17:00</span>
+</div>
+</div>
+</section>
+<!-- Language & Input Card -->
+<section class="bg-surface border border-outline-variant rounded-lg flex flex-col">
+<div class="p-stack-md border-b border-outline-variant flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary text-xl">translate</span>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">Language &amp; Input</h3>
+</div>
+<div class="p-stack-md flex flex-col gap-stack-md">
+<div class="flex flex-col gap-unit">
+<span class="font-label-md text-label-md text-outline">Preferred Languages</span>
+<span class="font-body-md text-body-md text-on-surface">English, Hindi, Assamese</span>
+</div>
+<button class="bg-surface border border-primary text-primary px-4 py-2 rounded flex items-center justify-center font-label-md text-label-md w-full md:w-auto self-start">Change Language</button>
+</div>
+</section>
+<!-- Preferences Card -->
+<section class="bg-surface border border-outline-variant rounded-lg flex flex-col">
+<div class="p-stack-md border-b border-outline-variant flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary text-xl">tune</span>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">Preferences</h3>
+</div>
+<div class="p-stack-md flex flex-col gap-stack-sm">
+<div class="flex items-center justify-between py-2 border-b border-surface-container-highest last:border-0">
+<span class="font-body-md text-body-md text-on-surface">Clarifications</span>
+<div class="w-10 h-6 bg-surface-variant border border-outline-variant rounded-full relative">
+<div class="w-4 h-4 bg-outline rounded-full absolute left-1 top-1"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Actions -->
+<div class="flex flex-col gap-stack-sm mt-stack-md mb-stack-lg">
+<button class="w-full bg-surface border border-primary text-primary px-4 py-3 rounded flex items-center justify-center font-label-md text-label-md font-bold">Return to Role Selection</button>
+<button class="w-full bg-surface border border-outline text-on-surface-variant px-4 py-3 rounded flex items-center justify-center font-label-md text-label-md">Sign Out</button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-gutter bg-surface dark:bg-surface-dim border-t border-outline-variant z-50 md:hidden"><!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95" href="#">
+  <span class="material-symbols-outlined mb-1">home</span>
+  <span class="font-label-md text-label-md">Home</span>
+</a>
+<!-- Reports (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95" href="#">
+  <span class="material-symbols-outlined mb-1">description</span>
+  <span class="font-label-md text-label-md">Reports</span>
+</a>
+<!-- Clarifications (Inactive with Badge) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95 relative" href="#">
+  <div class="relative">
+    <span class="material-symbols-outlined mb-1">quiz</span>
+    <span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">1</span>
+  </div>
+  <span class="font-label-md text-label-md">Clarifications</span>
+</a>
+<!-- Profile (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 hover:bg-surface-container-high transition-transform duration-150 active:scale-95" href="#">
+  <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">person</span>
+  <span class="font-label-md text-label-md font-bold">Profile</span>
+</a></nav>
+
+
+</body></html>

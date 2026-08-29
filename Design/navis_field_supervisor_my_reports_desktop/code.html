@@ -1,0 +1,404 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>NAVIS - My Reports</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d6e3ff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "tertiary-container": "#983c00",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-surface": "#191c21",
+                        "surface-tint": "#115cb9",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "primary-container": "#0056b3",
+                        "on-secondary": "#ffffff",
+                        "primary": "#003f87",
+                        "on-surface-variant": "#424752",
+                        "secondary-container": "#98bcfe",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-container-highest": "#e1e2ea",
+                        "outline-variant": "#c2c6d4",
+                        "surface": "#f9f9ff",
+                        "inverse-primary": "#acc7ff",
+                        "outline": "#727784",
+                        "surface-container-low": "#f2f3fc",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#d9d9e2",
+                        "on-background": "#191c21",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#001b3e",
+                        "primary-fixed-dim": "#acc7ff",
+                        "surface-container": "#ededf6",
+                        "secondary": "#385e9a",
+                        "surface-variant": "#e1e2ea",
+                        "on-secondary-container": "#224b85",
+                        "on-tertiary-container": "#ffc2a7",
+                        "on-primary-fixed-variant": "#004491",
+                        "inverse-surface": "#2e3037",
+                        "tertiary": "#722b00",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#e7e8f0",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#bbd0ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#001a40",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "primary-fixed": "#d7e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px",
+                        "container-padding": "24px",
+                        "gutter": "16px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="h-full flex text-on-surface bg-background">
+<!-- SideNavBar -->
+<nav class="bg-surface text-primary hidden md:flex flex-col py-stack-lg docked h-screen left-0 w-64 border-r border-outline-variant flex-shrink-0">
+<div class="px-container-padding mb-stack-lg">
+<h1 class="text-headline-md font-headline-md text-primary font-bold mb-stack-sm">NAVIS</h1>
+<div class="flex items-center gap-stack-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant">
+<span class="text-label-md font-label-md text-on-surface-variant font-bold">RK</span>
+</div>
+<div>
+<div class="text-body-md font-body-md font-bold text-on-surface">Rajesh Kumar</div>
+<div class="text-label-md font-label-md text-on-surface-variant">FIELD SUPERVISOR</div>
+</div>
+</div>
+<div class="text-label-md font-label-md text-on-surface-variant mt-stack-sm">FIELD SUPERVISOR</div>
+</div>
+<ul class="flex flex-col flex-grow">
+<li class="">
+<a class="flex items-center gap-stack-md px-container-padding py-3 text-on-surface-variant hover:bg-surface-container-highest transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface">home</span>
+<span class="text-body-md font-body-md font-medium group-hover:text-on-surface">Home</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-stack-md px-container-padding py-3 text-on-surface-variant hover:bg-surface-container-highest transition-all duration-150 group" href="#"><span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface">add_chart</span><span class="text-body-md font-body-md font-medium group-hover:text-on-surface">Submit Update</span></a>
+</li>
+<li class="">
+<a class="flex items-center gap-stack-md px-container-padding py-3 text-primary font-bold border-r-4 border-primary bg-surface-container-low transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-primary">description</span>
+<span class="text-body-md font-body-md">My Reports</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-stack-md px-container-padding py-3 text-on-surface-variant hover:bg-surface-container-highest transition-all duration-150 group" href="#"><span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface">forum</span><span class="text-body-md font-body-md font-medium group-hover:text-on-surface flex-grow">Clarifications</span><span class="bg-tertiary-container text-on-tertiary-container text-[10px] px-1.5 py-0.5 rounded-full font-bold">1</span></a>
+</li>
+<li class="">
+<a class="flex items-center gap-stack-md px-container-padding py-3 text-on-surface-variant hover:bg-surface-container-highest transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface">person</span>
+<span class="text-body-md font-body-md font-medium group-hover:text-on-surface">Profile</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-grow flex flex-col min-w-0 overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface text-primary border-b border-outline-variant flex justify-between items-center w-full px-container-padding h-16 shrink-0 transition-colors duration-200">
+<div class="flex items-center gap-stack-sm flex-grow min-w-0">
+<span class="text-body-md font-body-md font-bold text-on-surface truncate hidden sm:inline">Well-Site Development &amp; Gathering Pipeline Project</span>
+<span class="text-outline-variant hidden sm:inline">/</span>
+<span class="text-body-md font-body-md text-on-surface-variant whitespace-nowrap">OIL-WSD-2026</span>
+<span class="text-outline-variant">·</span>
+<span class="text-body-md font-body-md text-on-surface-variant whitespace-nowrap truncate">Sector A · Digboi Well #4</span>
+</div>
+<div class="flex items-center gap-stack-md shrink-0">
+<div class="flex items-center gap-1 text-label-md font-label-md text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/20">
+<span class="w-2 h-2 rounded-full bg-primary block"></span>
+                    Connected
+                </div>
+<button aria-label="Profile" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow overflow-y-auto p-container-padding lg:p-stack-lg flex flex-col xl:flex-row gap-gutter bg-background">
+<!-- Left Column: Reports List -->
+<div class="flex-grow flex flex-col min-w-0">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-stack-md gap-stack-md">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface font-bold mb-1">My Reports</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Track your reports, review their status, and respond to questions.</p>
+</div>
+<button class="bg-primary text-on-primary hover:bg-primary/90 px-4 py-2 rounded border border-transparent text-body-md font-body-md font-medium flex items-center gap-2 transition-colors shadow-sm whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        New Report
+                    </button>
+</div>
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-stack-md mb-stack-md">
+<div class="bg-surface rounded-lg border border-outline-variant p-stack-md shadow-sm">
+<div class="text-label-md font-label-md text-on-surface-variant mb-1 uppercase tracking-wider">Total</div>
+<div class="text-display-lg font-display-lg text-on-surface">24</div>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant p-stack-md shadow-sm">
+<div class="text-label-md font-label-md text-on-surface-variant mb-1 uppercase tracking-wider">Processing</div>
+<div class="text-display-lg font-display-lg text-primary">2</div>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant p-stack-md shadow-sm border-l-4 border-l-tertiary-container">
+<div class="text-label-md font-label-md text-on-surface-variant mb-1 uppercase tracking-wider">Needs Response</div>
+<div class="text-display-lg font-display-lg text-tertiary-container">1</div>
+</div>
+</div>
+<!-- Search & Filters -->
+<div class="bg-surface rounded-lg border border-outline-variant p-stack-sm mb-stack-md flex flex-col sm:flex-row items-center justify-between gap-stack-sm shadow-sm">
+<div class="relative w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-9 pr-3 py-2 bg-background border border-outline-variant rounded text-body-md font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow placeholder-outline" placeholder="Search reports" type="text">
+</div>
+<div class="flex gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-hide">
+<button class="px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary text-label-md font-label-md whitespace-nowrap font-medium">All</button>
+<button class="px-3 py-1.5 rounded-full bg-surface hover:bg-surface-container border border-outline-variant text-on-surface-variant text-label-md font-label-md whitespace-nowrap transition-colors">Processing</button>
+<button class="px-3 py-1.5 rounded-full bg-surface hover:bg-surface-container border border-outline-variant text-on-surface-variant text-label-md font-label-md whitespace-nowrap transition-colors">Needs Response</button>
+<button class="px-3 py-1.5 rounded-full bg-surface hover:bg-surface-container border border-outline-variant text-on-surface-variant text-label-md font-label-md whitespace-nowrap transition-colors">Confirmed</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface border border-outline-variant rounded-lg overflow-hidden shadow-sm flex-grow">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold whitespace-nowrap">Report</th>
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold min-w-[200px]">Work Front / Discipline</th>
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold whitespace-nowrap">Submitted</th>
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold">Evidence</th>
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold">Status</th>
+<th class="py-3 px-4 text-label-md font-label-md text-primary font-semibold min-w-[150px]">Action</th>
+</tr>
+</thead>
+<tbody class="text-body-md font-body-md divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer bg-background">
+<td class="py-3 px-4 text-on-surface font-medium whitespace-nowrap">FR-2026-08-24-A</td>
+<td class="py-3 px-4">
+<div class="text-on-surface">P-201 alignment update</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Sector A / Static Equipment</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant whitespace-nowrap">24 Aug · 14:31 IST</td>
+<td class="py-3 px-4">
+<span class="flex items-center gap-1 text-on-surface-variant text-label-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">mic</span> Voice
+                                        </span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed/50 text-on-secondary-fixed-variant text-label-md font-label-md font-medium border border-secondary-fixed-dim">
+<span class="w-1.5 h-1.5 rounded-full bg-primary block"></span>
+                                            Confirmed
+                                        </span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant text-label-md font-label-md italic">
+                                        "Approved by Priya Das"
+                                    </td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer bg-surface">
+<td class="py-3 px-4 text-on-surface font-medium whitespace-nowrap">FR-2026-08-24-B</td>
+<td class="py-3 px-4">
+<div class="text-on-surface">Zone 3 foundation update</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Sector A / Civil</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant whitespace-nowrap">24 Aug · 15:10 IST</td>
+<td class="py-3 px-4">
+<span class="flex items-center gap-1 text-on-surface-variant text-label-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">image</span> Text + 1
+                                        </span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed/50 text-on-secondary-fixed-variant text-label-md font-label-md font-medium border border-secondary-fixed-dim">
+<span class="w-1.5 h-1.5 rounded-full bg-primary block"></span>
+                                            Processing
+                                        </span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant text-label-md font-label-md italic">
+                                        "Preparing for Planning Engineer review"
+                                    </td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer bg-background border-l-4 border-l-tertiary-container relative">
+<td class="py-3 px-4 text-on-surface font-medium whitespace-nowrap">FR-2026-08-23-C</td>
+<td class="py-3 px-4">
+<div class="text-on-surface">Pier 18 concrete pour</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Sector A / Civil</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant whitespace-nowrap">23 Aug · 17:42 IST</td>
+<td class="py-3 px-4 text-on-surface-variant text-center">-</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#FFF8E1] text-tertiary-container text-label-md font-label-md font-medium border border-[#FFE082]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container block"></span>
+                                            Needs Information
+                                        </span>
+</td>
+<td class="py-3 px-4">
+<button class="bg-surface hover:bg-surface-container-low text-primary border border-primary px-3 py-1 rounded text-label-md font-label-md font-medium transition-colors whitespace-nowrap">
+                                            Answer Question
+                                        </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-lowest transition-colors cursor-pointer bg-surface">
+<td class="py-3 px-4 text-on-surface font-medium whitespace-nowrap">FR-2026-08-25-D</td>
+<td class="py-3 px-4">
+<div class="text-on-surface">P-201 mechanical seal not received</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Sector A / Static Equipment</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant whitespace-nowrap">25 Aug · 10:12 IST</td>
+<td class="py-3 px-4">
+<span class="flex items-center gap-1 text-on-surface-variant text-label-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">image</span> Text + 1
+                                        </span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed/50 text-on-secondary-fixed-variant text-label-md font-label-md font-medium border border-secondary-fixed-dim">
+<span class="w-1.5 h-1.5 rounded-full bg-primary block"></span>
+                                            Processing
+                                        </span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant text-label-md font-label-md italic">
+                                        "Preparing for Planning Engineer review"
+                                    </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="mt-stack-md text-label-md font-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">info</span>
+                    Only the Planning Engineer can confirm a report and apply approved project changes.
+                </div>
+</div>
+<!-- Right Panel: Report Details Preview (Hidden on smaller screens) -->
+<aside class="hidden xl:flex flex-col w-[360px] shrink-0 bg-surface border border-outline-variant rounded-lg shadow-sm h-full overflow-hidden">
+<div class="p-stack-md border-b border-outline-variant bg-surface-container-low flex justify-between items-start">
+<div>
+<h3 class="text-headline-md font-headline-md font-bold text-on-surface mb-1">FR-2026-08-23-C</h3>
+<div class="text-label-md font-label-md text-tertiary-container font-medium flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span>
+                            Needs Information
+                        </div>
+</div>
+<button class="text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-stack-md overflow-y-auto flex-grow bg-surface">
+<div class="mb-stack-lg">
+<h4 class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-2 border-b border-outline-variant pb-1">Report Details</h4>
+<div class="space-y-3 mt-3">
+<div>
+<div class="text-label-md font-label-md text-on-surface-variant">Work Front</div>
+<div class="text-body-md font-body-md font-medium text-on-surface">Pier 18 concrete pour</div>
+</div>
+<div>
+<div class="text-label-md font-label-md text-on-surface-variant">Discipline</div>
+<div class="text-body-md font-body-md text-on-surface">Sector A / Civil</div>
+</div>
+<div>
+<div class="text-label-md font-label-md text-on-surface-variant">Submitted</div>
+<div class="text-body-md font-body-md text-on-surface">23 Aug 2026 · 17:42 IST</div>
+</div>
+</div>
+</div>
+<div class="mb-stack-lg">
+<h4 class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-2 border-b border-outline-variant pb-1">Original Text</h4>
+<div class="bg-background p-3 rounded border border-outline-variant text-body-md font-body-md text-on-surface mt-3 italic text-sm">
+                            "Completed rebar tying for Pier 18. Awaiting inspection before pour. Inspector delayed by 2 hours due to rain."
+                        </div>
+</div>
+<div class="mb-stack-lg">
+<h4 class="text-label-md font-label-md text-tertiary-container uppercase tracking-wider mb-2 border-b border-outline-variant pb-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">warning</span> Question from Planning
+                        </h4>
+<div class="bg-[#FFF8E1] p-3 rounded border border-[#FFE082] mt-3">
+<div class="text-body-md font-body-md text-on-surface mb-2 text-sm font-medium">
+                                "Did the rain delay affect the concrete batch delivery schedule? Please confirm if batch plant was notified."
+                            </div>
+<div class="text-label-md font-label-md text-on-surface-variant text-right">- Priya Das (Planning Engineer)</div>
+<button class="w-full mt-3 bg-surface hover:bg-surface-container text-tertiary-container border border-tertiary-container py-2 rounded text-body-md font-body-md font-medium transition-colors">
+                                Respond Now
+                            </button>
+</div>
+</div>
+<div>
+<h4 class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider mb-2 border-b border-outline-variant pb-1">Attachments</h4>
+<div class="text-body-md font-body-md text-on-surface-variant text-center p-4 bg-background rounded border border-dashed border-outline-variant italic">
+                            No attachments provided.
+                        </div>
+</div>
+</div>
+</aside>
+</main>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="bg-surface text-primary md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 border-t border-outline-variant shadow-md z-50 rounded-t-xl transition-colors duration-200">
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 transition-transform w-16 h-full rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="text-label-md font-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold active:bg-surface-container scale-95 transition-transform w-16 h-full rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">description</span>
+<span class="text-label-md font-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 transition-transform w-16 h-full rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="text-label-md font-label-md">Profile</span>
+</a>
+</nav>
+
+
+</body></html>

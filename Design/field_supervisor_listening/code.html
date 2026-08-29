@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Supervisor — Listening</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#722b00",
+                        "tertiary-container": "#983c00",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f0f0f9",
+                        "secondary-container": "#98bcfe",
+                        "on-secondary-container": "#224b85",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001a40",
+                        "on-tertiary-container": "#ffc2a7",
+                        "primary-fixed-dim": "#acc7ff",
+                        "on-surface": "#191c21",
+                        "surface-container": "#ededf6",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "secondary": "#385e9a",
+                        "inverse-primary": "#acc7ff",
+                        "on-background": "#191c21",
+                        "primary-container": "#0056b3",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#bbd0ff",
+                        "background": "#f9f9ff",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#2e3037",
+                        "surface": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d9d9e2",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-secondary-fixed": "#001b3e",
+                        "tertiary-fixed": "#ffdbcc",
+                        "surface-tint": "#115cb9",
+                        "surface-variant": "#e1e2ea",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f3fc",
+                        "surface-container-highest": "#e1e2ea",
+                        "outline-variant": "#c2c6d4",
+                        "outline": "#727784",
+                        "secondary-fixed": "#d6e3ff",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-container-high": "#e7e8f0",
+                        "on-surface-variant": "#424752",
+                        "primary": "#003f87",
+                        "on-primary-fixed-variant": "#004491"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "stack-lg": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-padding": "24px",
+                        "stack-md": "16px"
+                    },
+                    fontFamily: {
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Waveform Animation */
+        @keyframes waveform {
+            0%, 100% { transform: scaleY(0.4); }
+            50% { transform: scaleY(1); }
+        }
+        .bar {
+            width: 4px;
+            background-color: #003f87; /* Primary */
+            border-radius: 9999px;
+            transform-origin: center;
+            animation: waveform 1s infinite ease-in-out;
+        }
+        .bar:nth-child(1) { animation-delay: 0.0s; height: 16px; }
+        .bar:nth-child(2) { animation-delay: 0.2s; height: 32px; }
+        .bar:nth-child(3) { animation-delay: 0.4s; height: 48px; }
+        .bar:nth-child(4) { animation-delay: 0.6s; height: 24px; }
+        .bar:nth-child(5) { animation-delay: 0.8s; height: 40px; }
+        .bar:nth-child(6) { animation-delay: 0.1s; height: 32px; }
+        .bar:nth-child(7) { animation-delay: 0.3s; height: 20px; }
+        
+        /* Pulse for Recording Status */
+        @keyframes pulse-dot {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .recording-dot {
+            animation: pulse-dot 2s infinite ease-in-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased pb-24 h-screen overflow-y-auto">
+<!-- Header -->
+<header class="px-gutter py-stack-md flex justify-between items-center bg-surface sticky top-0 z-10 border-b border-outline-variant">
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">OIL Well-Site Duliajan</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Sector A · Digboi Well #4</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a construction site supervisor wearing a hardhat, well-lit against a neutral background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChD60gXxBCH9ox9n6Cy5eu4eVo5I8xvRdfLw2GGX2pTAkkOAbbczIjaLmCAcTE-YLwWulP2uU8M19bqlz6fIxOx9xsRNX9kRRdCtp9T-iBvqfR1lsB1d_nSdCCp_Es-x0MQ7W-PRBcL-yHHUmFe1ND15if719RrUekaqX1hWxqJQQjD85nuqKaGeAFa9EkLV6b5M2XDYMEphj9ydwo4R6i_woN_apuKkJAPIitq1Mq4TcI0uo9jr3JAQ"/>
+</div>
+</div>
+</header>
+<main class="p-gutter flex flex-col gap-stack-lg">
+<!-- Expanded Listening Panel -->
+<section class="bg-surface border border-outline-variant rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-6 w-full relative overflow-hidden">
+<!-- Background accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+<div class="flex justify-between items-center w-full">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-error recording-dot"></div>
+<span class="font-label-md text-label-md text-error uppercase tracking-wider font-bold">Listening</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold">00:18</span>
+</div>
+<!-- Waveform Animation -->
+<div class="flex justify-center items-center h-16 gap-1 w-full">
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+<!-- Live Transcription -->
+<div class="min-h-[80px] flex items-center justify-center text-center">
+<p class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">
+                    "spool erection on the 24 inch header is done"
+                </p>
+</div>
+<!-- Actions -->
+<div class="flex flex-col items-center gap-4 mt-2 w-full">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md rounded-lg py-4 px-6 flex items-center justify-center gap-2 active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stop_circle</span>
+                    Stop &amp; Process
+                </button>
+<button class="text-on-surface-variant font-label-md text-label-md py-2 px-4 hover:text-primary transition-colors">
+                    Cancel
+                </button>
+</div>
+</section>
+<!-- Preserved Context: Needs Your Response -->
+<section class="flex flex-col gap-stack-sm opacity-60 pointer-events-none transition-opacity duration-300">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Needs Your Response</h2>
+<div class="bg-surface border border-outline-variant rounded-lg p-4 flex gap-4 items-start">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">FR-2026-08-23-C</span>
+<p class="font-body-md text-body-md text-on-surface mt-1">Clarification needed on structural support bracket placement in Sector B.</p>
+</div>
+</div>
+</section>
+<!-- Preserved Context: Recent Updates -->
+<section class="flex flex-col gap-stack-sm opacity-60 pointer-events-none transition-opacity duration-300">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Recent Updates</h2>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface border border-outline-variant rounded-lg p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">engineering</span>
+<span class="font-label-md text-label-md">Piping</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Started welding on main line.</p>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">construction</span>
+<span class="font-label-md text-label-md">Electrical</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Completed conduit run.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation (from JSON) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-2 bg-surface border-t border-outline-variant md:hidden flat no shadows">
+<!-- Active: Home -->
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl py-1 px-4 cursor-pointer active:bg-surface-container-high tap-highlight-transparent">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md-mobile mt-1">Home</span>
+</div>
+<!-- Inactive: Reports -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:bg-surface-container-high tap-highlight-transparent px-4">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-md text-label-md-mobile mt-1">Reports</span>
+</div>
+<!-- Inactive: Clarifications -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:bg-surface-container-high tap-highlight-transparent px-4">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-md text-label-md-mobile mt-1">Clarifications</span>
+</div>
+<!-- Inactive: Profile -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:bg-surface-container-high tap-highlight-transparent px-4">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md-mobile mt-1">Profile</span>
+</div>
+</nav>
+</body></html>

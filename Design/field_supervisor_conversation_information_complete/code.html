@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Field Supervisor Conversation - Information Complete</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#727784",
+                        "surface-bright": "#f9f9ff",
+                        "on-surface": "#191c21",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "surface-container-high": "#e7e8f0",
+                        "tertiary": "#722b00",
+                        "on-background": "#191c21",
+                        "on-secondary-fixed": "#001b3e",
+                        "primary-fixed-dim": "#acc7ff",
+                        "surface-tint": "#115cb9",
+                        "on-primary-container": "#bbd0ff",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-container": "#224b85",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-tertiary-container": "#ffc2a7",
+                        "surface": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "on-tertiary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#acc7ff",
+                        "surface-container-low": "#f2f3fc",
+                        "tertiary-fixed": "#ffdbcc",
+                        "primary-container": "#0056b3",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#983c00",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e1e2ea",
+                        "inverse-surface": "#2e3037",
+                        "surface-container-highest": "#e1e2ea",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "surface-dim": "#d9d9e2",
+                        "surface-container": "#ededf6",
+                        "secondary-container": "#98bcfe",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#d6e3ff",
+                        "primary": "#003f87",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary": "#385e9a",
+                        "on-surface-variant": "#424752",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-primary-fixed": "#001a40",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "background": "#f9f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "stack-lg": "32px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9ff;
+            color: #191c21;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background flex flex-col h-screen antialiased overflow-hidden md:hidden max-w-[390px] mx-auto relative border-x border-outline-variant">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-surface w-full top-0 sticky border-b border-outline-variant dark:border-outline transition-colors duration-200 flex items-center justify-between px-container-padding h-16 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">construction</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">NAVIS</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-surface-variant cursor-pointer hover:bg-surface-container-low dark:hover:bg-surface-variant p-2 rounded-full transition-colors duration-200">more_vert</span>
+</div>
+</header>
+<!-- Canvas / Main Content Area -->
+<main class="flex-1 overflow-y-auto no-scrollbar flex flex-col pb-24 relative">
+<!-- Conversation Feed -->
+<div class="flex-1 px-4 py-6 flex flex-col gap-stack-md">
+<!-- User Message 1 -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-primary text-on-primary rounded-lg rounded-tr-none px-4 py-3 max-w-[85%] shadow-sm">
+<p class="font-body-md text-body-md">We started spool erection for the cooling water system today.</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">09:14</span>
+</div>
+<!-- Assistant Message 1 -->
+<div class="flex flex-col items-start gap-1">
+<div class="bg-surface-container-low text-on-surface rounded-lg rounded-tl-none px-4 py-3 max-w-[85%] border border-outline-variant">
+<p class="font-body-md text-body-md">Understood. Just to clarify, was the erection started today, or yesterday?</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">09:15</span>
+</div>
+<!-- User Message 2 -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-primary text-on-primary rounded-lg rounded-tr-none px-4 py-3 max-w-[85%] shadow-sm">
+<p class="font-body-md text-body-md">yesterday</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">09:16</span>
+</div>
+<!-- Assistant Message 2 -->
+<div class="flex flex-col items-start gap-1">
+<div class="bg-surface-container-low text-on-surface rounded-lg rounded-tl-none px-4 py-3 max-w-[85%] border border-outline-variant">
+<p class="font-body-md text-body-md">Got it. What quantity of spools have been erected so far?</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">09:16</span>
+</div>
+<!-- User Message 3 (The New Response) -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-primary text-on-primary rounded-lg rounded-tr-none px-4 py-3 max-w-[85%] shadow-sm">
+<p class="font-body-md text-body-md">6 out of 18</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">09:18</span>
+</div>
+<!-- Assistant Status Block (Information Complete) -->
+<div class="mt-4 flex flex-col items-start gap-2">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-label-md text-primary font-bold">READY TO DRAFT</span>
+</div>
+<div class="bg-surface-bright text-on-surface rounded-lg px-4 py-3 w-full border border-outline-variant shadow-sm flex items-center justify-between">
+<p class="font-body-md text-body-md">I have enough information to prepare the update.</p>
+</div>
+</div>
+</div>
+<!-- Sticky Action Area -->
+<div class="px-4 pb-6 pt-2 sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent w-full">
+<button class="w-full bg-primary hover:bg-on-primary-fixed-variant text-on-primary font-label-md text-label-md font-bold py-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 shadow-sm border border-transparent">
+                Review Structured Update
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center h-20 px-gutter bg-surface dark:bg-on-surface border-t border-outline-variant dark:border-outline">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim scale-95 transition-transform duration-100 p-2 rounded-lg w-16" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim scale-95 transition-transform duration-100 p-2 rounded-lg w-16" href="#">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim font-bold hover:bg-surface-container-high dark:hover:bg-surface-dim scale-95 transition-transform duration-100 p-2 rounded-lg w-20" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">chat_bubble_outline</span>
+<span class="font-label-md text-label-md">Clarifications</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim scale-95 transition-transform duration-100 p-2 rounded-lg w-16" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+</body></html>

@@ -25,6 +25,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import re
 import statistics
 import uuid
@@ -44,6 +45,23 @@ from sqlalchemy.orm import Session
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from extraction.textio import read_text
+from server import agent_llm
+from server.agent_slots import (
+    AgentContext,
+    DISCIPLINE_VALUES,
+    InvalidDate,
+    STATUS_LABELS,
+    choices_for,
+    discipline_label,
+    mentions_countable,
+    parse_date,
+    parse_discipline,
+    parse_quantity,
+    parse_status,
+    parse_tags,
+    question_for,
+)
 from extraction.extractor import Extractor
 from extraction.models import (
     Discipline,
@@ -84,7 +102,16 @@ from .schemas import (
     AgentTurnResponse,
     DelayReason,
     DurationDistribution,
+    AuditFeedItem,
+    AuditRecordResponse,
+    ClarificationAnswerRequest,
+    ClarificationAskRequest,
+    ClarificationResponse,
+    ConflictSide,
     ExportRequest,
+    FieldReportResponse,
+    JobSummaryResponse,
+    SourceConflict,
     ExportResponse,
     IngestResponse,
     JobResponse,
@@ -176,8 +203,9 @@ def _seed_schedule_if_empty(db: Session) -> None:
         logger.warning(f"Baseline schedule not found: {schedule_path}")
         return
 
-    with open(schedule_path) as f:
-        activities = json.load(f)
+    # Explicit decode rather than the platform default, so the baseline
+    # loads identically on Windows and Linux.
+    activities = json.loads(read_text(schedule_path))
 
     for act in activities:
         db.add(Activity(
@@ -266,7 +294,10 @@ def _write_audit(
     old_value: Optional[str],
     new_value: Optional[str],
     source: str = "extraction",
+    linked_event_id: Optional[str] = None,
     source_file: Optional[str] = None,
+    source_line: Optional[int] = None,
+    source_row: Optional[int] = None,
     source_span: Optional[str] = None,
     confidence: Optional[float] = None,
     auto_applied: bool = False,
@@ -289,7 +320,10 @@ def _write_audit(
         old_value=old_value,
         new_value=new_value,
         source=source,
+        linked_event_id=linked_event_id,
         source_file=source_file,
+        source_line=source_line,
+        source_row=source_row,
         source_span=source_span,
         confidence=confidence,
         model_version=model_version,
@@ -305,7 +339,108 @@ def _write_audit(
 
 # ── Schedule actuals from matching/ rollup ───────────────────────────────────
 
-def _apply_rollup_to_schedule(db: Session, results) -> int:
+# ── Event index ──────────────────────────────────────────────────────────────
+
+# A DateAssertion now carries the file, line and row it came from, so an audit
+# write can name its origin exactly rather than by matching text. This index
+# closes the last hop: from that position back to the LinkedEvent row, so the
+# audit record can hold a real foreign key. The key includes line and row, so
+# two identical lines in one file are distinct entries rather than one.
+EventIndex = dict[tuple, str]
+
+
+def _build_event_index(pairs) -> EventIndex:
+    """Map (source_file, source_line, source_row, text) -> linked_event id.
+
+    `pairs` is an iterable of (event, linked_event_id). Each event is indexed
+    under both its extracted span and its raw text, because an assertion falls
+    back to raw text when the span is empty.
+    """
+    index: EventIndex = {}
+    for event, linked_event_id in pairs:
+        prov = getattr(event, "provenance", None)
+        if prov is None or not linked_event_id:
+            continue
+        where = (prov.source_file, prov.source_line, prov.source_row)
+        for text in (getattr(prov, "source_span", None), getattr(event, "raw_text", None)):
+            if text:
+                index.setdefault(where + (text,), linked_event_id)
+    return index
+
+
+def _origin(index: Optional[EventIndex], assertion) -> tuple:
+    """(linked_event_id, source_file, source_line, source_row) for one assertion.
+
+    Everything but the id comes straight off the assertion — the index is only
+    consulted to recover the foreign key.
+    """
+    if assertion is None:
+        return (None, None, None, None)
+    key = (
+        assertion.source_file,
+        assertion.source_line,
+        assertion.source_row,
+        assertion.source_span,
+    )
+    return (
+        (index or {}).get(key),
+        assertion.source_file or None,
+        assertion.source_line,
+        assertion.source_row,
+    )
+
+
+def _assertion_for(assertions, value):
+    """The assertion that produced the value actually written, if any."""
+    for a in assertions:
+        if a.value == value:
+            return a
+    return assertions[0] if assertions else None
+
+
+def _prior_write(db: Session, activity_id: str, field: str):
+    """The most recent audit row for one field of one activity, or None.
+
+    Conflict detection needs it because the roll-up only sees the assertions of
+    the current ingest call. Two files disagreeing about the same date are
+    almost always ingested separately, so the other side of the disagreement
+    lives in the audit trail, not in the current RollupResult.
+    """
+    return (
+        db.query(AuditRecord)
+        .filter(
+            AuditRecord.activity_id == activity_id,
+            AuditRecord.field_changed == field,
+        )
+        .order_by(AuditRecord.timestamp.desc(), AuditRecord.created_at.desc())
+        .first()
+    )
+
+
+def _describe_side(value, source_file, source_line, source_row) -> str:
+    """One side of a disagreement, shaped like DateAssertion.describe()."""
+    where = source_file or "unknown source"
+    if source_line is not None:
+        where = "%s line %s" % (where, source_line)
+    elif source_row is not None:
+        where = "%s row %s" % (where, source_row)
+    return "%s from %s" % (value, where)
+
+
+def _cross_file_conflict(prior, new_value: str, new_file) -> bool:
+    """True when this write contradicts an earlier one from a different file."""
+    return bool(
+        prior is not None
+        and prior.new_value is not None
+        and prior.new_value != new_value
+        and (prior.source_file or "") != (new_file or "")
+    )
+
+
+def _apply_rollup_to_schedule(db: Session, results,
+    prov_index: Optional[EventIndex] = None,
+    default_source_file: Optional[str] = None,
+) -> int:
     """Write rolled-up actual progress onto the schedule.
 
     Called with matching.RollupAccumulator results (AUTO_LINK decisions only):
@@ -319,13 +454,43 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
     (source="matching", auto_applied=True).
     """
     audits = 0
+    touched: set[str] = set()
     for r in results:
         act = db.query(Activity).filter(Activity.activity_id == r.activity_id).first()
         if act is None:
             continue
+        before = audits
         span = r.event_texts[0] if r.event_texts else None
         start_sources = [a.describe() for a in r.start_assertions]
         finish_sources = [a.describe() for a in r.finish_assertions]
+
+        # Provenance for each date, taken from the assertion that actually won
+        # the write, so the audit row cites the exact line of the exact report
+        # the value came from rather than an arbitrary contributing one.
+        start_a = _assertion_for(r.start_assertions, r.actual_start)
+        finish_a = _assertion_for(r.finish_assertions, r.actual_finish)
+        start_ev, start_file, start_line, start_row = _origin(prov_index, start_a)
+        finish_ev, finish_file, finish_line, finish_row = _origin(prov_index, finish_a)
+
+        # Quantity and conflict notes are aggregates: several events move a
+        # rolled-up quantity, and a conflict is by definition more than one
+        # source. Attribute those to a single line only when a single event
+        # produced them; otherwise name the file and let contributing_sources
+        # carry the rest, rather than pointing at one line that is not the
+        # whole story.
+        all_a = r.start_assertions + r.finish_assertions
+        single = all_a[0] if r.n_events == 1 and len(all_a) == 1 else None
+        agg_ev, agg_file, agg_line, agg_row = _origin(prov_index, single)
+        if agg_file is None:
+            # No assertion at all — the value came from the report's own date
+            # rather than a specific line. Name the file it was read from; the
+            # line stays null because there genuinely is not one.
+            agg_file = next(
+                (a.source_file for a in all_a if a.source_file), None
+            ) or default_source_file
+        start_file = start_file or default_source_file
+        finish_file = finish_file or default_source_file
+        all_sources = [a.describe() for a in all_a] or None
 
         # Any disagreement between sources is recorded on the write it
         # affects, and surfaced on GET /schedule.
@@ -337,7 +502,10 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
                 old_value=None,
                 new_value=note[:500],
                 source="matching",
-                source_file=None,
+                linked_event_id=agg_ev,
+                source_file=agg_file,
+                source_line=agg_line,
+                source_row=agg_row,
                 source_span=span,
                 confidence=None,
                 auto_applied=False,
@@ -356,20 +524,67 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
             except IntegrityError as e:
                 logger.warning("Integrity block on actual_start: %s", e)
             else:
+                prior = _prior_write(db, r.activity_id, "actual_start")
+                new_iso = r.actual_start.isoformat()
+                crossed = _cross_file_conflict(prior, new_iso, start_file)
+                sides = list(start_sources or [])
+                if crossed:
+                    sides = [
+                        _describe_side(prior.new_value, prior.source_file,
+                                       prior.source_line, prior.source_row),
+                        _describe_side(new_iso, start_file, start_line, start_row),
+                    ]
                 _write_audit(
                     db, r.activity_id,
                     field="actual_start",
                     old_value=act.actual_start.isoformat() if act.actual_start else None,
-                    new_value=r.actual_start.isoformat(),
+                    new_value=new_iso,
                     source="matching",
-                    source_span=span,
+                    linked_event_id=start_ev,
+                    source_file=start_file,
+                    source_line=start_line,
+                    source_row=start_row,
+                    source_span=(start_a.source_span if start_a else None) or span,
                     confidence=1.0,
                     auto_applied=True,
                     model_version=MATCHING_MODEL_VERSION,
-                    contributing_sources=start_sources or None,
-                    conflict=len({a.value for a in r.start_assertions}) > 1,
+                    contributing_sources=sides or None,
+                    conflict=crossed or len({a.value for a in r.start_assertions}) > 1,
                 )
                 act.actual_start = r.actual_start
+                audits += 1
+        elif r.actual_start is not None and act.actual_start != r.actual_start:
+            # The stored start wins on the earliest-evidence rule, so nothing is
+            # written. A different file still asserted a different date, so the
+            # disagreement is recorded rather than silently discarded.
+            prior = _prior_write(db, r.activity_id, "actual_start")
+            new_iso = r.actual_start.isoformat()
+            if _cross_file_conflict(prior, new_iso, start_file):
+                _write_audit(
+                    db, r.activity_id,
+                    field="source_conflict",
+                    old_value=None,
+                    new_value=(
+                        "actual_start disagreement: kept %s, did not apply %s from %s"
+                        % (act.actual_start.isoformat(), new_iso,
+                           start_file or "unknown source")
+                    )[:500],
+                    source="matching",
+                    linked_event_id=start_ev,
+                    source_file=start_file,
+                    source_line=start_line,
+                    source_row=start_row,
+                    source_span=(start_a.source_span if start_a else None) or span,
+                    confidence=None,
+                    auto_applied=False,
+                    model_version=MATCHING_MODEL_VERSION,
+                    contributing_sources=[
+                        _describe_side(prior.new_value, prior.source_file,
+                                       prior.source_line, prior.source_row),
+                        _describe_side(new_iso, start_file, start_line, start_row),
+                    ],
+                    conflict=True,
+                )
                 audits += 1
 
         # Installed quantity (quantity-based percent complete lives in
@@ -384,10 +599,15 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
                 old_value=str(act.actual_qty) if act.actual_qty is not None else None,
                 new_value=str(new_qty),
                 source="matching",
+                linked_event_id=agg_ev,
+                source_file=agg_file,
+                source_line=agg_line,
+                source_row=agg_row,
                 source_span=span,
                 confidence=1.0,
                 auto_applied=True,
                 model_version=MATCHING_MODEL_VERSION,
+                contributing_sources=all_sources,
             )
             act.actual_qty = new_qty
             audits += 1
@@ -400,24 +620,41 @@ def _apply_rollup_to_schedule(db: Session, results) -> int:
                 logger.warning("Integrity block on actual_finish: %s", e)
             else:
                 if act.actual_finish != r.actual_finish:
+                    prior = _prior_write(db, r.activity_id, "actual_finish")
+                    new_iso = r.actual_finish.isoformat()
+                    crossed = _cross_file_conflict(prior, new_iso, finish_file)
+                    sides = list(finish_sources or [])
+                    if crossed:
+                        sides = [
+                            _describe_side(prior.new_value, prior.source_file,
+                                           prior.source_line, prior.source_row),
+                            _describe_side(new_iso, finish_file,
+                                           finish_line, finish_row),
+                        ]
                     _write_audit(
                         db, r.activity_id,
                         field="actual_finish",
                         old_value=act.actual_finish.isoformat() if act.actual_finish else None,
-                        new_value=r.actual_finish.isoformat(),
+                        new_value=new_iso,
                         source="matching",
-                        source_span=span,
+                        linked_event_id=finish_ev,
+                        source_file=finish_file,
+                        source_line=finish_line,
+                        source_row=finish_row,
+                        source_span=(finish_a.source_span if finish_a else None) or span,
                         confidence=1.0,
                         auto_applied=True,
                         model_version=MATCHING_MODEL_VERSION,
-                        contributing_sources=finish_sources or None,
-                        conflict=len({a.value for a in r.finish_assertions}) > 1,
+                        contributing_sources=sides or None,
+                        conflict=crossed or len({a.value for a in r.finish_assertions}) > 1,
                     )
                     act.actual_finish = r.actual_finish
                     audits += 1
 
         act.compute_variance(DATA_DATE)
-    return audits
+        if audits > before:
+            touched.add(r.activity_id)
+    return audits, touched
 
 
 # ── POST /ingest ─────────────────────────────────────────────────────────────
@@ -528,6 +765,9 @@ async def ingest_file(
         linked_count = 0
         review_count = 0
         auto_pairs = []
+        # (event, linked_event.id) for every row written this call, so an
+        # audit record can point back at the exact event that produced it.
+        event_rows = []
 
         for event, decision in fresh:
             outcome = decision.outcome
@@ -564,6 +804,7 @@ async def ingest_file(
                 rationale=json.dumps(decision.rationale),
             )
             db.add(le)
+            event_rows.append((event, le.id))
 
             if outcome is Decision.AUTO_LINK:
                 linked_count += 1
@@ -611,17 +852,26 @@ async def ingest_file(
 
         # Granularity: roll many-to-one mentions into one L5/L6 node and
         # write aggregated actual progress + audit records.
+        audits_written = 0
+        activities_touched: set[str] = set()
         if auto_pairs:
             accumulator = RollupAccumulator(get_matching_engine())
             for event, decision in auto_pairs:
                 accumulator.add(decision, event)
-            _apply_rollup_to_schedule(db, accumulator.results())
+            audits_written, activities_touched = _apply_rollup_to_schedule(
+                db,
+                accumulator.results(),
+                _build_event_index(event_rows),
+                default_source_file=file.filename,
+            )
 
         # Update job
         job.status = "completed"
         job.event_count = event_count
         job.linked_count = linked_count
         job.review_count = review_count
+        job.activities_updated = len(activities_touched)
+        job.audit_records_created = audits_written
         job.completed_at = _now()
         db.commit()
 
@@ -645,6 +895,43 @@ async def ingest_file(
 
 # ── GET /jobs/{id} ───────────────────────────────────────────────────────────
 
+@app.get("/jobs", response_model=list[JobSummaryResponse])
+def list_jobs(
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """Past ingests, newest first, without their events.
+
+    The events array on a single job can run to hundreds of rows, so the
+    history list deliberately omits it — callers that need the detail fetch
+    GET /jobs/{job_id}.
+    """
+    jobs = (
+        db.query(Job)
+        .order_by(Job.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [_job_summary(job) for job in jobs]
+
+
+def _job_summary(job: Job) -> JobSummaryResponse:
+    return JobSummaryResponse(
+        id=job.id,
+        filename=job.filename,
+        file_type=job.file_type,
+        status=job.status,
+        event_count=job.event_count or 0,
+        linked_count=job.linked_count or 0,
+        review_count=job.review_count or 0,
+        activities_updated=job.activities_updated or 0,
+        audit_records_created=job.audit_records_created or 0,
+        error_message=job.error_message,
+        created_at=job.created_at,
+        completed_at=job.completed_at,
+    )
+
+
 @app.get("/jobs/{job_id}", response_model=JobResponse)
 def get_job(job_id: str, db: Session = Depends(get_db)):
     """Get extraction results and linking status for a job."""
@@ -666,6 +953,8 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
         event_count=job.event_count,
         linked_count=job.linked_count,
         review_count=job.review_count,
+        activities_updated=job.activities_updated or 0,
+        audit_records_created=job.audit_records_created or 0,
         error_message=job.error_message,
         created_at=job.created_at,
         completed_at=job.completed_at,
@@ -796,7 +1085,10 @@ def resolve_review_item(
             old_value=None,
             new_value=le.raw_text[:200],
             source="planner_review",
+            linked_event_id=le.id,
             source_file=le.source_file,
+            source_line=le.source_line,
+            source_row=le.source_row,
             source_span=le.source_span,
             confidence=le.confidence,
         )
@@ -837,7 +1129,10 @@ def resolve_review_item(
             old_value=old_activity_id,
             new_value=req.activity_id,
             source="planner_review",
+            linked_event_id=le.id,
             source_file=le.source_file,
+            source_line=le.source_line,
+            source_row=le.source_row,
             source_span=le.source_span,
             confidence=le.confidence,
         )
@@ -893,7 +1188,10 @@ def resolve_review_item(
             old_value=None,
             new_value=req.new_description,
             source="planner_review",
+            linked_event_id=le.id,
             source_file=le.source_file,
+            source_line=le.source_line,
+            source_row=le.source_row,
             source_span=le.source_span,
             confidence=1.0,
         )
@@ -972,7 +1270,13 @@ def _apply_confirmed_event_to_schedule(
     )
     accumulator = RollupAccumulator(engine)
     accumulator.add(decision, event)
-    return _apply_rollup_to_schedule(db, accumulator.results())
+    audits, _touched = _apply_rollup_to_schedule(
+        db,
+        accumulator.results(),
+        _build_event_index([(event, le.id)]),
+        default_source_file=le.source_file,
+    )
+    return audits
 
 
 def _upsert_alias(
@@ -1028,6 +1332,20 @@ def get_schedule(
     total_start_var = []
     total_finish_var = []
 
+    # Confidence of the most recent write that set an actual date, per
+    # activity. Read in one pass instead of a query per row.
+    actual_date_confidence: dict[str, float] = {}
+    for aid, conf in (
+        db.query(AuditRecord.activity_id, AuditRecord.confidence)
+        .filter(
+            AuditRecord.field_changed.in_(("actual_start", "actual_finish")),
+            AuditRecord.confidence.isnot(None),
+        )
+        .order_by(AuditRecord.timestamp.asc())
+        .all()
+    ):
+        actual_date_confidence[aid] = conf
+
     for act in activities:
         # Recompute variance
         act.compute_variance(DATA_DATE)
@@ -1065,6 +1383,10 @@ def get_schedule(
                 finish_variance_days=act.finish_variance_days,
                 percent_complete=pct,
                 predecessors=act.predecessor_list(),
+                link_confidence=(
+                    actual_date_confidence.get(act.activity_id)
+                    if (act.actual_start or act.actual_finish) else None
+                ),
             )
         )
 
@@ -1108,6 +1430,184 @@ def get_schedule(
         integrity_warnings=warnings,
         activities=response_activities,
     )
+
+
+# ── GET /schedule/{activity_id}/audit ───────────────────────────────────────
+
+@app.get(
+    "/schedule/{activity_id}/audit",
+    response_model=list[AuditRecordResponse],
+)
+def get_activity_audit(activity_id: str, db: Session = Depends(get_db)):
+    """Every recorded change to one activity, newest first.
+
+    Read-only by construction: audit_records is append-only, so there is no
+    write counterpart to this route. Returns [] for an activity that exists
+    but has never been touched; 404 only when the activity itself is unknown,
+    so the caller can tell "nothing recorded yet" from "no such activity".
+    """
+    exists = db.query(Activity).filter(
+        Activity.activity_id == activity_id
+    ).first()
+    if exists is None:
+        raise HTTPException(404, f"Unknown activity: {activity_id}")
+
+    records = (
+        db.query(AuditRecord)
+        .filter(AuditRecord.activity_id == activity_id)
+        .order_by(AuditRecord.timestamp.desc(), AuditRecord.created_at.desc())
+        .all()
+    )
+
+    return [
+        AuditRecordResponse(
+            id=rec.id,
+            activity_id=rec.activity_id,
+            linked_event_id=rec.linked_event_id,
+            timestamp=rec.timestamp,
+            field_changed=rec.field_changed,
+            old_value=rec.old_value,
+            new_value=rec.new_value,
+            source=rec.source,
+            source_file=rec.source_file,
+            source_line=rec.source_line,
+            source_row=rec.source_row,
+            source_span=rec.source_span,
+            confidence=rec.confidence,
+            model_version=rec.model_version,
+            auto_applied=rec.auto_applied,
+            contributing_sources=(
+                json.loads(rec.contributing_sources)
+                if rec.contributing_sources else []
+            ),
+            conflict=rec.conflict,
+        )
+        for rec in records
+    ]
+
+
+# ── GET /schedule/conflicts ─────────────────────────────────────────────────
+
+def _source_kind(source_file: Optional[str]) -> str:
+    """Classify a source by TYPE, which is what a planner weighs.
+
+    Never returns anything implying the baseline: Primavera is read-only, so it
+    can never be one side of a disagreement.
+    """
+    name = (source_file or "").lower()
+    if name.endswith(".xlsx") or name.endswith(".xls") or name.endswith(".csv"):
+        return "spreadsheet"
+    if name.startswith("agent_session"):
+        return "agent"
+    if name.endswith(".txt") or name.endswith(".log") or name.endswith(".md"):
+        return "daily_report"
+    return "other"
+
+
+@app.get("/schedule/conflicts", response_model=list[SourceConflict])
+def list_source_conflicts(
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """Activities where two field sources disagree about the same field.
+
+    Derived from the audit trail rather than stored: a disagreement is a write
+    whose value differs from the previous write to the same field, where the
+    two writes came from different files. Both values, both files and both
+    line/row numbers are already recorded, so no new state is needed.
+
+    Only field sources appear here. The Primavera baseline is read-only and is
+    never written, so it cannot be a side of a conflict.
+    """
+    records = (
+        db.query(AuditRecord)
+        .filter(AuditRecord.field_changed.in_(("actual_start", "actual_finish")))
+        .order_by(AuditRecord.activity_id, AuditRecord.timestamp.asc())
+        .all()
+    )
+
+    activities = {a.activity_id: a for a in db.query(Activity).all()}
+
+    # Walk each activity's writes per field, in order, and emit a conflict
+    # wherever consecutive writes disagree and come from different files.
+    seen: dict[tuple, AuditRecord] = {}
+    conflicts: list[SourceConflict] = []
+    for rec in records:
+        key = (rec.activity_id, rec.field_changed)
+        prior = seen.get(key)
+        if _cross_file_conflict(prior, rec.new_value, rec.source_file):
+            act = activities.get(rec.activity_id)
+            conflicts.append(SourceConflict(
+                activity_id=rec.activity_id,
+                description=act.description if act else "",
+                discipline=act.discipline if act else "unknown",
+                field=rec.field_changed,
+                sides=[
+                    ConflictSide(
+                        value=prior.new_value,
+                        source_file=prior.source_file,
+                        source_line=prior.source_line,
+                        source_row=prior.source_row,
+                        source_kind=_source_kind(prior.source_file),
+                    ),
+                    ConflictSide(
+                        value=rec.new_value,
+                        source_file=rec.source_file,
+                        source_line=rec.source_line,
+                        source_row=rec.source_row,
+                        source_kind=_source_kind(rec.source_file),
+                    ),
+                ],
+                stored_value=(
+                    (act.actual_start.isoformat() if act and act.actual_start else None)
+                    if rec.field_changed == "actual_start"
+                    else (act.actual_finish.isoformat() if act and act.actual_finish else None)
+                ),
+                detected_at=rec.timestamp,
+            ))
+        seen[key] = rec
+
+    # Newest disagreement first.
+    conflicts.sort(key=lambda c: c.detected_at, reverse=True)
+    return conflicts[:limit]
+
+
+# ── GET /audit/recent ───────────────────────────────────────────────────────
+
+@app.get("/audit/recent", response_model=list[AuditFeedItem])
+def recent_audit(
+    limit: int = Query(20, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """The newest audit writes across every activity, newest first.
+
+    The per-activity route serves the Schedule drawer; this one exists so a
+    dashboard can show recent activity without fetching all 120 activities.
+    """
+    records = (
+        db.query(AuditRecord)
+        .order_by(AuditRecord.timestamp.desc(), AuditRecord.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        AuditFeedItem(
+            id=rec.id,
+            activity_id=rec.activity_id,
+            field_changed=rec.field_changed,
+            old_value=rec.old_value,
+            new_value=rec.new_value,
+            source=rec.source,
+            source_file=rec.source_file,
+            source_line=rec.source_line,
+            source_row=rec.source_row,
+            confidence=rec.confidence,
+            auto_applied=rec.auto_applied,
+            conflict=rec.conflict,
+            timestamp=rec.timestamp,
+        )
+        for rec in records
+    ]
 
 
 # ── POST /schedule/export ───────────────────────────────────────────────────
@@ -1248,6 +1748,224 @@ def _generate_xer(activities: list[Activity], include_actuals: bool) -> str:
     return "\n".join(lines)
 
 
+# ── POST /admin/reset ───────────────────────────────────────────────────────
+
+@app.post("/admin/reset")
+def admin_reset(dpr_only: bool = Query(False)):
+    """Reset the demo database to its seeded state.
+
+    Off unless NAVIS_ENABLE_RESET=1 is set, because it destroys every ingest,
+    review decision and audit record. It exists so a rehearsal can be restarted
+    in one call without stopping the server; it is not something to leave
+    reachable by accident.
+    """
+    if os.environ.get("NAVIS_ENABLE_RESET") != "1":
+        raise HTTPException(
+            404,
+            "Reset is disabled. Start the server with NAVIS_ENABLE_RESET=1 to "
+            "enable it, or run: python scripts/reset_demo.py",
+        )
+
+    from server.demo import reset_demo
+
+    try:
+        summary = reset_demo(dpr_only=dpr_only)
+    except Exception as e:                                   # noqa: BLE001
+        logger.exception("Demo reset failed")
+        raise HTTPException(500, f"Reset failed: {e}") from e
+
+    # The per-file detail is useful in a terminal, not over HTTP.
+    summary.pop("files", None)
+    return summary
+
+
+# ── Field supervisor ────────────────────────────────────────────────────────
+
+# Everything submitted through the conversational agent belongs to the field
+# supervisor. There is no user table and authentication is out of scope, so
+# this is the scope marker: it is stable, it is already stored, and it cannot
+# accidentally include a planner's own edits.
+FIELD_MATCH_METHOD = "agent_turn"
+
+
+def _report_reference(event) -> str:
+    """A short human reference for one submitted report."""
+    stamp = (event.created_at or _now()).strftime("%Y-%m-%d")
+    return f"FR-{stamp}-{event.id[:4].upper()}"
+
+
+def _report_status(review) -> str:
+    """The status the supervisor sees, from the planner's own state."""
+    if review is None:
+        return "Processing"
+    if review.status == "resolved":
+        return "Rejected" if review.resolution == "ignore" else "Confirmed"
+    if review.clarification_question and not review.clarification_response:
+        return "Needs Information"
+    return "Processing"
+
+
+def _field_events(db: Session):
+    """This supervisor's submissions, newest first, with their review item."""
+    events = (
+        db.query(LinkedEvent)
+        .filter(LinkedEvent.match_method == FIELD_MATCH_METHOD)
+        .order_by(LinkedEvent.created_at.desc())
+        .all()
+    )
+    if not events:
+        return []
+    reviews = {
+        r.linked_event_id: r
+        for r in db.query(ReviewQueueItem)
+        .filter(ReviewQueueItem.linked_event_id.in_([e.id for e in events]))
+        .all()
+    }
+    return [(e, reviews.get(e.id)) for e in events]
+
+
+@app.get("/field/reports", response_model=list[FieldReportResponse])
+def field_reports(db: Session = Depends(get_db)):
+    """This supervisor's own submission history, newest first.
+
+    Read-only, and deliberately scoped: it never returns another reporter's
+    updates. Ingested DPRs and spreadsheet rows are not "his reports" and do
+    not appear here.
+    """
+    activities = {a.activity_id: a for a in db.query(Activity).all()}
+    out = []
+    for event, review in _field_events(db):
+        matched = activities.get(event.activity_id)
+        out.append(FieldReportResponse(
+            id=event.id,
+            reference=_report_reference(event),
+            raw_text=event.raw_text,
+            submitted_at=event.created_at or _now(),
+            location=None,
+            discipline=event.discipline if event.discipline != "unknown" else None,
+            discipline_label=(
+                discipline_label(event.discipline)
+                if event.discipline in DISCIPLINE_VALUES else None
+            ),
+            status=_report_status(review),
+            matched_activity_id=event.activity_id,
+            matched_activity_description=matched.description if matched else None,
+            confidence=event.confidence or 0.0,
+            review_item_id=review.id if review else None,
+            clarification_question=review.clarification_question if review else None,
+            clarification_response=review.clarification_response if review else None,
+        ))
+    return out
+
+
+@app.get("/field/clarifications", response_model=list[ClarificationResponse])
+def field_clarifications(
+    unanswered_only: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """Questions the Planning Engineer put back to this supervisor."""
+    out = []
+    for event, review in _field_events(db):
+        if review is None or not review.clarification_question:
+            continue
+        answered = bool(review.clarification_response)
+        if unanswered_only and answered:
+            continue
+        out.append(ClarificationResponse(
+            id=review.id,
+            review_item_id=review.id,
+            reference=_report_reference(event),
+            original_text=event.raw_text,
+            question=review.clarification_question,
+            asked_by=review.clarification_asked_by or "Priya Das",
+            asked_at=review.clarification_asked_at or review.created_at or _now(),
+            answered=answered,
+            response=review.clarification_response,
+            answered_at=review.clarification_answered_at,
+            matched_activity_id=event.activity_id,
+        ))
+    return out
+
+
+@app.post("/field/clarifications/{item_id}/respond",
+          response_model=ClarificationResponse)
+def answer_clarification(
+    item_id: str,
+    req: ClarificationAnswerRequest,
+    db: Session = Depends(get_db),
+):
+    """Answer one clarification.
+
+    Idempotent: answering twice keeps the first answer rather than appending a
+    second. Writes no schedule data, confirms no match and creates no activity
+    — it hands the item back to the Planning Engineer, who still decides.
+    """
+    review = db.query(ReviewQueueItem).filter(ReviewQueueItem.id == item_id).first()
+    if review is None or not review.clarification_question:
+        raise HTTPException(404, f"No clarification found for item {item_id}")
+
+    event = db.query(LinkedEvent).filter(
+        LinkedEvent.id == review.linked_event_id).first()
+
+    if not review.clarification_response:
+        review.clarification_response = req.response.strip()
+        review.clarification_answered_at = _now()
+        db.commit()
+        db.refresh(review)
+
+    return ClarificationResponse(
+        id=review.id,
+        review_item_id=review.id,
+        reference=_report_reference(event) if event else review.id[:8],
+        original_text=event.raw_text if event else "",
+        question=review.clarification_question,
+        asked_by=review.clarification_asked_by or "Priya Das",
+        asked_at=review.clarification_asked_at or review.created_at or _now(),
+        answered=True,
+        response=review.clarification_response,
+        answered_at=review.clarification_answered_at,
+        matched_activity_id=event.activity_id if event else None,
+    )
+
+
+@app.post("/review/{item_id}/clarify", response_model=ClarificationResponse)
+def ask_clarification(
+    item_id: str,
+    req: ClarificationAskRequest,
+    db: Session = Depends(get_db),
+):
+    """Planner side: ask the supervisor a question about a queued item.
+
+    Exists so the loop can be closed end to end. It does not resolve the item,
+    change its activity, or touch the schedule.
+    """
+    review = db.query(ReviewQueueItem).filter(ReviewQueueItem.id == item_id).first()
+    if review is None:
+        raise HTTPException(404, f"Review item {item_id} not found")
+
+    review.clarification_question = req.question.strip()
+    review.clarification_asked_by = req.asked_by
+    review.clarification_asked_at = _now()
+    review.clarification_response = None
+    review.clarification_answered_at = None
+    db.commit()
+    db.refresh(review)
+
+    event = db.query(LinkedEvent).filter(
+        LinkedEvent.id == review.linked_event_id).first()
+    return ClarificationResponse(
+        id=review.id,
+        review_item_id=review.id,
+        reference=_report_reference(event) if event else review.id[:8],
+        original_text=event.raw_text if event else "",
+        question=review.clarification_question,
+        asked_by=review.clarification_asked_by,
+        asked_at=review.clarification_asked_at,
+        answered=False,
+        matched_activity_id=event.activity_id if event else None,
+    )
+
+
 # ── GET /memory/query ────────────────────────────────────────────────────────
 
 @app.get("/memory/query", response_model=MemoryQueryResponse)
@@ -1322,6 +2040,7 @@ def _compute_duration_distribution(
         results.append(DurationDistribution(
             activity_type=type_key,
             count=len(data),
+            actuals_count=len(actual_days_list),
             planned_mean_days=round(statistics.mean(planned_days_list), 1),
             actual_mean_days=round(statistics.mean(actual_days_list), 1) if actual_days_list else None,
             planned_min_days=min(planned_days_list),
@@ -1402,14 +2121,26 @@ def _compute_delay_reasons(
                 if reason_kw in text:
                     reasons[reason_kw].append(item.resolved_activity_id or "")
 
+    # Finish slip per activity, so a cause can report the days behind it.
+    slip_by_activity = {
+        a.activity_id: a.finish_variance_days
+        for a in activities
+        if a.finish_variance_days and a.finish_variance_days > 0
+    }
+
     results = []
     for reason, act_ids in sorted(reasons.items(), key=lambda x: -len(x[1])):
+        affected = {a for a in act_ids if a}
         results.append(DelayReason(
             reason=reason,
             frequency=len(act_ids),
-            affected_activities=list(set(act_ids))[:10],
+            affected_activities=sorted(affected)[:10],
+            days_lost=sum(slip_by_activity.get(a, 0) for a in affected),
         ))
 
+    # Frequency first, then the days behind it — a cause that recurs often but
+    # costs nothing ranks below one that recurs less and costs weeks.
+    results.sort(key=lambda r: (-r.frequency, -r.days_lost))
     return results
 
 
@@ -1445,7 +2176,18 @@ def _compute_suggested_duration(
         p80_actual = sorted_actuals[min(p80_idx, len(sorted_actuals) - 1)]
 
     recommendation = f"For {activity_type} activities, "
-    if median_actual is not None:
+    if len(actual_days) < 2:
+        # One completed activity is an anecdote, not a pattern, and the
+        # dataset contains same-day activities that would otherwise produce a
+        # 0-day "recommendation".
+        recommendation = (
+            f"Not enough completed {activity_type} activities yet — "
+            f"{len(actual_days)} of {len(matching)} have actual dates. "
+            f"Planned duration is {median_planned}d."
+        )
+        median_actual = None
+        p80_actual = None
+    elif median_actual is not None:
         if median_actual > median_planned:
             recommendation += f"actual median ({median_actual}d) exceeds planned ({median_planned}d). "
             recommendation += f"Consider revising planned duration to {median_actual}d or using P80 ({p80_actual}d)."
@@ -1457,6 +2199,7 @@ def _compute_suggested_duration(
     return SuggestedDuration(
         activity_type_pattern=activity_type,
         sample_size=len(matching),
+        actuals_count=len(actual_days),
         median_planned_days=median_planned,
         median_actual_days=median_actual,
         p80_actual_days=p80_actual,
@@ -1471,14 +2214,20 @@ def agent_turn(
     req: AgentTurnRequest,
     db: Session = Depends(get_db),
 ):
-    """Slot-filling conversational logging turn.
+    """One turn of the conversational logging agent.
 
-    The agent asks for missing fields and fills them incrementally.
-    When all required slots are filled, it creates a LinkedEvent.
+    Slot-filling, propose-never-write. Structured context the client already
+    knows (project, work front, discipline, data date) arrives on the request
+    rather than as a fake supervisor message, so the transcript stays a record
+    of what a person actually said.
+
+    Nothing is persisted until `confirm` is true, and even then the schedule is
+    untouched: a confirmed turn creates a LinkedEvent and one review item for
+    the Planning Engineer, who alone can apply an actual date.
     """
     session_id = req.session_id or str(uuid.uuid4())
+    context = _context_from_request(req.context)
 
-    # Get or create conversation state
     existing_turns = (
         db.query(ConversationTurn)
         .filter(ConversationTurn.session_id == session_id)
@@ -1486,7 +2235,6 @@ def agent_turn(
         .limit(1)
         .all()
     )
-
     if existing_turns:
         prev_turn = existing_turns[0]
         slots = SlotState(**json.loads(prev_turn.slots_filled))
@@ -1495,39 +2243,77 @@ def agent_turn(
         slots = SlotState()
         turn_number = 1
 
-    # Parse the user message for slot values
-    _fill_slots_from_message(slots, req.message, db)
+    _apply_context(slots, context)
 
-    # Determine which slots are still pending
-    required_slots = ["discipline", "location", "status"]
-    pending = [s for s in required_slots if getattr(slots, s) is None]
+    clarification = None
+    if req.message:
+        # The first substantive message is the description: it carries the
+        # activity, and it is what the matcher is run against later.
+        if slots.description is None:
+            slots.description = req.message.strip() or None
+        clarification = _fill_slots(slots, req.message, context, db)
 
-    # Generate agent response
-    if pending:
-        slot_name = pending[0]
-        prompts = {
-            "discipline": "Which discipline? (civil, piping, electrical, instrumentation, hse, static_equipment)",
-            "location": "Where is this work happening? (zone, area, or specific location)",
-            "status": "What's the status? (completed, in_progress, delayed, not_started)",
-        }
-        agent_msg = prompts.get(slot_name, f"Please provide: {slot_name}")
-        event_created = False
-        linked_event_id = None
-        confidence = 0.0
+    awaiting_confirmation = False
+    review_item_id = None
+    event_created = False
+    linked_event_id = None
+    confidence = 0.0
+    choices = None
+
+    pending_slot = _next_missing(slots)
+    pending = [pending_slot] if pending_slot else []
+
+    if clarification:
+        # A value was offered but could not be read. Ask about the same slot
+        # again rather than moving on with a hole in the record.
+        agent_msg = clarification
+        slots.ask_count = slots.ask_count + 1 if slots.asked_slot == pending_slot else 1
+        slots.asked_slot = pending_slot
+        choices = choices_for(pending_slot) if pending_slot else None
+    elif pending_slot:
+        agent_msg = question_for(pending_slot, countable_noun=_countable_noun(slots))
+        slots.ask_count = slots.ask_count + 1 if slots.asked_slot == pending_slot else 1
+        slots.asked_slot = pending_slot
+        choices = choices_for(pending_slot)
     else:
-        # All slots filled — create the event
-        event_id = _create_event_from_slots(slots, session_id, db)
-        if event_id:
-            event_created = True
-            linked_event_id = event_id
-            confidence = slots.confidence if hasattr(slots, 'confidence') else 0.8
-            agent_msg = f"Progress logged for {slots.activity_id or 'new activity'}: {slots.status}. Thank you!"
-        else:
-            event_created = False
-            agent_msg = "Could not create event. Please check the details and try again."
-            confidence = 0.0
+        slots.asked_slot = None
+        slots.ask_count = 0
+        # Every required slot is present. The real matcher decides the
+        # activity and the confidence; neither is ever hardcoded.
+        _match_slots(slots, session_id)
 
-    # Save conversation turn
+        if not req.confirm:
+            confidence = slots.confidence or 0.0
+            awaiting_confirmation = True
+            agent_msg = "I have enough to prepare the update."
+        else:
+            existing = _existing_agent_submission(db, session_id)
+            if existing is not None:
+                # Idempotent: a double tap on CONFIRM & SUBMIT, or a retried
+                # request, must not create a second event or a second review
+                # item for the planner to work through.
+                linked_event_id, review_item_id = existing
+                event_created = True
+                confidence = slots.confidence or 0.0
+                agent_msg = (
+                    "Sent for Planning Engineer review. The schedule has not "
+                    "been changed yet."
+                )
+            else:
+                event_id, review_id = _create_event_from_slots(slots, session_id, db)
+                confidence = slots.confidence or 0.0
+                if event_id:
+                    event_created = True
+                    linked_event_id = event_id
+                    review_item_id = review_id
+                    agent_msg = (
+                        "Sent for Planning Engineer review. The schedule has "
+                        "not been changed yet."
+                    )
+                else:
+                    agent_msg = "Could not record the update. Please try again."
+                    confidence = 0.0
+
     turn = ConversationTurn(
         id=_uuid(),
         session_id=session_id,
@@ -1552,92 +2338,213 @@ def agent_turn(
         event_created=event_created,
         linked_event_id=linked_event_id,
         confidence=confidence,
+        awaiting_confirmation=awaiting_confirmation,
+        activity_description=slots.activity_description,
+        match_outcome=slots.match_outcome,
+        review_item_id=review_item_id,
+        # Labels, never raw enum values: a supervisor must not see
+        # "static_equipment" on a phone.
+        discipline_label=discipline_label(slots.discipline),
+        status_label=STATUS_LABELS.get(slots.status) if slots.status else None,
+        choices=choices,
     )
 
 
-def _fill_slots_from_message(slots: SlotState, message: str, db: Session) -> None:
-    """Extract slot values from a free-text message using regex + keyword matching."""
-    msg_lower = message.lower()
+def _existing_agent_submission(db: Session, session_id: str):
+    """The (linked_event_id, review_item_id) already submitted for a session.
 
-    # Discipline
+    Agent events are filed under a per-session job, so one session can only
+    ever hold one submission. Returns None when nothing has been submitted.
+    """
+    job = db.query(Job).filter(Job.filename == f"agent_session_{session_id}").first()
+    if job is None:
+        return None
+    event = (
+        db.query(LinkedEvent)
+        .filter(LinkedEvent.job_id == job.id)
+        .order_by(LinkedEvent.id)
+        .first()
+    )
+    if event is None:
+        return None
+    review = (
+        db.query(ReviewQueueItem)
+        .filter(ReviewQueueItem.linked_event_id == event.id)
+        .first()
+    )
+    return event.id, (review.id if review else None)
+
+
+def _fill_slots(
+    slots: SlotState,
+    message: str,
+    context: AgentContext,
+    db: Session,
+    *,
+    llm_backend=None,
+) -> Optional[str]:
+    """Read everything possible out of one message.
+
+    Returns a clarification to ask instead of the normal next question, or
+    None. The order matters: the message is first read as an answer to the
+    question just asked, because a bare "Electrical" or "yesterday" only means
+    anything in that light. General extraction runs afterwards, so a message
+    that both answers and adds detail contributes everything it can.
+    """
+    answering = slots.asked_slot
+    clarification: Optional[str] = None
+    data_date = context.resolved_data_date(DATA_DATE)
+
+    # ── the answer to our own question, first ──
+    if answering == "discipline" and slots.discipline is None:
+        slots.discipline = parse_discipline(message, as_answer=True)
+    elif answering == "status" and slots.status is None:
+        slots.status = parse_status(message)
+    elif answering in ("date",) and slots.date is None:
+        try:
+            slots.date = parse_date(message, data_date)
+        except InvalidDate as e:
+            clarification = f"That date cannot be right ({e}). Which date was it completed?"
+    elif answering in ("quantity", "planned_quantity"):
+        parsed = parse_quantity(message)
+        if parsed is None:
+            clarification = (
+                "I did not catch the numbers. How many are done, and how many "
+                "were planned in total?"
+            )
+        else:
+            _merge_quantity(slots, parsed)
+    elif answering == "location" and slots.location is None:
+        # Any answer to "where" is a location; the supervisor knows the site
+        # better than a pattern does.
+        text = message.strip()
+        if text:
+            slots.location = text[:120]
+
+    # ── optional LLM interpretation, then general extraction ──
+    suggestion = agent_llm.interpret(message, backend=llm_backend)
+    if suggestion is not None:
+        if slots.discipline is None and suggestion.discipline:
+            slots.discipline = suggestion.discipline
+        if slots.status is None and suggestion.status:
+            slots.status = suggestion.status
+        if not slots.tags and suggestion.tags:
+            slots.tags = suggestion.tags
+        if suggestion.activity_description and not slots.activity_description:
+            slots.activity_description = suggestion.activity_description
+
     if slots.discipline is None:
-        disc_keywords = {
-            "civil": ["civil", "foundation", "concrete", "backfill", "grading", "slab", "flooring", "tile", "plaster", "drainage", "fencing"],
-            "piping": ["pipe", "spool", "flange", "hydrotest", "erect", "insulation", "coating", "paint"],
-            "static_equipment": ["vessel", "exchanger", "pump", "compressor", "skid", "tank", "setting", "jacking", "grout"],
-            "electrical": ["cable", "termination", "earthing", "grounding", "transformer", "swgr", "panel", "energis", "megger", "motor"],
-            "instrumentation": ["instrument", "transmitter", "calibrat", "loop check", "dcs", "sis", "esd", "junction box", "control valve"],
-            "hse": ["safety", "ncr", "near-miss", "lti", "bbs", "scaffold", "permit", "jsa", "induction", "drill"],
-        }
-        for disc, keywords in disc_keywords.items():
-            if any(kw in msg_lower for kw in keywords):
-                slots.discipline = disc
-                break
-
-    # Tags (equipment/line tags)
-    if not slots.tags:
-        from extraction.prepass import PIPE_TAG_RE, EQUIPMENT_TAG_RE
-        tags = []
-        for m in PIPE_TAG_RE.finditer(message):
-            size, _, num, spec = m.groups()
-            tags.append(f'{size}"-P-{num}-{spec.upper()}')
-        for m in EQUIPMENT_TAG_RE.finditer(message):
-            prefix, suffix = m.groups()
-            tags.append(f"{prefix}-{suffix}")
-        # Also match common patterns
-        tk_match = re.search(r'TK-(\d+)', message, re.IGNORECASE)
-        if tk_match:
-            tags.append(f"TK-{tk_match.group(1)}")
-        slots.tags = tags
-
-    # Quantity + UOM
-    if slots.quantity is None:
-        qty_match = re.search(r'(\d+(?:\.\d+)?)\s*(m3|m2|lm|mt|m|nos?|mm|km|panels?|spools?|flanges?|tonnes?)\b', msg_lower)
-        if qty_match:
-            slots.quantity = float(qty_match.group(1))
-            slots.uom = qty_match.group(2)
-
-    # Status
+        slots.discipline = parse_discipline(message)
     if slots.status is None:
-        if any(w in msg_lower for w in ["complete", "done", "finished", "passed", "closed", "khotom"]):
-            slots.status = "completed"
-        elif any(w in msg_lower for w in ["delay", "delayed", "behind", "held up"]):
-            slots.status = "delayed"
-        elif any(w in msg_lower for w in ["started", "ongoing", "in progress", "chalu", "shuru"]):
-            slots.status = "in_progress"
-
-    # Activity ID (if mentioned)
-    if slots.activity_id is None:
-        act_match = re.search(r'\b([A-Z]{2,3}-[A-Z]{2,4}-\d{4})\b', message)
-        if act_match:
-            slots.activity_id = act_match.group(1)
-
-    # Location
-    if slots.location is None:
-        loc_match = re.search(r'\b(zone\s+[A-Z]|area\s+\w+|tier\s+\d+|workshop|field|pump\s+house|pipe\s+rack)\b', msg_lower)
-        if loc_match:
-            slots.location = loc_match.group(0).title()
-
-    # Date
+        slots.status = parse_status(message)
+    if not slots.tags:
+        found = parse_tags(message)
+        if found:
+            slots.tags = found
     if slots.date is None:
-        if "yesterday" in msg_lower:
-            slots.date = DATA_DATE - timedelta(days=1)
-        elif "today" in msg_lower:
-            slots.date = DATA_DATE
+        try:
+            found_date = parse_date(message, data_date)
+        except InvalidDate:
+            found_date = None
+        if found_date is not None:
+            slots.date = found_date
+    if slots.quantity is None or slots.planned_quantity is None:
+        parsed = parse_quantity(message)
+        if parsed is not None and answering not in ("quantity", "planned_quantity"):
+            _merge_quantity(slots, parsed)
 
-    # Try to match activity if not found
-    if slots.activity_id is None and slots.tags:
-        # Simple tag → activity lookup (no full linking engine needed)
-        activities = db.query(Activity).all()
-        tag_to_act = {}
-        for act in activities:
-            if act.tag:
-                tag_to_act[act.tag.lower()] = act.activity_id
+    # An activity code typed by the supervisor is not a picker; it is a hint.
+    # The matcher still decides.
+    if slots.activity_id is None:
+        m = re.search(r"\b([A-Z]{2,3}-[A-Z]{2,4}-\d{3,4})\b", message)
+        if m:
+            slots.activity_id = m.group(1)
 
-        for tag in slots.tags:
-            if tag.lower() in tag_to_act:
-                slots.activity_id = tag_to_act[tag.lower()]
-                break
+    return clarification
+
+
+def _merge_quantity(slots: SlotState, parsed) -> None:
+    """Fold a parsed quantity into the slots, keeping both numbers."""
+    if parsed.completed is not None and slots.quantity is None:
+        slots.quantity = parsed.completed
+    if parsed.planned is not None and slots.planned_quantity is None:
+        slots.planned_quantity = parsed.planned
+    if parsed.uom and not slots.uom:
+        slots.uom = parsed.uom
+    if (
+        slots.quantity is not None
+        and slots.planned_quantity is not None
+        and slots.quantity > slots.planned_quantity
+    ):
+        # Kept as reported and surfaced, not clamped.
+        slots.quantity_over_planned = True
+
+
+def _context_from_request(req_context) -> AgentContext:
+    """Turn the optional request context into the parser's context object."""
+    if req_context is None:
+        return AgentContext()
+    discipline = req_context.discipline
+    if discipline is not None and discipline not in DISCIPLINE_VALUES:
+        # A context value is machine-supplied, so a bad one is a caller bug.
+        raise HTTPException(400, f"Unknown discipline in context: {discipline!r}")
+    return AgentContext(
+        project_code=req_context.project_code,
+        location=req_context.location,
+        discipline=discipline,
+        data_date=req_context.data_date,
+        timezone=req_context.timezone,
+    )
+
+
+def _apply_context(slots: SlotState, context: AgentContext) -> None:
+    """Seed slots the client already knows, without inventing a message."""
+    if slots.discipline is None and context.discipline:
+        slots.discipline = context.discipline
+    if slots.location is None and context.location:
+        slots.location = context.location
+
+
+def _quantity_relevant(slots: SlotState) -> bool:
+    """Whether a quantity is worth asking for on this update.
+
+    Only when the supervisor named a countable plural. A milestone such as a
+    safety induction has no quantity, and asking for one is noise.
+    """
+    text = " ".join(filter(None, (slots.description, slots.activity_description)))
+    return mentions_countable(text)
+
+
+def _countable_noun(slots: SlotState) -> str:
+    text = (slots.description or "").lower()
+    for noun in ("spool", "flange", "panel", "joint", "pile", "valve",
+                 "instrument", "loop", "light", "support", "pedestal"):
+        if re.search(rf"\b{noun}s?\b", text):
+            return noun + "s"
+    return "units"
+
+
+def _next_missing(slots: SlotState) -> Optional[str]:
+    """The one slot to ask about next, or None when the update is complete.
+
+    Asked in the order a supervisor would volunteer them. A slot the agent has
+    already asked about twice without success is skipped: asking a third time
+    is a loop, and the planner can fill it in.
+    """
+    order = ["discipline", "location", "status", "date"]
+    for name in order:
+        if getattr(slots, name) is None:
+            if slots.asked_slot == name and slots.ask_count >= 2:
+                continue
+            return name
+    if _quantity_relevant(slots):
+        if slots.quantity is None:
+            if not (slots.asked_slot == "quantity" and slots.ask_count >= 2):
+                return "quantity"
+        elif slots.planned_quantity is None:
+            if not (slots.asked_slot == "planned_quantity" and slots.ask_count >= 2):
+                return "planned_quantity"
+    return None
 
 
 def _extract_intent(message: str) -> str:
@@ -1653,8 +2560,63 @@ def _extract_intent(message: str) -> str:
         return "progress_update"
 
 
-def _create_event_from_slots(slots: SlotState, session_id: str, db: Session) -> Optional[str]:
-    """Create a LinkedEvent from filled slots."""
+def _match_slots(slots: SlotState, session_id: str) -> None:
+    """Run the real matching engine over the filled slots.
+
+    Sets `activity_id`, `activity_description`, `confidence` and
+    `match_outcome` on the slots. This is the only place the agent path decides
+    an activity — the supervisor never picks one, which is the whole point of
+    the product. A low confidence is reported as-is and routed to review rather
+    than smoothed over.
+    """
+    engine = get_matching_engine()
+
+    event = PydanticEvent(
+        raw_text=slots.description or "progress update",
+        tags=slots.tags or [],
+        reported_date=slots.date,
+        quantity=slots.quantity,
+        uom=slots.uom,
+        discipline=(
+            Discipline(slots.discipline) if slots.discipline else Discipline.UNKNOWN
+        ),
+        status=EventStatus(slots.status) if slots.status else EventStatus.UNKNOWN,
+        percentage=None,
+        provenance=Provenance(
+            source_file=f"agent_session_{session_id}",
+            source_span=slots.description or "",
+            method=ExtractionMethod.PREPASS,
+        ),
+    )
+
+    decision = engine.match_event(event)
+    top = decision.top1
+
+    slots.match_outcome = decision.outcome.value
+    slots.confidence = round(decision.confidence, 3)
+    slots.alternatives = [c.activity_id for c in decision.candidates[:3]]
+    if top is not None:
+        slots.activity_id = top.activity_id
+        record = engine.index.by_id.get(top.activity_id)
+        slots.activity_description = record.description if record else None
+    else:
+        slots.activity_id = None
+        slots.activity_description = None
+
+
+def _create_event_from_slots(
+    slots: SlotState, session_id: str, db: Session
+) -> tuple[Optional[str], Optional[str]]:
+    """Persist a confirmed agent update as a proposal for the planner.
+
+    Returns (linked_event_id, review_item_id).
+
+    Deliberately does NOT write actual_start or actual_finish. A voice update
+    is evidence, not an approved actual: the planner commits it through
+    POST /review/{id}/resolve, which is where the audit record and the
+    alias-lexicon training signal belong. Writing the schedule here would put
+    an unreviewed date straight into the baseline comparison.
+    """
     # Find or create job for agent turns
     agent_job = db.query(Job).filter(Job.filename == f"agent_session_{session_id}").first()
     if not agent_job:
@@ -1668,11 +2630,11 @@ def _create_event_from_slots(slots: SlotState, session_id: str, db: Session) -> 
         db.flush()
 
     tags_json = json.dumps(slots.tags)
-    raw_text = f"Agent-logged: {slots.description or 'progress update'}"
+    raw_text = slots.description or "progress update"
 
-    # Try to link
+    # Both already decided by _match_slots, which ran the matching engine.
     linked_id = slots.activity_id
-    confidence = 0.7  # Default for agent-logged events
+    confidence = slots.confidence if slots.confidence is not None else 0.0
 
     le = LinkedEvent(
         id=_uuid(),
@@ -1692,55 +2654,35 @@ def _create_event_from_slots(slots: SlotState, session_id: str, db: Session) -> 
         percentage=None,
         confidence=confidence,
         match_method="agent_turn",
-        alternatives="[]",
+        alternatives=json.dumps(slots.alternatives or []),
         reviewed=False,
     )
     db.add(le)
     db.flush()
 
-    # Write audit record if actual dates are being set
-    if linked_id and slots.date and slots.status:
-        activity = db.query(Activity).filter(Activity.activity_id == linked_id).first()
-        if activity:
-            if slots.status == "completed" and not activity.actual_finish:
-                # Integrity check: finish must be >= start
-                if activity.actual_start and slots.date < activity.actual_start:
-                    pass  # Don't write invalid date
-                else:
-                    old_finish = activity.actual_finish.isoformat() if activity.actual_finish else None
-                    activity.actual_finish = slots.date
-                    _write_audit(
-                        db, linked_id, "actual_finish",
-                        old_finish, slots.date.isoformat(),
-                        source="agent_turn",
-                        source_file=f"agent_session_{session_id}",
-                        source_span=raw_text,
-                        confidence=confidence,
-                        auto_applied=True,
-                    )
+    # Queue it for the planner. Without this the update reaches nobody: it
+    # would sit as a LinkedEvent that no screen reads, and GET /review-queue —
+    # which the field supervisor's own "recent updates" list is built from —
+    # would never show it.
+    reason = {
+        "AUTO_LINK": "agent_high_confidence",
+        "REVIEW": "low_confidence",
+        "NEW_ACTIVITY": "no_match",
+        "REJECTED": "no_match",
+    }.get(slots.match_outcome or "", "low_confidence")
 
-            if slots.status in ("in_progress", "completed") and not activity.actual_start:
-                # Integrity check: start must be <= data_date
-                if slots.date > DATA_DATE:
-                    pass  # Don't write date after data_date
-                else:
-                    old_start = activity.actual_start.isoformat() if activity.actual_start else None
-                    activity.actual_start = slots.date
-                    _write_audit(
-                        db, linked_id, "actual_start",
-                        old_start, slots.date.isoformat(),
-                        source="agent_turn",
-                        source_file=f"agent_session_{session_id}",
-                        source_span=raw_text,
-                        confidence=confidence,
-                        auto_applied=True,
-                    )
+    review = ReviewQueueItem(
+        id=_uuid(),
+        linked_event_id=le.id,
+        activity_id=linked_id,
+        reason=reason,
+        priority="high" if linked_id is None else "medium",
+        status="pending",
+    )
+    db.add(review)
+    db.flush()
 
-            # Also create alias for future matching
-            if slots.tags:
-                _upsert_alias(db, raw_text, linked_id, slots.discipline or "unknown", slots.tags)
-
-    return le.id
+    return le.id, review.id
 
 
 if __name__ == "__main__":

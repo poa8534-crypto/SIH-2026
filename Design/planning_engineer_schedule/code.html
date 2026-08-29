@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planning Engineer - Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#0056b3",
+                      "on-secondary-fixed": "#001b3e",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed": "#d6e3ff",
+                      "on-secondary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#f9f9ff",
+                      "on-secondary-container": "#224b85",
+                      "tertiary-fixed-dim": "#ffb694",
+                      "outline": "#727784",
+                      "error": "#ba1a1a",
+                      "surface-variant": "#e1e2ea",
+                      "inverse-surface": "#2e3037",
+                      "secondary-container": "#98bcfe",
+                      "secondary": "#385e9a",
+                      "on-secondary-fixed-variant": "#1c4681",
+                      "primary-fixed-dim": "#acc7ff",
+                      "on-background": "#191c21",
+                      "outline-variant": "#c2c6d4",
+                      "surface-container-high": "#e7e8f0",
+                      "on-tertiary-container": "#ffc2a7",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "secondary-fixed-dim": "#aac7ff",
+                      "surface-container-highest": "#e1e2ea",
+                      "tertiary": "#722b00",
+                      "surface-container-low": "#f2f3fc",
+                      "on-primary-fixed": "#001a40",
+                      "on-primary-fixed-variant": "#004491",
+                      "surface-dim": "#d9d9e2",
+                      "surface-container": "#ededf6",
+                      "on-surface-variant": "#424752",
+                      "on-surface": "#191c21",
+                      "on-tertiary-fixed": "#351000",
+                      "on-primary-container": "#bbd0ff",
+                      "tertiary-container": "#983c00",
+                      "surface-tint": "#115cb9",
+                      "primary": "#003f87",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "background": "#f9f9ff",
+                      "inverse-primary": "#acc7ff",
+                      "surface": "#f9f9ff",
+                      "primary-fixed": "#d7e2ff",
+                      "tertiary-fixed": "#ffdbcc",
+                      "inverse-on-surface": "#f0f0f9"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "stack-md": "16px",
+                      "stack-sm": "8px",
+                      "container-padding": "24px",
+                      "gutter": "16px",
+                      "stack-lg": "32px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-md": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "display-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[200px] flex flex-col pt-4 pb-8 bg-surface-container-low dark:bg-surface-container border-r border-outline-variant z-10 transition-transform duration-150 ease-in-out">
+<div class="px-container-padding mb-8">
+<h1 class="font-headline-md text-headline-md font-black text-primary">OIL-WSD-2026</h1>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Sector A · Digboi</p>
+</div>
+<ul class="flex-1 flex flex-col gap-1 w-full">
+<li class="px-4 py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+</li>
+<li class="px-4 py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-label-md text-label-md">Reconcile</span>
+</a>
+</li>
+<li class="px-4 py-2 bg-secondary-container/20 border-r-4 border-primary text-primary font-bold cursor-pointer">
+<a class="flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]" data-weight="fill">calendar_today</span>
+<span class="font-label-md text-label-md">Schedule</span>
+</a>
+</li>
+<li class="px-4 py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">input</span>
+<span class="font-label-md text-label-md">Ingest</span>
+</a>
+</li>
+<li class="px-4 py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">database</span>
+<span class="font-label-md text-label-md">Memory</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto px-4 flex flex-col gap-1 w-full">
+<div class="py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<div class="py-2 hover:bg-surface-container-high transition-all cursor-pointer">
+<a class="flex items-center gap-3 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="ml-[200px] flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-container-padding h-14 bg-surface dark:bg-background border-b border-outline-variant z-20">
+<div class="flex items-center gap-4">
+<div class="font-body-md text-body-md text-on-surface-variant font-medium">OIL-WSD-2026</div>
+<div class="w-1 h-1 rounded-full bg-outline-variant"></div>
+<div class="font-body-md text-body-md text-on-surface-variant font-medium">Sector A · Digboi Well #4</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<div class="font-label-md text-label-md font-bold text-on-surface">Priya Das</div>
+<div class="font-label-md text-label-md text-on-surface-variant">Planning Engineer</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
+<img alt="Priya Das, Planning Engineer" class="w-full h-full object-cover" data-alt="A small, professional headshot portrait of a female engineer with dark hair, looking confident against a plain light grey background, suitable for a corporate profile avatar. The lighting is soft and even." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkVumB3kvCvoPS5g2Km2unlVy105Ot7MKF1Yzs1t4-AOZdJ1_Za40q7pfEs-3LCrOKQack_cB7O2S3NtsMM60fwdgC5J1uFMIQj0wVQyNqVwSC5nBkF1gY0E4nOvRQop7caD8LD-ayQ-eKnJAbE7BKMXIRCvEJfiE0QHbtDjW2jtq2RE_g_58vHUCG_BF6eRZ8uMm59jaFprAAYkp76_PQt3ZWxeMEZPZXoRJwVjm3W3vcDFHfnC6vQw"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-container-padding flex gap-container-padding relative overflow-hidden">
+<!-- Left Panel (Table) -->
+<div class="flex-1 flex flex-col min-w-0 bg-surface rounded-lg border border-outline-variant">
+<!-- Header -->
+<div class="p-4 border-b border-outline-variant flex justify-between items-start">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Schedule</h2>
+<div class="flex items-center gap-3 mt-1 text-on-surface-variant font-body-md text-body-md">
+<span>120 baseline activities</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Data date: 15 Sep 2026</span>
+</div>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded bg-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        EXPORT
+                    </button>
+</div>
+<!-- Integrity Banner -->
+<div class="bg-error-container/20 border-l-4 border-error p-3 flex items-center justify-between mx-4 mt-4 mb-2 rounded-r">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-body-md text-body-md font-medium">9 integrity warnings — 4 source conflicts, 5 date warnings</span>
+</div>
+<button class="text-error font-label-md text-label-md underline hover:opacity-80">Review Warnings</button>
+</div>
+<!-- Filters -->
+<div class="px-4 py-3 border-b border-outline-variant flex gap-4 items-center flex-wrap">
+<div class="relative min-w-[200px]">
+<select class="w-full h-10 pl-3 pr-8 rounded border border-outline-variant bg-surface text-on-surface font-body-md text-body-md focus:border-primary focus:ring-0 appearance-none">
+<option>All Disciplines</option>
+<option>Civil</option>
+<option>Piping</option>
+<option>Static Equipment</option>
+<option>Electrical</option>
+<option>Instrumentation</option>
+<option>HSE</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+<div class="relative flex-1 min-w-[250px]">
+<span class="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant">search</span>
+<input class="w-full h-10 pl-10 pr-3 rounded border border-outline-variant bg-surface text-on-surface font-body-md text-body-md focus:border-primary focus:ring-0 placeholder:text-outline" placeholder="Search descriptions..." type="text"/>
+</div>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface-variant">Only activities with actual dates</span>
+</label>
+</div>
+<!-- Table Container -->
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left border-collapse whitespace-nowrap">
+<thead class="sticky top-0 bg-surface-container-low border-b border-outline-variant z-10">
+<tr>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">ACTIVITY ID</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">DESCRIPTION</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">DISCIPLINE</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">PLANNED START</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">PLANNED FINISH</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">ACTUAL START</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">ACTUAL FINISH</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">START VAR</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">FINISH VAR</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">% COMP</th>
+<th class="px-3 py-2 font-label-md text-label-md text-primary font-semibold">CONF</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md divide-y divide-surface-variant">
+<!-- Row 1: Selected, Actuals -->
+<tr class="h-[40px] bg-secondary-container/20 border-l-2 border-primary hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="px-3 font-mono text-sm">CIV-SIT-1001</td>
+<td class="px-3 font-medium">Site Clearing &amp; Grading</td>
+<td class="px-3">Civil</td>
+<td class="px-3 font-mono text-sm text-on-surface-variant">01-Sep-26</td>
+<td class="px-3 font-mono text-sm text-on-surface-variant">10-Sep-26</td>
+<td class="px-3 font-mono text-sm font-semibold">02-Sep-26</td>
+<td class="px-3 font-mono text-sm font-semibold">12-Sep-26</td>
+<td class="px-3 font-mono text-sm text-error">+1d</td>
+<td class="px-3 font-mono text-sm text-error">+2d</td>
+<td class="px-3 font-mono text-sm">100%</td>
+<td class="px-3 font-mono text-sm text-on-secondary-container">High</td>
+</tr>
+<!-- Row 2: Planned Only -->
+<tr class="h-[40px] text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer opacity-80">
+<td class="px-3 font-mono text-sm">CIV-FDN-1007</td>
+<td class="px-3">Foundation Excavation</td>
+<td class="px-3">Civil</td>
+<td class="px-3 font-mono text-sm">11-Sep-26</td>
+<td class="px-3 font-mono text-sm">20-Sep-26</td>
+<td class="px-3 font-mono text-sm text-outline">—</td>
+<td class="px-3 font-mono text-sm text-outline">—</td>
+<td class="px-3 font-mono text-sm">—</td>
+<td class="px-3 font-mono text-sm">—</td>
+<td class="px-3 font-mono text-sm">0%</td>
+<td class="px-3 font-mono text-sm">—</td>
+</tr>
+<!-- Row 3: In Progress -->
+<tr class="h-[40px] hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="px-3 font-mono text-sm">SEQ-PMP-1060</td>
+<td class="px-3 font-medium">Pump Delivery — P-101A/B</td>
+<td class="px-3">Static Equipment</td>
+<td class="px-3 font-mono text-sm text-on-surface-variant">12-Sep-26</td>
+<td class="px-3 font-mono text-sm text-on-surface-variant">15-Sep-26</td>
+<td class="px-3 font-mono text-sm font-semibold">12-Sep-26</td>
+<td class="px-3 font-mono text-sm text-outline">—</td>
+<td class="px-3 font-mono text-sm">0d</td>
+<td class="px-3 font-mono text-sm">—</td>
+<td class="px-3 font-mono text-sm bg-secondary-fixed text-on-secondary-fixed px-1 rounded inline-block">50%</td>
+<td class="px-3 font-mono text-sm text-on-secondary-container">Med</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Right Drawer (Activity Details) -->
+<aside class="w-[360px] bg-surface rounded-lg border border-outline-variant flex flex-col shadow-sm flex-shrink-0">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low rounded-t-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Activity Details</h3>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-4 overflow-y-auto flex-1">
+<div class="mb-6">
+<div class="font-mono text-sm text-on-surface-variant mb-1">CIV-SIT-1001</div>
+<h4 class="font-body-lg text-body-lg font-semibold text-primary mb-2">Site Clearing &amp; Grading</h4>
+<span class="inline-block px-2 py-1 bg-surface-variant text-on-surface-variant rounded font-label-md text-label-md">Civil</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="border border-outline-variant rounded p-2">
+<div class="font-label-md text-label-md text-on-surface-variant mb-1">Planned Start</div>
+<div class="font-mono text-sm">01-Sep-26</div>
+</div>
+<div class="border border-outline-variant rounded p-2">
+<div class="font-label-md text-label-md text-on-surface-variant mb-1">Actual Start</div>
+<div class="font-mono text-sm font-semibold text-primary">02-Sep-26</div>
+</div>
+<div class="border border-outline-variant rounded p-2">
+<div class="font-label-md text-label-md text-on-surface-variant mb-1">Planned Finish</div>
+<div class="font-mono text-sm">10-Sep-26</div>
+</div>
+<div class="border border-outline-variant rounded p-2">
+<div class="font-label-md text-label-md text-on-surface-variant mb-1">Actual Finish</div>
+<div class="font-mono text-sm font-semibold text-primary">12-Sep-26</div>
+</div>
+</div>
+<div class="mb-6">
+<h5 class="font-label-md text-label-md text-on-surface-variant uppercase mb-2 border-b border-outline-variant pb-1">Predecessors</h5>
+<div class="font-body-md text-body-md text-on-surface p-2 bg-surface-container-lowest border border-outline-variant rounded">
+<span class="font-mono text-sm mr-2 text-outline">PM-001</span> Project Kickoff (FS)
+                        </div>
+</div>
+<div>
+<h5 class="font-label-md text-label-md text-primary uppercase mb-3 border-b border-outline-variant pb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">history</span>
+                            Append-Only Audit Trail
+                        </h5>
+<div class="flex flex-col gap-3 relative before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-outline-variant ml-1">
+<!-- Audit Entry 1 -->
+<div class="relative pl-6">
+<div class="absolute left-[-4px] top-1 w-2 h-2 rounded-full bg-primary ring-4 ring-surface"></div>
+<div class="bg-surface-container-low border border-outline-variant rounded p-3 text-sm">
+<div class="flex justify-between items-start mb-2">
+<div class="font-semibold text-on-surface">Actual Finish Updated</div>
+<div class="font-mono text-xs text-on-surface-variant">12-Sep 14:30</div>
+</div>
+<div class="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 mb-2 font-mono text-xs">
+<span class="text-outline">Old:</span> <span>—</span>
+<span class="text-outline">New:</span> <span class="text-primary font-medium">12-Sep-26</span>
+<span class="text-outline">Src:</span> <span class="text-on-surface-variant truncate" title="DPR_SectorA_1209.xlsx (Row 42)">DPR_SectorA_1209.xlsx (Row 42)</span>
+</div>
+<div class="flex items-center gap-2 justify-between border-t border-outline-variant pt-2 mt-2">
+<span class="font-label-md text-[10px] bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded">HIGH CONFIDENCE</span>
+<span class="font-body-md text-[11px] text-on-surface-variant">by Priya Das</span>
+</div>
+</div>
+</div>
+<!-- Audit Entry 2 -->
+<div class="relative pl-6">
+<div class="absolute left-[-4px] top-1 w-2 h-2 rounded-full bg-outline ring-4 ring-surface"></div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-sm opacity-80">
+<div class="flex justify-between items-start mb-2">
+<div class="font-semibold text-on-surface">Actual Start Ingested</div>
+<div class="font-mono text-xs text-on-surface-variant">03-Sep 08:15</div>
+</div>
+<div class="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 mb-2 font-mono text-xs">
+<span class="text-outline">Old:</span> <span>—</span>
+<span class="text-outline">New:</span> <span class="text-primary font-medium">02-Sep-26</span>
+<span class="text-outline">Src:</span> <span class="text-on-surface-variant truncate">Daily_Log_0209.pdf</span>
+</div>
+<div class="flex items-center gap-2 justify-between border-t border-outline-variant pt-2 mt-2">
+<span class="font-label-md text-[10px] bg-surface-variant text-on-surface-variant px-1.5 py-0.5 rounded">SYSTEM EXTRACT</span>
+<span class="font-body-md text-[11px] text-on-surface-variant">Auto-confirmed</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+</div>
+</body></html>

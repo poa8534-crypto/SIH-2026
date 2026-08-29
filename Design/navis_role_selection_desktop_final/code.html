@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NAVIS - Role Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#224b85",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary-fixed": "#001b3e",
+                        "surface": "#f9f9ff",
+                        "primary-fixed-dim": "#acc7ff",
+                        "inverse-on-surface": "#f0f0f9",
+                        "primary-fixed": "#d7e2ff",
+                        "on-surface-variant": "#424752",
+                        "surface-container-high": "#e7e8f0",
+                        "surface-container": "#ededf6",
+                        "secondary-container": "#98bcfe",
+                        "on-primary-fixed": "#001a40",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-fixed": "#d6e3ff",
+                        "inverse-primary": "#acc7ff",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2e3037",
+                        "outline-variant": "#c2c6d4",
+                        "surface-container-highest": "#e1e2ea",
+                        "on-background": "#191c21",
+                        "surface-container-low": "#f2f3fc",
+                        "on-tertiary-container": "#ffc2a7",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#bbd0ff",
+                        "surface-variant": "#e1e2ea",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#722b00",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "primary": "#003f87",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#115cb9",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-surface": "#191c21",
+                        "tertiary-container": "#983c00",
+                        "on-tertiary-fixed": "#351000",
+                        "secondary": "#385e9a",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "outline": "#727784",
+                        "surface-dim": "#d9d9e2",
+                        "primary-container": "#0056b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-padding": "24px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        body { background-color: #F7F8FC; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface">
+<!-- Header -->
+<header class="bg-surface dark:bg-on-background w-full top-0 border-b border-outline-variant flex justify-between items-center px-container-padding py-stack-sm w-full">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 bg-primary text-on-primary flex items-center justify-center font-bold rounded">N</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">NAVIS</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">AI-Assisted Construction Progress</p>
+</div>
+</div>
+<div class="hidden md:flex flex-col items-center">
+<h2 class="font-body-md text-body-md font-semibold">Well-Site Development &amp; Gathering Pipeline Project</h2>
+<p class="font-label-md text-label-md text-on-surface-variant">OIL-WSD-2026 | Sector A · Digboi Well #4</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">Connected</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant cursor-pointer hover:bg-surface-container-low p-2 rounded">
+<span class="material-symbols-outlined text-[18px]">language</span>
+<span class="font-label-md text-label-md">EN</span>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-center p-6 w-full max-w-[1280px] mx-auto">
+<div class="text-center mb-12">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-4">Choose your workspace</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Select your role to open the tools designed for your work.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+<!-- Field Supervisor Card -->
+<a class="group flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg p-6 hover:bg-[#E8F0FF] hover:border-primary transition-colors cursor-pointer h-full" href="#">
+<div class="mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">FIELD SUPERVISOR</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-grow">Report completed work, progress, delays, and blockages from the site.</p>
+</div>
+<div class="mt-auto">
+<div class="flex items-center gap-2 mb-4 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">smartphone</span>
+<span>Optimised for mobile</span>
+</div>
+<button class="w-full bg-surface-container-lowest border border-primary text-primary font-body-md text-body-md font-semibold py-2 px-4 rounded group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                        Continue as Field Supervisor
+                    </button>
+</div>
+</a>
+<!-- Planning Engineer Card -->
+<a class="group flex flex-col bg-surface-container-lowest border border-outline-variant rounded-lg p-6 hover:bg-[#E8F0FF] hover:border-primary transition-colors cursor-pointer h-full" href="#">
+<div class="mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">PLANNING ENGINEER</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-grow">Review field updates, request clarification, and confirm or reject AI suggestions.</p>
+</div>
+<div class="mt-auto">
+<div class="flex items-center gap-2 mb-4 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">devices</span>
+<span>Mobile and desktop</span>
+</div>
+<button class="w-full bg-surface-container-lowest border border-primary text-primary font-body-md text-body-md font-semibold py-2 px-4 rounded group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                        Continue as Planning Engineer
+                    </button>
+</div>
+</a>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-on-background fixed bottom-0 w-full border-t border-outline-variant flex justify-between items-center px-container-padding py-2 z-50">
+<div class="flex items-center gap-4 text-on-surface-variant font-label-md text-label-md">
+<span>Data date: 24 Aug 2026</span>
+<span class="hidden md:inline">|</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Connected</span>
+</div>
+<span class="hidden md:inline">|</span>
+<span>Demo environment</span>
+</div>
+<div class="flex gap-4">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">System Health</a>
+</div>
+</footer>
+</body></html>

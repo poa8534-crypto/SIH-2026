@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planning Engineer — Ingest</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#98bcfe",
+                        "inverse-surface": "#2e3037",
+                        "surface-container-highest": "#e1e2ea",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "surface-container-low": "#f2f3fc",
+                        "tertiary": "#722b00",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-tertiary-container": "#ffc2a7",
+                        "on-secondary-container": "#224b85",
+                        "surface-container": "#ededf6",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-surface-variant": "#424752",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#001b3e",
+                        "tertiary-container": "#983c00",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d6e3ff",
+                        "outline": "#727784",
+                        "on-primary-container": "#bbd0ff",
+                        "surface-container-high": "#e7e8f0",
+                        "surface-tint": "#115cb9",
+                        "surface-variant": "#e1e2ea",
+                        "background": "#f9f9ff",
+                        "primary": "#003f87",
+                        "primary-fixed-dim": "#acc7ff",
+                        "surface": "#f9f9ff",
+                        "on-surface": "#191c21",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c2c6d4",
+                        "surface-dim": "#d9d9e2",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-primary-fixed": "#001a40",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-bright": "#f9f9ff",
+                        "primary-fixed": "#d7e2ff",
+                        "on-background": "#191c21",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#acc7ff",
+                        "primary-container": "#0056b3",
+                        "secondary": "#385e9a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "4px",
+                        "lg": "4px",
+                        "xl": "4px",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "display-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-lg-mobile": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for data tables */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f9f9ff;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c2c6d4;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #727784;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased w-[1280px] h-[1024px] overflow-hidden flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<nav class="fixed left-0 top-0 h-full w-[200px] flex flex-col pt-4 pb-8 border-r border-outline-variant bg-surface-container-low dark:bg-surface-container z-50">
+<!-- Brand Header -->
+<div class="px-4 pb-6 flex flex-col gap-1 border-b border-outline-variant">
+<h1 class="font-headline-md text-headline-md font-black text-primary">NAVIS</h1>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+<a class="group flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">home</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Home</span>
+</a>
+<a class="group flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">account_tree</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Reconcile</span>
+</a>
+<a class="group flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">calendar_today</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Schedule</span>
+</a>
+<a class="group flex items-center gap-3 px-3 py-2 rounded text-primary font-bold border-r-4 border-primary bg-secondary-container/20" href="#">
+<span class="material-symbols-outlined fill text-[20px] text-primary">input</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary">Ingest</span>
+</a>
+<a class="group flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">database</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Memory</span>
+</a>
+</div>
+<!-- Footer / User Info -->
+<div class="px-4 pt-4 border-t border-outline-variant flex flex-col gap-3">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Data Date</span>
+<span class="font-mono text-sm font-bold text-primary">2026-09-15</span>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-xs uppercase border border-outline">
+                    PD
+                </div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-label-md text-label-md text-on-surface truncate font-bold">Priya Das</span>
+<span class="text-[10px] text-on-surface-variant truncate uppercase tracking-wide">Planning Engineer</span>
+</div>
+</div>
+<a class="flex items-center gap-2 mt-2 text-error hover:text-on-error-container transition-colors group" href="#">
+<span class="material-symbols-outlined text-[16px] group-hover:scale-110 transition-transform">logout</span>
+<span class="font-label-md text-label-md uppercase">Sign Out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[200px] flex-1 flex flex-col h-full bg-background overflow-hidden relative">
+<!-- Top App Bar (Project Context) -->
+<header class="flex justify-between items-center w-full px-container-padding h-14 border-b border-outline-variant bg-surface flex-shrink-0 z-40">
+<div class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="text-primary font-bold">OIL Well-Site Duliajan</span>
+<span class="text-outline">/</span>
+<span>OIL-WSD-2026</span>
+<span class="text-outline">/</span>
+<span>Sector A · Digboi Well #4</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-8 h-8 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Project Settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-container-padding flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex flex-col gap-1">
+<h2 class="font-display-lg text-display-lg text-on-surface m-0">Ingest Project Updates</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant m-0">Upload structured site reports for extraction and human review.</p>
+</div>
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column (Upload & Pipeline) -->
+<div class="col-span-12 xl:col-span-4 flex flex-col gap-6">
+<!-- Upload Area -->
+<div class="bg-surface border border-outline-variant rounded p-stack-sm flex flex-col gap-0 shadow-sm relative overflow-hidden group border-dashed border-2 hover:border-primary transition-colors cursor-pointer" style="min-height: 200px;">
+<!-- Subtle background pattern for technical feel -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#003f87 1px, transparent 1px); background-size: 16px 16px;"></div>
+<div class="flex-1 flex flex-col items-center justify-center p-6 text-center z-10">
+<span class="material-symbols-outlined text-[48px] text-primary mb-4 group-hover:-translate-y-1 transition-transform">cloud_upload</span>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Drop a .txt or .xlsx file here</h3>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-label-md text-label-md uppercase tracking-wide hover:bg-primary-container transition-colors mb-4">Browse Files</button>
+<p class="font-body-md text-body-md text-on-surface-variant text-xs max-w-xs leading-relaxed">
+                                Accepted formats: daily progress reports (.txt) and discipline spreadsheets (.xlsx). Do not accept photos, images, PDFs or scanned documents.
+                            </p>
+</div>
+</div>
+<!-- Pipeline Trace -->
+<div class="bg-surface border border-outline-variant rounded shadow-sm flex flex-col">
+<div class="px-4 py-3 border-b border-outline-variant bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">polyline</span>
+                                Pipeline Trace
+                            </h3>
+</div>
+<div class="p-4 flex flex-col gap-4 relative">
+<!-- Vertical connect line -->
+<div class="absolute left-[27px] top-6 bottom-8 w-px bg-outline-variant z-0"></div>
+<!-- Step 1 -->
+<div class="flex items-start gap-3 relative z-10">
+<div class="w-6 h-6 rounded bg-[#E8F0FF] border border-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-primary font-bold">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface uppercase">PARSED</span>
+<span class="font-mono text-xs text-on-surface-variant mt-0.5"><span class="text-primary">dpr_day_03.txt</span> · 2,151 bytes</span>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex items-start gap-3 relative z-10">
+<div class="w-6 h-6 rounded bg-[#E8F0FF] border border-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-primary font-bold">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface uppercase">EXTRACTED</span>
+<span class="font-mono text-xs text-on-surface-variant mt-0.5">15 progress events</span>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex items-start gap-3 relative z-10">
+<div class="w-6 h-6 rounded bg-[#E8F0FF] border border-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-primary font-bold animate-pulse">sync</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-primary uppercase">PROPOSED</span>
+<span class="font-mono text-xs text-on-surface-variant mt-0.5">10 high-confidence candidates · <span class="text-tertiary-container font-bold bg-tertiary-fixed px-1 rounded">5 require review</span></span>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="flex items-start gap-3 relative z-10">
+<div class="w-6 h-6 rounded bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+</div>
+<div class="flex flex-col opacity-60">
+<span class="font-label-md text-label-md font-bold text-on-surface-variant uppercase">STAGED</span>
+<span class="font-mono text-xs text-on-surface-variant mt-0.5">15 events recorded · no actual dates written before approval</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (Data Table & History) -->
+<div class="col-span-12 xl:col-span-8 flex flex-col gap-6 h-[calc(100vh-140px)]">
+<!-- Extracted Events Table -->
+<div class="bg-surface border border-outline-variant rounded shadow-sm flex flex-col flex-1 overflow-hidden">
+<div class="px-4 py-3 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center shrink-0">
+<h3 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">data_object</span>
+                                Extracted Events (dpr_day_03.txt)
+                            </h3>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-xs border border-outline-variant text-on-surface-variant hover:bg-surface-container-low rounded uppercase font-bold tracking-wide">Filter</button>
+<button class="px-3 py-1 text-xs bg-primary text-on-primary hover:bg-primary-container rounded uppercase font-bold tracking-wide">Commit Validated</button>
+</div>
+</div>
+<div class="flex-1 overflow-auto bg-surface">
+<table class="w-full text-left border-collapse min-w-[900px]">
+<thead class="bg-surface-container-low sticky top-0 z-20 border-b border-outline-variant shadow-[0_1px_0_0_#D9E1EC]">
+<tr>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold w-[60px]">Src Ln</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold w-[250px]">Raw Text (Snippet)</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold">Discipline</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold">Tags</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold">Date</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold w-[80px]">Conf.</th>
+<th class="px-3 py-2 font-label-md text-[10px] text-primary uppercase font-bold">Outcome</th>
+</tr>
+</thead>
+<tbody class="text-xs divide-y divide-outline-variant font-mono text-on-surface-variant bg-surface">
+<!-- Row 1: High Confidence -->
+<tr class="hover:bg-[#E8F0FF] transition-colors h-[40px] group cursor-default">
+<td class="px-3 py-1 whitespace-nowrap">0042</td>
+<td class="px-3 py-1 truncate max-w-[250px]" title="Completed poured concrete for pad foundation A1">Completed poured concr...</td>
+<td class="px-3 py-1 whitespace-nowrap"><span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px] border border-outline-variant">CIVIL</span></td>
+<td class="px-3 py-1 whitespace-nowrap">PAD_A1, C_POUR</td>
+<td class="px-3 py-1 whitespace-nowrap">26-09-14</td>
+<td class="px-3 py-1 whitespace-nowrap text-primary font-bold">0.98</td>
+<td class="px-3 py-1 whitespace-nowrap">
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+<span class="font-body-md text-[11px]">High-confidence suggestion</span>
+</span>
+</td>
+</tr>
+<!-- Row 2: High Confidence -->
+<tr class="bg-[#F7F8FC] hover:bg-[#E8F0FF] transition-colors h-[40px] group cursor-default">
+<td class="px-3 py-1 whitespace-nowrap">0045</td>
+<td class="px-3 py-1 truncate max-w-[250px]" title="Installed rebar grid section B2 per spec">Installed rebar grid s...</td>
+<td class="px-3 py-1 whitespace-nowrap"><span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px] border border-outline-variant">STRUCT</span></td>
+<td class="px-3 py-1 whitespace-nowrap">REB_B2, I_GRID</td>
+<td class="px-3 py-1 whitespace-nowrap">26-09-14</td>
+<td class="px-3 py-1 whitespace-nowrap text-primary font-bold">0.95</td>
+<td class="px-3 py-1 whitespace-nowrap">
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+<span class="font-body-md text-[11px]">High-confidence suggestion</span>
+</span>
+</td>
+</tr>
+<!-- Row 3: Needs Review -->
+<tr class="hover:bg-tertiary-fixed/30 transition-colors h-[40px] group cursor-default border-l-2 border-l-tertiary-container relative">
+<td class="px-3 py-1 whitespace-nowrap font-bold text-tertiary-container">0051</td>
+<td class="px-3 py-1 truncate max-w-[250px]" title="Pump station wiring 50% maybe done">Pump station wiring 50...</td>
+<td class="px-3 py-1 whitespace-nowrap"><span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px] border border-outline-variant">ELEC</span></td>
+<td class="px-3 py-1 whitespace-nowrap">PUMP_W, AMBIG</td>
+<td class="px-3 py-1 whitespace-nowrap">26-09-14</td>
+<td class="px-3 py-1 whitespace-nowrap text-tertiary-container font-bold">0.45</td>
+<td class="px-3 py-1 whitespace-nowrap">
+<span class="flex items-center gap-1 text-tertiary-container bg-tertiary-fixed/50 px-1 rounded border border-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="font-body-md text-[11px] font-bold">Sent to review</span>
+</span>
+</td>
+</tr>
+<!-- Row 4: Unscheduled Work -->
+<tr class="bg-[#F7F8FC] hover:bg-tertiary-fixed/30 transition-colors h-[40px] group cursor-default border-l-2 border-l-error relative">
+<td class="px-3 py-1 whitespace-nowrap">0055</td>
+<td class="px-3 py-1 truncate max-w-[250px]" title="Replaced broken valve on temporary line">Replaced broken valve ...</td>
+<td class="px-3 py-1 whitespace-nowrap"><span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px] border border-outline-variant">MECH</span></td>
+<td class="px-3 py-1 whitespace-nowrap text-error">VLV_TMP, REP</td>
+<td class="px-3 py-1 whitespace-nowrap">26-09-14</td>
+<td class="px-3 py-1 whitespace-nowrap text-on-surface-variant font-bold">0.88</td>
+<td class="px-3 py-1 whitespace-nowrap">
+<span class="flex items-center gap-1 text-error bg-error-container/50 px-1 rounded border border-error-container">
+<span class="material-symbols-outlined text-[14px]">flag</span>
+<span class="font-body-md text-[11px] font-bold">Flagged as unscheduled work</span>
+</span>
+</td>
+</tr>
+<!-- Row 5: High Confidence -->
+<tr class="hover:bg-[#E8F0FF] transition-colors h-[40px] group cursor-default">
+<td class="px-3 py-1 whitespace-nowrap">0062</td>
+<td class="px-3 py-1 truncate max-w-[250px]" title="Tested pressure on main loop up to 150psi">Tested pressure on mai...</td>
+<td class="px-3 py-1 whitespace-nowrap"><span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px] border border-outline-variant">QAQC</span></td>
+<td class="px-3 py-1 whitespace-nowrap">MAIN_L, P_TEST</td>
+<td class="px-3 py-1 whitespace-nowrap">26-09-14</td>
+<td class="px-3 py-1 whitespace-nowrap text-primary font-bold">0.91</td>
+<td class="px-3 py-1 whitespace-nowrap">
+<span class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+<span class="font-body-md text-[11px]">High-confidence suggestion</span>
+</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Ingest History -->
+<div class="bg-surface border border-outline-variant rounded shadow-sm flex flex-col shrink-0">
+<div class="px-4 py-2 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center">
+<h3 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">history</span>
+                                Recent Ingest History
+                            </h3>
+<button class="text-xs text-primary hover:underline uppercase font-bold tracking-wide">View All</button>
+</div>
+<div class="p-0">
+<table class="w-full text-left border-collapse">
+<tbody class="text-xs divide-y divide-outline-variant font-mono text-on-surface-variant">
+<tr class="hover:bg-surface-container-low">
+<td class="px-4 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-outline">description</span>
+<span class="text-primary font-bold">dpr_day_02.txt</span>
+</td>
+<td class="px-4 py-2">2026-09-13 18:45</td>
+<td class="px-4 py-2">12 events</td>
+<td class="px-4 py-2 text-right">12 confirmed</td>
+</tr>
+<tr class="hover:bg-surface-container-low bg-[#F7F8FC]">
+<td class="px-4 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-outline">table</span>
+<span class="text-primary font-bold">structural_wk3.xlsx</span>
+</td>
+<td class="px-4 py-2">2026-09-12 09:12</td>
+<td class="px-4 py-2">45 events</td>
+<td class="px-4 py-2 text-right">42 confirmed</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-4 py-2 bg-surface-container-lowest border-t border-outline-variant">
+<p class="font-body-md text-[10px] text-outline italic m-0 text-center">Every file and extracted event is retained in the append-only audit history.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

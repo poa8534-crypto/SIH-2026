@@ -1,0 +1,294 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Field Supervisor Home</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config defined by Design System -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#ffffff",
+                    "primary-fixed-dim": "#acc7ff",
+                    "outline-variant": "#c2c6d4",
+                    "inverse-primary": "#acc7ff",
+                    "on-primary-container": "#bbd0ff",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-secondary-fixed": "#001b3e",
+                    "secondary-container": "#98bcfe",
+                    "secondary-fixed-dim": "#aac7ff",
+                    "inverse-on-surface": "#f0f0f9",
+                    "on-tertiary-fixed": "#351000",
+                    "on-tertiary-container": "#ffc2a7",
+                    "on-surface-variant": "#424752",
+                    "on-secondary-fixed-variant": "#1c4681",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "tertiary-container": "#983c00",
+                    "tertiary": "#722b00",
+                    "surface-container": "#ededf6",
+                    "on-secondary-container": "#224b85",
+                    "error": "#ba1a1a",
+                    "outline": "#727784",
+                    "surface-container-low": "#f2f3fc",
+                    "secondary-fixed": "#d6e3ff",
+                    "surface-container-high": "#e7e8f0",
+                    "background": "#f9f9ff",
+                    "tertiary-fixed-dim": "#ffb694",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#0056b3",
+                    "surface-dim": "#d9d9e2",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e1e2ea",
+                    "surface-variant": "#e1e2ea",
+                    "primary-fixed": "#d7e2ff",
+                    "error-container": "#ffdad6",
+                    "on-background": "#191c21",
+                    "primary": "#003f87",
+                    "secondary": "#385e9a",
+                    "on-surface": "#191c21",
+                    "surface": "#f9f9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#004491",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#115cb9",
+                    "on-primary-fixed": "#001a40",
+                    "inverse-surface": "#2e3037"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "container-padding": "24px",
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter", "sans-serif"],
+                    "body-md": ["Inter", "sans-serif"],
+                    "headline-lg": ["Inter", "sans-serif"],
+                    "headline-lg-mobile": ["Inter", "sans-serif"],
+                    "display-lg": ["Inter", "sans-serif"],
+                    "label-md": ["Inter", "sans-serif"],
+                    "headline-md": ["Inter", "sans-serif"]
+            },
+            "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            background-color: #f9f9ff; /* bg-background fallback */
+            display: flex;
+            justify-content: center;
+        }
+        
+        .mobile-container {
+            width: 100%;
+            max-width: 390px;
+            min-height: 844px;
+            background-color: var(--color-background);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hide scrollbar for clean mock */
+        .mobile-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" data-snapdom="injected-import"></head>
+<body class="bg-surface-container-highest py-8">
+<div class="mobile-container bg-background pb-20">
+<!-- Header (Adapted TopAppBar) -->
+<header class="flex justify-between items-center w-full px-4 h-16 bg-surface border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors rounded p-1">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary font-bold text-lg">N</div>
+<span class="text-headline-md font-headline-md font-bold text-primary">NAVIS</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-full border border-outline-variant">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<span class="text-[10px] font-label-md text-on-surface-variant uppercase">Connected</span>
+</div>
+<div class="text-label-md font-label-md text-on-surface-variant cursor-pointer">EN</div>
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary font-bold border border-primary-fixed cursor-pointer">RK</div>
+</div>
+</header>
+<!-- Context Sub-header -->
+<div class="bg-surface-container-low px-4 py-2 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
+<span class="text-label-md font-label-md text-on-surface-variant">Sector A · Digboi Well #4</span>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-4 pt-6 pb-8 flex flex-col">
+<!-- Greetings -->
+<div class="mb-6">
+<h1 class="text-headline-lg-mobile font-headline-lg-mobile text-on-surface">Good afternoon, Rajesh</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">Report progress for the work fronts you supervise.</p>
+</div>
+<!-- Primary Action: Microphone Unavailable -->
+<button class="w-full bg-primary-container text-on-primary rounded-xl p-8 flex flex-col items-center justify-center gap-4 shadow-sm active:scale-95 transition-transform">
+  <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+    <span class="material-symbols-outlined text-[32px] text-on-primary" style="font-variation-settings: 'FILL' 1;">mic</span>
+  </div>
+  <div class="flex flex-col items-center">
+    <span class="text-headline-md font-headline-md">Tap &amp; Speak</span>
+    <span class="text-body-md opacity-90">Describe what happened on site</span>
+  </div>
+</button>
+<!-- Primary Text Input -->
+<div class="mt-4">
+  <div class="relative flex items-center">
+    <input type="text" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-3 px-4 text-body-md font-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary outline-none shadow-sm" placeholder="Or type your update">
+    <button class="absolute right-2 text-primary p-1">
+      <span class="material-symbols-outlined">send</span>
+    </button>
+  </div>
+</div>
+<!-- Work Context Selector -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 mt-6">
+<div class="flex justify-between items-center mb-3 border-b border-surface-variant pb-2">
+<span class="text-label-md font-label-md text-outline uppercase tracking-wider">Current Context</span>
+<span class="material-symbols-outlined text-[18px] text-primary cursor-pointer">edit</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between">
+<span class="text-body-md font-body-md text-on-surface-variant">Work front:</span>
+<span class="text-body-md font-body-md text-on-surface font-medium">Sector A</span>
+</div>
+<div class="flex justify-between">
+<span class="text-body-md font-body-md text-on-surface-variant">Discipline:</span>
+<span class="text-body-md font-body-md text-on-surface font-medium">Static Equipment</span>
+</div>
+</div>
+</div>
+<!-- Needs Your Response Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 mt-6 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-error-container text-on-error-container text-label-md font-label-md px-2 py-1 rounded-full inline-block">1 Question</span>
+<span class="text-label-md font-label-md text-outline">FR-2026-08-23-C</span>
+</div>
+<h3 class="text-body-lg font-body-lg text-on-surface font-medium mt-2">Needs Your Response</h3>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1 mb-4">"Please confirm the concrete pour location..."</p>
+<button class="w-full border border-primary text-primary hover:bg-surface-container-low transition-colors text-label-md font-label-md py-2 rounded-lg font-medium">Answer Question</button>
+</div>
+<!-- Recent Updates List -->
+<div class="mt-8">
+<h3 class="text-body-lg font-body-lg text-on-surface font-medium mb-4 border-b border-outline-variant pb-2">Recent Updates</h3>
+<div class="flex flex-col">
+<!-- Item 1 -->
+<div class="flex items-start justify-between py-3 border-b border-outline-variant last:border-0">
+<div class="flex gap-3">
+<div class="mt-0.5"><span class="material-symbols-outlined text-[18px] text-outline">feed</span></div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md text-on-surface">P-201 alignment update</span>
+<span class="text-label-md font-label-md text-on-surface-variant mt-0.5">10:42 AM</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="text-label-md font-label-md">Confirmed</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-start justify-between py-3 border-b border-outline-variant last:border-0">
+<div class="flex gap-3">
+<div class="mt-0.5"><span class="material-symbols-outlined text-[18px] text-outline">feed</span></div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md text-on-surface">Zone 3 foundation update</span>
+<span class="text-label-md font-label-md text-on-surface-variant mt-0.5">09:15 AM</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span class="text-label-md font-label-md">Processing</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-start justify-between py-3 border-b border-outline-variant last:border-0">
+<div class="flex gap-3">
+<div class="mt-0.5"><span class="material-symbols-outlined text-[18px] text-outline">feed</span></div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md text-on-surface">Pier 18 concrete pour</span>
+<span class="text-label-md font-label-md text-on-surface-variant mt-0.5">Yesterday</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span class="text-label-md font-label-md">Needs Info</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Trust Note -->
+<div class="mt-8 mb-4 flex items-start gap-2 bg-surface-container px-3 py-2 rounded text-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-outline mt-0.5 shrink-0">verified_user</span>
+<p class="text-[11px] font-label-md text-on-surface-variant leading-tight text-left">Every submitted update requires Planning Engineer confirmation before project data changes.</p>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component) -->
+<nav class="absolute bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 bg-surface border-t border-outline-variant rounded-t-xl px-4" style="box-shadow: 0px -4px 12px rgba(0, 0, 0, 0.05);"><!-- Home (Active) -->
+<button class="flex flex-col items-center justify-center text-primary font-bold scale-95 transition-transform duration-150 w-16 h-full active:bg-surface-container-high rounded-xl">
+  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+  <span class="text-label-md font-label-md mt-1">Home</span>
+</button>
+<!-- Reports -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant scale-95 transition-transform duration-150 w-16 h-full active:bg-surface-container-high rounded-xl">
+  <span class="material-symbols-outlined">description</span>
+  <span class="text-label-md font-label-md mt-1">Reports</span>
+</button>
+<!-- Clarifications (with badge) -->
+<button class="relative flex flex-col items-center justify-center text-on-surface-variant scale-95 transition-transform duration-150 w-16 h-full active:bg-surface-container-high rounded-xl">
+  <div class="relative">
+    <span class="material-symbols-outlined">quiz</span>
+    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-on-primary font-bold">1</span>
+  </div>
+  <span class="text-label-md font-label-md mt-1">Clarifications</span>
+</button>
+<!-- Profile -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant scale-95 transition-transform duration-150 w-16 h-full active:bg-surface-container-high rounded-xl">
+  <span class="material-symbols-outlined">person</span>
+  <span class="text-label-md font-label-md mt-1">Profile</span>
+</button></nav>
+</div>
+
+
+</body></html>

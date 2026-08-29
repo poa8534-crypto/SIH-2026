@@ -1,0 +1,221 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>NAVIS - Clarifications</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#acc7ff",
+                        "outline-variant": "#c2c6d4",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#bbd0ff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "surface-bright": "#f9f9ff",
+                        "secondary": "#385e9a",
+                        "on-tertiary-container": "#ffc2a7",
+                        "surface-variant": "#e1e2ea",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-background": "#191c21",
+                        "outline": "#727784",
+                        "on-secondary-fixed": "#001b3e",
+                        "inverse-surface": "#2e3037",
+                        "secondary-fixed": "#d6e3ff",
+                        "surface-tint": "#115cb9",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "primary-container": "#0056b3",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#983c00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#224b85",
+                        "on-surface-variant": "#424752",
+                        "inverse-primary": "#acc7ff",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e7e8f0",
+                        "primary-fixed": "#d7e2ff",
+                        "surface-dim": "#d9d9e2",
+                        "tertiary": "#722b00",
+                        "on-primary-fixed": "#001a40",
+                        "background": "#f9f9ff",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-on-surface": "#f0f0f9",
+                        "tertiary-fixed": "#ffdbcc",
+                        "surface-container-highest": "#e1e2ea",
+                        "primary": "#003f87",
+                        "surface-container": "#ededf6",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "surface-container-low": "#f2f3fc",
+                        "on-surface": "#191c21",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#98bcfe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "stack-lg": "32px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F7F8FC; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .status-amber { background-color: #FFF3E0; color: #E65100; }
+        .status-blue { background-color: #E8F0FF; color: #003f87; }
+        .heading-dark { color: #0B3B75; }
+    </style>
+</head>
+<body class="bg-background text-on-background pb-24">
+<!-- Top App Bar -->
+<header class="bg-surface dark:bg-on-background border-b border-outline-variant flex justify-between items-center px-4 w-full sticky top-0 z-50 h-16 shadow-[0px_4px_12px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">menu</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">NAVIS</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low transition-colors active:opacity-80 p-1 rounded-full">search</span>
+<img alt="Supervisor Profile" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A small, professional headshot of an Indian male field supervisor in his 30s, wearing a high-visibility construction vest over a collared shirt. He has short dark hair and a serious but approachable expression, shot in bright daylight with a blurred construction site background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCotFg-WtGRMWaMpIk9KHJz7_rEvs31z8RpuhlDEFJCoVyB6SHIYHeYTr6fVfsoXmeIV1t-BahGjtGyI2YkuGHV9rw-10LGzNqU9yaQaJq3VbF7Rl4e1QqF-6-CD_eGiJjhI2lIoRZS57hqK-WKdBJrIBSfb5F84LZ5cWSnFBcx37s_PMbpiaIUGWGqjFjN6jY5erqCUKx4gbUpzUDgxH73s_qChqQvOpQNCZne9lf5EKz7Yz29O9dG-Q">
+</div>
+</header>
+<main class="px-4 py-4 max-w-[390px] mx-auto">
+<!-- Header -->
+<div class="mb-4">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile heading-dark">Clarifications</h1>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 mb-4">
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex flex-col items-center justify-center text-center">
+<span class="font-body-md text-body-md text-on-surface-variant mb-1">Needs Response</span>
+<span class="font-headline-md text-headline-md font-semibold text-primary">1</span>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex flex-col items-center justify-center text-center">
+<span class="font-body-md text-body-md text-on-surface-variant mb-1">Answered</span>
+<span class="font-headline-md text-headline-md font-semibold text-primary">8</span>
+</div>
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex flex-col items-center justify-center text-center">
+<span class="font-body-md text-body-md text-on-surface-variant mb-1">Total</span>
+<span class="font-headline-md text-headline-md font-semibold text-primary">9</span>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-2">
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface text-on-surface-variant font-body-md text-body-md whitespace-nowrap">All</button>
+<button class="px-4 py-1.5 rounded-full border border-primary bg-primary-container text-on-primary font-body-md text-body-md whitespace-nowrap">Needs Response</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface text-on-surface-variant font-body-md text-body-md whitespace-nowrap">Answered</button>
+</div>
+<!-- Content Cards -->
+<div class="flex flex-col gap-4">
+<!-- Expanded Card -->
+<div class="bg-surface border border-outline-variant rounded-lg overflow-hidden shadow-[0px_4px_12px_rgba(0,0,0,0.02)]">
+<div class="p-4 border-b border-outline-variant border-opacity-50">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant">FR-2026-08-23-C</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider status-amber">Needs Response</span>
+</div>
+<h3 class="font-headline-md text-headline-md heading-dark mb-4">Pier 18 concrete pour completed.</h3>
+<div class="bg-surface-container-low rounded p-3 mb-4 border border-outline-variant">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-sm">quiz</span>
+<span class="font-label-md text-label-md text-secondary uppercase">Question From Planning</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mb-2">Please confirm the exact pour location and the date and time the work was completed.</p>
+<div class="text-[11px] text-on-surface-variant">
+                            Priya Das · Planning Engineer | Sent 24 Aug 2026 · 09:12 IST
+                        </div>
+</div>
+<div class="mb-4">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">YOUR RESPONSE</label>
+<textarea class="w-full border border-outline-variant rounded p-3 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] bg-surface" placeholder="Type your response here..."></textarea>
+</div>
+<div class="flex gap-2 flex-col">
+<button class="w-full py-2.5 rounded border border-primary bg-surface text-primary font-body-md text-body-md font-semibold text-center flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">mic</span> Record Response
+                        </button>
+<button class="w-full py-2.5 rounded bg-primary text-on-primary font-body-md text-body-md font-semibold text-center">
+                            Send Response
+                        </button>
+</div>
+</div>
+<div class="p-3 bg-surface-container-low text-center">
+<span class="font-label-md text-label-md text-on-surface-variant">Your response will be returned to the Planning Engineer for review.</span>
+</div>
+</div>
+<!-- Collapsed Card 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-[0px_4px_12px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">FR-2026-08-24-A</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider status-blue">Answered</span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface">P-201 alignment update</h3>
+</div>
+<!-- Collapsed Card 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 shadow-[0px_4px_12px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface-variant">FR-2026-08-25-D</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider status-blue">Answered</span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface">P-201 mechanical seal not received</h3>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-2 bg-surface dark:bg-on-background border-t border-outline-variant md:hidden"><a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-high tap-highlight-transparent w-1/4 h-full" href="#">
+  <span class="material-symbols-outlined mb-1">home</span>
+  <span class="font-label-md text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-high tap-highlight-transparent w-1/4 h-full" href="#">
+  <span class="material-symbols-outlined mb-1">description</span>
+  <span class="font-label-md text-[10px]">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl py-1 px-2 relative w-1/4 h-12 mt-1" href="#">
+  <span class="material-symbols-outlined mb-0.5" style="font-variation-settings: 'FILL' 1;">quiz</span>
+  <span class="font-label-md text-[10px]">Clarifications</span>
+  <span class="absolute top-0 right-2 w-4 h-4 bg-primary text-on-primary rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container-high tap-highlight-transparent w-1/4 h-full" href="#">
+  <span class="material-symbols-outlined mb-1">person</span>
+  <span class="font-label-md text-[10px]">Profile</span>
+</a></nav>
+
+
+</body></html>

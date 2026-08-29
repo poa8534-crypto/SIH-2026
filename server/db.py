@@ -118,6 +118,12 @@ class Job(Base):
     event_count = Column(Integer, default=0)
     linked_count = Column(Integer, default=0)
     review_count = Column(Integer, default=0)
+    # What this ingest actually changed, as opposed to what it extracted.
+    # Recorded at write time because the roll-up is the only place that knows:
+    # an auto-linked event whose value was older, or blocked by an integrity
+    # rule, is linked but writes nothing.
+    activities_updated = Column(Integer, default=0)
+    audit_records_created = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=_now)
     completed_at = Column(DateTime, nullable=True)
@@ -213,6 +219,14 @@ class AuditRecord(Base):
 
     id = Column(String, primary_key=True, default=_uuid)
     activity_id = Column(String, ForeignKey("activities.activity_id"), nullable=False)
+    # The single extracted event responsible for this write, when there is
+    # one. Null for genuinely aggregate writes — a rolled-up quantity or a
+    # conflict note is produced by several events at once, and pointing at any
+    # one of them would misattribute it. `contributing_sources` carries the
+    # full picture in that case.
+    linked_event_id = Column(
+        String, ForeignKey("linked_events.id"), nullable=True, index=True
+    )
     timestamp = Column(DateTime, nullable=False, default=_now)
 
     # What changed
@@ -223,6 +237,11 @@ class AuditRecord(Base):
     # Why it changed
     source = Column(String, nullable=False)  # extraction, matching, planner_review, agent_turn, manual
     source_file = Column(String, nullable=True)
+    # Where in that file the claim came from. Carried onto the audit row rather
+    # than left on LinkedEvent alone, so the trail can name the exact line of
+    # the exact report without a join that has no foreign key to travel along.
+    source_line = Column(Integer, nullable=True)
+    source_row = Column(Integer, nullable=True)
     source_span = Column(Text, nullable=True)
     confidence = Column(Float, nullable=True)
 
@@ -241,6 +260,7 @@ class AuditRecord(Base):
 
     # Relationships
     activity = relationship("Activity", back_populates="audit_records")
+    linked_event = relationship("LinkedEvent")
 
 
 # ── ReviewQueueItem ─────────────────────────────────────────────────────────
@@ -267,6 +287,16 @@ class ReviewQueueItem(Base):
     resolved_activity_id = Column(String, nullable=True)  # the activity_id the planner chose
     resolution_note = Column(Text, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
+
+    # A question the Planning Engineer put back to the supervisor, and the
+    # answer. Kept on the review item rather than in a separate thread: a
+    # clarification is always about one queued item, and the planner needs the
+    # answer beside the item they are adjudicating.
+    clarification_question = Column(Text, nullable=True)
+    clarification_asked_by = Column(String, nullable=True)
+    clarification_asked_at = Column(DateTime, nullable=True)
+    clarification_response = Column(Text, nullable=True)
+    clarification_answered_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=_now)
 

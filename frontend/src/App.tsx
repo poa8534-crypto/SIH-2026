@@ -1,30 +1,40 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Monitor, Smartphone, ListTodo, CalendarDays, Upload, Database, Sun, Moon } from 'lucide-react';
-import { api } from './lib/api';
+import { Monitor, Smartphone, LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon } from 'lucide-react';
+import { api, errorDetail } from './lib/api';
 import { useDevice } from './hooks/useDevice';
 import { useTheme } from './hooks/useTheme';
 import Reconcile from './pages/Reconcile';
+import Schedule from './pages/Schedule';
+import Ingest from './pages/Ingest';
+import Field from './pages/Field';
+import Memory from './pages/Memory';
+import Home from './pages/Home';
+import FieldReports from './pages/FieldReports';
+import FieldClarifications from './pages/FieldClarifications';
+import FieldProfile from './pages/FieldProfile';
+import { FieldNav } from './components/FieldNav';
 
 // Placeholder route components
-const FieldAgent = () => <div className="p-4 text-sm font-mono">Field Agent View (Mobile)</div>;
-const Schedule = () => <div className="p-4 text-sm font-mono">Schedule View</div>;
-const Ingest = () => <div className="p-4 text-sm font-mono">Ingest View</div>;
-const Memory = () => <div className="p-4 text-sm font-mono">Memory View</div>;
 
 function DesktopShell({ children }: { children: React.ReactNode }) {
   const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
-  const { data: scheduleData } = useQuery({
+  const {
+    data: scheduleData,
+    isLoading: headerLoading,
+    error: headerError,
+  } = useQuery({
     queryKey: ['schedule', 'header'],
     queryFn: () => api.getSchedule(undefined, false),
     retry: false,
   });
 
   const navItems = [
+    { path: '/home', label: 'Home', icon: LayoutDashboard },
     { path: '/reconcile', label: 'Reconcile', icon: ListTodo },
     { path: '/schedule', label: 'Schedule', icon: CalendarDays },
     { path: '/ingest', label: 'Ingest', icon: Upload },
@@ -57,7 +67,12 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="p-4 border-t border-hair">
           <div className="text-[10px] font-mono uppercase mb-1 text-muted">Data Date</div>
-          <div className="text-fg font-mono">{scheduleData?.data_date || 'N/A'}</div>
+          <div
+            className={`font-mono ${headerError ? 'text-danger' : 'text-fg'}`}
+            title={headerError ? errorDetail(headerError) : undefined}
+          >
+            {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
+          </div>
           
           <button
             onClick={() => setOverride('mobile')}
@@ -82,11 +97,16 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
               <span className="text-fg uppercase font-bold text-[12px]">
-                {scheduleData ? scheduleData.project : 'Loading...'}
+                {scheduleData ? scheduleData.project : headerLoading ? 'Loading…' : 'Project unavailable'}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
+             {headerError && (
+               <span className="font-mono text-[9px] text-danger max-w-[420px] truncate" title={errorDetail(headerError)}>
+                 {errorDetail(headerError)}
+               </span>
+             )}
              <div className="flex bg-raised p-0.5 rounded border border-hair">
                <div className="px-2 py-1 text-[9px] font-bold bg-accent text-accent-fg rounded-sm cursor-pointer">PLANNER</div>
                <div className="px-2 py-1 text-[9px] font-bold text-muted hover:text-fg cursor-pointer" onClick={() => setOverride('mobile')}>FIELD</div>
@@ -108,7 +128,12 @@ function MobileShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-screen w-full bg-surface text-muted overflow-hidden font-sans">
       <header className="h-12 border-b border-hair flex items-center justify-between px-4 bg-surface">
-        <span className="font-bold tracking-tighter text-fg uppercase text-[12px]">Field Agent</span>
+        <span className="flex items-center gap-2">
+          <span className="w-6 h-6 bg-accent text-accent-fg flex items-center justify-center font-bold text-[12px]">
+            N
+          </span>
+          <span className="font-bold tracking-tighter text-fg uppercase text-[12px]">NAVIS</span>
+        </span>
         <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
@@ -124,11 +149,17 @@ function MobileShell({ children }: { children: React.ReactNode }) {
           >
             <Monitor size={16} />
           </button>
+          <span className="w-7 h-7 border border-hair bg-raised text-fg flex items-center justify-center font-mono text-[10px]">
+            RK
+          </span>
         </div>
       </header>
-      <main className="flex-1 overflow-auto">
+      {/* min-h-0 so the field screen owns its own scrolling rather than
+          nesting a second scroll container inside this one. */}
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {children}
       </main>
+      <FieldNav />
     </div>
   );
 }
@@ -140,9 +171,14 @@ export default function App() {
     return (
       <BrowserRouter>
         <MobileShell>
+          {/* Four real routes, each its own page. The bottom nav lives in
+              the shell so it is identical everywhere. */}
           <Routes>
-            <Route path="/" element={<FieldAgent />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/field" element={<Field />} />
+            <Route path="/field/reports" element={<FieldReports />} />
+            <Route path="/field/clarifications" element={<FieldClarifications />} />
+            <Route path="/field/profile" element={<FieldProfile />} />
+            <Route path="*" element={<Navigate to="/field" replace />} />
           </Routes>
         </MobileShell>
       </BrowserRouter>
@@ -153,12 +189,13 @@ export default function App() {
     <BrowserRouter>
       <DesktopShell>
         <Routes>
+          <Route path="/home" element={<Home />} />
           <Route path="/reconcile" element={<Reconcile />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/ingest" element={<Ingest />} />
           <Route path="/memory" element={<Memory />} />
-          <Route path="/" element={<Navigate to="/reconcile" replace />} />
-          <Route path="*" element={<Navigate to="/reconcile" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </DesktopShell>
     </BrowserRouter>

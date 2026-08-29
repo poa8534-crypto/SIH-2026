@@ -195,9 +195,8 @@ One progress assertion before linking.
     "raw_text": "spool erected for 24\"-P-1001 upto gridline 7, 40m done"
   },
   "event_type": "PROGRESS",
-  "reported_date": "2026-03-10",
-  "asserted_start": null,
-  "asserted_finish": "2026-03-10",
+  "asserted_date": "2026-03-10",
+  "date_basis": "RELATIVE_RESOLVED",
   "description_text": "spool erected for line 24-P-1001 upto gridline 7",
   "tags_found": ["24\"-P-1001"],
   "discipline_inferred": "PIPING",
@@ -224,47 +223,13 @@ PROGRESS
 BLOCKED
 ```
 
-### Dates: one reported, two asserted
+Allowed date basis values:
 
-An event carries three dates, and they do different jobs.
-
-`reported_date` is the single date the **matcher** scores against (the
-`date_proximity` feature). It is resolved from the span itself where the text
-carries a date, and otherwise defaults to the source's report date — the DPR
-header date, or the completion column of a spreadsheet register. It is
-always populated. Recording *which* of those produced it — the `date_basis`
-provenance field — was deferred.
-
-`asserted_start` and `asserted_finish` are what reaches the **schedule**.
-Either may be null, and most events assert only one: a line reading
-"backfilling started today" asserts a start and no finish. They exist
-because a single date slot cannot express both ends of an activity, which
-left every activity with `actual_start == actual_finish` and a fictitious
-start variance.
-
-How the two are bound:
-
-- **Free text** binds by verb. An explicit start verb ("started",
-  "commenced", "mobilised") asserts a start. A completion is taken from the
-  line's inferred status, so that a progress line reading "about 40% done"
-  leans `in_progress` and is not misread as a completion. A completion verb
-  with a date bound directly to it ("pour completed on 30 Jul") asserts a
-  finish even when a later clause in the same line is still open ("curing
-  ongoing"). When a line makes both claims and carries two dates, they bind
-  positionally in the order the verbs appear. When a claim carries no
-  in-span date, the report's own date carries it.
-- **Spreadsheets** assert both from one row: the commencement column is an
-  actual start, and the completion column is an actual finish — but only for
-  a row that is genuinely complete. Headers like `Actual / Est. Completion`
-  and `End Date` hold a *forecast* for a row still in progress, and writing
-  a forecast as an actual finish would corrupt the schedule.
-
-Year-less dates ("completed 30 Jul") are resolved against the report's own
-header date by taking the candidate year that puts the date nearest that
-report date, preferring a past reading on a near-tie because field reports
-describe work already done. A date further than ~6 months from the report
-date sits near the midpoint between two candidate years, so it is flagged as
-ambiguous and left unresolved rather than guessed.
+```text
+EXPLICIT
+RELATIVE_RESOLVED
+DEFAULTED_TO_REPORT_DATE
+```
 
 **Provenance is non-negotiable.** It is the spine of the audit trail.
 
@@ -367,11 +332,6 @@ Append-only record created for every field mutation.
     "finish_ge_start",
     "predecessor_started"
   ],
-  "contributing_sources": [
-    "2026-07-12 from civil_progress.xlsx \"Pedestal Concreting P1-P12\"",
-    "2026-08-02 from dpr_day_01.txt \"pedestals P7 to P12 completed yesterday\""
-  ],
-  "conflict": true,
   "created_at": "2026-03-11T20:14:03+05:30"
 }
 ```
@@ -386,28 +346,6 @@ percent_complete
 ```
 
 The audit log has **no update path**. Corrections create a new record instead of mutating historical records.
-
-### Conflicting sources are recorded, never silently resolved
-
-Two sources routinely disagree about one node: a full-scope spreadsheet row
-says a node finished 12 Jul, while a partial-scope DPR line says pedestals
-P7–P12 completed 2 Aug. Precedence is **earliest start wins, latest finish
-wins**, but the losing claim is not discarded. Every source that asserted a
-value is listed in `contributing_sources`, `conflict` is set on the write it
-affects, and the disagreement surfaces on `GET /schedule` as an
-`integrity_warnings` entry with `severity: "conflict"`. A planner has to be
-able to see that the surviving date came from a partial-scope line.
-
-### Partial scope must not finish a whole node
-
-A completion mention that covers part of a node's scope must not set Actual
-Finish on the whole node. On a node measured by quantity, a completion
-asserted *without* a quantity is recorded as progress only — the quantity
-roll-up decides completion, and the finish assertion is withheld and
-reported. A DPR line completing pedestals P7–P12 therefore cannot finish a
-P1–P12 node on its own. Only an unquantified node (a milestone), where a
-completion claim is all the evidence there will ever be, completes on the
-claim alone.
 
 ---
 
@@ -614,112 +552,261 @@ Those five elements are the core pitch. Everything else is packaging.
 
 # 7. Known Limitations
 
-Recorded deliberately, so they can be answered directly if asked rather
-than discovered during a demo. Both are known and understood, not
-undiscovered bugs.
+## Audit provenance is exact where it exists, and absent where it does not
 
-## A. A dateless completion in a mixed-status line registers no finish
+`AuditRecord` carries a real foreign key, `linked_event_id`, to the
+`LinkedEvent` that produced the write, plus a denormalised snapshot of
+`source_file`, `source_line` and `source_row`. `DateAssertion` in
+`matching/models.py` carries the line and row through the roll-up, so the
+server reads the position straight off the winning assertion rather than
+matching on text. Two identical lines in one file are distinct entries.
 
-A finish is asserted either when the line's inferred status is `completed`,
-or when a completion verb has a date bound directly to it ("pour completed
-on 30 Jul"). A line whose overall status is *not* `completed`, and whose
-completion verb carries no date of its own, therefore asserts no finish.
+The snapshot is deliberately kept alongside the key: `audit_records` is
+append-only and must stay readable as a historical record even if the event
+row is later reinterpreted. On the seeded corpus all 259 audit rows agree
+with their foreign key on all three fields, and no key dangles.
 
-For example, "Tank TK-1 shell erection going good — currently on 4th course
-(lower courses 1-3 completed)" registers no finish date. The parenthetical
-completion refers to a sub-scope, the line as a whole reads `in_progress`,
-and no date is bound to the word "completed".
+What is genuinely absent, and why:
 
-This is a deliberate precision-first trade, not an oversight. The same rule
-is what stops "about 40% done" from being read as a completion — reading
-every stray completion verb as a finish would write false Actual Finish
-dates onto live schedule nodes, which is the more expensive error. The cost
-is that a completion stated without a date, in a line that is otherwise
-about work in progress, is missed. The quantity roll-up still captures the
-progress itself, so the node is not lost — only the finish date is.
+- **165 of 259 rows have an exact position.** The rest are writes with no
+  single originating line. Two cases produce them.
+- **A date taken from the report's own date rather than a line.** When no
+  event asserts a start or finish, `RollupAccumulator` falls back to
+  `min`/`max` of the events' `reported_date`
+  (`matching/engine.py`, `results()`). The value is real and the file is
+  named, but no single line asserted it, so `source_line` stays null rather
+  than pointing at an arbitrary one.
+- **Aggregate writes.** A rolled-up `actual_qty` is the sum of several
+  events, and a `source_conflict` note is by definition more than one
+  source. These get `linked_event_id = NULL` and carry every contributor in
+  `contributing_sources` instead. A single key here would misattribute the
+  write.
 
-## B. `eval.py` measures the matcher, not the system end to end
+Every row still names its `source_file`. The rule the UI relies on is: a
+position shown is exact; no position shown means there is no single line to
+show, not that the line was lost.
 
-`eval.py` builds its `ExtractedEvent` objects directly from
-`dataset/ground_truth.csv` (`_build_event`), reading the labelled mention
-text and the `source_date` column. It does **not** call `Extractor` or
-`SpreadsheetParser`.
+## `link_confidence` on `GET /schedule` is derived per request
 
-So its metrics — top-1 accuracy, precision, coverage, auto-link precision —
-measure **retrieval, feature scoring, and the decision thresholds on clean,
-correctly-dated input**. They are honest numbers for the matcher. They are
-not end-to-end system numbers, and they will not move when extraction
-changes.
+`ScheduleActivityResponse.link_confidence` is not stored. It is read back off
+the audit trail on every `GET /schedule` — the confidence of the most recent
+write that set `actual_start` or `actual_finish`. It exists so the Schedule
+table can show a confidence per row without issuing 120 audit requests.
 
-This has already cost us once. Extraction was silently dropping every date
-on the real ingest path while `eval.py`, feeding the matcher dates straight
-from the ground-truth CSV, continued to report healthy figures. The bug was
-invisible to the metrics table and only surfaced through `GET /schedule`
-reporting `activities_with_actuals: 0`.
+It is one grouped query, not a query per activity, so the cost is flat. But
+it does mean the value is a projection of the audit log rather than a fact
+about the activity, and it will shift if the audit trail is ever rewritten
+(it cannot be — the table is append-only, which is what makes this safe).
 
-The practical consequences:
+## The time agent fills slots by regex, not by an LLM
 
-- A regression in `extraction/` will not show up in the metrics table.
-  Verify extraction changes against the API (`POST /ingest` then
-  `GET /schedule`), not against `eval.py`.
-- Quote these numbers as matcher performance. Describing them as end-to-end
-  accuracy would overstate what has been measured.
+The problem statement asks for "an LLM-based conversational or voice
+interface". `POST /agent/turn` is conversational and it is stateful
+slot-filling, but the slot extraction in `_fill_slots_from_message` is regex
+and keyword matching — there is no model in that path. The LLM is used in
+`extraction/`, on ingested documents, not in the agent. Worth saying plainly
+if a judge asks, because the conversation is convincing enough to be mistaken
+for a model.
 
-Closing this would mean a second evaluation path that runs the real
-extractors over the source files and aligns their output to ground truth by
-provenance span. That is worthwhile but was not built.
+Consequences visible in the UI:
 
-## C. On tag-free input the system degrades to planner-assist
+- **It asks for three things only:** `discipline`, `location`, `status`. It
+  never asks for a date or a quantity, so those are captured only when the
+  supervisor happens to mention them unprompted. The Stitch mockups show the
+  agent asking "Which date was it completed?" and "How many spools out of the
+  planned quantity?" — those questions do not exist.
+- **Quantity needs a unit.** "6 nos" parses; "6 out of 18", which is what the
+  mockup's own script says, does not. This is consistent with the deliberate
+  decision to reject unitless quantities in the roll-up, but it means the
+  QUANTITY row on the structured card is often "Not stated".
+- **Prompts are raw enum strings**, e.g. "Which discipline? (civil, piping,
+  electrical, instrumentation, hse, static_equipment)". Legible, but it reads
+  as a form rather than a conversation.
 
-Equipment and line tags are the near-decisive matching feature. When a field
-report contains none, the system does not auto-update the schedule — it
-ranks candidates and asks a planner. This is a deliberate trade, and it is
-worth stating plainly before anyone finds it by accident.
+Two bugs in this path were fixed while wiring the screen, both fatal:
+`SlotState.date` was annotated `Optional[date]`, where the field name shadowed
+the imported type under `from __future__ import annotations`, so Pydantic
+resolved it to `NoneType` and the endpoint returned 500 on the turn after any
+date was mentioned; and the location regex matched an uppercase character
+class against a lowercased string, so no answer containing "Zone A" could
+ever satisfy the agent and it re-asked forever.
 
-`dataset/dpr_day_11_messy.txt` was written specifically to test this: a DPR
-in the voice of a supervisor writing at 8pm, with Hindi/English code-mixing,
-heavy site abbreviation (w/o, RFI, JMR, BBS, NCR, u/g, F&G), delay causes
-buried in narrative, implicit status with no completion keyword, and — the
-point of the exercise — **no equipment tags at all**. Work is referred to as
-"the 24 inch line near rack 3", "the big tank", "pump house slab".
+## Voice updates are proposals, never direct writes
 
-Measured on that file, extraction is followed by the full hybrid matcher
-(exact tag, BM25, fuzzy, dense retrieval, RRF fusion, feature scoring,
-calibrated thresholds):
+`POST /agent/turn` now runs the real matching engine when the last slot fills
+and returns the proposal — activity, confidence, outcome — without writing
+anything. A second call with `confirm: true` persists a `LinkedEvent` and a
+`ReviewQueueItem` and still does not touch `actual_start` or `actual_finish`.
 
-| | rules-only | qwen3:8b |
-|---|---:|---:|
-| events extracted | 16 | 16 |
-| **auto-linked** | **0** | **0** |
-| **sent to review** | **16** | **16** |
-| mean match confidence | 0.630 | 0.627 |
-| status resolved | 6 | 14 |
-| quantity extracted | 4 | 9 |
-| extraction wall clock | 0.003 s | 64.5 s |
+This matters because the previous behaviour did the opposite: it created the
+event on the turn that filled the last slot, before the supervisor saw
+anything, wrote actual dates directly with `auto_applied=True`, and created no
+review item at all — so a voice update bypassed the planner and never appeared
+in any queue. The alias-lexicon write was removed from that path too: learning
+from an unconfirmed update would feed the matcher its own unreviewed guesses.
+`POST /review/{id}/resolve` remains the only place an actual date is committed.
 
-The comparison is the informative part. The LLM understands this text far
-better than the regex pre-pass does — it more than doubles both status and
-quantity resolution, and it correctly reads "Both pumps at the pump house
-set and aligned" as a completion with no completion keyword present. **And
-it changes the linking outcome by exactly nothing**: zero auto-links and
-sixteen review items either way, with mean match confidence marginally
-*lower*. Text comprehension does not substitute for a tag. Understanding
-what a line says is a different problem from knowing which of 120 schedule
-nodes it refers to, and only the second one moves a date onto the schedule.
+## Institutional memory is real but thin, and the screen says so
 
-For contrast, the same pipeline on `dpr_day_01.txt`, where tags are present,
-auto-links 4 of 13 mentions and reviews 9. Across the labelled corpus
-`eval.py` reports 100% auto-link precision at 50.4% coverage.
+Every figure on the Memory screen is computed by `GET /memory/query` from
+captured execution data. The honest caveat is how little of it there is on the
+seeded corpus, and the UI surfaces the sample size everywhere rather than
+hiding it.
 
-**This is the precision-first trade, working as designed.** A wrong
-auto-link writes a false actual date onto a live schedule and is expensive
-to find and undo; a review item costs a planner about ten seconds. On
-tag-free input the honest output is sixteen ranked candidates with their
-evidence, not sixteen guessed dates. The system degrades to planner-assist
-rather than degrading into fabrication, and every one of those sixteen
-items arrives with its retrieval sources, feature scores and provenance
-span attached.
+- **47 of 120 activities have both an actual start and finish.** Only those can
+  contribute a duration. Of those 47, **32 show identical planned and actual
+  dates** — zero measured slip; 10 overran and 5 finished early.
+- **43 of 67 actual starts equal the planned start.** So most of the
+  planned-vs-actual delta is driven by the finish date alone, not by a measured
+  execution window. 24 starts do genuinely differ, so this is a majority
+  artefact rather than a total one.
+- **26 of 56 activity types have any actual duration; 11 have two or more.**
+  The largest overruns are single-activity types — `CIV-PLT` reads 6d planned
+  against 35d actual from one activity — which is why both the table and the
+  picker show a completed-of-total count on every row, and why the suggested
+  duration panel defaults to the worst overrun *among types with at least two
+  completions* rather than the worst overall.
+- **Delay causes are four keyword hits.** `_compute_delay_reasons` substring
+  matches a fixed list against audit `source_span` text. All four found are
+  civil and each touches one activity. This is keyword recall over DPR prose,
+  not a modelled cause taxonomy.
 
-The lever that would change this is retrieval strength on tag-free text —
-description-level embedding match weighted higher when no tag is present —
-which is matcher work, not extraction work, and has not been done.
+Two fields were added so the UI could stop overstating its evidence.
+`DurationDistribution.actuals_count` and `SuggestedDuration.actuals_count`
+report how many activities a mean or median is actually drawn from —
+`sample_size` alone counts every activity of the type, which claimed 5 samples
+behind a median computed from 2. A suggestion is now suppressed entirely below
+two completions, which also removes a 0-day recommendation that `ELE-CBL`
+produced from one same-day activity.
+
+`DelayReason.days_lost` is **attributed, not measured**: it sums the finish slip
+of the affected activities, and an activity recording two causes has its slip
+counted against both. The screen states this under the table. It is an upper
+bound per cause, and the right way to tighten it is to attribute slip to a
+cause at write time rather than to reconstruct it afterwards.
+
+## Source-conflict detection was scoped to one upload
+
+`RollupAccumulator` computes a conflict from the assertions it sees in a single
+`POST /ingest` call. Real disagreements are almost always across uploads — a
+discipline spreadsheet ingested on Tuesday contradicting a DPR ingested on
+Monday — so the accumulator saw one assertion each time and found nothing. The
+result was that 24 genuine disagreements existed in the data while
+`integrity_warnings` reported zero of them, and the 35 entries it did flag were
+partial-scope notes with a single contributing source, not two-sided conflicts.
+
+Two changes fixed it, both in `server/main.py` rather than in `matching/`:
+
+- Before writing `actual_start` or `actual_finish`, the roll-up now reads the
+  most recent audit row for that field (`_prior_write`). If the incoming value
+  differs and came from a different file, the write is flagged `conflict=True`
+  and both sides are recorded in `contributing_sources`.
+- When the stored value wins on the earliest-evidence rule and the incoming
+  assertion is therefore discarded, a `source_conflict` audit row is written
+  anyway. Previously that assertion vanished silently, which is the more
+  dangerous of the two cases because nothing recorded that a source had been
+  overruled.
+
+`GET /schedule/conflicts` then derives the list by walking each activity's
+writes per field and emitting a conflict wherever consecutive writes disagree
+and came from different files. Nothing new is stored: the values, files and
+line/row numbers were already in the audit trail.
+
+On the seeded corpus this surfaces **25 conflicts, 21 of them spreadsheet
+against daily report**. Two properties are worth stating to a planner:
+
+- **The stored value is whichever source was ingested last, not whichever is
+  right.** `PIP-SKN-1051` holds an `actual_finish` of 2026-08-20 from
+  `piping_progress.xlsx` row 33, overruling 2026-09-02 from `dpr_day_08.txt`
+  line 19 — moving the finish *earlier* purely because the spreadsheet arrived
+  second. The screen shows both sides and which one is stored; it does not
+  pretend the stored one is correct.
+- **The Primavera baseline is never a side.** It is read-only and never
+  written, so it cannot disagree with anything. Labelling a conflict column
+  "Primavera" would be wrong, and `_source_kind` classifies sources as
+  `spreadsheet`, `daily_report`, `agent` or `other` — never as the baseline.
+
+`GET /audit/recent` was added alongside it so a dashboard can show recent
+writes across all activities without fetching all 120 audit trails.
+
+## Source files were decoded lossily, and the damage was permanent
+
+Every supplied DPR is cp1252, not UTF-8: an em-dash is the single byte `0x97`,
+which is not valid UTF-8 at all. `extraction/extractor.py` read them with
+`errors="replace"`, so each one became U+FFFD at ingest — and because the
+replacement happened on the way in, it was written to `LinkedEvent.raw_text`,
+to `source_span`, into the audit trail, and onto the screen as
+"flange start <?> P-1002 flange boltup begins". 51 of 266 linked events and 48
+of 274 audit rows carried it. Re-ingesting could not fix it; the original
+character was gone.
+
+`extraction/textio.py` now decodes by trying `utf-8-sig`, then `cp1252`, then
+`latin-1`, and only falls back to lossy decoding if all three fail. cp1252
+comes before latin-1 deliberately: it maps `0x80`-`0x9f` to real punctuation
+where latin-1 maps them to control characters, and latin-1 accepts any byte so
+it would otherwise mask the others.
+
+Two bare `open()` calls were reading the baseline JSON with the platform
+default encoding — cp1252 on Windows, UTF-8 elsewhere — so the same file could
+parse differently on two machines. Both now decode explicitly.
+
+After the fix: zero U+FFFD anywhere in the database, and 101 em-dashes survive
+intact through `GET /schedule`. The baseline JSON itself was never corrupt; it
+is pure ASCII with `\u2014` escapes, so activity descriptions were always
+clean. Only text read from the report files was affected.
+
+## The agent asks for what it needs, and the LLM is genuinely optional
+
+`/agent/turn` proactively fills five slots — discipline, location, status, date
+and, when the update is about something the project counts, a completed and
+planned quantity. Parsing lives in `server/agent_slots.py` as pure functions so
+each format is table-tested rather than discovered on stage.
+
+Three fixes worth naming, because each was a loop or a lie:
+
+- **A supervisor's answer is now read as an answer.** The parser compared
+  against lowercase enum values, so answering "Electrical" to "which
+  discipline?" matched nothing and the same question came back forever. The
+  message is now read as a reply to the outstanding question first, matching is
+  case-insensitive, and synonyms ("elec", "safety", "equipment") are accepted.
+  After two failed attempts on one slot the agent moves on and leaves it for
+  the planner rather than asking a third time.
+- **Enum values never reach a phone.** `DISCIPLINE_LABELS` is the single
+  mapping; `static_equipment` renders as "Static Equipment" everywhere, and
+  `discipline_label()` raises on an unknown value so a typo fails a test rather
+  than appearing in the UI.
+- **A ratio stays two numbers.** "6 out of 18" is stored as completed 6 and
+  planned 18. Collapsing it lost the denominator, which is what decides whether
+  a node is finished. A completed figure above the planned total is retained
+  and flagged, never clamped.
+
+**The LLM is off by default and cannot break the demo.** The repository already
+had a flag — `EXTRACTION_PROVIDER`, defaulting to `rules` — so none was added.
+When it is off, `server/agent_llm.py` builds no client, opens no socket and
+waits for nothing. When it is on, extraction is bounded by
+`NAVIS_LLM_TIMEOUT_SECONDS` (default 5, far tighter than the batch path's 120),
+tried once with no retry, and every value it returns is re-validated by the
+same deterministic parsers before it may touch SlotState. A refused connection,
+a timeout, malformed JSON or a schema violation all fall back silently: the
+supervisor sees no Ollama error, keeps every slot already collected, and the
+conversation continues. An Ollama problem is not a NAVIS outage and is never
+presented as one.
+
+One bug found while testing that bound: the timeout was not actually bounded.
+`ThreadPoolExecutor` used as a context manager joins its workers on exit, so a
+stalled model still held the request for its own full timeout after we had
+given up waiting. It now shuts down without waiting.
+
+## Resetting has to survive a schema change
+
+`scripts/reset_demo.py` clears rows rather than dropping the database, which is
+what lets it run while the server is up. That is not enough on its own:
+SQLAlchemy's `create_all` adds missing tables but never missing columns, so a
+database built before a model gained a field kept working right until the first
+insert, which then failed with an OperationalError mid-demo — exactly what
+happened when `ReviewQueueItem` gained its clarification columns.
+
+`reset_demo` now compares every model column against the live database first
+and rebuilds the schema when they differ. Everything in that database is
+regenerated from `dataset/`, so there is nothing to preserve and no migration
+to write.

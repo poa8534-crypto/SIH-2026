@@ -96,10 +96,26 @@ class DateAssertion(BaseModel):
     field: str          # actual_start | actual_finish
     value: date
     source_file: str = ""
+    # Where in that file the claim sits. Carried alongside the span because a
+    # span is not an identity: two lines of a DPR can read identically, and an
+    # audit trail that cannot tell them apart is not a trail.
+    source_line: Optional[int] = None
+    source_row: Optional[int] = None
     source_span: str = ""
+
+    def locate(self) -> str:
+        """Human-readable position within the source, or '' if unknown."""
+        if self.source_line is not None:
+            return f"line {self.source_line}"
+        if self.source_row is not None:
+            return f"row {self.source_row}"
+        return ""
 
     def describe(self) -> str:
         where = self.source_file or "unknown source"
+        loc = self.locate()
+        if loc:
+            where = f"{where} {loc}"
         span = f' "{self.source_span[:80]}"' if self.source_span else ""
         return f"{self.value.isoformat()} from {where}{span}"
 

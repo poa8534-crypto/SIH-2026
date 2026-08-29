@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from '../lib/api';
+import { ApiError, api, errorDetail } from '../lib/api';
 import { ReviewItem, ScheduleActivity } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
@@ -53,7 +53,7 @@ export default function Reconcile() {
     }, 4000);
   };
 
-  const { data: scheduleData } = useQuery({
+  const { data: scheduleData, error: scheduleError } = useQuery({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(undefined, false),
   });
@@ -236,7 +236,7 @@ export default function Reconcile() {
         <AlertCircle size={32} className="text-danger mb-4" />
         <div className="font-mono text-fg mb-2">Error loading review queue</div>
         <div className="text-muted text-sm mb-6 max-w-md">
-          {queueError instanceof ApiError ? queueError.detail : 'Unknown error occurred'}
+          {errorDetail(queueError)}
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['reviewQueue'] })}
@@ -442,7 +442,11 @@ export default function Reconcile() {
                             </div>
                           </>
                         ) : (
-                          <div className="text-[11px] text-danger font-mono italic">Activity details not found in schedule baseline.</div>
+                          <div className="text-[11px] text-danger font-mono italic">
+                            {scheduleError
+                              ? `Schedule unavailable — ${errorDetail(scheduleError)}`
+                              : 'Activity details not found in schedule baseline.'}
+                          </div>
                         )}
                       </div>
                     );

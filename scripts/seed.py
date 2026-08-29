@@ -26,48 +26,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 DATASET = PROJECT_ROOT / "dataset"
 
 
-def source_files(dpr_only: bool) -> list[Path]:
-    files = sorted(DATASET.glob("dpr_day_*.txt"))
-    if not dpr_only:
-        files += sorted(DATASET.glob("*_progress.xlsx"))
-    return files
-
-
-def ingest_one(path: Path) -> dict:
-    """Push one file through POST /ingest's own handler.
-
-    Calls the endpoint function directly rather than reimplementing the
-    pipeline, so seeding cannot drift from what the API does. The server does
-    not need to be running: the handler is an ordinary coroutine, and passing
-    `file` and `db` explicitly bypasses FastAPI's dependency injection.
-    """
-    import asyncio
-
-    from fastapi import UploadFile
-    from sqlalchemy.orm import Session
-
-    from server.db import engine
-    from server.main import ingest_file
-
-    upload = UploadFile(filename=path.name, file=io.BytesIO(path.read_bytes()))
-    with Session(engine) as db:
-        response = asyncio.run(ingest_file(file=upload, db=db))
-        job = _job_counts(db, response.job_id)
-    return job
-
-
-def _job_counts(db, job_id: str) -> dict:
-    from server.db import Job
-    job = db.query(Job).filter(Job.id == job_id).first()
-    if job is None:
-        return {"events": 0, "linked": 0, "review": 0}
-    return {
-        "events": job.event_count or 0,
-        "linked": job.linked_count or 0,
-        "review": job.review_count or 0,
-    }
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="Seed the EPC progress database")
     ap.add_argument("--keep", action="store_true",
@@ -77,10 +35,11 @@ def main() -> int:
     args = ap.parse_args()
 
     # Imported after sys.path is set so the script runs from any directory.
-    from server.db import (
-        Activity, AuditRecord, Base, DB_PATH, Job, LinkedEvent,
-        ReviewQueueItem, engine, init_db,
+    from server.db import DB_PATH
+    from server.demo import (
+        clear_progress, ingest_one, source_files, summarise,
     )
+    from server.db import Activity, AuditRecord, ReviewQueueItem, engine, init_db
     from sqlalchemy.orm import Session
 
     print(f"database: {DB_PATH}")
@@ -89,14 +48,7 @@ def main() -> int:
     with Session(engine) as db:
         if not args.keep:
             print("clearing previous ingest data ...")
-            for model in (ReviewQueueItem, AuditRecord, LinkedEvent, Job):
-                db.query(model).delete()
-            db.query(Activity).update({
-                Activity.actual_start: None, Activity.actual_finish: None,
-                Activity.actual_qty: None, Activity.start_variance_days: None,
-                Activity.finish_variance_days: None,
-            })
-            db.commit()
+            clear_progress(db)
 
         # Baseline schedule. _seed_schedule_if_empty is a no-op when the
         # activities table is already populated.

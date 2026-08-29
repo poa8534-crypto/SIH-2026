@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from .llm_backend import LLMBackend, NullBackend, make_backend_from_env
+from .textio import read_text
 from .models import (
     Discipline,
     EventStatus,
@@ -77,8 +78,10 @@ class Extractor:
 
     def _load_schedule(self, path: str) -> None:
         """Load baseline schedule and build compact context string."""
-        with open(path) as f:
-            self.schedule = json.load(f)
+        # Explicit decode: a bare open() uses the platform default, which
+        # is cp1252 on Windows and UTF-8 elsewhere — the same file would
+        # then parse differently on a teammate's machine.
+        self.schedule = json.loads(read_text(path))
 
         lines = []
         for act in self.schedule:
@@ -119,8 +122,7 @@ class Extractor:
         path = Path(filepath)
         result = ExtractionResult(source_file=path.name)
 
-        with open(filepath, encoding="utf-8", errors="replace") as f:
-            content = f.read()
+        content = read_text(filepath)
 
         lines = content.split("\n")
 

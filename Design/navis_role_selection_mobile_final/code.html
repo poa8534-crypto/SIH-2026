@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NAVIS - Role Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#224b85",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f9f9ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary-fixed": "#001b3e",
+                        "surface": "#f9f9ff",
+                        "primary-fixed-dim": "#acc7ff",
+                        "inverse-on-surface": "#f0f0f9",
+                        "primary-fixed": "#d7e2ff",
+                        "on-surface-variant": "#424752",
+                        "surface-container-high": "#e7e8f0",
+                        "surface-container": "#ededf6",
+                        "secondary-container": "#98bcfe",
+                        "on-primary-fixed": "#001a40",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-fixed": "#d6e3ff",
+                        "inverse-primary": "#acc7ff",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2e3037",
+                        "outline-variant": "#c2c6d4",
+                        "surface-container-highest": "#e1e2ea",
+                        "on-background": "#191c21",
+                        "surface-container-low": "#f2f3fc",
+                        "on-tertiary-container": "#ffc2a7",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#bbd0ff",
+                        "surface-variant": "#e1e2ea",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#722b00",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "primary": "#003f87",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#115cb9",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-primary-fixed-variant": "#004491",
+                        "on-surface": "#191c21",
+                        "tertiary-container": "#983c00",
+                        "on-tertiary-fixed": "#351000",
+                        "secondary": "#385e9a",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "outline": "#727784",
+                        "surface-dim": "#d9d9e2",
+                        "primary-container": "#0056b3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "container-padding": "24px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background font-body-md text-on-background flex flex-col min-h-screen antialiased">
+<!-- Header -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center px-container-padding py-stack-sm w-full sticky top-0 z-10">
+<div class="flex items-center gap-2"><span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary tracking-tight">N NAVIS</span></div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">OIL-WSD-2026</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-low transition-colors rounded-full p-1" style="font-variation-settings: 'FILL' 0;">language</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-start px-container-padding py-stack-lg max-w-md mx-auto w-full gap-stack-lg">
+<div class="text-center flex flex-col gap-stack-sm">
+<h1 class="font-display-lg text-display-lg text-primary">Choose your workspace</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Select your role to open the tools designed for your work.</p>
+</div>
+<div class="flex flex-col gap-stack-md w-full">
+<!-- Card 1: FIELD WORKER -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-container-padding flex flex-col gap-stack-md relative z-0 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-lg before:pointer-events-none focus-within:border-primary transition-colors duration-200">
+<div class="flex flex-col gap-stack-sm">
+<div class="flex items-center gap-2 mb-2 border-b border-surface-container pb-2">
+<h2 class="font-headline-md text-headline-md text-on-background uppercase tracking-wider text-sm">FIELD SUPERVISOR</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Report progress, completed work, delays, and blockages for the work fronts you supervise.</p>
+<span class="font-label-md text-label-md bg-secondary-container text-on-secondary-container px-2 py-1 rounded inline-block w-max mt-2">Optimised for field use</span>
+</div>
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 px-4 rounded transition-opacity hover:opacity-90 active:opacity-80">Continue as Field Supervisor</button>
+</div>
+<!-- Card 2: SUPERVISOR -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-container-padding flex flex-col gap-stack-md relative z-0 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-lg before:pointer-events-none focus-within:border-primary transition-colors duration-200">
+<div class="flex flex-col gap-stack-sm">
+<div class="flex items-center gap-2 mb-2 border-b border-surface-container pb-2">
+<h2 class="font-headline-md text-headline-md text-on-background uppercase tracking-wider text-sm">PLANNING ENGINEER</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Review field reports, confirm activity matches, request clarification, and approve schedule updates.</p>
+<span class="font-label-md text-label-md bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded inline-block w-max mt-2">Mobile and desktop</span>
+</div>
+<button class="w-full bg-surface-container-lowest border border-primary text-primary font-label-md text-label-md py-3 px-4 rounded transition-colors hover:bg-surface-container-low active:opacity-80">Continue as Planning Engineer</button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container border-t border-outline-variant flex justify-between items-center px-container-padding py-2 w-full z-50 mt-auto">
+<div class="font-label-md text-label-md text-on-surface-variant">
+            Data date: 24 Aug 2026
+        </div>
+<div class="flex items-center gap-stack-sm font-label-md text-label-md text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+            Connected
+            <span class="mx-1">|</span>
+            Demo environment
+        </div>
+</footer>
+</body></html>

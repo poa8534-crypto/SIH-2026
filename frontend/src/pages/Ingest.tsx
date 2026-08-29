@@ -1,0 +1,523 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  ArrowUpRight,
+  Check,
+  FileText,
+  Info,
+  Upload,
+} from 'lucide-react';
+import { api, errorDetail } from '../lib/api';
+import { Discipline, ExtractedEvent, JobResponse } from '../types';
+import { ConfidenceBadge } from '../components/ConfidenceBadge';
+import { DisciplineTag } from '../components/DisciplineTag';
+
+/** The only two the drop zone accepts. Narrower than the server, on purpose. */
+const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx'] as const;
+const ACCEPTED_LABEL = '.txt and .xlsx';
+
+/** Milliseconds between trace lines. Long enough to read one before the next. */
+const TRACE_BEAT = 550;
+
+const KNOWN_DISCIPLINES: Discipline[] = [
+  'civil',
+  'piping',
+  'static_equipment',
+  'electrical',
+  'instrumentation',
+  'hse',
+];
+
+function isKnownDiscipline(d: string | null): d is Discipline {
+  return d !== null && (KNOWN_DISCIPLINES as string[]).includes(d);
+}
+
+function extensionOf(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i === -1 ? '' : name.slice(i).toLowerCase();
+}
+
+function formatBytes(n: number): string {
+  return `${n.toLocaleString()} bytes`;
+}
+
+/** Where in the source this event was found. */
+function positionOf(ev: ExtractedEvent): string {
+  if (ev.source_line !== null) return `L${ev.source_line}`;
+  if (ev.source_row !== null) return `R${ev.source_row}`;
+  return '—';
+}
+
+// ── Pipeline trace ──────────────────────────────────────────────────────────
+
+type TraceLine = { label: string; detail: React.ReactNode };
+
+/**
+ * The four stages of one ingest, revealed one at a time.
+ *
+ * Every number comes from the POST /ingest response and the follow-up
+ * GET /jobs/{id}; nothing here is computed optimistically or estimated. The
+ * stagger is presentational only — the data is already complete before the
+ * first line appears, so a slow render can never show a number that later
+ * turns out to be wrong.
+ */
+function PipelineTrace({ lines }: { lines: TraceLine[] }) {
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    setShown(0);
+    if (lines.length === 0) return;
+    const timers = lines.map((_l, i) =>
+      setTimeout(() => setShown((s) => Math.max(s, i + 1)), i * TRACE_BEAT)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [lines]);
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="border border-hair bg-raised">
+      <div className="px-3 py-2 border-b border-hair font-mono text-[9px] uppercase tracking-wider text-muted">
+        Pipeline
+      </div>
+      <div className="p-3 space-y-1.5">
+        {lines.map((line, i) => {
+          const visible = i < shown;
+          return (
+            <div
+              key={line.label}
+              className={`flex items-baseline gap-3 font-mono text-[11px] transition-all duration-300 ${
+                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+              }`}
+            >
+              <Check
+                size={12}
+                className={`shrink-0 self-center ${visible ? 'text-ok' : 'text-transparent'}`}
+              />
+              <span className="w-[76px] shrink-0 text-fg tracking-wider">{line.label}</span>
+              <span className="text-muted">{line.detail}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Outcome ─────────────────────────────────────────────────────────────────
+
+/** AUTO-LINKED rows carry a link through to that activity on the Schedule. */
+function Outcome({ ev }: { ev: ExtractedEvent }) {
+  if (ev.decision === 'AUTO_LINK' && ev.activity_id) {
+    return (
+      <Link
+        to={`/schedule?activity=${encodeURIComponent(ev.activity_id)}`}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 font-mono text-[10px] text-ok hover:underline"
+      >
+        <span className="uppercase">Auto-linked</span>
+        <span className="text-fg">{ev.activity_id}</span>
+        <ArrowUpRight size={10} className="shrink-0" />
+      </Link>
+    );
+  }
+  if (ev.decision === 'NEW_ACTIVITY') {
+    return (
+      <span className="font-mono text-[10px] uppercase text-warn">Flagged as new</span>
+    );
+  }
+  if (ev.decision === 'REJECTED') {
+    return <span className="font-mono text-[10px] uppercase text-muted">Rejected</span>;
+  }
+  return <span className="font-mono text-[10px] uppercase text-accent">Sent to review</span>;
+}
+
+// ── Page ────────────────────────────────────────────────────────────────────
+
+type Status =
+  | { kind: 'idle' }
+  | { kind: 'rejected'; message: string }
+  | { kind: 'uploading'; filename: string }
+  | { kind: 'duplicate'; filename: string; jobId: string }
+  | { kind: 'error'; detail: string }
+  | { kind: 'done'; job: JobResponse; bytes: number };
+
+export default function Ingest() {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    data: history,
+    isLoading: historyLoading,
+    error: historyError,
+  } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => api.listJobs(50),
+  });
+
+  const upload = useCallback(
+    async (file: File) => {
+      const ext = extensionOf(file.name);
+      if (!(ACCEPTED_EXTENSIONS as readonly string[]).includes(ext)) {
+        setStatus({
+          kind: 'rejected',
+          message: `${file.name} is not an accepted file type. This screen accepts ${ACCEPTED_LABEL} only.`,
+        });
+        return;
+      }
+
+      setStatus({ kind: 'uploading', filename: file.name });
+      try {
+        const res = await api.ingestFile(file);
+
+        // The server answers a duplicate with 200 and an explanatory message
+        // rather than an error, returning the ORIGINAL job's id. That is the
+        // signal: content already ingested, nothing written a second time.
+        if (res.message.startsWith('Duplicate upload ignored')) {
+          setStatus({ kind: 'duplicate', filename: file.name, jobId: res.job_id });
+          return;
+        }
+
+        // Every trace number comes from here, not from the upload response.
+        const job = await api.getJob(res.job_id);
+        setStatus({ kind: 'done', job, bytes: file.size });
+        queryClient.invalidateQueries({ queryKey: ['jobs'] });
+        queryClient.invalidateQueries({ queryKey: ['schedule'] });
+        queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+      } catch (e) {
+        setStatus({
+          kind: 'error',
+          detail: errorDetail(e),
+        });
+      }
+    },
+    [queryClient]
+  );
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) upload(file);
+  };
+
+  const job = status.kind === 'done' ? status.job : null;
+
+  const traceLines = useMemo<TraceLine[]>(() => {
+    if (!job || status.kind !== 'done') return [];
+    return [
+      {
+        label: 'PARSED',
+        detail: (
+          <>
+            <span className="text-fg">{job.filename}</span> · {formatBytes(status.bytes)}
+          </>
+        ),
+      },
+      {
+        label: 'EXTRACTED',
+        detail: (
+          <>
+            <span className="text-fg">{job.event_count}</span> progress event
+            {job.event_count === 1 ? '' : 's'}
+          </>
+        ),
+      },
+      {
+        label: 'MATCHED',
+        detail: (
+          <>
+            <span className="text-fg">{job.linked_count}</span> auto-linked ·{' '}
+            <span className="text-fg">{job.review_count}</span> sent to review
+          </>
+        ),
+      },
+      {
+        label: 'WRITTEN',
+        detail: (
+          <>
+            <span className="text-fg">{job.activities_updated}</span> activit
+            {job.activities_updated === 1 ? 'y' : 'ies'} updated ·{' '}
+            <span className="text-fg">{job.audit_records_created}</span> audit record
+            {job.audit_records_created === 1 ? '' : 's'}
+          </>
+        ),
+      },
+    ];
+  }, [job, status]);
+
+  const events = job?.events ?? [];
+  const sortedEvents = useMemo(
+    () =>
+      [...events].sort(
+        (a, b) =>
+          (a.source_line ?? a.source_row ?? 0) - (b.source_line ?? b.source_row ?? 0)
+      ),
+    [events]
+  );
+
+  return (
+    <div className="flex flex-col h-full w-full bg-surface overflow-y-auto">
+      <div className="max-w-[1280px] w-full mx-auto p-6 space-y-6">
+        {/* DROP ZONE */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          onClick={() => inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+          }}
+          className={`border border-dashed p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+            dragging ? 'border-accent bg-selected' : 'border-strong hover:bg-raised'
+          }`}
+        >
+          <Upload size={20} className={dragging ? 'text-accent' : 'text-muted'} />
+          <div className="font-mono text-[11px] text-fg">
+            Drop a file here, or click to browse
+          </div>
+          <div className="font-mono text-[10px] text-muted uppercase tracking-wider">
+            Accepts {ACCEPTED_LABEL} only
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ACCEPTED_EXTENSIONS.join(',')}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) upload(file);
+              e.target.value = '';
+            }}
+          />
+        </div>
+
+        {/* STATES */}
+        {status.kind === 'rejected' && (
+          <div className="border border-danger-line bg-danger-bg text-danger px-3 py-2.5 font-mono text-[10px] flex items-start gap-2">
+            <AlertCircle size={12} className="mt-0.5 shrink-0" />
+            <span>{status.message}</span>
+          </div>
+        )}
+
+        {status.kind === 'error' && (
+          <div className="border border-danger-line bg-danger-bg text-danger px-3 py-2.5 font-mono text-[10px] flex items-start gap-2">
+            <AlertCircle size={12} className="mt-0.5 shrink-0" />
+            <span>{status.detail}</span>
+          </div>
+        )}
+
+        {/* A duplicate is the guard working, not a failure — styled as
+            information rather than as an error. */}
+        {status.kind === 'duplicate' && (
+          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[10px] flex items-start gap-2">
+            <Info size={12} className="mt-0.5 shrink-0 text-accent" />
+            <span className="text-muted">
+              <span className="text-fg">This file has already been ingested.</span> Identical
+              content was matched by hash against job{' '}
+              <span className="text-fg">{status.jobId}</span>, so nothing was read a second
+              time. This is what stops the same progress being counted twice and inflating
+              the schedule.
+            </span>
+          </div>
+        )}
+
+        {status.kind === 'uploading' && (
+          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[10px] text-muted flex items-center gap-2">
+            <FileText size={12} className="shrink-0" />
+            Reading {status.filename}…
+          </div>
+        )}
+
+        {/* PIPELINE TRACE */}
+        {job && <PipelineTrace lines={traceLines} />}
+
+        {/* Parsed but nothing extractable — a real outcome, worth naming. */}
+        {job && job.event_count === 0 && (
+          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[10px] flex items-start gap-2">
+            <Info size={12} className="mt-0.5 shrink-0 text-warn" />
+            <span className="text-muted">
+              <span className="text-fg">No progress events were extracted.</span> The file
+              parsed without error, but nothing in it matched a reportable progress
+              statement. Nothing was written to the schedule.
+            </span>
+          </div>
+        )}
+
+        {/* EVENT TABLE */}
+        {job && sortedEvents.length > 0 && (
+          <section className="border border-hair">
+            <div className="px-3 py-2 border-b border-hair flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+                Extracted events
+              </span>
+              <span className="font-mono text-[9px] text-muted">
+                {sortedEvents.length} from {job.filename}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-hair">
+                    {['Pos', 'Raw text', 'Extracted', 'Conf', 'Outcome'].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left font-mono text-[9px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedEvents.map((ev) => (
+                    <tr key={ev.id} className="border-b border-hair last:border-0 align-top">
+                      <td className="px-3 py-2 font-mono text-[10px] text-muted whitespace-nowrap">
+                        {positionOf(ev)}
+                      </td>
+                      <td className="px-3 py-2 text-[11px] text-fg min-w-[280px] max-w-[420px]">
+                        {ev.raw_text}
+                      </td>
+                      <td className="px-3 py-2 min-w-[220px]">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {isKnownDiscipline(ev.discipline) ? (
+                            <DisciplineTag discipline={ev.discipline} />
+                          ) : (
+                            <span className="font-mono text-[9px] text-muted border border-hair px-1 rounded-[2px] uppercase">
+                              {ev.discipline || 'unknown'}
+                            </span>
+                          )}
+                          {ev.tags.map((t) => (
+                            <span
+                              key={t}
+                              className="font-mono text-[9px] text-muted border border-hair bg-raised px-1 rounded-[2px]"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-1 font-mono text-[9px] text-muted space-x-2">
+                          {ev.asserted_start && (
+                            <span>
+                              start <span className="text-fg">{ev.asserted_start}</span>
+                            </span>
+                          )}
+                          {ev.asserted_finish && (
+                            <span>
+                              finish <span className="text-fg">{ev.asserted_finish}</span>
+                            </span>
+                          )}
+                          {ev.quantity !== null && (
+                            <span>
+                              qty{' '}
+                              <span className="text-fg">
+                                {ev.quantity}
+                                {ev.uom ? ` ${ev.uom}` : ''}
+                              </span>
+                            </span>
+                          )}
+                          {!ev.asserted_start &&
+                            !ev.asserted_finish &&
+                            ev.quantity === null && <span className="italic">no date or quantity</span>}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <ConfidenceBadge value={ev.confidence} />
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <Outcome ev={ev} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* HISTORY */}
+        <section className="border border-hair">
+          <div className="px-3 py-2 border-b border-hair font-mono text-[9px] uppercase tracking-wider text-muted">
+            Previously ingested
+          </div>
+          {historyError ? (
+            <div className="px-3 py-4 flex items-start gap-2">
+              <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
+              <span className="font-mono text-[10px] text-danger">
+                {errorDetail(historyError)}
+              </span>
+            </div>
+          ) : historyLoading ? (
+            <div className="p-3 space-y-2 opacity-50">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-5 bg-raised rounded animate-pulse" />
+              ))}
+            </div>
+          ) : !history || history.length === 0 ? (
+            <div className="py-8 text-center text-[11px] text-muted leading-relaxed px-4">
+              No files have been ingested yet. Drop a .txt or .xlsx above and it
+              will appear here.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-hair">
+                    {['File', 'Ingested', 'Events', 'Linked', 'Review', 'Status'].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left font-mono text-[9px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((j) => (
+                    <tr key={j.id} className="border-b border-hair last:border-0">
+                      <td className="px-3 py-1.5 font-mono text-[10px] text-fg whitespace-nowrap">
+                        {j.filename}
+                      </td>
+                      <td className="px-3 py-1.5 font-mono text-[10px] text-muted whitespace-nowrap">
+                        {new Date(j.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-1.5 font-mono text-[10px] text-fg">
+                        {j.event_count}
+                      </td>
+                      <td className="px-3 py-1.5 font-mono text-[10px] text-fg">
+                        {j.linked_count}
+                      </td>
+                      <td className="px-3 py-1.5 font-mono text-[10px] text-muted">
+                        {j.review_count}
+                      </td>
+                      <td className="px-3 py-1.5 font-mono text-[10px] whitespace-nowrap">
+                        {j.status === 'completed' ? (
+                          <span className="text-muted">{j.status}</span>
+                        ) : (
+                          <span className="text-danger">
+                            {j.status}
+                            {j.error_message ? ` — ${j.error_message}` : ''}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

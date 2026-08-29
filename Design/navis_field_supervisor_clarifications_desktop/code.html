@@ -1,0 +1,428 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>NAVIS - Clarifications</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed-dim": "#acc7ff",
+                      "outline-variant": "#c2c6d4",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-container": "#bbd0ff",
+                      "on-error": "#ffffff",
+                      "secondary-fixed-dim": "#aac7ff",
+                      "surface-bright": "#f9f9ff",
+                      "secondary": "#385e9a",
+                      "on-tertiary-container": "#ffc2a7",
+                      "surface-variant": "#e1e2ea",
+                      "on-secondary-fixed-variant": "#1c4681",
+                      "on-background": "#191c21",
+                      "outline": "#727784",
+                      "on-secondary-fixed": "#001b3e",
+                      "inverse-surface": "#2e3037",
+                      "secondary-fixed": "#d6e3ff",
+                      "surface-tint": "#115cb9",
+                      "error-container": "#ffdad6",
+                      "tertiary-fixed-dim": "#ffb694",
+                      "primary-container": "#0056b3",
+                      "surface": "#f9f9ff",
+                      "tertiary-container": "#983c00",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#224b85",
+                      "on-surface-variant": "#424752",
+                      "inverse-primary": "#acc7ff",
+                      "surface-container-lowest": "#ffffff",
+                      "error": "#ba1a1a",
+                      "surface-container-high": "#e7e8f0",
+                      "primary-fixed": "#d7e2ff",
+                      "surface-dim": "#d9d9e2",
+                      "tertiary": "#722b00",
+                      "on-primary-fixed": "#001a40",
+                      "background": "#f9f9ff",
+                      "on-tertiary-fixed": "#351000",
+                      "inverse-on-surface": "#f0f0f9",
+                      "tertiary-fixed": "#ffdbcc",
+                      "surface-container-highest": "#e1e2ea",
+                      "primary": "#003f87",
+                      "surface-container": "#ededf6",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#004491",
+                      "on-tertiary-fixed-variant": "#7b2f00",
+                      "surface-container-low": "#f2f3fc",
+                      "on-surface": "#191c21",
+                      "on-secondary": "#ffffff",
+                      "secondary-container": "#98bcfe"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "16px",
+                      "container-padding": "24px",
+                      "unit": "4px",
+                      "stack-lg": "32px",
+                      "stack-md": "16px",
+                      "stack-sm": "8px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #F7F8FC;
+            color: #111827;
+        }
+        /* Hide scrollbar for clean UI but keep functionality */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1e2ea;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c2c6d4;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased overflow-hidden h-screen flex bg-[#F7F8FC]">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 hidden md:flex flex-col bg-surface-container-low dark:bg-on-background border-r border-outline-variant fixed left-0 top-0 z-40 transition-all duration-200 ease-in-out shrink-0">
+<!-- Header -->
+<div class="p-container-padding flex items-center gap-3 border-b border-outline-variant/50">
+<div class="w-10 h-10 rounded bg-primary text-on-primary flex items-center justify-center font-headline-md font-black shrink-0">
+                A
+            </div>
+<div class="flex-col flex overflow-hidden">
+<span class="font-headline-md text-headline-md font-black text-primary truncate">OIL Well-Site Duliajan</span>
+<span class="font-label-md text-label-md text-on-surface-variant truncate">Sector A · Digboi Well #4</span>
+</div>
+</div>
+<!-- CTA -->
+<div class="p-4">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"><span class="material-symbols-outlined text-[18px]">add</span>Submit Update</button>
+</div>
+<!-- Main Tabs -->
+<div class="flex flex-col flex-1 px-4 gap-1 overflow-y-auto"><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#"><span class="material-symbols-outlined text-[20px]">home</span><span class="font-label-md text-label-md">Home</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#"><span class="material-symbols-outlined text-[20px]">add_circle</span><span class="font-label-md text-label-md">Submit Update</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-label-md text-label-md">My Reports</span></a><a class="flex items-center justify-between px-3 py-2.5 rounded-lg text-primary font-bold bg-secondary-fixed/30 hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">quiz</span><span class="font-label-md text-label-md">Clarifications</span></div><span class="bg-[#FFB694] text-[#7B2F00] font-label-md px-2 py-0.5 rounded-full text-[10px]">1</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#"><span class="material-symbols-outlined text-[20px]">account_circle</span><span class="font-label-md text-label-md">Profile</span></a></div>
+<!-- Footer Tabs -->
+<div class="mt-auto p-4 flex flex-col gap-1 border-t border-outline-variant/50">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<div class="mt-4 pt-4 border-t border-outline-variant/30 flex items-center gap-3 px-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-label-md font-bold shrink-0">
+                    RK
+                </div>
+<div class="flex flex-col overflow-hidden">
+<span class="font-label-md text-label-md text-on-surface truncate">Rajesh Kumar</span>
+<span class="text-[10px] text-on-surface-variant truncate">FIELD SUPERVISOR</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col h-screen overflow-hidden bg-[#F7F8FC]">
+<!-- TopAppBar (Minimal for Desktop with Sidebar) -->
+<header class="h-16 flex justify-between items-center px-container-padding w-full sticky top-0 z-30 bg-surface border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-[#0B3B75]">Clarifications</h1>
+</div>
+<div class="flex items-center gap-4">
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-auto p-container-padding flex flex-col gap-stack-lg">
+<!-- Page Header Section -->
+<div class="flex flex-col gap-stack-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-semibold text-[#0B3B75] mb-1">Clarifications</h2>
+<p class="font-body-md text-on-surface-variant">Questions from the Planning Engineer about your submitted updates.</p>
+</div>
+<!-- Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="bg-surface rounded-lg border border-outline-variant p-4 flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant mb-2">Needs Response</span>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-[#983C00]">1</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant p-4 flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant mb-2">Answered</span>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-primary">8</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg border border-outline-variant p-4 flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant mb-2">Total</span>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-display-lg text-on-surface">9</span>
+</div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex gap-2">
+<button class="px-4 py-1.5 rounded-full border border-outline-variant text-on-surface-variant font-label-md hover:bg-surface-container-low transition-colors">All</button>
+<button class="px-4 py-1.5 rounded-full bg-[#FFB694]/20 border border-[#983C00] text-[#983C00] font-label-md font-semibold">Needs Response</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant text-on-surface-variant font-label-md hover:bg-surface-container-low transition-colors">Answered</button>
+</div>
+</div>
+<!-- Split Pane Layout -->
+<div class="flex flex-1 min-h-0 gap-gutter bg-surface border border-outline-variant rounded-[10px] overflow-hidden">
+<!-- Left List -->
+<div class="w-1/3 border-r border-outline-variant flex flex-col bg-[#F7F8FC]/50">
+<div class="p-4 border-b border-outline-variant bg-surface sticky top-0">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-9 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Search ID or Keyword..." type="text">
+</div>
+</div>
+<div class="overflow-y-auto flex-1 p-2 flex flex-col gap-2">
+<!-- Item 1 (Selected) -->
+<div class="bg-surface border-2 border-primary rounded-lg p-3 cursor-pointer shadow-sm relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-start mb-2 pl-2">
+<span class="font-label-md text-[11px] text-on-surface-variant tracking-wider">FR-2026-08-23-C</span>
+<span class="bg-[#FFB694]/20 text-[#983C00] px-2 py-0.5 rounded text-[10px] font-semibold border border-[#983C00]/30 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#983C00]"></span>
+                                    Needs Response
+                                </span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1 pl-2">Pier 18 concrete pour</h4>
+<div class="flex items-center gap-1 text-[12px] text-on-surface-variant pl-2">
+<span class="material-symbols-outlined text-[14px]">person</span>
+<span class="">Priya Das</span>
+<span class="mx-1">·</span>
+<span class="">24 Aug</span>
+<span class="mx-1">·</span>
+<span class="">09:12 IST</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-3 cursor-pointer hover:bg-surface-container-lowest transition-colors group">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-md text-[11px] text-on-surface-variant tracking-wider">FR-2026-08-24-A</span>
+<span class="bg-primary-fixed/50 text-primary-container px-2 py-0.5 rounded text-[10px] font-semibold border border-primary/20">
+                                    Answered
+                                </span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1 group-hover:text-primary transition-colors">P-201 alignment update</h4>
+<div class="flex items-center gap-1 text-[12px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">person</span>
+<span class="">Priya Das</span>
+<span class="mx-1">·</span>
+<span class="">24 Aug</span>
+<span class="mx-1">·</span>
+<span class="">14:35 IST</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-3 cursor-pointer hover:bg-surface-container-lowest transition-colors group">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-md text-[11px] text-on-surface-variant tracking-wider">FR-2026-08-25-D</span>
+<span class="bg-primary-fixed/50 text-primary-container px-2 py-0.5 rounded text-[10px] font-semibold border border-primary/20">
+                                    Answered
+                                </span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1 group-hover:text-primary transition-colors">P-201 mechanical seal not received</h4>
+<div class="flex items-center gap-1 text-[12px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">person</span>
+<span class="">Priya Das</span>
+<span class="mx-1">·</span>
+<span class="">25 Aug</span>
+<span class="mx-1">·</span>
+<span class="">10:20 IST</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Detail Panel -->
+<div class="w-2/3 flex flex-col bg-surface overflow-hidden">
+<!-- Detail Header -->
+<div class="p-container-padding border-b border-outline-variant flex justify-between items-start bg-surface sticky top-0 z-10">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h3 class="font-headline-md text-headline-md font-bold text-[#0B3B75]">FR-2026-08-23-C</h3>
+<span class="bg-[#FFB694]/20 text-[#983C00] px-2.5 py-1 rounded-md text-[11px] font-bold border border-[#983C00]/30 flex items-center gap-1.5 uppercase tracking-wide">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                                    Needs Response
+                                </span>
+</div>
+<div class="flex items-center gap-2 text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span class="">Submitted 23 Aug 2026 · 17:42 IST</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary p-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Detail Content Scrollable -->
+<div class="flex-1 overflow-y-auto p-container-padding flex flex-col gap-stack-lg">
+<!-- Original Update Context -->
+<div class="rounded-[10px] border border-outline-variant overflow-hidden">
+<div class="bg-surface-container-low px-4 py-3 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">history</span>
+<h4 class="font-label-md font-bold text-on-surface uppercase tracking-wider">Original Update</h4>
+</div>
+<div class="p-4 bg-surface">
+<p class="font-body-lg text-on-surface font-medium mb-3">"Pier 18 concrete pour completed."</p>
+<div class="grid grid-cols-3 gap-4 border-t border-outline-variant pt-3">
+<div>
+<span class="block text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">Work Front</span>
+<span class="font-body-md text-on-surface">Sector A</span>
+</div>
+<div>
+<span class="block text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">Discipline</span>
+<span class="font-body-md text-on-surface">Civil</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Question from Planning -->
+<div class="rounded-[10px] border border-[#FFB694]/50 overflow-hidden bg-[#FFB694]/5">
+<div class="px-4 py-3 border-b border-[#FFB694]/30 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#983C00]">help</span>
+<h4 class="font-label-md font-bold text-[#983C00] uppercase tracking-wider">Question from Planning</h4>
+</div>
+<div class="p-4">
+<p class="font-body-md text-on-surface mb-4 p-3 bg-surface rounded-lg border border-outline-variant/50 border-l-4 border-l-[#983C00]">
+                                    "Please confirm the exact pour location and the date and time the work was completed."
+                                </p>
+<div class="flex items-center gap-3 text-label-md text-on-surface-variant">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center font-bold text-[10px]">PD</div>
+<span class="">Priya Das · Planning Engineer</span>
+<span class="text-outline-variant">|</span>
+<span class="">Sent 24 Aug 2026 · 09:12 IST</span>
+</div>
+</div>
+</div>
+<!-- Response Area -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">edit_square</span>
+                                Your Response
+                            </label>
+<textarea class="w-full min-h-[160px] p-4 bg-surface border border-outline-variant rounded-[10px] text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-y shadow-sm" placeholder="Example: Pier 18, Sector A. Pour completed on 23 Aug 2026 at 16:30 IST."></textarea>
+</div>
+</div>
+<!-- Detail Footer Actions -->
+<div class="p-4 border-t border-outline-variant bg-surface-container-lowest mt-auto shrink-0 flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<button class="px-4 py-2 rounded-lg border border-outline-variant text-on-surface font-label-md hover:bg-surface-container-low transition-colors bg-surface">
+                                Record Response
+                            </button>
+<div class="flex gap-3">
+<button class="px-6 py-2 rounded-lg bg-[#0056B3] text-white font-label-md hover:bg-[#003f87] transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">send</span>
+                                    Send Response
+                                </button>
+</div>
+</div>
+<p class="text-[11px] text-center text-on-surface-variant italic">
+<span class="material-symbols-outlined text-[12px] align-text-bottom mr-1">info</span>
+                            Your response will be returned to the Planning Engineer for review. It will not change the project schedule.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+
+</body></html>

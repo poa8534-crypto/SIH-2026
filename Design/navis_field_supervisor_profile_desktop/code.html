@@ -1,0 +1,251 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>NAVIS Field Supervisor Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbcc",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c21",
+                        "surface-dim": "#d9d9e2",
+                        "on-primary-fixed": "#001a40",
+                        "error": "#ba1a1a",
+                        "surface": "#f9f9ff",
+                        "surface-variant": "#e1e2ea",
+                        "inverse-surface": "#2e3037",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed": "#001b3e",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#98bcfe",
+                        "surface-container-low": "#f2f3fc",
+                        "surface-tint": "#115cb9",
+                        "on-secondary-fixed-variant": "#1c4681",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c6d4",
+                        "surface-container-highest": "#e1e2ea",
+                        "on-tertiary-container": "#ffc2a7",
+                        "tertiary": "#722b00",
+                        "secondary": "#385e9a",
+                        "outline": "#727784",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#aac7ff",
+                        "primary": "#003f87",
+                        "surface-container-high": "#e7e8f0",
+                        "inverse-on-surface": "#f0f0f9",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed": "#d7e2ff",
+                        "secondary-fixed": "#d6e3ff",
+                        "on-primary-fixed-variant": "#004491",
+                        "tertiary-container": "#983c00",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-primary-container": "#bbd0ff",
+                        "primary-container": "#0056b3",
+                        "inverse-primary": "#acc7ff",
+                        "tertiary-fixed-dim": "#ffb694",
+                        "surface-container": "#ededf6",
+                        "on-secondary-container": "#224b85",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c21",
+                        "primary-fixed-dim": "#acc7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F7F8FC] h-full flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full py-6 px-4 bg-surface dark:bg-on-background h-screen w-64 border-r border-outline-variant flex-shrink-0">
+<div class="mb-stack-lg px-4 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<img alt="Field Supervisor Profile Photo" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A highly detailed close-up portrait of a professional Indian male field supervisor in his 40s. He wears a high-visibility yellow and orange safety vest over a neat, dark blue polo shirt. He is wearing a clean white hard hat. His expression is confident, experienced, and calm. The background is a brightly lit, out-of-focus industrial construction site during the day. The lighting is natural and flattering, emphasizing stability and professional confidence, fitting a modern corporate construction aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkQvbM119ZIymk2b7POW_S16s6EgwXKLHIWRnx69iBSMM7VzQoTe4WXPTPN5yU3X3riTWiHkIowost8mXiKCAW8lTZ6MQ2DTgHeL4w7dA6caaVr9TUDuVTI-LFopeY422b40vsBs3Q9QmeXaAvOqrPj5_fWDKXm3ehZI73JER-ccL1JFWtz0-4FrM_gSEI-FPuzAXZFMXzWvrWYzIsyvtO1yHOtA6dGHXLt9q9Nrq4VzQo4RpaOM091Q">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed leading-tight">Rajesh Kumar</h2>
+<p class="font-label-md text-label-md text-on-surface-variant">FIELD SUPERVISOR</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-unit">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+                Home
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#"><span class="material-symbols-outlined" data-icon="add_chart" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">add_chart</span>Submit Update</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="assignment" data-weight="fill" style="font-variation-settings: 'FILL' 1;">assignment</span>
+                My Reports
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-md text-body-md transition-all duration-200 ease-in-out active:scale-95 rounded-lg" href="#"><div class="flex items-center justify-between w-full"><div class="flex items-center gap-3"><span class="material-symbols-outlined" data-icon="help_center" data-weight="fill" style="font-variation-settings: 'FILL' 1;">help_center</span>Clarifications</div><span class="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span></div></a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container font-semibold rounded-lg font-body-md text-body-md transition-all duration-200 ease-in-out active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="person" data-weight="fill" style="font-variation-settings: 'FILL' 1;">person</span>
+                Profile
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col overflow-hidden">
+<!-- TopAppBar (Mobile Only per instructions, but keeping structural container for desktop alignment if needed, suppressing actual nav logic) -->
+<header class="flex justify-between items-center w-full h-16 px-6 md:hidden bg-surface dark:bg-on-background border-b border-outline-variant flex-shrink-0">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">NAVIS</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-70" data-icon="settings">settings</span>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 overflow-y-auto p-4 md:p-container-padding">
+<div class="max-w-6xl mx-auto flex flex-col gap-stack-lg">
+<!-- Header -->
+<header class="flex flex-col gap-1 border-b border-outline-variant pb-stack-md">
+<h1 class="font-headline-lg text-headline-lg text-[#0B3B75] m-0">Profile</h1>
+<p class="font-body-md text-body-md text-on-surface-variant m-0">Manage your field identity, assignment and device preferences.</p>
+</header>
+<!-- Two Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column -->
+<div class="lg:col-span-7 flex flex-col gap-stack-md">
+<!-- Identity Card -->
+<section class="bg-surface border border-[#D9E1EC] rounded-[10px] p-stack-md flex flex-col gap-stack-sm">
+<div class="flex items-center gap-4 border-b border-[#D9E1EC] pb-stack-sm mb-unit">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden flex-shrink-0">
+<img alt="Rajesh Kumar" class="w-full h-full object-cover" data-alt="A detailed, straight-on headshot of a professional Indian male field supervisor. He is wearing standard construction site personal protective equipment including a yellow hard hat and a high-visibility orange vest over a light blue collared shirt. The background is a clean, neutral gray wall, indicative of a formal ID badge photo. The lighting is even and flat, avoiding dramatic shadows to ensure clear identification." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3d0O6X5OQER37LSR2-cEKhh74PZ54D1SQUe1QR8arawHTic9DqvkQ9XinAiddz1OticVccobUBBzMxobCc9QsV13v1FQBLexzEWzX-QLJpUCWsPbzbDiIX15e6d4So3fEtjC34tU395e7J5Mgx-nykHnqVXMPDXr6JbnQQj2YojHxD5Vxn3zepXHsU7UnxDahp4ZOO8eQwty7-l1ERvyOIogM-ygo76czDUbDq9_FwH6sO82rZqpvYg">
+</div>
+<div class="flex flex-col">
+<h3 class="font-headline-md text-headline-md text-on-surface m-0">Rajesh Kumar</h3>
+<span class="font-body-md text-body-md text-on-surface-variant">Field Supervisor</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-stack-sm">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Employee ID</span>
+<span class="font-body-md text-body-md text-on-surface">OIL-FS-014</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Location</span>
+<span class="font-body-md text-body-md text-on-surface">Sector A · Digboi Well #4</span>
+</div>
+</div>
+</section>
+<!-- Current Assignment Card -->
+<section class="bg-surface border border-[#D9E1EC] rounded-[10px] flex flex-col">
+<header class="p-stack-md border-b border-[#D9E1EC]">
+<h3 class="font-headline-md text-headline-md text-[#0B3B75] m-0 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="work" data-weight="fill" style="font-variation-settings: 'FILL' 1;">work</span>
+                                    Current Assignment
+                                </h3>
+</header>
+<div class="p-stack-md flex flex-col gap-stack-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider mb-1">Project</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Well-Site Development &amp; Gathering Pipeline Project (OIL-WSD-2026)</span>
+</div>
+<div class="grid grid-cols-2 gap-stack-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider mb-1">Work Front</span>
+<span class="font-body-md text-body-md text-on-surface">Sector A</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider mb-1">Primary Discipline</span>
+<span class="font-body-md text-body-md text-on-surface">Static Equipment</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider mb-1">Shift</span>
+<span class="font-body-md text-body-md text-on-surface">Day · 07:00–17:00</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column -->
+<div class="lg:col-span-5 flex flex-col gap-stack-md">
+<!-- Language & Input Card -->
+<section class="bg-surface border border-[#D9E1EC] rounded-[10px] p-stack-md flex flex-col gap-stack-sm">
+<h3 class="font-headline-md text-headline-md text-[#0B3B75] m-0 border-b border-[#D9E1EC] pb-stack-sm mb-unit flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="language">language</span>
+                                Language &amp; Input
+                            </h3>
+<div class="flex flex-col gap-1 mb-stack-sm">
+<span class="font-label-md text-label-md text-outline uppercase tracking-wider">Active Languages</span>
+<span class="font-body-md text-body-md text-on-surface">English, Hindi, Assamese</span>
+</div>
+<button class="self-start py-2 px-4 border border-primary text-primary bg-on-primary rounded font-label-md text-label-md uppercase tracking-wider hover:bg-surface-container-low transition-colors">
+                                Change Language
+                            </button>
+</section>
+<!-- Preferences Card -->
+<section class="bg-surface border border-[#D9E1EC] rounded-[10px] p-stack-md flex flex-col gap-stack-sm">
+<h3 class="font-headline-md text-headline-md text-[#0B3B75] m-0 border-b border-[#D9E1EC] pb-stack-sm mb-unit flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="tune">tune</span>
+                                Preferences
+                            </h3>
+<div class="flex flex-col gap-stack-sm">
+<label class="flex items-center justify-between cursor-pointer">
+<span class="font-body-md text-body-md text-on-surface">Clarification alerts</span>
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-stack-lg border-t border-[#D9E1EC] pt-stack-md flex justify-start">
+<button class="py-2 px-6 border border-error text-error bg-surface hover:bg-error-container hover:text-on-error-container rounded font-label-md text-label-md uppercase tracking-wider transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                        Sign Out
+                    </button>
+</div>
+</div>
+</div>
+</main>
+
+
+</body></html>
