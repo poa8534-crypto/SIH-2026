@@ -262,7 +262,11 @@ describe('profile', () => {
       'OIL-WSD-2026', 'Sector A · Digboi Well #4',
       'English', 'Hindi', 'Assamese',
     ]) {
-      expect(screen.getByText(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+      // Several of these appear more than once now (a language is both a
+      // button and part of the preferred-languages line).
+      expect(
+        screen.getAllByText(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).length
+      ).toBeGreaterThan(0);
     }
     const text = container.textContent ?? '';
     for (const banned of ['Crew', 'Workers', 'Offline', 'Last sync',
@@ -274,5 +278,125 @@ describe('profile', () => {
   it('offers a way back to role selection', () => {
     wrap(<FieldProfile />);
     expect(screen.getByText(/return to role selection/i)).toBeInTheDocument();
+  });
+});
+
+// ── The escape hatch ────────────────────────────────────────────────────────
+
+describe('leaving a conversation', () => {
+  const stalled = {
+    session_id: 'stuck-1', turn_number: 1,
+    agent_message: 'Which discipline does this work belong to?',
+    slots: { asked_slot: 'discipline', ask_count: 1 } as never,
+    pending_slots: ['discipline'],
+    event_created: false, linked_event_id: null, confidence: 0,
+    awaiting_confirmation: false, activity_description: null,
+    match_outcome: null, review_item_id: null,
+    discipline_label: null, status_label: null,
+    choices: 'Civil, Piping, Static Equipment, Electrical, Instrumentation, or HSE',
+  };
+
+  async function enterConversation() {
+    vi.spyOn(api, 'agentTurn').mockResolvedValue(stalled as never);
+    wrap(<Field />);
+    const input = screen.getByPlaceholderText(/type your update/i);
+    fireEvent.change(input, { target: { value: 'something happened' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await screen.findByText(stalled.agent_message);
+  }
+
+  it('shows the Data Entry Session header with a close control', async () => {
+    await enterConversation();
+    expect(screen.getByText('Data Entry Session')).toBeInTheDocument();
+    expect(screen.getByLabelText(/close session/i)).toBeInTheDocument();
+  });
+
+  it('closing abandons the session and returns to idle', async () => {
+    await enterConversation();
+    // The agent is stuck on a slot — exactly the demo-killer case.
+    fireEvent.click(screen.getByLabelText(/close session/i));
+
+    expect(screen.getByText('Tap & Speak')).toBeInTheDocument();
+    expect(screen.queryByText(stalled.agent_message)).toBeNull();
+    expect(screen.queryByText('Data Entry Session')).toBeNull();
+  });
+
+  it('closing starts a new session id and writes nothing', async () => {
+    const spy = vi.spyOn(api, 'agentTurn').mockResolvedValue(stalled as never);
+    wrap(<Field />);
+    const input = screen.getByPlaceholderText(/type your update/i);
+    fireEvent.change(input, { target: { value: 'something happened' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await screen.findByText(stalled.agent_message);
+    const firstSession = (spy.mock.calls[0][0] as never as Record<string, string>)
+      .session_id;
+
+    fireEvent.click(screen.getByLabelText(/close session/i));
+
+    const again = screen.getByPlaceholderText(/type your update/i);
+    fireEvent.change(again, { target: { value: 'a fresh start' } });
+    fireEvent.keyDown(again, { key: 'Enter' });
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+
+    const secondSession = (spy.mock.calls[1][0] as never as Record<string, string>)
+      .session_id;
+    expect(secondSession).not.toBe(firstSession);
+    // Abandoning never confirms, so nothing was ever written.
+    for (const call of spy.mock.calls) {
+      expect((call[0] as never as Record<string, boolean>).confirm).toBe(false);
+    }
+  });
+});
+
+// ── The Review Structured Update beat ───────────────────────────────────────
+
+describe('ready to draft', () => {
+  const proposal = {
+    session_id: 's', turn_number: 3,
+    agent_message: 'I have enough to prepare the update.',
+    slots: {
+      discipline: 'piping', location: 'Sector A · Digboi Well #4',
+      quantity: 6, planned_quantity: 18, quantity_over_planned: false,
+      uom: 'nos', tags: [], status: 'completed',
+      activity_id: 'PIP-ERC-1034', description: 'spool erection',
+      date: '2026-09-14', confidence: 0.682,
+      activity_description: 'Spool Erection — 6"-P-1015-A1A',
+      match_outcome: 'REVIEW', alternatives: [],
+      asked_slot: null, ask_count: 0,
+    },
+    pending_slots: [], event_created: false, linked_event_id: null,
+    confidence: 0.682, awaiting_confirmation: true,
+    activity_description: 'Spool Erection — 6"-P-1015-A1A',
+    match_outcome: 'REVIEW', review_item_id: null,
+    discipline_label: 'Piping', status_label: 'Finished', choices: null,
+  };
+
+  async function reachReady() {
+    vi.spyOn(api, 'agentTurn').mockResolvedValue(proposal as never);
+    wrap(<Field />);
+    const input = screen.getByPlaceholderText(/type your update/i);
+    fireEvent.change(input, { target: { value: '6 out of 18' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await screen.findByText('READY TO DRAFT');
+  }
+
+  it('stops at READY TO DRAFT rather than jumping to the card', async () => {
+    await reachReady();
+    expect(screen.getByText('I have enough to prepare the update.')).toBeInTheDocument();
+    expect(screen.getByText(/Review Structured Update/)).toBeInTheDocument();
+    // The card is not on screen yet.
+    expect(screen.queryByText('STRUCTURED UPDATE')).toBeNull();
+  });
+
+  it('tapping the button reveals the card with the assistant preamble', async () => {
+    await reachReady();
+    fireEvent.click(screen.getByText(/Review Structured Update/));
+
+    expect(screen.getByText('STRUCTURED UPDATE')).toBeInTheDocument();
+    expect(
+      screen.getByText(/extracted the structured data from your update/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/PIP-ERC-1034/)).toBeInTheDocument();
+    expect(screen.getByText('CONFIRM & SUBMIT')).toBeInTheDocument();
   });
 });

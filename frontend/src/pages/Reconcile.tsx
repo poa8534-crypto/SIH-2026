@@ -240,7 +240,7 @@ export default function Reconcile() {
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['reviewQueue'] })}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded transition-colors"
+          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -286,7 +286,7 @@ export default function Reconcile() {
       {/* Toast Notifications */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
-          <div key={t.id} className="bg-fg text-surface px-4 py-3 rounded shadow-lg border border-hair font-mono text-[10px] max-w-md pointer-events-auto flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+          <div key={t.id} className="bg-fg text-surface px-4 py-3 rounded-[10px] shadow-lg border border-hair font-mono text-[12px] max-w-md pointer-events-auto flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
             <Check size={14} className="mt-0.5 shrink-0" />
             <span>{t.message}</span>
           </div>
@@ -296,8 +296,8 @@ export default function Reconcile() {
       {/* LEFT PANE - QUEUE */}
       <div className="w-[38%] flex-shrink-0 border-r border-hair flex flex-col bg-surface z-10">
         <div className="h-10 border-b border-hair flex items-center px-4 justify-between bg-surface sticky top-0">
-          <span className="font-bold text-fg uppercase tracking-wider text-[10px]">Review Queue</span>
-          <span className="bg-raised border border-hair px-1.5 py-0.5 rounded font-mono text-[9px] text-muted">
+          <span className="font-bold text-fg uppercase tracking-wider text-[12px]">Review Queue</span>
+          <span className="bg-raised border border-hair px-1.5 py-0.5 rounded-[4px] font-mono text-[11px] text-muted">
             {sortedQueue.length} PENDING
           </span>
         </div>
@@ -310,26 +310,26 @@ export default function Reconcile() {
                 key={item.id}
                 id={`queue-item-${item.id}`}
                 onClick={() => setSelectedId(item.id)}
-                className={`border-b border-hair p-3 cursor-pointer transition-colors ${
+                className={`border-b border-hair p-4 cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
                     : 'border-l-2 border-l-transparent hover:bg-raised'
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-mono text-[9px] text-muted uppercase">{item.priority}</span>
+                  <span className="font-mono text-[11px] text-muted uppercase">{item.priority}</span>
                   <ConfidenceBadge value={item.confidence} />
                 </div>
-                <div className="text-[11px] text-fg mb-2 line-clamp-1" title={item.raw_text}>
+                <div className="text-[14px] text-fg mb-2 line-clamp-1" title={item.raw_text}>
                   {item.raw_text}
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   {suggAct ? (
                     <DisciplineTag discipline={suggAct.discipline} />
                   ) : (
-                    <span className="font-mono text-[9px] text-muted border border-hair px-1 rounded">UNKNOWN</span>
+                    <span className="font-mono text-[11px] text-muted border border-hair px-1 rounded-[4px]">UNKNOWN</span>
                   )}
-                  <span className="font-mono text-[9px] text-muted">
+                  <span className="font-mono text-[11px] text-muted">
                     {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -337,9 +337,9 @@ export default function Reconcile() {
             );
           })}
         </div>
-        <div className="h-8 border-t border-hair flex items-center px-4 gap-4 text-[9px] font-mono text-muted uppercase bg-surface">
-          <span><kbd className="border border-strong bg-raised text-fg px-1 rounded">↑↓</kbd> or <kbd className="border border-strong bg-raised text-fg px-1 rounded">j/k</kbd> Nav</span>
-          <span><kbd className="border border-strong bg-raised text-fg px-1 rounded">Enter</kbd> Confirm</span>
+        <div className="h-8 border-t border-hair flex items-center px-4 gap-4 text-[11px] font-mono text-muted uppercase bg-surface">
+          <span><kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">↑↓</kbd> or <kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">j/k</kbd> Nav</span>
+          <span><kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">Enter</kbd> Confirm</span>
         </div>
       </div>
 
@@ -352,20 +352,20 @@ export default function Reconcile() {
               {/* Section 1: SOURCE EVIDENCE */}
               <section>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-[10px] uppercase text-muted tracking-wider">Source Evidence</span>
-                  <span className="font-mono text-[9px] text-fg border border-hair px-2 py-0.5 bg-raised rounded">
+                  <span className="font-mono text-[12px] uppercase text-muted tracking-wider">Source Evidence</span>
+                  <span className="font-mono text-[11px] text-fg border border-hair px-2 py-0.5 bg-raised rounded-[4px]">
                     REASON: {selectedItem.reason.toUpperCase()}
                   </span>
                 </div>
-                <div className="p-4 bg-raised border border-hair font-mono text-[11px] leading-relaxed text-fg">
+                <div className="p-4 bg-raised border border-hair font-mono text-[14px] leading-relaxed text-fg">
                   <HighlightedText text={selectedItem.raw_text} highlight={selectedItem.source_span} />
                 </div>
               </section>
 
               {/* Section 2: EXTRACTED */}
               <section>
-                <span className="font-mono text-[10px] uppercase text-muted tracking-wider mb-2 block">Extracted Metadata</span>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[10px] font-mono">
+                <span className="font-mono text-[12px] uppercase text-muted tracking-wider mb-2 block">Extracted Metadata</span>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[12px] font-mono">
                   <div className="flex justify-between border-b border-hair pb-1">
                     <span className="text-muted">ID</span>
                     <span className="text-fg">{selectedItem.id.split('-')[0]}...</span>
@@ -391,7 +391,7 @@ export default function Reconcile() {
 
               {/* Section 3: CANDIDATE ACTIVITIES */}
               <section className="pb-24">
-                <span className="font-mono text-[10px] uppercase text-muted tracking-wider mb-3 block">Candidate Activities</span>
+                <span className="font-mono text-[12px] uppercase text-muted tracking-wider mb-3 block">Candidate Activities</span>
                 <div className="space-y-2">
                   {candidates.map((actId, idx) => {
                     const act = activityMap.get(actId);
@@ -402,7 +402,7 @@ export default function Reconcile() {
                       <div 
                         key={actId}
                         onClick={() => setSelectedCandidate(actId)}
-                        className={`p-3 border-2 cursor-pointer transition-colors ${
+                        className={`p-4 border-2 cursor-pointer transition-colors ${
                           isSelected
                             ? 'border-accent bg-selected'
                             : 'border-hair hover:border-strong bg-raised'
@@ -410,14 +410,14 @@ export default function Reconcile() {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-3">
-                            <span className="font-mono text-[10px] border border-strong text-fg px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[12px] border border-strong text-fg px-1.5 py-0.5 rounded-[4px]">
                               {idx + 1}
                             </span>
-                            <span className={`font-mono text-[12px] font-bold ${isSelected ? 'text-fg' : 'text-muted'}`}>
+                            <span className={`font-mono text-[14px] font-bold ${isSelected ? 'text-fg' : 'text-muted'}`}>
                               {actId}
                             </span>
                             {isSuggested && (
-                              <span className="font-mono text-[9px] text-warn border border-current px-1 rounded uppercase">Suggested</span>
+                              <span className="font-mono text-[11px] text-warn border border-current px-1 rounded-[4px] uppercase">Suggested</span>
                             )}
                           </div>
                           {act && <DisciplineTag discipline={act.discipline} />}
@@ -425,8 +425,8 @@ export default function Reconcile() {
                         
                         {act ? (
                           <>
-                            <div className="text-[12px] text-fg mb-3">{act.description}</div>
-                            <div className="flex gap-6 font-mono text-[9px] text-muted">
+                            <div className="text-[14px] text-fg mb-3">{act.description}</div>
+                            <div className="flex gap-6 font-mono text-[11px] text-muted">
                               <div className="flex flex-col">
                                 <span className="text-muted mb-0.5">PLANNED START</span>
                                 <span>{act.planned_start || 'N/A'}</span>
@@ -442,7 +442,7 @@ export default function Reconcile() {
                             </div>
                           </>
                         ) : (
-                          <div className="text-[11px] text-danger font-mono italic">
+                          <div className="text-[14px] text-danger font-mono italic">
                             {scheduleError
                               ? `Schedule unavailable — ${errorDetail(scheduleError)}`
                               : 'Activity details not found in schedule baseline.'}
@@ -452,7 +452,7 @@ export default function Reconcile() {
                     );
                   })}
                   {candidates.length === 0 && (
-                    <div className="p-4 border border-hair text-muted font-mono text-[10px] text-center bg-raised">
+                    <div className="p-4 border border-hair text-muted font-mono text-[12px] text-center bg-raised">
                       NO CANDIDATES IDENTIFIED
                     </div>
                   )}
@@ -463,7 +463,7 @@ export default function Reconcile() {
             {/* Section 4: ACTIONS */}
             <div className="absolute bottom-0 left-0 right-0 bg-surface border-t border-hair p-4 z-20">
               {actionError && (
-                <div className="mb-3 px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[10px] flex items-center gap-2">
+                <div className="mb-3 px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] flex items-center gap-2">
                   <AlertCircle size={12} />
                   {actionError}
                 </div>
@@ -477,7 +477,7 @@ export default function Reconcile() {
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     placeholder="Enter short description for new activity..."
-                    className="flex-1 bg-raised border border-hair px-3 py-2 font-mono text-[11px] text-fg focus:outline-none focus:border-accent transition-colors"
+                    className="rounded-[8px] flex-1 bg-raised border border-hair px-3 py-2 font-mono text-[14px] text-fg focus:outline-none focus:border-accent transition-colors"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleNew();
                       if (e.key === 'Escape') setNewMode(false);
@@ -487,14 +487,14 @@ export default function Reconcile() {
                   <button 
                     onClick={handleNew}
                     disabled={resolveMutation.isPending}
-                    className="bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[10px] uppercase hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                    className="rounded-[8px] bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[12px] uppercase hover:bg-accent-hover disabled:opacity-50 transition-colors"
                   >
                     {resolveMutation.isPending ? 'Processing...' : 'Save Activity'}
                   </button>
                   <button 
                     onClick={() => setNewMode(false)}
                     disabled={resolveMutation.isPending}
-                    className="border border-hair text-muted px-4 py-2 font-bold font-mono text-[10px] uppercase hover:text-fg hover:border-strong transition-colors"
+                    className="rounded-[8px] border border-hair text-muted px-4 py-2 font-bold font-mono text-[12px] uppercase hover:text-fg hover:border-strong transition-colors"
                   >
                     Cancel
                   </button>
@@ -505,7 +505,7 @@ export default function Reconcile() {
                     <button
                       onClick={handleConfirm}
                       disabled={!selectedCandidate || resolveMutation.isPending}
-                      className="bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[10px] uppercase flex items-center gap-2 hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                      className="rounded-[8px] bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:bg-accent-hover disabled:opacity-50 transition-colors"
                     >
                       <Check size={14} />
                       Confirm Match
@@ -513,7 +513,7 @@ export default function Reconcile() {
                     <button
                       onClick={() => setNewMode(true)}
                       disabled={resolveMutation.isPending}
-                      className="border border-hair text-muted px-4 py-2 font-bold font-mono text-[10px] uppercase flex items-center gap-2 hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
+                      className="rounded-[8px] border border-hair text-muted px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
                     >
                       <Plus size={14} />
                       Mark New [N]
@@ -522,7 +522,7 @@ export default function Reconcile() {
                   <button
                     onClick={handleReject}
                     disabled={resolveMutation.isPending}
-                    className="border border-danger-line text-danger hover:bg-danger-bg px-4 py-2 font-bold font-mono text-[10px] uppercase flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    className="rounded-[8px] border border-danger-line text-danger hover:bg-danger-bg px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 disabled:opacity-50 transition-colors"
                   >
                     <X size={14} />
                     Reject [R]
@@ -532,7 +532,7 @@ export default function Reconcile() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center font-mono text-muted text-[10px] uppercase tracking-wider">
+          <div className="flex-1 flex items-center justify-center font-mono text-muted text-[12px] uppercase tracking-wider">
             Select an item from the queue
           </div>
         )}

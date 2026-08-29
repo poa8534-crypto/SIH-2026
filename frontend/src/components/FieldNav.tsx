@@ -38,11 +38,11 @@ export function FieldNav() {
             }`
           }
         >
-          <span className="font-mono text-[9px] uppercase tracking-wider">
+          <span className="font-mono text-[11px] uppercase tracking-wider">
             {tab.label}
           </span>
           {tab.label === 'Clarifications' && unanswered > 0 && (
-            <span className="absolute top-1.5 right-1/2 translate-x-[26px] min-w-[14px] h-[14px] px-1 bg-accent text-accent-fg font-mono text-[9px] flex items-center justify-center">
+            <span className="absolute top-1.5 right-1/2 translate-x-[26px] min-w-[14px] h-[14px] px-1 bg-accent text-accent-fg font-mono text-[11px] flex items-center justify-center">
               {unanswered}
             </span>
           )}

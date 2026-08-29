@@ -55,27 +55,33 @@
 }
 
 [data-theme="light"] {
-  --bg: #FFFFFF;
-  --bg-raised: #F4F6F8;
-  --bg-selected: #E4EDF7;
+  /* Technical Precision — Modern Corporate, flat and structured.
+     Content sits on the cool off-white background; containers pop in
+     pure white above it. */
+  --bg: #F7F8FC;
+  --bg-raised: #FFFFFF;
+  --bg-selected: #E8F0FF; /* pale-blue highlight: row hover, active nav */
 
-  --text: #14181C;        /*                  16.4:1 on --bg         */
-  --text-muted: #565E66;  /*                   7.2:1 on --bg         */
+  --text: #191C21;
+  --text-muted: #424752;
 
-  --border: #DFE3E7;
-  --border-strong: #828A92;
+  --border: #D9E1EC;
+  --border-strong: #727784;
 
-  --accent: #1A6BA8;      /*                   5.5:1 on --bg         */
+  --accent: #0056B3;      /* Primary Blue                            */
   --accent-text: #FFFFFF;
-  --accent-hover: #12537F;
+  --accent-hover: #003F87;
 
   --mark-bg: #FFD972;
-  --mark-text: #4A3200;   /*                   8.8:1 on --mark-bg    */
+  --mark-text: #4A3200;
 
-  --ok: #0E7A63;
-  --warn: #7D6208;
-  --danger: #B3261E;
-  --danger-bg: #FDECEA;
+  /* --ok is deliberately Primary Blue, not green: DESIGN.md — "Do not use
+     green for complete states to avoid confusion with architectural safety
+     standards." */
+  --ok: #0056B3;
+  --warn: #983C00;
+  --danger: #BA1A1A;
+  --danger-bg: #FFDAD6;
   --danger-border: #E8A9A4;
 
   /* Darkened so they clear 3:1 on white and on --bg-raised. */
@@ -87,32 +93,35 @@
   --disc-hse: #A82834;
 }
 
-/* Default before useTheme stamps the attribute: match the dark values so
-   there is no flash of unstyled/unreadable content on first paint. */
-:root {
-  --bg: #0C0C0C;
-  --bg-raised: #16181A;
-  --bg-selected: #24282D;
-  --text: #F2F3F4;
-  --text-muted: #9BA1A8;
-  --border: #2C3033;
-  --border-strong: #7A8288;
-  --accent: #7FB2E5;
-  --accent-text: #0C0C0C;
-  --accent-hover: #A6CBF0;
-  --mark-bg: #4A3C12;
-  --mark-text: #FFE9A8;
-  --ok: #56C4AC;
-  --warn: #E3C567;
-  --danger: #F2777A;
-  --danger-bg: #2A1416;
-  --danger-border: #6B2E31;
-  --disc-civil: #8CC9EE;
-  --disc-piping: #DE9AD6;
-  --disc-seq: #EE9977;
-  --disc-ele: #DDCC77;
-  --disc-ins: #58C79A;
-  --disc-hse: #EE8899;
+/* Default before useTheme stamps the attribute: match the light values so
+   there is no dark flash on first paint. Scoped with :not([data-theme]) so
+   it applies only until the attribute is stamped — a bare :root has the same
+   specificity as [data-theme="dark"] and, sitting later in the file, would
+   win on source order and make dark mode unreachable. */
+:root:not([data-theme]) {
+  --bg: #F7F8FC;
+  --bg-raised: #FFFFFF;
+  --bg-selected: #E8F0FF;
+  --text: #191C21;
+  --text-muted: #424752;
+  --border: #D9E1EC;
+  --border-strong: #727784;
+  --accent: #0056B3;
+  --accent-text: #FFFFFF;
+  --accent-hover: #003F87;
+  --mark-bg: #FFD972;
+  --mark-text: #4A3200;
+  --ok: #0056B3;
+  --warn: #983C00;
+  --danger: #BA1A1A;
+  --danger-bg: #FFDAD6;
+  --danger-border: #E8A9A4;
+  --disc-civil: #1A6191;
+  --disc-piping: #8E2F86;
+  --disc-seq: #9C4318;
+  --disc-ele: #6F5804;
+  --disc-ins: #0B6B4F;
+  --disc-hse: #A82834;
 }
 
 /* ============================================================================
@@ -167,7 +176,7 @@ body {
   background-color: var(--bg);
   color: var(--text-muted);
   font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 11px;
+  font-size: 14px;
   margin: 0;
   height: 100vh;
   overflow: hidden;

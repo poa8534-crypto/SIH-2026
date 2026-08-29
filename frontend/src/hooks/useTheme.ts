@@ -28,7 +28,7 @@ function stored(): Theme | null {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => stored() ?? 'dark');
+  const [theme, setTheme] = useState<Theme>(() => stored() ?? 'light');
 
   // Apply on mount and whenever the theme changes, so the attribute is
   // present before first paint of the shell rather than one tick later.

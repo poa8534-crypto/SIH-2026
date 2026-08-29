@@ -95,7 +95,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (error) {
     return (
-      <div className="px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[10px] flex items-start gap-2">
+      <div className="px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] flex items-start gap-2">
         <AlertCircle size={12} className="mt-0.5 shrink-0" />
         {errorDetail(error)}
       </div>
@@ -104,7 +104,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-4 border border-hair bg-raised text-muted font-mono text-[10px] text-center">
+      <div className="p-4 border border-hair bg-raised text-muted font-mono text-[12px] text-center">
         No actual dates recorded yet.
       </div>
     );
@@ -130,7 +130,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
               />
 
               <div
-                className={`border bg-raised px-2.5 py-2 font-mono text-[10px] leading-relaxed ${
+                className={`border bg-raised px-2.5 py-2 font-mono text-[12px] leading-relaxed ${
                   isConflict ? 'border-danger-line' : 'border-hair'
                 }`}
               >
@@ -178,7 +178,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
                 {/* How it was applied */}
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                   <span
-                    className={`px-1 border text-[9px] uppercase ${
+                    className={`px-1 border text-[11px] uppercase ${
                       rec.auto_applied
                         ? 'border-hair text-muted'
                         : 'border-accent text-accent'
@@ -203,7 +203,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
                 {rec.contributing_sources.length > 1 && (
                   <div className="mt-1.5 pt-1.5 border-t border-hair text-muted">
-                    <div className="uppercase text-[9px] mb-0.5">
+                    <div className="uppercase text-[11px] mb-0.5">
                       {rec.contributing_sources.length} sources asserted this field
                     </div>
                     {rec.contributing_sources.map((src, i) => (
@@ -219,7 +219,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 text-muted font-mono text-[9px] uppercase tracking-wider">
+      <div className="mt-3 flex items-center gap-1.5 text-muted font-mono text-[11px] uppercase tracking-wider">
         <Lock size={10} />
         Append-only · {data.length} record{data.length === 1 ? '' : 's'} · never edited
       </div>
@@ -232,8 +232,8 @@ function AuditTrail({ activityId }: { activityId: string }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-[9px] uppercase tracking-wider text-muted">{label}</span>
-      <span className="font-mono text-[11px] text-fg break-words">{children}</span>
+      <span className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</span>
+      <span className="font-mono text-[14px] text-fg break-words">{children}</span>
     </div>
   );
 }
@@ -254,12 +254,12 @@ function AuditDrawer({
       {/* Header */}
       <div className="border-b border-hair px-4 py-3 flex items-start justify-between gap-3 shrink-0">
         <div className="min-w-0">
-          <div className="font-mono text-[13px] text-fg">{activity.activity_id}</div>
-          <div className="text-[11px] text-muted mt-0.5">{activity.description}</div>
+          <div className="font-mono text-[15px] text-fg">{activity.activity_id}</div>
+          <div className="text-[14px] text-muted mt-0.5">{activity.description}</div>
         </div>
         <button
           onClick={onClose}
-          className="text-muted hover:text-fg shrink-0 p-1"
+          className="rounded-[8px] text-muted hover:text-fg shrink-0 p-1"
           aria-label="Close"
         >
           <X size={16} />
@@ -269,7 +269,7 @@ function AuditDrawer({
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* DETAIL */}
         <section>
-          <div className="font-mono text-[10px] uppercase tracking-wider text-muted mb-2.5">
+          <div className="font-mono text-[12px] uppercase tracking-wider text-muted mb-2.5">
             Detail
           </div>
 
@@ -284,29 +284,29 @@ function AuditDrawer({
               rendered muted so the actual column is the one that reads. */}
           <div className="mt-3 border border-hair">
             <div className="grid grid-cols-3 border-b border-hair bg-raised">
-              <div className="px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-muted" />
-              <div className="px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-muted border-l border-hair">
+              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted" />
+              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted border-l border-hair">
                 Planned
               </div>
-              <div className="px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-muted border-l border-hair">
+              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted border-l border-hair">
                 Actual
               </div>
             </div>
             <div className="grid grid-cols-3 border-b border-hair">
-              <div className="px-2 py-1.5 font-mono text-[10px] text-muted">Start</div>
-              <div className="px-2 py-1.5 font-mono text-[10px] text-muted border-l border-hair">
+              <div className="px-2 py-1.5 font-mono text-[12px] text-muted">Start</div>
+              <div className="px-2 py-1.5 font-mono text-[12px] text-muted border-l border-hair">
                 {activity.planned_start ?? <Absent />}
               </div>
-              <div className="px-2 py-1.5 font-mono text-[10px] text-fg border-l border-hair">
+              <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
                 {activity.actual_start ?? <Absent />}
               </div>
             </div>
             <div className="grid grid-cols-3">
-              <div className="px-2 py-1.5 font-mono text-[10px] text-muted">Finish</div>
-              <div className="px-2 py-1.5 font-mono text-[10px] text-muted border-l border-hair">
+              <div className="px-2 py-1.5 font-mono text-[12px] text-muted">Finish</div>
+              <div className="px-2 py-1.5 font-mono text-[12px] text-muted border-l border-hair">
                 {activity.planned_finish ?? <Absent />}
               </div>
-              <div className="px-2 py-1.5 font-mono text-[10px] text-fg border-l border-hair">
+              <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
                 {activity.actual_finish ?? <Absent />}
               </div>
             </div>
@@ -342,7 +342,7 @@ function AuditDrawer({
           </div>
 
           <div className="mt-3">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
               Predecessors
             </span>
             <div className="mt-1 flex flex-wrap gap-1">
@@ -350,13 +350,13 @@ function AuditDrawer({
                 activity.predecessors.map((p) => (
                   <span
                     key={p}
-                    className="font-mono text-[10px] text-fg border border-hair bg-raised px-1.5 py-0.5"
+                    className="font-mono text-[12px] text-fg border border-hair bg-raised px-1.5 py-0.5"
                   >
                     {p}
                   </span>
                 ))
               ) : (
-                <span className="font-mono text-[10px] text-muted">None</span>
+                <span className="font-mono text-[12px] text-muted">None</span>
               )}
             </div>
           </div>
@@ -364,7 +364,7 @@ function AuditDrawer({
 
         {/* AUDIT TRAIL */}
         <section>
-          <div className="font-mono text-[10px] uppercase tracking-wider text-muted mb-2.5">
+          <div className="font-mono text-[12px] uppercase tracking-wider text-muted mb-2.5">
             Audit Trail
           </div>
           <AuditTrail activityId={activity.activity_id} />
@@ -568,7 +568,7 @@ export default function Schedule() {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded transition-colors"
+          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -582,7 +582,7 @@ export default function Schedule() {
       {warnings.length > 0 && (
         <button
           onClick={() => setOnlyFlagged((v) => !v)}
-          className={`shrink-0 h-8 px-4 flex items-center gap-2 border-b text-left font-mono text-[10px] transition-colors ${
+          className={`rounded-[8px] shrink-0 h-8 px-4 flex items-center gap-2 border-b text-left font-mono text-[12px] transition-colors ${
             onlyFlagged
               ? 'bg-danger-bg border-danger-line text-danger'
               : 'bg-raised border-hair text-muted hover:text-fg'
@@ -608,7 +608,7 @@ export default function Schedule() {
         <select
           value={discipline}
           onChange={(e) => setDiscipline(e.target.value)}
-          className="h-7 bg-raised border border-hair text-fg font-mono text-[10px] px-2 focus:outline-none focus:border-accent"
+          className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 focus:outline-none focus:border-accent"
           aria-label="Filter by discipline"
         >
           <option value="">All disciplines</option>
@@ -624,30 +624,30 @@ export default function Schedule() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search descriptions"
-          className="h-7 w-64 bg-raised border border-hair px-2 font-mono text-[10px] text-fg focus:outline-none focus:border-accent"
+          className="rounded-[8px] h-7 w-64 bg-raised border border-hair px-2 font-mono text-[12px] text-fg focus:outline-none focus:border-accent"
         />
 
-        <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[10px] text-muted hover:text-fg">
+        <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[12px] text-muted hover:text-fg">
           <input
             type="checkbox"
             checked={onlyActuals}
             onChange={(e) => setOnlyActuals(e.target.checked)}
-            className="accent-accent"
+            className="rounded-[8px] accent-accent"
           />
           Only activities with actuals
         </label>
 
         <div className="ml-auto flex items-center gap-2">
           {exportState.kind === 'done' && (
-            <span className="font-mono text-[10px] text-ok">Wrote {exportState.name}</span>
+            <span className="font-mono text-[12px] text-ok">Wrote {exportState.name}</span>
           )}
           {exportState.kind === 'error' && (
-            <span className="font-mono text-[10px] text-danger">{exportState.detail}</span>
+            <span className="font-mono text-[12px] text-danger">{exportState.detail}</span>
           )}
           <select
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as 'pmxml' | 'xer')}
-            className="h-7 bg-raised border border-hair text-fg font-mono text-[10px] px-2 focus:outline-none focus:border-accent"
+            className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 focus:outline-none focus:border-accent"
             aria-label="Export format"
           >
             <option value="pmxml">PMXML</option>
@@ -656,7 +656,7 @@ export default function Schedule() {
           <button
             onClick={handleExport}
             disabled={exportState.kind === 'busy'}
-            className="h-7 flex items-center gap-1.5 border border-hair px-3 font-mono text-[10px] uppercase text-muted hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
+            className="rounded-[8px] h-7 flex items-center gap-1.5 border border-hair px-3 font-mono text-[12px] uppercase text-muted hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
           >
             <Download size={12} />
             {exportState.kind === 'busy' ? 'Exporting…' : 'Export'}
@@ -674,7 +674,7 @@ export default function Schedule() {
                   <th
                     key={h.id}
                     style={{ width: h.getSize() }}
-                    className="text-left font-mono text-[9px] uppercase tracking-wider text-muted font-normal px-2 py-2 whitespace-nowrap"
+                    className="text-left font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-2 py-2 whitespace-nowrap"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -718,7 +718,7 @@ export default function Schedule() {
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className="px-2 py-1.5 text-[11px] whitespace-nowrap max-w-0"
+                        className="px-2 py-1.5 text-[14px] whitespace-nowrap max-w-0"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
@@ -730,14 +730,14 @@ export default function Schedule() {
         </table>
 
         {!isLoading && rows.length === 0 && (
-          <div className="py-16 text-center font-mono text-[10px] uppercase tracking-wider text-muted">
+          <div className="py-16 text-center font-mono text-[12px] uppercase tracking-wider text-muted">
             No activities match the filter
           </div>
         )}
       </div>
 
       {/* FOOTER */}
-      <div className="shrink-0 h-7 border-t border-hair px-4 flex items-center gap-4 font-mono text-[9px] uppercase tracking-wider text-muted">
+      <div className="shrink-0 h-7 border-t border-hair px-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-muted">
         <span>
           {rows.length} of {data?.total_activities ?? 0} activities
         </span>

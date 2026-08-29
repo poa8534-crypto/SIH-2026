@@ -48,7 +48,7 @@ function Panel({
   return (
     <section className={`${span} border border-hair bg-surface flex flex-col`}>
       <div className="px-4 py-2.5 border-b border-hair">
-        <h3 className="font-mono text-[10px] uppercase tracking-wider text-muted">
+        <h3 className="font-mono text-[12px] uppercase tracking-wider text-muted">
           {title}
         </h3>
       </div>
@@ -60,14 +60,14 @@ function Panel({
 /** Said in words, per the constraint against empty charts. */
 function NoData({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-4 py-6 text-[11px] text-muted leading-relaxed">{children}</div>
+    <div className="px-4 py-6 text-[14px] text-muted leading-relaxed">{children}</div>
   );
 }
 
 function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
   return (
     <th
-      className={`font-mono text-[9px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap ${
+      className={`font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap ${
         right ? 'text-right' : 'text-left'
       }`}
     >
@@ -129,17 +129,17 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
               const flat = Math.abs(r.deltaDays) < 0.05;
               return (
                 <tr key={r.activity_type} className="border-b border-hair last:border-0">
-                  <td className="px-3 py-1.5 font-mono text-[11px] text-fg whitespace-nowrap">
+                  <td className="px-3 py-1.5 font-mono text-[14px] text-fg whitespace-nowrap">
                     {r.activity_type}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[11px] text-muted text-right">
+                  <td className="px-3 py-1.5 font-mono text-[14px] text-muted text-right">
                     {r.planned_mean_days.toFixed(1)}d
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[11px] text-fg text-right">
+                  <td className="px-3 py-1.5 font-mono text-[14px] text-fg text-right">
                     {r.actual_mean_days.toFixed(1)}d
                   </td>
                   <td
-                    className={`px-3 py-1.5 font-mono text-[11px] text-right ${
+                    className={`px-3 py-1.5 font-mono text-[14px] text-right ${
                       flat ? 'text-muted' : late ? 'text-danger' : 'text-ok'
                     }`}
                   >
@@ -149,7 +149,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
                           late ? '+' : ''
                         }${r.deltaPct.toFixed(0)}%`}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[11px] text-muted text-right">
+                  <td className="px-3 py-1.5 font-mono text-[14px] text-muted text-right">
                     {r.actuals_count}/{r.count}
                   </td>
                 </tr>
@@ -159,7 +159,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
         </table>
       </div>
       {withoutActuals > 0 && (
-        <p className="px-3 py-2 border-t border-hair text-[10px] text-muted">
+        <p className="px-3 py-2 border-t border-hair text-[12px] text-muted">
           {withoutActuals} further activity type
           {withoutActuals === 1 ? '' : 's'} have no completed activity yet and are
           not listed.
@@ -193,12 +193,12 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
     <div className="p-4 flex flex-col gap-3">
       {bars.map((b) => (
         <div key={b.discipline} className="flex items-center gap-3">
-          <div className="w-24 shrink-0 text-[11px] text-fg text-right">
+          <div className="w-24 shrink-0 text-[14px] text-fg text-right">
             {DISCIPLINE_LABEL[b.discipline] ?? b.discipline}
           </div>
 
           {b.slip === null ? (
-            <div className="flex-1 text-[10px] text-muted italic">
+            <div className="flex-1 text-[12px] text-muted italic">
               no completed activities yet
             </div>
           ) : (
@@ -213,7 +213,7 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
           )}
 
           <div
-            className={`w-16 shrink-0 font-mono text-[11px] text-right ${
+            className={`w-16 shrink-0 font-mono text-[14px] text-right ${
               b.slip === null
                 ? 'text-muted'
                 : b.slip > 0
@@ -227,12 +227,12 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
               ? '—'
               : `${b.slip > 0 ? '+' : ''}${b.slip.toFixed(1)}d`}
           </div>
-          <div className="w-14 shrink-0 font-mono text-[9px] text-muted text-right">
+          <div className="w-14 shrink-0 font-mono text-[11px] text-muted text-right">
             {b.metric ? `${b.metric.completed}/${b.metric.total_activities}` : ''}
           </div>
         </div>
       ))}
-      <p className="text-[10px] text-muted leading-relaxed border-t border-hair pt-2">
+      <p className="text-[12px] text-muted leading-relaxed border-t border-hair pt-2">
         Average actual duration minus average planned duration, over completed
         activities only. The right-hand figure is how many of that discipline&rsquo;s
         activities have completed.
@@ -267,25 +267,25 @@ function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.reason} className="border-b border-hair last:border-0">
-              <td className="px-3 py-1.5 text-[11px] text-fg capitalize">{r.reason}</td>
-              <td className="px-3 py-1.5 font-mono text-[11px] text-fg text-right">
+              <td className="px-3 py-1.5 text-[14px] text-fg capitalize">{r.reason}</td>
+              <td className="px-3 py-1.5 font-mono text-[14px] text-fg text-right">
                 {r.frequency}
               </td>
               <td
-                className={`px-3 py-1.5 font-mono text-[11px] text-right ${
+                className={`px-3 py-1.5 font-mono text-[14px] text-right ${
                   r.days_lost > 0 ? 'text-danger' : 'text-muted'
                 }`}
               >
                 {r.days_lost}d
               </td>
-              <td className="px-3 py-1.5 font-mono text-[10px] text-muted">
+              <td className="px-3 py-1.5 font-mono text-[12px] text-muted">
                 {r.affected_activities.join(', ') || '—'}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="px-3 py-2 border-t border-hair text-[10px] text-muted leading-relaxed">
+      <p className="px-3 py-2 border-t border-hair text-[12px] text-muted leading-relaxed">
         Days lost is the finish slip of the affected activities, attributed to
         this cause. Where an activity records more than one cause, its slip is
         counted against each, so treat these as an upper bound.
@@ -333,13 +333,13 @@ function SuggestedDurationPanel({
   return (
     <div className="p-4 flex-1 flex flex-col gap-5">
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
           Activity type
         </span>
         <select
           value={selected}
           onChange={(e) => setActivityType(e.target.value)}
-          className="w-full bg-raised border border-hair text-fg text-[12px] px-2 py-2 focus:outline-none focus:border-accent"
+          className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[14px] px-2 py-2 focus:outline-none focus:border-accent"
         >
           {types.map((t) => (
             <option key={t.activity_type} value={t.activity_type}>
@@ -354,7 +354,7 @@ function SuggestedDurationPanel({
       )}
 
       {error && (
-        <div className="border border-danger-line bg-danger-bg px-3 py-2 font-mono text-[10px] text-danger">
+        <div className="border border-danger-line bg-danger-bg px-3 py-2 font-mono text-[12px] text-danger">
           {errorDetail(error)}
         </div>
       )}
@@ -368,38 +368,38 @@ function SuggestedDurationPanel({
           {/* Recommendation against baseline, so the difference is obvious. */}
           <div className="border border-accent/40 bg-selected">
             <div className="grid grid-cols-2 divide-x divide-hair">
-              <div className="p-3 flex flex-col items-center text-center gap-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+              <div className="p-4 flex flex-col items-center text-center gap-1">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
                   Baseline planned
                 </span>
-                <span className="font-mono text-[20px] text-muted">
+                <span className="font-mono text-[24px] text-muted">
                   {s.median_planned_days}d
                 </span>
               </div>
-              <div className="p-3 flex flex-col items-center text-center gap-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-accent">
+              <div className="p-4 flex flex-col items-center text-center gap-1">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-accent">
                   Suggested
                 </span>
                 {hasRecommendation ? (
-                  <span className="font-mono text-[20px] text-fg">
+                  <span className="font-mono text-[24px] text-fg">
                     {s.median_actual_days}d
                   </span>
                 ) : (
-                  <span className="font-mono text-[12px] text-muted">not yet</span>
+                  <span className="font-mono text-[14px] text-muted">not yet</span>
                 )}
               </div>
             </div>
             {hasRecommendation && (
-              <div className="px-3 py-2 border-t border-hair flex items-center justify-between font-mono text-[10px]">
+              <div className="px-3 py-2 border-t border-hair flex items-center justify-between font-mono text-[12px]">
                 <span className="text-muted">P80</span>
                 <span className="text-fg">{s.p80_actual_days}d</span>
               </div>
             )}
           </div>
 
-          <p className="text-[11px] text-fg leading-relaxed">{s.recommendation}</p>
+          <p className="text-[14px] text-fg leading-relaxed">{s.recommendation}</p>
 
-          <p className="text-[10px] text-muted leading-relaxed border-t border-hair pt-3 mt-auto">
+          <p className="text-[12px] text-muted leading-relaxed border-t border-hair pt-3 mt-auto">
             {hasRecommendation ? (
               <>
                 Based on <span className="text-fg font-mono">{s.actuals_count}</span>{' '}
@@ -439,7 +439,7 @@ export default function Memory() {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded transition-colors"
+          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -466,9 +466,9 @@ export default function Memory() {
     <div className="h-full overflow-y-auto">
       <div className="p-6 max-w-[1280px] w-full mx-auto flex flex-col gap-4">
         <div className="mb-1">
-          <h2 className="text-[20px] text-fg mb-1">Project Memory</h2>
-          <p className="text-[13px] text-muted">What this project has learned so far.</p>
-          <p className="text-[11px] text-muted mt-1 max-w-3xl leading-relaxed">
+          <h2 className="text-[24px] text-fg mb-1">Project Memory</h2>
+          <p className="text-[15px] text-muted">What this project has learned so far.</p>
+          <p className="text-[14px] text-muted mt-1 max-w-3xl leading-relaxed">
             These patterns are computed from actual execution data the system
             captured from field reports and discipline spreadsheets — not from
             the baseline plan. The baseline appears only as the figure each
@@ -495,7 +495,7 @@ export default function Memory() {
         </div>
 
         {data && (
-          <p className="font-mono text-[9px] uppercase tracking-wider text-muted text-right">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-muted text-right">
             Computed {new Date(data.computed_at).toLocaleString()}
           </p>
         )}

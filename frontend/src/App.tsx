@@ -44,7 +44,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-full bg-surface text-muted overflow-hidden font-sans">
       <div className="w-[200px] flex-shrink-0 border-r border-hair flex flex-col">
-        <div className="h-12 border-b border-hair flex items-center px-4 font-bold tracking-tighter text-fg uppercase text-[12px]">
+        <div className="h-12 border-b border-hair flex items-center px-4 font-bold tracking-tighter text-fg uppercase text-[14px]">
           EPC OPERATIONS
         </div>
         <nav className="flex-1 py-2 overflow-y-auto">
@@ -55,7 +55,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2 px-4 py-1.5 text-[11px] uppercase font-mono ${
+                className={`flex items-center gap-2 px-4 py-1.5 text-[14px] uppercase font-mono ${
                   active ? 'bg-selected text-fg border-r-2 border-accent' : 'hover:text-fg hover:bg-raised'
                 }`}
               >
@@ -66,7 +66,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="p-4 border-t border-hair">
-          <div className="text-[10px] font-mono uppercase mb-1 text-muted">Data Date</div>
+          <div className="text-[12px] font-mono uppercase mb-1 text-muted">Data Date</div>
           <div
             className={`font-mono ${headerError ? 'text-danger' : 'text-fg'}`}
             title={headerError ? errorDetail(headerError) : undefined}
@@ -76,7 +76,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           
           <button
             onClick={() => setOverride('mobile')}
-            className="mt-4 flex items-center gap-2 text-[10px] font-mono uppercase text-muted hover:text-fg transition-colors"
+            className="rounded-[8px] mt-4 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
           >
             <Smartphone size={12} />
             Force Mobile View
@@ -84,7 +84,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           
           <button
             onClick={toggleTheme}
-            className="mt-2 flex items-center gap-2 text-[10px] font-mono uppercase text-muted hover:text-fg transition-colors"
+            className="rounded-[8px] mt-2 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
           >
             {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -96,20 +96,20 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         <header className="h-12 border-b border-hair flex items-center justify-between px-6">
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-fg uppercase font-bold text-[12px]">
+              <span className="text-fg uppercase font-bold text-[14px]">
                 {scheduleData ? scheduleData.project : headerLoading ? 'Loading…' : 'Project unavailable'}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
              {headerError && (
-               <span className="font-mono text-[9px] text-danger max-w-[420px] truncate" title={errorDetail(headerError)}>
+               <span className="font-mono text-[11px] text-danger max-w-[420px] truncate" title={errorDetail(headerError)}>
                  {errorDetail(headerError)}
                </span>
              )}
-             <div className="flex bg-raised p-0.5 rounded border border-hair">
-               <div className="px-2 py-1 text-[9px] font-bold bg-accent text-accent-fg rounded-sm cursor-pointer">PLANNER</div>
-               <div className="px-2 py-1 text-[9px] font-bold text-muted hover:text-fg cursor-pointer" onClick={() => setOverride('mobile')}>FIELD</div>
+             <div className="flex bg-raised p-0.5 rounded-[8px] border border-hair">
+               <div className="px-2 py-1 text-[11px] font-bold bg-accent text-accent-fg rounded-sm cursor-pointer">PLANNER</div>
+               <div className="px-2 py-1 text-[11px] font-bold text-muted hover:text-fg cursor-pointer" onClick={() => setOverride('mobile')}>FIELD</div>
              </div>
           </div>
         </header>
@@ -129,27 +129,27 @@ function MobileShell({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-screen w-full bg-surface text-muted overflow-hidden font-sans">
       <header className="h-12 border-b border-hair flex items-center justify-between px-4 bg-surface">
         <span className="flex items-center gap-2">
-          <span className="w-6 h-6 bg-accent text-accent-fg flex items-center justify-center font-bold text-[12px]">
+          <span className="w-6 h-6 bg-accent text-accent-fg flex items-center justify-center font-bold text-[14px]">
             N
           </span>
-          <span className="font-bold tracking-tighter text-fg uppercase text-[12px]">NAVIS</span>
+          <span className="font-bold tracking-tighter text-fg uppercase text-[14px]">NAVIS</span>
         </span>
         <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="text-muted hover:text-fg p-1 transition-colors"
+            className="rounded-[8px] text-muted hover:text-fg p-1 transition-colors"
             title="Toggle Theme"
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           <button
             onClick={() => setOverride('desktop')}
-            className="text-muted hover:text-fg p-1 transition-colors"
+            className="rounded-[8px] text-muted hover:text-fg p-1 transition-colors"
             title="Force Desktop View"
           >
             <Monitor size={16} />
           </button>
-          <span className="w-7 h-7 border border-hair bg-raised text-fg flex items-center justify-center font-mono text-[10px]">
+          <span className="w-7 h-7 border border-hair bg-raised text-fg flex items-center justify-center font-mono text-[12px]">
             RK
           </span>
         </div>

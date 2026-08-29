@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  ArrowRight,
   Check,
   ChevronDown,
   ChevronUp,
@@ -9,12 +10,15 @@ import {
   MicOff,
   Pencil,
   Send,
+  ShieldCheck,
   StopCircle,
+  X,
 } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
 import { AgentTurnResponse, Discipline, ReviewItem, SlotState } from '../types';
 import { SPEECH_LANGUAGES, useSpeech } from '../hooks/useSpeech';
 import { PROJECT, SUPERVISOR, WORK_FRONTS, agentContext } from '../config';
+import { NeedsYourResponse, RecentUpdates } from '../components/FieldContextBlocks';
 
 /**
  * Field supervisor screen — the "time agent" the problem statement mandates.
@@ -32,6 +36,10 @@ type Stage =
   | 'listening'
   | 'transcript'
   | 'conversation'
+  // Every slot is filled and the proposal is ready, but the supervisor
+  // has not asked to see it yet. The mockup makes this a deliberate beat
+  // rather than jumping straight to the card.
+  | 'ready'
   | 'card'
   | 'submitted';
 
@@ -161,9 +169,9 @@ function StructuredCard({
 
   return (
     <section className="border border-hair bg-raised">
-      <div className="px-4 py-2 border-b border-hair">
-        <h2 className="font-mono text-[9px] uppercase tracking-wider text-muted">
-          Structured update
+      <div className="px-5 py-3 border-b border-hair">
+        <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
+          STRUCTURED UPDATE
         </h2>
       </div>
 
@@ -174,15 +182,15 @@ function StructuredCard({
             className="flex justify-between items-start px-4 py-3 border-b border-hair"
           >
             <div className="flex flex-col gap-1 pr-4 min-w-0">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
                 {r.label}
               </span>
-              <span className="text-[13px] text-fg break-words">{r.value}</span>
+              <span className="text-[15px] text-fg break-words">{r.value}</span>
             </div>
             <button
               onClick={() => onEdit(r.key)}
               aria-label={`Correct ${r.label.toLowerCase()}`}
-              className="p-1 text-accent hover:bg-selected shrink-0 mt-1"
+              className="rounded-[8px] p-1 text-accent hover:bg-selected shrink-0 mt-1"
             >
               <Pencil size={14} />
             </button>
@@ -190,8 +198,8 @@ function StructuredCard({
         ))}
 
         {slots.quantity_over_planned && (
-          <div className="px-4 py-2 border-b border-hair">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-warn">
+          <div className="px-5 py-3 border-b border-hair">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-warn">
               Completed exceeds the planned total — the Planning Engineer will
               check this
             </span>
@@ -202,14 +210,14 @@ function StructuredCard({
             the supervisor's to change. */}
         <div className="flex justify-between items-start px-4 py-3">
           <div className="flex flex-col gap-1 pr-4">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
               Confidence
             </span>
-            <span className="text-[13px] text-fg font-mono">
+            <span className="text-[15px] text-fg font-mono">
               {(confidence * 100).toFixed(1)}%
             </span>
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted mt-1 shrink-0">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-muted mt-1 shrink-0">
             {outcome === 'AUTO_LINK' ? 'strong match' : 'planner confirms'}
           </span>
         </div>
@@ -219,18 +227,18 @@ function StructuredCard({
         <button
           onClick={onSubmit}
           disabled={submitting}
-          className="w-full bg-accent text-accent-fg font-mono text-[11px] uppercase tracking-wider py-4 disabled:opacity-50"
+          className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 disabled:opacity-50"
         >
-          {submitting ? 'Submitting…' : 'Confirm & submit'}
+          {submitting ? 'Submitting…' : 'CONFIRM & SUBMIT'}
         </button>
         <button
           onClick={onCancel}
           disabled={submitting}
-          className="self-center font-mono text-[10px] uppercase tracking-wider text-muted hover:text-fg disabled:opacity-50"
+          className="rounded-[8px] self-center font-mono text-[12px] uppercase tracking-wider text-muted hover:text-fg disabled:opacity-50"
         >
           Cancel
         </button>
-        <p className="text-[10px] text-muted leading-relaxed text-center">
+        <p className="text-[12px] text-muted leading-relaxed text-center">
           Submitting confirms the report information only. The Planning Engineer
           must review it before any project data changes.
         </p>
@@ -295,7 +303,16 @@ export default function Field() {
     if (speech.failure && stage === 'listening') setStage('idle');
   }, [speech.failure, stage]);
 
+  /**
+   * Abandon whatever is in progress and start clean.
+   *
+   * Nothing is written: the agent only proposes until CONFIRM & SUBMIT, so
+   * walking away from a half-finished conversation leaves no trace. A new
+   * session id means the server treats the next message as a fresh start
+   * rather than resuming the abandoned slots.
+   */
   const resetSession = () => {
+    speech.cancel();
     setSessionId(crypto.randomUUID());
     setMessages([]);
     setTurn(null);
@@ -338,7 +355,7 @@ export default function Field() {
         setStage('submitted');
         queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
       } else if (res.awaiting_confirmation) {
-        setStage('card');
+        setStage('ready');
       }
       setTyped('');
     } catch (e) {
@@ -375,10 +392,10 @@ export default function Field() {
     <div className="border border-hair bg-raised">
       <button
         onClick={() => setContextOpen((v) => !v)}
-        className="w-full px-3 py-2 flex items-center justify-between"
+        className="rounded-[8px] w-full px-3 py-2 flex items-center justify-between"
       >
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
-          Current context
+        <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+          Current Context
         </span>
         {contextOpen ? (
           <ChevronUp size={14} className="text-muted" />
@@ -389,13 +406,13 @@ export default function Field() {
       {contextOpen ? (
         <div className="px-3 pb-3 flex flex-col gap-2 border-t border-hair pt-2">
           <label className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
               Work front
             </span>
             <select
               value={workFront}
               onChange={(e) => setWorkFront(e.target.value)}
-              className="bg-surface border border-hair text-fg text-[12px] px-2 py-1.5"
+              className="rounded-[8px] bg-surface border border-hair text-fg text-[14px] px-2 py-1.5"
             >
               {WORK_FRONTS.map((w) => (
                 <option key={w} value={w}>
@@ -405,13 +422,13 @@ export default function Field() {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
               Discipline
             </span>
             <select
               value={discipline}
               onChange={(e) => setDiscipline(e.target.value as Discipline)}
-              className="bg-surface border border-hair text-fg text-[12px] px-2 py-1.5"
+              className="rounded-[8px] bg-surface border border-hair text-fg text-[14px] px-2 py-1.5"
             >
               {DISCIPLINE_OPTIONS.map((d) => (
                 <option key={d.value} value={d.value}>
@@ -423,11 +440,11 @@ export default function Field() {
         </div>
       ) : (
         <div className="px-3 pb-2 flex flex-col gap-0.5">
-          <div className="flex justify-between text-[11px]">
+          <div className="flex justify-between text-[14px]">
             <span className="text-muted">Work front:</span>
             <span className="text-fg">{workFront}</span>
           </div>
-          <div className="flex justify-between text-[11px]">
+          <div className="flex justify-between text-[14px]">
             <span className="text-muted">Discipline:</span>
             <span className="text-fg">
               {DISCIPLINE_OPTIONS.find((d) => d.value === discipline)?.label}
@@ -448,15 +465,15 @@ export default function Field() {
           if (e.key === 'Enter') send(typed);
         }}
         placeholder={grow ? 'Type your update' : 'Or type your update'}
-        className={`w-full bg-surface border border-hair text-fg placeholder:text-muted px-3 pr-10 focus:outline-none focus:border-accent ${
-          grow ? 'py-4 text-[14px]' : 'py-3 text-[13px]'
+        className={`rounded-[8px] w-full bg-surface border border-hair text-fg placeholder:text-muted px-3 pr-10 focus:outline-none focus:border-accent ${
+          grow ? 'py-4 text-[16px]' : 'py-3 text-[15px]'
         }`}
       />
       <button
         onClick={() => send(typed)}
         disabled={!typed.trim() || thinking}
         aria-label="Send"
-        className="absolute right-2 p-1 text-accent disabled:opacity-40"
+        className="rounded-[8px] absolute right-2 p-1 text-accent disabled:opacity-40"
       >
         <Send size={16} />
       </button>
@@ -466,15 +483,21 @@ export default function Field() {
   const micUnavailableBox = (
     <div className="border border-hair bg-raised p-4 flex flex-col items-center gap-1.5 text-center">
       <MicOff size={20} className="text-muted" />
-      <span className="text-[13px] text-fg">Microphone unavailable</span>
-      <span className="text-[11px] text-muted">Typing works just as well.</span>
+      <span className="text-[15px] text-fg">Microphone unavailable</span>
+      <span className="text-[14px] text-muted">Typing works just as well.</span>
     </div>
   );
 
   const notUnderstoodBox = (
     <div className="border border-hair bg-raised p-4 flex flex-col items-center gap-2 text-center">
-      <span className="text-[13px] text-fg">We couldn&rsquo;t understand that recording</span>
-      <span className="text-[11px] text-muted">Try speaking again, or type your response.</span>
+      {/* The session is still live; only the last recording failed. */}
+      <span className="self-end flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-ok">
+        <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+        Active
+      </span>
+      <MicOff size={20} className="text-muted" />
+      <span className="text-[15px] text-fg">We couldn&rsquo;t understand that recording</span>
+      <span className="text-[14px] text-muted">Try speaking again, or type your response.</span>
       <div className="flex gap-2 mt-1">
         <button
           onClick={() => {
@@ -482,36 +505,36 @@ export default function Field() {
             speech.start();
             setStage('listening');
           }}
-          className="border border-hair px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-fg hover:border-strong"
+          className="rounded-[8px] border border-hair px-3 py-2 font-mono text-[12px] uppercase tracking-wider text-fg hover:border-strong"
         >
-          Record again
+          Record Again
         </button>
         <button
           onClick={() => speech.clearFailure()}
-          className="border border-accent px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-accent"
+          className="rounded-[8px] border border-accent px-3 py-2 font-mono text-[12px] uppercase tracking-wider text-accent"
         >
-          Type response
+          Type Response
         </button>
       </div>
     </div>
   );
 
   const serverErrorBox = serverError && (
-    <div className="border border-danger-line bg-danger-bg p-3 flex flex-col gap-2">
+    <div className="border border-danger-line bg-danger-bg p-4 flex flex-col gap-2">
       <div className="flex items-start gap-2">
         <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
         <div className="flex flex-col gap-0.5">
-          <span className="font-mono text-[10px] text-danger">
+          <span className="font-mono text-[12px] text-danger">
             Could not reach the server — try again
           </span>
-          <span className="font-mono text-[10px] text-danger opacity-80">
+          <span className="font-mono text-[12px] text-danger opacity-80">
             This update was not saved. {serverError}
           </span>
         </div>
       </div>
       <button
         onClick={() => send(typed)}
-        className="self-start border border-danger-line px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-danger"
+        className="rounded-[8px] self-start border border-danger-line px-3 py-1.5 font-mono text-[12px] uppercase tracking-wider text-danger"
       >
         Retry
       </button>
@@ -524,13 +547,13 @@ export default function Field() {
     <div className="flex flex-col h-full w-full bg-surface overflow-hidden">
       {/* Context sub-header */}
       <div className="shrink-0 px-4 py-1.5 bg-raised border-b border-hair flex items-center justify-between">
-        <span className="font-mono text-[10px] text-muted">{workFront}</span>
+        <span className="font-mono text-[12px] text-muted">{workFront}</span>
         <div className="flex items-center gap-1">
           {SPEECH_LANGUAGES.map((l) => (
             <button
               key={l.code}
               onClick={() => speech.setLang(l.code)}
-              className={`font-mono text-[10px] px-1.5 py-0.5 border ${
+              className={`rounded-[8px] font-mono text-[12px] px-1.5 py-0.5 border ${
                 speech.lang === l.code
                   ? 'border-accent text-accent'
                   : 'border-transparent text-muted'
@@ -546,8 +569,8 @@ export default function Field() {
         {stage === 'idle' && (
           <>
             <div>
-              <h1 className="text-[20px] text-fg">Good afternoon, {SUPERVISOR.name.split(' ')[0]}</h1>
-              <p className="text-[12px] text-muted mt-0.5">
+              <h1 className="text-[24px] text-fg">Good afternoon, {SUPERVISOR.name.split(' ')[0]}</h1>
+              <p className="text-[14px] text-muted mt-0.5">
                 Report progress for the work fronts you supervise.
               </p>
             </div>
@@ -563,14 +586,14 @@ export default function Field() {
                   speech.start();
                   setStage('listening');
                 }}
-                className="w-full bg-accent text-accent-fg p-8 flex flex-col items-center justify-center gap-4 active:opacity-90"
+                className="rounded-[8px] w-full bg-accent text-accent-fg p-8 flex flex-col items-center justify-center gap-4 active:opacity-90"
               >
                 <span className="w-16 h-16 border border-current/40 flex items-center justify-center">
                   <Mic size={28} />
                 </span>
                 <span className="flex flex-col items-center gap-0.5">
-                  <span className="text-[18px]">Tap &amp; Speak</span>
-                  <span className="text-[12px] opacity-90">
+                  <span className="text-[20px]">Tap &amp; Speak</span>
+                  <span className="text-[14px] opacity-90">
                     Describe what happened on site
                   </span>
                 </span>
@@ -580,6 +603,13 @@ export default function Field() {
             {textInput(micBlocked)}
             {serverErrorBox}
             {contextBlock}
+            <NeedsYourResponse />
+            <RecentUpdates />
+            <p className="flex items-start gap-1.5 text-[12px] text-muted leading-relaxed">
+              <ShieldCheck size={12} className="mt-px shrink-0" />
+              Every submitted update requires Planning Engineer confirmation
+              before project data changes.
+            </p>
           </>
         )}
 
@@ -588,25 +618,25 @@ export default function Field() {
             <div className="w-full flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-danger rounded-full animate-pulse" />
-                <span className="font-mono text-[10px] uppercase tracking-wider text-danger">
+                <span className="font-mono text-[12px] uppercase tracking-wider text-danger">
                   Listening
                 </span>
               </span>
-              <span className="font-mono text-[16px] text-fg">{mmss(speech.elapsed)}</span>
+              <span className="font-mono text-[18px] text-fg">{mmss(speech.elapsed)}</span>
             </div>
 
             <Waveform />
 
             <div className="min-h-[80px] flex flex-col items-center justify-center text-center w-full gap-1">
-              <p className="text-[18px] text-fg leading-snug">
+              <p className="text-[20px] text-fg leading-snug">
                 {speech.transcript ? `“${speech.transcript}”` : (
-                  <span className="text-muted text-[13px]">Speak now…</span>
+                  <span className="text-muted text-[15px]">Speak now…</span>
                 )}
               </p>
               {/* A pause does not end the recording, so say so rather than
                   leaving him wondering whether it stopped. */}
               {speech.silent && (
-                <span className="font-mono text-[10px] text-muted">listening…</span>
+                <span className="font-mono text-[12px] text-muted">listening…</span>
               )}
             </div>
 
@@ -616,28 +646,36 @@ export default function Field() {
                 setDraftTranscript(speech.transcript);
                 setStage('transcript');
               }}
-              className="w-full bg-accent text-accent-fg font-mono text-[11px] uppercase tracking-wider py-4 flex items-center justify-center gap-2"
+              className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 flex items-center justify-center gap-2"
             >
               <StopCircle size={16} />
-              Stop &amp; process
+              Stop &amp; Process
             </button>
             <button
               onClick={() => {
                 speech.cancel();
                 setStage('idle');
               }}
-              className="font-mono text-[10px] uppercase tracking-wider text-muted hover:text-fg"
+              className="rounded-[8px] font-mono text-[12px] uppercase tracking-wider text-muted hover:text-fg"
             >
               Cancel
             </button>
           </div>
         )}
 
+        {/* Dimmed while recording: still in sight, not competing for it. */}
+        {stage === 'listening' && (
+          <>
+            <NeedsYourResponse dimmed />
+            <RecentUpdates dimmed />
+          </>
+        )}
+
         {stage === 'transcript' && (
           <div className="flex flex-col gap-3">
             <div>
-              <h1 className="text-[18px] text-fg">Check your transcript</h1>
-              <p className="text-[11px] text-muted mt-1 leading-relaxed">
+              <h1 className="text-[20px] text-fg">Check your transcript</h1>
+              <p className="text-[14px] text-muted mt-1 leading-relaxed">
                 Check this before sending — speech recognition can mishear
                 equipment numbers.
               </p>
@@ -646,14 +684,14 @@ export default function Field() {
               value={draftTranscript}
               onChange={(e) => setDraftTranscript(e.target.value)}
               rows={5}
-              className="w-full bg-raised border border-hair text-fg text-[14px] p-3 focus:outline-none focus:border-accent resize-none"
+              className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] p-3 focus:outline-none focus:border-accent resize-none"
             />
             <button
               onClick={() => send(draftTranscript)}
               disabled={!draftTranscript.trim()}
-              className="w-full bg-accent text-accent-fg font-mono text-[11px] uppercase tracking-wider py-4 disabled:opacity-50"
+              className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 disabled:opacity-50"
             >
-              Use this transcript
+              Use This Transcript
             </button>
             <button
               onClick={() => {
@@ -662,15 +700,35 @@ export default function Field() {
                 speech.start();
                 setStage('listening');
               }}
-              className="w-full border border-hair font-mono text-[10px] uppercase tracking-wider text-fg py-3 hover:border-strong"
+              className="rounded-[8px] w-full border border-hair font-mono text-[12px] uppercase tracking-wider text-fg py-3 hover:border-strong"
             >
-              Record again
+              Record Again
             </button>
+
+            <NeedsYourResponse dimmed />
+            <RecentUpdates dimmed title="My Recent Updates" />
           </div>
         )}
 
-        {(stage === 'conversation' || stage === 'card') && (
+        {(stage === 'conversation' || stage === 'ready' || stage === 'card') && (
           <>
+            {/* Without this there was no way out of a conversation: if the
+                agent stalled on a slot, idle was unreachable for the rest of
+                the session. */}
+            <div className="flex items-center justify-between border-b border-hair pb-2">
+              <span className="font-mono text-[12px] uppercase tracking-wider text-muted">
+                Data Entry Session
+              </span>
+              <button
+                onClick={resetSession}
+                aria-label="Close session"
+                className="rounded-[8px] flex items-center gap-1 text-muted hover:text-fg font-mono text-[11px] uppercase tracking-wider"
+              >
+                Close
+                <X size={14} />
+              </button>
+            </div>
+
             <div className="flex flex-col gap-4">
               {messages.map((m, i) => (
                 <div
@@ -680,14 +738,14 @@ export default function Field() {
                   }`}
                 >
                   <span
-                    className={`font-mono text-[9px] uppercase tracking-wider mb-1 ${
+                    className={`font-mono text-[11px] uppercase tracking-wider mb-1 ${
                       m.from === 'supervisor' ? 'text-muted' : 'text-accent'
                     }`}
                   >
                     {m.from === 'supervisor' ? 'Supervisor' : 'NAVIS Assistant'}
                   </span>
                   <div
-                    className={`max-w-[85%] border px-3 py-2 text-[13px] leading-relaxed ${
+                    className={`max-w-[85%] border px-3 py-2 text-[15px] leading-relaxed ${
                       m.from === 'supervisor'
                         ? 'border-hair bg-surface text-fg'
                         : 'border-hair bg-raised text-fg'
@@ -695,19 +753,19 @@ export default function Field() {
                   >
                     {m.text}
                   </div>
-                  <span className="font-mono text-[9px] text-muted mt-1">{m.at}</span>
+                  <span className="font-mono text-[11px] text-muted mt-1">{m.at}</span>
                 </div>
               ))}
 
               {/* Options for a closed-set question, in human labels. */}
               {turn?.choices && !thinking && stage === 'conversation' && (
-                <span className="text-[11px] text-muted -mt-2">
+                <span className="text-[14px] text-muted -mt-2">
                   {turn.choices}
                 </span>
               )}
 
               {thinking && (
-                <span className="font-mono text-[10px] text-muted">
+                <span className="font-mono text-[12px] text-muted">
                   NAVIS Assistant is speaking…
                 </span>
               )}
@@ -716,13 +774,36 @@ export default function Field() {
 
             {serverErrorBox}
 
-            {stage === 'card' && turn && (
-              <>
+            {stage === 'ready' && turn && (
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-1.5">
                   <Check size={12} className="text-ok" />
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-ok">
-                    Ready to draft
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-ok">
+                    READY TO DRAFT
                   </span>
+                </div>
+                <button
+                  onClick={() => setStage('card')}
+                  className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 flex items-center justify-center gap-2"
+                >
+                  Review Structured Update
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
+
+            {stage === 'card' && turn && (
+              <>
+                {/* The assistant hands the card over rather than it simply
+                    appearing. */}
+                <div className="flex flex-col items-start w-full">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-accent mb-1">
+                    NAVIS Assistant
+                  </span>
+                  <div className="max-w-[85%] border border-hair bg-raised px-3 py-2 text-[15px] leading-relaxed text-fg">
+                    Got it. I&rsquo;ve extracted the structured data from your
+                    update. Please review it below.
+                  </div>
                 </div>
                 <StructuredCard
                   slots={turn.slots}
@@ -751,7 +832,7 @@ export default function Field() {
                       speech.start();
                       setStage('listening');
                     }}
-                    className="w-full border border-hair py-3 font-mono text-[10px] uppercase tracking-wider text-fg flex items-center justify-center gap-2 hover:border-strong"
+                    className="rounded-[8px] w-full border border-hair py-3 font-mono text-[12px] uppercase tracking-wider text-fg flex items-center justify-center gap-2 hover:border-strong"
                   >
                     <Mic size={14} />
                     Answer by voice
@@ -765,97 +846,32 @@ export default function Field() {
         {stage === 'submitted' && (
           <div className="flex flex-col items-center text-center gap-3 py-8">
             <Check size={28} className="text-ok" />
-            <h1 className="text-[18px] text-fg">Update submitted</h1>
+            <h1 className="text-[20px] text-fg">Update submitted</h1>
             {reference && (
-              <p className="font-mono text-[10px] text-muted break-all">
+              <p className="font-mono text-[12px] text-muted break-all">
                 Report reference: {reference}
               </p>
             )}
-            <p className="text-[12px] text-fg">Sent for Planning Engineer review.</p>
-            <p className="text-[11px] text-muted">
+            <p className="text-[14px] text-fg">Sent for Planning Engineer review.</p>
+            <p className="text-[14px] text-muted">
               The project schedule has not been changed.
             </p>
             <button
               onClick={resetSession}
-              className="mt-2 border border-hair px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-fg hover:border-strong"
+              className="rounded-[8px] mt-2 border border-hair px-4 py-3 font-mono text-[12px] uppercase tracking-wider text-fg hover:border-strong"
             >
-              Return home
+              Return Home
             </button>
           </div>
         )}
 
-        {/* MY RECENT UPDATES — this supervisor's own submissions only. */}
-        {(stage === 'idle' || stage === 'submitted') && (
-          <section className="border border-hair mt-1">
-            <div className="px-3 py-2 border-b border-hair font-mono text-[9px] uppercase tracking-wider text-muted">
-              My recent updates
-            </div>
-            {queueError ? (
-              <div className="px-3 py-4 flex items-start gap-2">
-                <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
-                <span className="font-mono text-[10px] text-danger">
-                  {errorDetail(queueError)}
-                </span>
-              </div>
-            ) : queueLoading ? (
-              <div className="p-3 space-y-2 opacity-50">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-8 bg-raised animate-pulse" />
-                ))}
-              </div>
-            ) : myUpdates.length === 0 ? (
-              <div className="py-6 text-center text-[10px] text-muted leading-relaxed px-4">
-                Nothing submitted yet. Updates you send appear here with their
-                review status.
-              </div>
-            ) : (
-              <div className="flex flex-col">
-                {myUpdates.map((item) => (
-                  <div
-                    key={item.id}
-                    className="px-3 py-2.5 border-b border-hair last:border-0 flex flex-col gap-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-[12px] text-fg leading-snug">{item.raw_text}</span>
-                      <span
-                        className={`font-mono text-[9px] uppercase tracking-wider shrink-0 ${
-                          item.status === 'resolved'
-                            ? 'text-ok'
-                            : item.reason === 'no_match'
-                              ? 'text-warn'
-                              : 'text-muted'
-                        }`}
-                      >
-                        {item.status === 'resolved'
-                          ? 'Confirmed'
-                          : item.reason === 'no_match'
-                            ? 'Needs info'
-                            : 'Processing'}
-                      </span>
-                    </div>
-                    {/* The matched activity — his sentence became a real
-                        schedule activity, which is the point worth showing. */}
-                    {item.suggested_activity_id && (
-                      <span className="font-mono text-[10px] text-accent">
-                        {item.suggested_activity_id}
-                      </span>
-                    )}
-                    <span className="font-mono text-[9px] text-muted">
-                      {new Date(item.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <p className="px-3 py-2 border-t border-hair text-[10px] text-muted leading-relaxed">
-              Every submitted update requires Planning Engineer confirmation
-              before project data changes.
-            </p>
-          </section>
+        {stage === 'submitted' && (
+          <>
+            <NeedsYourResponse />
+            <RecentUpdates />
+          </>
         )}
+
       </main>
 
     </div>

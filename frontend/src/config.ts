@@ -22,6 +22,10 @@ export const SUPERVISOR = {
   name: 'Rajesh Kumar',
   initials: 'RK',
   role: 'Field Supervisor',
+  /** Static project context, not user data: there is no auth and no user
+   *  table, and the Profile screen in design/ shows both. */
+  employeeId: 'OIL-FS-014',
+  shift: 'Day · 07:00–17:00',
   /** Default discipline for this supervisor's work front. */
   discipline: 'piping' as Discipline,
 } as const;

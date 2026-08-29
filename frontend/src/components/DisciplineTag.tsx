@@ -29,7 +29,7 @@ export function DisciplineTag({ discipline }: DisciplineTagProps) {
 
   return (
     <span
-      className={`font-mono text-[9px] px-[4px] py-[1px] border border-current rounded-[2px] uppercase ${config.color}`}
+      className={`font-mono text-[11px] px-[4px] py-[1px] border border-current rounded-[4px] uppercase ${config.color}`}
     >
       {config.label}
     </span>

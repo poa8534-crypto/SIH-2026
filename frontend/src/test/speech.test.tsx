@@ -206,6 +206,8 @@ describe('structured card', () => {
     fireEvent.change(input, { target: { value: 'spool erection is done' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
+    // The card sits behind the deliberate READY TO DRAFT beat.
+    fireEvent.click(await screen.findByText(/Review Structured Update/));
     expect(await screen.findByText(/PIP-ERC-1034/)).toBeInTheDocument();
     expect(screen.getByText(/68\.2%/)).toBeInTheDocument();
     expect(screen.getByText(/6 of 18 nos/)).toBeInTheDocument();
@@ -218,6 +220,7 @@ describe('structured card', () => {
     const input = screen.getByPlaceholderText(/type your update/i);
     fireEvent.change(input, { target: { value: 'spool erection is done' } });
     fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.click(await screen.findByText(/Review Structured Update/));
     await screen.findByText(/PIP-ERC-1034/);
 
     expect(screen.queryByLabelText(/correct confidence/i)).toBeNull();
@@ -241,6 +244,7 @@ describe('structured card', () => {
     const input = screen.getByPlaceholderText(/type your update/i);
     fireEvent.change(input, { target: { value: 'something unusual happened' } });
     fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.click(await screen.findByText(/Review Structured Update/));
 
     expect(
       await screen.findByText('No matching activity — flagged for Planning Engineer')
