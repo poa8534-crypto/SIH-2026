@@ -255,11 +255,10 @@ describe('clarifications', () => {
 // ── Profile ─────────────────────────────────────────────────────────────────
 
 describe('profile', () => {
-  it('shows the seeded identity and no forbidden sections', () => {
+  it('shows the role and assignment, and no forbidden sections', () => {
     const { container } = wrap(<FieldProfile />);
     for (const value of [
-      'Rajesh Kumar', 'Field Supervisor', 'OIL Well-Site Duliajan',
-      'OIL-WSD-2026', 'Sector A · Digboi Well #4',
+      'Field Supervisor', 'OIL-WSD-2026', 'Sector A · Digboi Well #4',
       'English', 'Hindi', 'Assamese',
     ]) {
       // Several of these appear more than once now (a language is both a
@@ -270,9 +269,22 @@ describe('profile', () => {
     }
     const text = container.textContent ?? '';
     for (const banned of ['Crew', 'Workers', 'Offline', 'Last sync',
-                          'Pending', 'Draft', 'Notification']) {
+                          'Pending', 'Draft', 'Notification',
+                          // There is no authentication and no profile
+                          // endpoint, so no screen may name a person or
+                          // carry a made-up employee record.
+                          'Rajesh Kumar', 'OIL-FS-014']) {
       expect(text).not.toContain(banned);
     }
+  });
+
+  it('takes the project name from the schedule endpoint, not a constant', async () => {
+    vi.spyOn(api, 'getSchedule').mockResolvedValue({
+      project: 'Server Named Project', data_date: '2026-10-01',
+    } as never);
+    wrap(<FieldProfile />);
+    expect(await screen.findAllByText(/Server Named Project/)).not.toHaveLength(0);
+    expect(screen.getByText('2026-10-01')).toBeInTheDocument();
   });
 
   it('offers a way back to role selection', () => {

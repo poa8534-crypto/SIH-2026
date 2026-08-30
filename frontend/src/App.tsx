@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Monitor, Smartphone, LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useDevice } from './hooks/useDevice';
 import { useTheme } from './hooks/useTheme';
+import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
 import Reconcile from './pages/Reconcile';
 import Schedule from './pages/Schedule';
 import Ingest from './pages/Ingest';
@@ -15,6 +16,7 @@ import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
 import { FieldNav } from './components/FieldNav';
+import { FIELD_ROLE, PLANNER_ROLE } from './config';
 
 // Placeholder route components
 
@@ -22,6 +24,10 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
   const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+
+  // Whatever the current page published via usePageHeader. Null until the
+  // page's effect runs, and for any route that has not adopted the hook.
+  const [pageHeader, setPageHeader] = useState<PageHeader | null>(null);
 
   const {
     data: scheduleData,
@@ -41,13 +47,37 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
     { path: '/memory', label: 'Memory', icon: Database },
   ];
 
+  const projectName = scheduleData
+    ? scheduleData.project
+    : headerLoading
+      ? 'Loading…'
+      : 'Project unavailable';
+
+  // Falls back to the nav label so the bar is never blank on the first frame
+  // of a navigation, before the incoming page has published its own header.
+  const currentNav = navItems.find((item) => location.pathname.startsWith(item.path));
+  const title = pageHeader?.title ?? currentNav?.label ?? '';
+  const subtitle = pageHeader?.subtitle ?? '';
+
   return (
     <div className="flex h-screen w-full bg-surface text-muted overflow-hidden font-sans">
-      <div className="w-[200px] flex-shrink-0 border-r border-hair flex flex-col">
-        <div className="h-12 border-b border-hair flex items-center px-4 font-bold tracking-tighter text-fg uppercase text-[14px]">
-          EPC OPERATIONS
+      <div className="w-[240px] flex-shrink-0 border-r border-hair flex flex-col">
+        {/* Project identity. The name is the real one off /schedule. */}
+        <div className="px-4 pt-6 pb-4">
+          <h1
+            className={`text-[20px] font-semibold leading-7 truncate ${
+              headerError ? 'text-danger' : 'text-heading'
+            }`}
+            title={headerError ? errorDetail(headerError) : projectName}
+          >
+            {headerError ? 'Project unavailable' : projectName}
+          </h1>
+          <p className="text-[12px] font-medium leading-4 tracking-[0.05em] text-muted truncate">
+            {PLANNER_ROLE}
+          </p>
         </div>
-        <nav className="flex-1 py-2 overflow-y-auto">
+
+        <nav className="flex-1 overflow-y-auto flex flex-col gap-1 py-2">
           {navItems.map((item) => {
             const active = location.pathname.startsWith(item.path);
             const Icon = item.icon;
@@ -55,16 +85,19 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2 px-4 py-1.5 text-[14px] uppercase font-mono ${
-                  active ? 'bg-selected text-fg border-r-2 border-accent' : 'hover:text-fg hover:bg-raised'
+                className={`mx-3 flex items-center gap-3 rounded-[8px] px-3 py-2 text-[16px] font-medium leading-6 transition-colors ${
+                  active
+                    ? 'bg-accent text-accent-fg'
+                    : 'text-muted hover:bg-selected hover:text-fg'
                 }`}
               >
-                <div className={`w-2 h-2 border ${active ? 'border-accent' : 'border-strong'}`}></div>
+                <Icon size={20} strokeWidth={2} className="shrink-0" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
+
         <div className="p-4 border-t border-hair">
           <div className="text-[12px] font-mono uppercase mb-1 text-muted">Data Date</div>
           <div
@@ -73,7 +106,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           >
             {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
           </div>
-          
+
           <button
             onClick={() => setOverride('mobile')}
             className="rounded-[8px] mt-4 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
@@ -81,7 +114,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
             <Smartphone size={12} />
             Force Mobile View
           </button>
-          
+
           <button
             onClick={toggleTheme}
             className="rounded-[8px] mt-2 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
@@ -93,29 +126,42 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 bg-surface">
-        <header className="h-12 border-b border-hair flex items-center justify-between px-6">
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-fg uppercase font-bold text-[14px]">
-                {scheduleData ? scheduleData.project : headerLoading ? 'Loading…' : 'Project unavailable'}
+        <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between gap-6 px-6">
+          <div className="min-w-0">
+            <h2 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-heading truncate">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="text-[14px] leading-5 text-muted truncate">{subtitle}</p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {headerError && (
+              <span
+                className="font-mono text-[11px] text-danger max-w-[420px] truncate"
+                title={errorDetail(headerError)}
+              >
+                {errorDetail(headerError)}
               </span>
+            )}
+            <div className="flex rounded-[8px] border border-hair overflow-hidden">
+              <span className="px-3 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.05em] bg-accent text-accent-fg">
+                Planner
+              </span>
+              <button
+                onClick={() => setOverride('mobile')}
+                className="px-3 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.05em] text-muted hover:bg-selected hover:text-fg transition-colors"
+              >
+                Field
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-             {headerError && (
-               <span className="font-mono text-[11px] text-danger max-w-[420px] truncate" title={errorDetail(headerError)}>
-                 {errorDetail(headerError)}
-               </span>
-             )}
-             <div className="flex bg-raised p-0.5 rounded-[8px] border border-hair">
-               <div className="px-2 py-1 text-[11px] font-bold bg-accent text-accent-fg rounded-sm cursor-pointer">PLANNER</div>
-               <div className="px-2 py-1 text-[11px] font-bold text-muted hover:text-fg cursor-pointer" onClick={() => setOverride('mobile')}>FIELD</div>
-             </div>
-          </div>
         </header>
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+
+        <PageHeaderContext.Provider value={setPageHeader}>
+          <main className="flex-1 overflow-auto p-6">{children}</main>
+        </PageHeaderContext.Provider>
       </div>
     </div>
   );
@@ -124,34 +170,64 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 function MobileShell({ children }: { children: React.ReactNode }) {
   const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
+
+  // The same project identity the planner sidebar shows, off the same query
+  // key, so the two shells cannot name the project differently. There is no
+  // auth and no profile endpoint, so the second line is the role this surface
+  // is for — never a person.
+  const {
+    data: scheduleData,
+    isLoading: headerLoading,
+    error: headerError,
+  } = useQuery({
+    queryKey: ['schedule', 'header'],
+    queryFn: () => api.getSchedule(undefined, false),
+    retry: false,
+  });
+
+  const projectName =
+    headerError || !scheduleData
+      ? headerLoading
+        ? 'Loading…'
+        : 'Project unavailable'
+      : scheduleData.project;
   
   return (
     <div className="flex flex-col h-screen w-full bg-surface text-muted overflow-hidden font-sans">
-      <header className="h-12 border-b border-hair flex items-center justify-between px-4 bg-surface">
-        <span className="flex items-center gap-2">
-          <span className="w-6 h-6 bg-accent text-accent-fg flex items-center justify-center font-bold text-[14px]">
+      <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between px-4 bg-raised">
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="w-8 h-8 shrink-0 rounded-[8px] bg-accent text-accent-fg flex items-center justify-center font-semibold text-[16px]">
             N
           </span>
-          <span className="font-bold tracking-tighter text-fg uppercase text-[14px]">NAVIS</span>
+          <span className="flex flex-col min-w-0">
+            <span
+              className={`text-[16px] font-semibold leading-5 truncate ${
+                headerError ? 'text-danger' : 'text-heading'
+              }`}
+              title={headerError ? errorDetail(headerError) : projectName}
+            >
+              {projectName}
+            </span>
+            <span className="text-[12px] font-medium leading-4 tracking-[0.05em] text-muted truncate">
+              {FIELD_ROLE}
+            </span>
+          </span>
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={toggleTheme}
-            className="rounded-[8px] text-muted hover:text-fg p-1 transition-colors"
+            className="rounded-[8px] text-muted hover:bg-selected hover:text-accent p-2 transition-colors"
             title="Toggle Theme"
           >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button
             onClick={() => setOverride('desktop')}
-            className="rounded-[8px] text-muted hover:text-fg p-1 transition-colors"
+            className="rounded-[8px] text-muted hover:bg-selected hover:text-accent p-2 transition-colors"
             title="Force Desktop View"
           >
-            <Monitor size={16} />
+            <Monitor size={18} />
           </button>
-          <span className="w-7 h-7 border border-hair bg-raised text-fg flex items-center justify-center font-mono text-[12px]">
-            RK
-          </span>
         </div>
       </header>
       {/* min-h-0 so the field screen owns its own scrolling rather than

@@ -10,17 +10,10 @@ import {
 import { AlertCircle, AlertTriangle, Download, Lock, X } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
 import { AuditRecord, Discipline, IntegrityWarning, ScheduleActivity } from '../types';
+import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
-
-const DISCIPLINES: { value: Discipline; label: string }[] = [
-  { value: 'civil', label: 'Civil' },
-  { value: 'piping', label: 'Piping' },
-  { value: 'static_equipment', label: 'Static Equipment' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'instrumentation', label: 'Instrumentation' },
-  { value: 'hse', label: 'HSE' },
-];
+import { usePageHeader } from '../hooks/usePageHeader';
 
 /** Which audit fields represent an actual-date write, for the trail's header. */
 const FIELD_LABEL: Record<string, string> = {
@@ -45,15 +38,15 @@ function DateCell({ value, solid }: { value: string | null; solid: boolean }) {
 
 /**
  * Variance in days. Positive is late (behind the baseline) and reads danger;
- * negative is early and reads ok. Zero is on-plan and stays neutral rather
- * than green, so only genuine early finishes draw the eye.
+ * negative is early and reads --accent. Zero is on-plan and stays neutral, and
+ * nothing here is green — DESIGN.md rules green out for completion states.
  */
 function VarianceCell({ value }: { value: number | null }) {
   if (value === null || value === undefined) return null;
   if (value === 0) return <span className="font-mono text-muted">0d</span>;
   const late = value > 0;
   return (
-    <span className={`font-mono ${late ? 'text-danger' : 'text-ok'}`}>
+    <span className={`font-mono ${late ? 'text-danger' : 'text-accent'}`}>
       {late ? '+' : ''}
       {value}d
     </span>
@@ -87,7 +80,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
     return (
       <div className="space-y-2 opacity-50">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-14 bg-raised rounded animate-pulse" />
+          <div key={i} className="h-14 bg-selected rounded-[8px] animate-pulse" />
         ))}
       </div>
     );
@@ -95,7 +88,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (error) {
     return (
-      <div className="px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] flex items-start gap-2">
+      <div className="px-3 py-3 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] rounded-[10px] flex items-start gap-2">
         <AlertCircle size={12} className="mt-0.5 shrink-0" />
         {errorDetail(error)}
       </div>
@@ -104,7 +97,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-4 border border-hair bg-raised text-muted font-mono text-[12px] text-center">
+      <div className="p-4 border border-hair bg-raised rounded-[10px] text-muted font-mono text-[12px] text-center">
         No actual dates recorded yet.
       </div>
     );
@@ -130,7 +123,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
               />
 
               <div
-                className={`border bg-raised px-2.5 py-2 font-mono text-[12px] leading-relaxed ${
+                className={`border bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] leading-relaxed ${
                   isConflict ? 'border-danger-line' : 'border-hair'
                 }`}
               >
@@ -178,7 +171,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
                 {/* How it was applied */}
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                   <span
-                    className={`px-1 border text-[11px] uppercase ${
+                    className={`px-2 border rounded-full text-[11px] uppercase ${
                       rec.auto_applied
                         ? 'border-hair text-muted'
                         : 'border-accent text-accent'
@@ -247,7 +240,7 @@ function AuditDrawer({
 }) {
   return (
     <aside
-      className="absolute top-0 right-0 bottom-0 w-[480px] max-w-full bg-surface border-l border-hair flex flex-col z-30 shadow-2xl"
+      className="absolute top-0 right-0 bottom-0 w-[480px] max-w-full bg-raised border-l border-hair flex flex-col z-30"
       role="dialog"
       aria-label={`Audit trail for ${activity.activity_id}`}
     >
@@ -282,7 +275,7 @@ function AuditDrawer({
 
           {/* Planned against actual. Planned is read-only baseline and is
               rendered muted so the actual column is the one that reads. */}
-          <div className="mt-3 border border-hair">
+          <div className="mt-3 border border-hair rounded-[8px] overflow-hidden">
             <div className="grid grid-cols-3 border-b border-hair bg-raised">
               <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted" />
               <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted border-l border-hair">
@@ -350,7 +343,7 @@ function AuditDrawer({
                 activity.predecessors.map((p) => (
                   <span
                     key={p}
-                    className="font-mono text-[12px] text-fg border border-hair bg-raised px-1.5 py-0.5"
+                    className="font-mono text-[12px] text-accent bg-selected rounded-full px-2 py-0.5"
                   >
                     {p}
                   </span>
@@ -377,6 +370,7 @@ function AuditDrawer({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
+  usePageHeader('Schedule', 'The 120-activity baseline with every confirmed actual date.');
   const [discipline, setDiscipline] = useState<string>('');
   const [search, setSearch] = useState('');
   const [onlyActuals, setOnlyActuals] = useState(false);
@@ -568,7 +562,7 @@ export default function Schedule() {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
+          className="px-5 py-3 bg-accent text-accent-fg hover:bg-accent-hover font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -577,7 +571,7 @@ export default function Schedule() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-surface relative overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-[10px] relative overflow-hidden">
       {/* INTEGRITY BANNER */}
       {warnings.length > 0 && (
         <button
@@ -608,7 +602,7 @@ export default function Schedule() {
         <select
           value={discipline}
           onChange={(e) => setDiscipline(e.target.value)}
-          className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 focus:outline-none focus:border-accent"
+          className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 transition-colors focus:outline-none focus:border-accent"
           aria-label="Filter by discipline"
         >
           <option value="">All disciplines</option>
@@ -624,7 +618,7 @@ export default function Schedule() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search descriptions"
-          className="rounded-[8px] h-7 w-64 bg-raised border border-hair px-2 font-mono text-[12px] text-fg focus:outline-none focus:border-accent"
+          className="rounded-[8px] h-7 w-64 bg-raised border border-hair px-2 font-mono text-[12px] text-fg transition-colors focus:outline-none focus:border-accent"
         />
 
         <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[12px] text-muted hover:text-fg">
@@ -647,7 +641,7 @@ export default function Schedule() {
           <select
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as 'pmxml' | 'xer')}
-            className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 focus:outline-none focus:border-accent"
+            className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 transition-colors focus:outline-none focus:border-accent"
             aria-label="Export format"
           >
             <option value="pmxml">PMXML</option>
@@ -656,7 +650,7 @@ export default function Schedule() {
           <button
             onClick={handleExport}
             disabled={exportState.kind === 'busy'}
-            className="rounded-[8px] h-7 flex items-center gap-1.5 border border-hair px-3 font-mono text-[12px] uppercase text-muted hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
+            className="rounded-[8px] h-7 flex items-center gap-1.5 bg-raised border border-accent text-accent px-3 font-mono text-[12px] uppercase hover:bg-selected disabled:opacity-50 transition-colors"
           >
             <Download size={12} />
             {exportState.kind === 'busy' ? 'Exporting…' : 'Export'}
@@ -667,14 +661,14 @@ export default function Schedule() {
       {/* TABLE */}
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10 bg-surface">
+          <thead className="sticky top-0 z-10 bg-raised">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b border-hair">
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
                     style={{ width: h.getSize() }}
-                    className="text-left font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-2 py-2 whitespace-nowrap"
+                    className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -688,8 +682,8 @@ export default function Schedule() {
               Array.from({ length: 18 }).map((_, i) => (
                 <tr key={i} className="border-b border-hair">
                   {columns.map((_c, j) => (
-                    <td key={j} className="px-2 py-1.5">
-                      <div className="h-3 bg-raised rounded animate-pulse" />
+                    <td key={j} className="px-3 py-3">
+                      <div className="h-3 bg-selected rounded-[4px] animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -711,14 +705,14 @@ export default function Schedule() {
                     }}
                     onClick={() => setSelectedId(a.activity_id)}
                     className={`border-b border-hair cursor-pointer transition-colors ${
-                      isSelected ? 'bg-selected' : 'hover:bg-raised'
+                      isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
                     } ${hasActual ? 'text-fg' : 'text-muted opacity-55'}`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className="px-2 py-1.5 text-[14px] whitespace-nowrap max-w-0"
+                        className="px-3 py-3 text-[14px] whitespace-nowrap max-w-0"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>

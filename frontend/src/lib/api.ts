@@ -111,6 +111,31 @@ export const api = {
     });
   },
 
+  /**
+   * Planner side of the clarification loop: put a question back to the
+   * supervisor about one queued item. POST /review/{item_id}/clarify.
+   *
+   * It deliberately does not resolve the item — the server sets the question
+   * and clears any previous answer, and leaves the queue entry pending. Use
+   * resolveReview for the three actions that close an item.
+   *
+   * `asked_by` is optional and left unset by this app: ClarificationAskRequest
+   * defaults it server-side, and there is no authentication here, so there is
+   * no person for the client to name.
+   */
+  askClarification: (
+    itemId: string,
+    body: { question: string; asked_by?: string }
+  ): Promise<Clarification> => {
+    return fetchWithHandler(`/review/${encodeURIComponent(itemId)}/clarify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
   getSchedule: (discipline?: string, includeWarnings: boolean = true): Promise<ScheduleResponse> => {
     const params = new URLSearchParams();
     if (discipline) params.append('discipline', discipline);

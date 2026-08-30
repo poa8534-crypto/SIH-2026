@@ -34,6 +34,10 @@
   --accent-text: #0C0C0C; /* text on top of a solid --accent fill    */
   --accent-hover: #A6CBF0;
 
+  /* Page and section titles. Distinct from --text so headings read as a
+     level, and from --accent so a title is never mistaken for a link. */
+  --heading: #BFD8F2;     /*                  12.8:1 on --bg         */
+
   /* Evidence-span highlight */
   --mark-bg: #4A3C12;
   --mark-text: #FFE9A8;   /*                   9.1:1 on --mark-bg    */
@@ -72,6 +76,8 @@
   --accent-text: #FFFFFF;
   --accent-hover: #003F87;
 
+  --heading: #0B3B75;     /* Heading Blue, DESIGN.md   9.8:1 on --bg */
+
   --mark-bg: #FFD972;
   --mark-text: #4A3200;
 
@@ -109,6 +115,7 @@
   --accent: #0056B3;
   --accent-text: #FFFFFF;
   --accent-hover: #003F87;
+  --heading: #0B3B75;
   --mark-bg: #FFD972;
   --mark-text: #4A3200;
   --ok: #0056B3;
@@ -144,6 +151,7 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-text);
   --color-accent-hover: var(--accent-hover);
+  --color-heading: var(--heading);
 
   --color-mark: var(--mark-bg);
   --color-mark-fg: var(--mark-text);

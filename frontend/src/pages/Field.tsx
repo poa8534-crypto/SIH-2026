@@ -6,18 +6,21 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Cpu,
+  MapPin,
   Mic,
   MicOff,
   Pencil,
   Send,
   ShieldCheck,
   StopCircle,
+  WifiOff,
   X,
 } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
 import { AgentTurnResponse, Discipline, ReviewItem, SlotState } from '../types';
 import { SPEECH_LANGUAGES, useSpeech } from '../hooks/useSpeech';
-import { PROJECT, SUPERVISOR, WORK_FRONTS, agentContext } from '../config';
+import { DISCIPLINES, SUPERVISOR, WORK_FRONTS, agentContext } from '../config';
 import { NeedsYourResponse, RecentUpdates } from '../components/FieldContextBlocks';
 
 /**
@@ -50,17 +53,6 @@ interface Message {
 }
 
 
-
-// Substituted for the mockup's "Crew" / "Workers on site": no crew entity
-// exists in this system, and discipline is a real field the extractor reads.
-const DISCIPLINE_OPTIONS: { value: Discipline; label: string }[] = [
-  { value: 'civil', label: 'Civil' },
-  { value: 'piping', label: 'Piping' },
-  { value: 'static_equipment', label: 'Static Equipment' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'instrumentation', label: 'Instrumentation' },
-  { value: 'hse', label: 'HSE' },
-];
 
 const STATUS_LABEL: Record<string, string> = {
   completed: 'Finished',
@@ -168,38 +160,42 @@ function StructuredCard({
   ];
 
   return (
-    <section className="border border-hair bg-raised">
-      <div className="px-5 py-3 border-b border-hair">
-        <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
+    <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+      <div className="px-5 py-4 border-b border-hair flex items-center gap-2">
+        <Cpu size={18} className="text-accent shrink-0" />
+        <h2 className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
           STRUCTURED UPDATE
         </h2>
       </div>
 
+      {/* One labelled row per extracted slot. Each is its own tap target for
+          a correction, which goes back through the agent as another turn. */}
       <div className="flex flex-col">
         {rows.map((r) => (
           <div
             key={r.key}
-            className="flex justify-between items-start px-4 py-3 border-b border-hair"
+            className="flex justify-between items-start gap-4 px-5 py-4 border-b border-hair"
           >
-            <div className="flex flex-col gap-1 pr-4 min-w-0">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
                 {r.label}
               </span>
-              <span className="text-[15px] text-fg break-words">{r.value}</span>
+              <span className="text-[16px] leading-6 text-fg break-words">{r.value}</span>
             </div>
             <button
               onClick={() => onEdit(r.key)}
               aria-label={`Correct ${r.label.toLowerCase()}`}
-              className="rounded-[8px] p-1 text-accent hover:bg-selected shrink-0 mt-1"
+              className="rounded-[8px] p-2 text-accent hover:bg-selected shrink-0 transition-colors"
             >
-              <Pencil size={14} />
+              <Pencil size={16} />
             </button>
           </div>
         ))}
 
         {slots.quantity_over_planned && (
-          <div className="px-5 py-3 border-b border-hair">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-warn">
+          <div className="px-5 py-4 border-b border-hair flex items-start gap-2">
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-warn" />
+            <span className="text-[14px] leading-5 text-warn">
               Completed exceeds the planned total — the Planning Engineer will
               check this
             </span>
@@ -208,33 +204,33 @@ function StructuredCard({
 
         {/* No pencil: confidence is computed by the matching engine and is not
             the supervisor's to change. */}
-        <div className="flex justify-between items-start px-4 py-3">
-          <div className="flex flex-col gap-1 pr-4">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+        <div className="flex justify-between items-start gap-4 px-5 py-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
               Confidence
             </span>
-            <span className="text-[15px] text-fg font-mono">
+            <span className="text-[16px] leading-6 font-mono text-accent">
               {(confidence * 100).toFixed(1)}%
             </span>
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted mt-1 shrink-0">
+          <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted mt-1 shrink-0">
             {outcome === 'AUTO_LINK' ? 'strong match' : 'planner confirms'}
           </span>
         </div>
       </div>
 
-      <div className="p-4 border-t border-hair flex flex-col gap-3">
+      <div className="px-5 py-5 border-t border-hair bg-surface flex flex-col gap-3">
         <button
           onClick={onSubmit}
           disabled={submitting}
-          className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 disabled:opacity-50"
+          className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover disabled:opacity-50 transition-colors"
         >
           {submitting ? 'Submitting…' : 'CONFIRM & SUBMIT'}
         </button>
         <button
           onClick={onCancel}
           disabled={submitting}
-          className="rounded-[8px] self-center font-mono text-[12px] uppercase tracking-wider text-muted hover:text-fg disabled:opacity-50"
+          className="rounded-[8px] w-full text-[16px] font-medium text-accent px-5 py-3 hover:bg-selected disabled:opacity-50 transition-colors"
         >
           Cancel
         </button>
@@ -386,33 +382,93 @@ export default function Field() {
 
   const micBlocked = !speech.supported || speech.failure === 'denied';
 
+  /**
+   * The agent returns a closed set as one human sentence — "Finished, In
+   * progress, Delayed, Blocked, or Not started". Splitting it into chips is
+   * presentation only: a chip sends exactly the word the supervisor would
+   * otherwise have typed, through the same POST /agent/turn.
+   */
+  const suggestions = useMemo<string[]>(() => {
+    if (stage !== 'conversation' || !turn) return [];
+    const fromServer = (turn.choices ?? '')
+      .replace(/,?\s+or\s+/gi, ', ')
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    if (fromServer.length > 0) return fromServer;
+    // The date slot has no server-side set, but these two cover most reports
+    // and the slot parser already understands both words.
+    return turn.pending_slots.includes('date') ? ['Today', 'Yesterday'] : [];
+  }, [stage, turn]);
+
+  /** The one open question: the last thing the assistant asked. */
+  const currentQuestion = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].from === 'assistant') return messages[i].text;
+    }
+    return null;
+  }, [messages]);
+
+  /** Echoed under the question so the answer being corrected stays in view. */
+  const lastSaid = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].from === 'supervisor') return messages[i].text;
+    }
+    return null;
+  }, [messages]);
+
+  /**
+   * Slots already filled, as read-only chips. This is what replaces scrolling
+   * back through a transcript to find out what the agent thinks it has.
+   */
+  const collected = useMemo<{ label: string; value: string }[]>(() => {
+    const slots = turn?.slots;
+    if (!slots) return [];
+    const out: { label: string; value: string }[] = [];
+    if (slots.activity_id) out.push({ label: 'Activity', value: slots.activity_id });
+    if (turn.discipline_label)
+      out.push({ label: 'Discipline', value: turn.discipline_label });
+    if (slots.location) out.push({ label: 'Location', value: slots.location });
+    if (turn.status_label) out.push({ label: 'Status', value: turn.status_label });
+    if (slots.date) out.push({ label: 'Date', value: longDate(slots.date) });
+    if (slots.quantity !== null) {
+      out.push({
+        label: 'Quantity',
+        value: `${slots.quantity}${
+          slots.planned_quantity !== null ? ` of ${slots.planned_quantity}` : ''
+        }`,
+      });
+    }
+    return out;
+  }, [turn]);
+
   // ── Sub-views ─────────────────────────────────────────────────────────────
 
   const contextBlock = (
-    <div className="border border-hair bg-raised">
+    <div className="border border-hair bg-raised rounded-[10px] overflow-hidden">
       <button
         onClick={() => setContextOpen((v) => !v)}
-        className="rounded-[8px] w-full px-3 py-2 flex items-center justify-between"
+        className="w-full px-5 py-4 flex items-center justify-between hover:bg-selected transition-colors"
       >
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+        <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
           Current Context
         </span>
         {contextOpen ? (
-          <ChevronUp size={14} className="text-muted" />
+          <ChevronUp size={18} className="text-accent" />
         ) : (
-          <ChevronDown size={14} className="text-muted" />
+          <ChevronDown size={18} className="text-accent" />
         )}
       </button>
       {contextOpen ? (
-        <div className="px-3 pb-3 flex flex-col gap-2 border-t border-hair pt-2">
-          <label className="flex flex-col gap-1">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+        <div className="px-5 pb-5 pt-4 flex flex-col gap-4 border-t border-hair">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
               Work front
             </span>
             <select
               value={workFront}
               onChange={(e) => setWorkFront(e.target.value)}
-              className="rounded-[8px] bg-surface border border-hair text-fg text-[14px] px-2 py-1.5"
+              className="rounded-[8px] bg-raised border border-hair text-fg text-[16px] px-4 py-3 transition-colors focus:outline-none focus:border-accent"
             >
               {WORK_FRONTS.map((w) => (
                 <option key={w} value={w}>
@@ -421,16 +477,16 @@ export default function Field() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
               Discipline
             </span>
             <select
               value={discipline}
               onChange={(e) => setDiscipline(e.target.value as Discipline)}
-              className="rounded-[8px] bg-surface border border-hair text-fg text-[14px] px-2 py-1.5"
+              className="rounded-[8px] bg-raised border border-hair text-fg text-[16px] px-4 py-3 transition-colors focus:outline-none focus:border-accent"
             >
-              {DISCIPLINE_OPTIONS.map((d) => (
+              {DISCIPLINES.map((d) => (
                 <option key={d.value} value={d.value}>
                   {d.label}
                 </option>
@@ -439,15 +495,15 @@ export default function Field() {
           </label>
         </div>
       ) : (
-        <div className="px-3 pb-2 flex flex-col gap-0.5">
-          <div className="flex justify-between text-[14px]">
-            <span className="text-muted">Work front:</span>
-            <span className="text-fg">{workFront}</span>
+        <div className="px-5 pb-4 pt-4 flex flex-col gap-2 border-t border-hair">
+          <div className="flex justify-between gap-3 text-[16px]">
+            <span className="text-muted">Work front</span>
+            <span className="text-fg text-right">{workFront}</span>
           </div>
-          <div className="flex justify-between text-[14px]">
-            <span className="text-muted">Discipline:</span>
-            <span className="text-fg">
-              {DISCIPLINE_OPTIONS.find((d) => d.value === discipline)?.label}
+          <div className="flex justify-between gap-3 text-[16px]">
+            <span className="text-muted">Discipline</span>
+            <span className="text-fg text-right">
+              {DISCIPLINES.find((d) => d.value === discipline)?.label}
             </span>
           </div>
         </div>
@@ -465,53 +521,69 @@ export default function Field() {
           if (e.key === 'Enter') send(typed);
         }}
         placeholder={grow ? 'Type your update' : 'Or type your update'}
-        className={`rounded-[8px] w-full bg-surface border border-hair text-fg placeholder:text-muted px-3 pr-10 focus:outline-none focus:border-accent ${
-          grow ? 'py-4 text-[16px]' : 'py-3 text-[15px]'
-        }`}
+        className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] placeholder:text-muted px-4 pr-12 py-3 transition-colors focus:outline-none focus:border-accent"
       />
       <button
         onClick={() => send(typed)}
         disabled={!typed.trim() || thinking}
         aria-label="Send"
-        className="rounded-[8px] absolute right-2 p-1 text-accent disabled:opacity-40"
+        className="rounded-[8px] absolute right-2 p-2 text-accent hover:bg-selected disabled:opacity-40 transition-colors"
       >
-        <Send size={16} />
+        <Send size={18} />
       </button>
     </div>
   );
 
+  /*
+   * The four states below are deliberately unalike. Collapsing them into one
+   * "something went wrong" panel would hide the only thing that matters to a
+   * supervisor holding a phone on site: whether the session is still alive,
+   * and whether anything reached the server.
+   */
+
+  /** No microphone at all. Quiet and neutral — typing is the whole answer. */
   const micUnavailableBox = (
-    <div className="border border-hair bg-raised p-4 flex flex-col items-center gap-1.5 text-center">
-      <MicOff size={20} className="text-muted" />
-      <span className="text-[15px] text-fg">Microphone unavailable</span>
-      <span className="text-[14px] text-muted">Typing works just as well.</span>
+    <div className="border border-hair bg-raised rounded-[10px] px-5 py-6 flex flex-col items-center gap-2 text-center">
+      <span className="w-16 h-16 rounded-full bg-surface border border-hair flex items-center justify-center">
+        <MicOff size={26} className="text-muted" />
+      </span>
+      <span className="text-[20px] font-semibold text-heading mt-1">
+        Microphone unavailable
+      </span>
+      <span className="text-[16px] text-muted">Typing works just as well.</span>
     </div>
   );
 
+  /** The mic worked, the recording did not. The session is still live. */
   const notUnderstoodBox = (
-    <div className="border border-hair bg-raised p-4 flex flex-col items-center gap-2 text-center">
-      {/* The session is still live; only the last recording failed. */}
-      <span className="self-end flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-ok">
-        <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+    <div className="border border-warn bg-raised rounded-[10px] px-5 py-5 flex flex-col items-center gap-3 text-center">
+      <span className="self-end flex items-center gap-1.5 rounded-full bg-selected px-3 py-1 text-[12px] font-medium uppercase tracking-[0.05em] text-accent">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
         Active
       </span>
-      <MicOff size={20} className="text-muted" />
-      <span className="text-[15px] text-fg">We couldn&rsquo;t understand that recording</span>
-      <span className="text-[14px] text-muted">Try speaking again, or type your response.</span>
-      <div className="flex gap-2 mt-1">
+      <span className="w-16 h-16 rounded-full bg-selected flex items-center justify-center">
+        <MicOff size={26} className="text-warn" />
+      </span>
+      <span className="text-[20px] font-semibold leading-7 text-heading">
+        We couldn&rsquo;t understand that recording
+      </span>
+      <span className="text-[16px] text-muted">
+        Try speaking again, or type your response.
+      </span>
+      <div className="w-full flex flex-col gap-2 mt-1">
         <button
           onClick={() => {
             speech.clearFailure();
             speech.start();
             setStage('listening');
           }}
-          className="rounded-[8px] border border-hair px-3 py-2 font-mono text-[12px] uppercase tracking-wider text-fg hover:border-strong"
+          className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
         >
           Record Again
         </button>
         <button
           onClick={() => speech.clearFailure()}
-          className="rounded-[8px] border border-accent px-3 py-2 font-mono text-[12px] uppercase tracking-wider text-accent"
+          className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
         >
           Type Response
         </button>
@@ -519,22 +591,22 @@ export default function Field() {
     </div>
   );
 
+  /** The server never answered. Nothing was written, and his text is kept. */
   const serverErrorBox = serverError && (
-    <div className="border border-danger-line bg-danger-bg p-4 flex flex-col gap-2">
-      <div className="flex items-start gap-2">
-        <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
-        <div className="flex flex-col gap-0.5">
-          <span className="font-mono text-[12px] text-danger">
-            Could not reach the server — try again
-          </span>
-          <span className="font-mono text-[12px] text-danger opacity-80">
-            This update was not saved. {serverError}
-          </span>
-        </div>
-      </div>
+    <div className="border border-danger-line bg-danger-bg rounded-[10px] px-5 py-5 flex flex-col items-center gap-3 text-center">
+      <span className="w-16 h-16 rounded-full bg-raised border border-danger-line flex items-center justify-center">
+        <WifiOff size={26} className="text-danger" />
+      </span>
+      <span className="text-[20px] font-semibold leading-7 text-danger">
+        Could not reach the server — try again
+      </span>
+      <span className="text-[16px] text-danger">This update was not saved.</span>
+      <span className="font-mono text-[12px] text-danger opacity-80 break-all">
+        {serverError}
+      </span>
       <button
         onClick={() => send(typed)}
-        className="rounded-[8px] self-start border border-danger-line px-3 py-1.5 font-mono text-[12px] uppercase tracking-wider text-danger"
+        className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
       >
         Retry
       </button>
@@ -546,17 +618,20 @@ export default function Field() {
   return (
     <div className="flex flex-col h-full w-full bg-surface overflow-hidden">
       {/* Context sub-header */}
-      <div className="shrink-0 px-4 py-1.5 bg-raised border-b border-hair flex items-center justify-between">
-        <span className="font-mono text-[12px] text-muted">{workFront}</span>
-        <div className="flex items-center gap-1">
+      <div className="shrink-0 px-4 py-2 bg-raised border-b border-hair flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <MapPin size={14} className="text-muted shrink-0" />
+          <span className="text-[14px] text-muted truncate">{workFront}</span>
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
           {SPEECH_LANGUAGES.map((l) => (
             <button
               key={l.code}
               onClick={() => speech.setLang(l.code)}
-              className={`rounded-[8px] font-mono text-[12px] px-1.5 py-0.5 border ${
+              className={`rounded-full text-[12px] font-medium px-3 py-1 border transition-colors ${
                 speech.lang === l.code
-                  ? 'border-accent text-accent'
-                  : 'border-transparent text-muted'
+                  ? 'border-accent bg-selected text-accent'
+                  : 'border-transparent text-muted hover:bg-selected'
               }`}
             >
               {l.label}
@@ -569,8 +644,12 @@ export default function Field() {
         {stage === 'idle' && (
           <>
             <div>
-              <h1 className="text-[24px] text-fg">Good afternoon, {SUPERVISOR.name.split(' ')[0]}</h1>
-              <p className="text-[14px] text-muted mt-0.5">
+              {/* No auth and no profile endpoint: the app does not know who
+                  is holding the phone, so it does not pretend to. */}
+              <h1 className="text-[24px] font-semibold leading-8 text-heading">
+                Report an update
+              </h1>
+              <p className="text-[16px] text-muted mt-1 leading-6">
                 Report progress for the work fronts you supervise.
               </p>
             </div>
@@ -580,20 +659,25 @@ export default function Field() {
             ) : speech.failure === 'no-speech' ? (
               notUnderstoodBox
             ) : (
+              /* The one thing this screen is for. The mic itself is a 96px
+                 circular primary fill, centred; the whole card is the tap
+                 target so it stays reachable with gloves on. */
               <button
                 onClick={() => {
                   speech.clearFailure();
                   speech.start();
                   setStage('listening');
                 }}
-                className="rounded-[8px] w-full bg-accent text-accent-fg p-8 flex flex-col items-center justify-center gap-4 active:opacity-90"
+                className="group border border-hair bg-raised rounded-[10px] px-5 py-8 flex flex-col items-center gap-5 text-center hover:bg-selected transition-colors"
               >
-                <span className="w-16 h-16 border border-current/40 flex items-center justify-center">
-                  <Mic size={28} />
+                <span className="w-24 h-24 rounded-full bg-accent text-accent-fg flex items-center justify-center group-hover:bg-accent-hover group-active:scale-95 transition-all">
+                  <Mic size={36} />
                 </span>
-                <span className="flex flex-col items-center gap-0.5">
-                  <span className="text-[20px]">Tap &amp; Speak</span>
-                  <span className="text-[14px] opacity-90">
+                <span className="flex flex-col items-center gap-1">
+                  <span className="text-[20px] font-semibold text-heading">
+                    Tap &amp; Speak
+                  </span>
+                  <span className="text-[16px] text-muted">
                     Describe what happened on site
                   </span>
                 </span>
@@ -605,8 +689,8 @@ export default function Field() {
             {contextBlock}
             <NeedsYourResponse />
             <RecentUpdates />
-            <p className="flex items-start gap-1.5 text-[12px] text-muted leading-relaxed">
-              <ShieldCheck size={12} className="mt-px shrink-0" />
+            <p className="flex items-start gap-2 text-[12px] text-muted leading-relaxed">
+              <ShieldCheck size={14} className="mt-px shrink-0" />
               Every submitted update requires Planning Engineer confirmation
               before project data changes.
             </p>
@@ -614,29 +698,36 @@ export default function Field() {
         )}
 
         {stage === 'listening' && (
-          <div className="border border-hair bg-raised p-4 flex flex-col items-center gap-3">
+          <div className="relative border border-hair bg-raised rounded-[10px] overflow-hidden px-5 py-5 flex flex-col items-center gap-4">
+            {/* Accent rule across the top: this panel is the live one. */}
+            <span className="absolute top-0 left-0 w-full h-1 bg-accent" aria-hidden />
+
             <div className="w-full flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-danger rounded-full animate-pulse" />
-                <span className="font-mono text-[12px] uppercase tracking-wider text-danger">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-danger rounded-full animate-pulse" />
+                <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-danger">
                   Listening
                 </span>
               </span>
-              <span className="font-mono text-[18px] text-fg">{mmss(speech.elapsed)}</span>
+              <span className="font-mono text-[20px] font-semibold text-accent">
+                {mmss(speech.elapsed)}
+              </span>
             </div>
 
             <Waveform />
 
-            <div className="min-h-[80px] flex flex-col items-center justify-center text-center w-full gap-1">
-              <p className="text-[20px] text-fg leading-snug">
-                {speech.transcript ? `“${speech.transcript}”` : (
-                  <span className="text-muted text-[15px]">Speak now…</span>
+            <div className="min-h-[80px] flex flex-col items-center justify-center text-center w-full gap-1.5">
+              <p className="text-[20px] leading-7 text-fg">
+                {speech.transcript ? (
+                  `“${speech.transcript}”`
+                ) : (
+                  <span className="text-muted text-[16px]">Speak now…</span>
                 )}
               </p>
               {/* A pause does not end the recording, so say so rather than
                   leaving him wondering whether it stopped. */}
               {speech.silent && (
-                <span className="font-mono text-[12px] text-muted">listening…</span>
+                <span className="text-[14px] text-muted">still listening…</span>
               )}
             </div>
 
@@ -646,9 +737,9 @@ export default function Field() {
                 setDraftTranscript(speech.transcript);
                 setStage('transcript');
               }}
-              className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 flex items-center justify-center gap-2"
+              className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover flex items-center justify-center gap-2 transition-colors"
             >
-              <StopCircle size={16} />
+              <StopCircle size={18} />
               Stop &amp; Process
             </button>
             <button
@@ -656,7 +747,7 @@ export default function Field() {
                 speech.cancel();
                 setStage('idle');
               }}
-              className="rounded-[8px] font-mono text-[12px] uppercase tracking-wider text-muted hover:text-fg"
+              className="rounded-[8px] w-full text-[16px] font-medium text-accent px-5 py-2 hover:bg-selected transition-colors"
             >
               Cancel
             </button>
@@ -672,42 +763,46 @@ export default function Field() {
         )}
 
         {stage === 'transcript' && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <h1 className="text-[20px] text-fg">Check your transcript</h1>
-              <p className="text-[14px] text-muted mt-1 leading-relaxed">
-                Check this before sending — speech recognition can mishear
-                equipment numbers.
-              </p>
+          <>
+            <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
+              <div>
+                <h1 className="text-[20px] font-semibold text-heading">
+                  Check your transcript
+                </h1>
+                <p className="text-[16px] text-muted mt-1 leading-6">
+                  Check this before sending — speech recognition can mishear
+                  equipment numbers.
+                </p>
+              </div>
+              <textarea
+                value={draftTranscript}
+                onChange={(e) => setDraftTranscript(e.target.value)}
+                rows={5}
+                className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] leading-6 p-4 transition-colors focus:outline-none focus:border-accent resize-none"
+              />
+              <button
+                onClick={() => send(draftTranscript)}
+                disabled={!draftTranscript.trim()}
+                className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover disabled:opacity-50 transition-colors"
+              >
+                Use This Transcript
+              </button>
+              <button
+                onClick={() => {
+                  setDraftTranscript('');
+                  speech.clearFailure();
+                  speech.start();
+                  setStage('listening');
+                }}
+                className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
+              >
+                Record Again
+              </button>
             </div>
-            <textarea
-              value={draftTranscript}
-              onChange={(e) => setDraftTranscript(e.target.value)}
-              rows={5}
-              className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] p-3 focus:outline-none focus:border-accent resize-none"
-            />
-            <button
-              onClick={() => send(draftTranscript)}
-              disabled={!draftTranscript.trim()}
-              className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 disabled:opacity-50"
-            >
-              Use This Transcript
-            </button>
-            <button
-              onClick={() => {
-                setDraftTranscript('');
-                speech.clearFailure();
-                speech.start();
-                setStage('listening');
-              }}
-              className="rounded-[8px] w-full border border-hair font-mono text-[12px] uppercase tracking-wider text-fg py-3 hover:border-strong"
-            >
-              Record Again
-            </button>
 
             <NeedsYourResponse dimmed />
             <RecentUpdates dimmed title="My Recent Updates" />
-          </div>
+          </>
         )}
 
         {(stage === 'conversation' || stage === 'ready' || stage === 'card') && (
@@ -715,107 +810,132 @@ export default function Field() {
             {/* Without this there was no way out of a conversation: if the
                 agent stalled on a slot, idle was unreachable for the rest of
                 the session. */}
-            <div className="flex items-center justify-between border-b border-hair pb-2">
-              <span className="font-mono text-[12px] uppercase tracking-wider text-muted">
+            <div className="flex items-center justify-between border-b border-hair pb-3">
+              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
                 Data Entry Session
               </span>
               <button
                 onClick={resetSession}
                 aria-label="Close session"
-                className="rounded-[8px] flex items-center gap-1 text-muted hover:text-fg font-mono text-[11px] uppercase tracking-wider"
+                className="rounded-[8px] flex items-center gap-1 px-2 py-1 text-[12px] font-medium uppercase tracking-[0.05em] text-accent hover:bg-selected transition-colors"
               >
                 Close
                 <X size={14} />
               </button>
             </div>
 
-            <div className="flex flex-col gap-4">
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col ${
-                    m.from === 'supervisor' ? 'items-end' : 'items-start'
-                  }`}
-                >
+            {/* What the agent has captured so far, as read-only chips, so the
+                filled slots are visible without scrolling back through talk. */}
+            {stage === 'conversation' && collected.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {collected.map((c) => (
                   <span
-                    className={`font-mono text-[11px] uppercase tracking-wider mb-1 ${
-                      m.from === 'supervisor' ? 'text-muted' : 'text-accent'
-                    }`}
+                    key={c.label}
+                    className="rounded-full bg-selected text-accent px-3 py-1 text-[12px] font-medium"
                   >
-                    {m.from === 'supervisor' ? 'Supervisor' : 'NAVIS Assistant'}
+                    <span className="uppercase tracking-[0.05em] opacity-80">
+                      {c.label}
+                    </span>{' '}
+                    {c.value}
                   </span>
-                  <div
-                    className={`max-w-[85%] border px-3 py-2 text-[15px] leading-relaxed ${
-                      m.from === 'supervisor'
-                        ? 'border-hair bg-surface text-fg'
-                        : 'border-hair bg-raised text-fg'
-                    }`}
-                  >
-                    {m.text}
+                ))}
+              </div>
+            )}
+
+            {stage === 'conversation' && lastSaid && (
+              <div className="flex flex-col gap-1">
+                <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+                  Supervisor
+                </span>
+                <p className="text-[16px] leading-6 text-fg">{lastSaid}</p>
+              </div>
+            )}
+
+            {/* One slot prompt at a time, with the closed set the agent
+                returned rendered as tappable chips. A supervisor answering on
+                site needs the open question, not a scrollback of the exchange. */}
+            {stage === 'conversation' && currentQuestion && !thinking && (
+              <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
+                <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
+                  <Cpu size={14} />
+                  NAVIS Assistant
+                </span>
+                <p className="text-[20px] leading-7 font-semibold text-heading">
+                  {currentQuestion}
+                </p>
+                {suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((sug) => (
+                      <button
+                        key={sug}
+                        onClick={() => send(sug)}
+                        disabled={thinking}
+                        className="rounded-full border border-accent bg-raised text-accent text-[16px] px-4 py-2 hover:bg-selected disabled:opacity-50 transition-colors"
+                      >
+                        {sug}
+                      </button>
+                    ))}
                   </div>
-                  <span className="font-mono text-[11px] text-muted mt-1">{m.at}</span>
-                </div>
-              ))}
+                )}
+              </div>
+            )}
 
-              {/* Options for a closed-set question, in human labels. */}
-              {turn?.choices && !thinking && stage === 'conversation' && (
-                <span className="text-[14px] text-muted -mt-2">
-                  {turn.choices}
+            {thinking && (
+              <div className="border border-hair bg-raised rounded-[10px] px-5 py-4 flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+                <span className="text-[16px] text-muted">
+                  NAVIS Assistant is thinking…
                 </span>
-              )}
-
-              {thinking && (
-                <span className="font-mono text-[12px] text-muted">
-                  NAVIS Assistant is speaking…
-                </span>
-              )}
-              <div ref={threadEnd} />
-            </div>
+              </div>
+            )}
+            <div ref={threadEnd} />
 
             {serverErrorBox}
 
             {stage === 'ready' && turn && (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-1.5">
-                  <Check size={12} className="text-ok" />
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-ok">
+              <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
+                <span className="flex items-center gap-2">
+                  <Check size={16} className="text-accent" />
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
                     READY TO DRAFT
                   </span>
-                </div>
+                </span>
+                <p className="text-[16px] leading-6 text-fg">
+                  I have enough to prepare the update.
+                </p>
                 <button
                   onClick={() => setStage('card')}
-                  className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[14px] uppercase tracking-wider py-4 flex items-center justify-center gap-2"
+                  className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover flex items-center justify-center gap-2 transition-colors"
                 >
                   Review Structured Update
-                  <ArrowRight size={14} />
+                  <ArrowRight size={18} />
                 </button>
               </div>
             )}
 
             {stage === 'card' && turn && (
               <>
-                {/* The assistant hands the card over rather than it simply
-                    appearing. */}
-                <div className="flex flex-col items-start w-full">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-accent mb-1">
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
+                    <Cpu size={14} />
                     NAVIS Assistant
                   </span>
-                  <div className="max-w-[85%] border border-hair bg-raised px-3 py-2 text-[15px] leading-relaxed text-fg">
+                  <p className="text-[16px] leading-6 text-fg">
                     Got it. I&rsquo;ve extracted the structured data from your
                     update. Please review it below.
-                  </div>
+                  </p>
                 </div>
                 <StructuredCard
-                  slots={turn.slots}
-                  confidence={turn.confidence}
-                  outcome={turn.match_outcome}
-                  submitting={submitting}
-                  onEdit={editRow}
-                  onSubmit={async () => {
-                    setSubmitting(true);
-                    await send('', { confirm: true });
-                    setSubmitting(false);
-                  }}
+                slots={turn.slots}
+                confidence={turn.confidence}
+                outcome={turn.match_outcome}
+                submitting={submitting}
+                onEdit={editRow}
+                onSubmit={async () => {
+                  setSubmitting(true);
+                  await send('', { confirm: true });
+                  setSubmitting(false);
+                }}
                   onCancel={resetSession}
                 />
               </>
@@ -824,17 +944,18 @@ export default function Field() {
             {stage === 'conversation' && (
               <div className="flex flex-col gap-2">
                 {speech.failure === 'no-speech' && notUnderstoodBox}
+                {micBlocked && micUnavailableBox}
                 {textInput(micBlocked)}
-                {!micBlocked && (
+                {!micBlocked && speech.failure !== 'no-speech' && (
                   <button
                     onClick={() => {
                       speech.clearFailure();
                       speech.start();
                       setStage('listening');
                     }}
-                    className="rounded-[8px] w-full border border-hair py-3 font-mono text-[12px] uppercase tracking-wider text-fg flex items-center justify-center gap-2 hover:border-strong"
+                    className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected flex items-center justify-center gap-2 transition-colors"
                   >
-                    <Mic size={14} />
+                    <Mic size={18} />
                     Answer by voice
                   </button>
                 )}
@@ -844,36 +965,36 @@ export default function Field() {
         )}
 
         {stage === 'submitted' && (
-          <div className="flex flex-col items-center text-center gap-3 py-8">
-            <Check size={28} className="text-ok" />
-            <h1 className="text-[20px] text-fg">Update submitted</h1>
-            {reference && (
-              <p className="font-mono text-[12px] text-muted break-all">
-                Report reference: {reference}
-              </p>
-            )}
-            <p className="text-[14px] text-fg">Sent for Planning Engineer review.</p>
-            <p className="text-[14px] text-muted">
-              The project schedule has not been changed.
-            </p>
-            <button
-              onClick={resetSession}
-              className="rounded-[8px] mt-2 border border-hair px-4 py-3 font-mono text-[12px] uppercase tracking-wider text-fg hover:border-strong"
-            >
-              Return Home
-            </button>
-          </div>
-        )}
-
-        {stage === 'submitted' && (
           <>
+            <div className="border border-hair bg-raised rounded-[10px] px-5 py-8 flex flex-col items-center text-center gap-3">
+              <span className="w-16 h-16 rounded-full bg-selected flex items-center justify-center">
+                <Check size={30} className="text-accent" />
+              </span>
+              <h1 className="text-[24px] font-semibold text-heading mt-1">
+                Update submitted
+              </h1>
+              {reference && (
+                <p className="w-full rounded-[8px] border border-hair bg-surface px-3 py-2 font-mono text-[12px] text-muted break-all">
+                  Report reference: {reference}
+                </p>
+              )}
+              <p className="text-[16px] text-fg">Sent for Planning Engineer review.</p>
+              <p className="text-[16px] text-muted">
+                The project schedule has not been changed.
+              </p>
+              <button
+                onClick={resetSession}
+                className="rounded-[8px] w-full mt-2 bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
+              >
+                Return Home
+              </button>
+            </div>
+
             <NeedsYourResponse />
             <RecentUpdates />
           </>
         )}
-
       </main>
-
     </div>
   );
 }

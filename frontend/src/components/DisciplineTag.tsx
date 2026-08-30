@@ -1,4 +1,5 @@
 import { Discipline } from '../types';
+import { DISCIPLINE_SHORT, isDiscipline } from '../config';
 
 interface DisciplineTagProps {
   discipline: Discipline;
@@ -11,27 +12,32 @@ interface DisciplineTagProps {
  * at 1.9:1 on the dark background and piping (#AA4499) at 2.8:1.
  *
  * The border is `currentColor`, so it tracks the text colour automatically.
+ * Labels come from config so this file cannot fall out of step with the
+ * filters and legends that render the same six.
  */
-const DISCIPLINE_CONFIG: Record<Discipline, { label: string; color: string }> = {
-  civil: { label: 'CIV', color: 'text-disc-civil' },
-  piping: { label: 'PIP', color: 'text-disc-piping' },
-  static_equipment: { label: 'SEQ', color: 'text-disc-seq' },
-  electrical: { label: 'ELE', color: 'text-disc-ele' },
-  instrumentation: { label: 'INS', color: 'text-disc-ins' },
-  hse: { label: 'HSE', color: 'text-disc-hse' },
+const DISCIPLINE_COLOR: Record<Discipline, string> = {
+  civil: 'text-disc-civil',
+  piping: 'text-disc-piping',
+  static_equipment: 'text-disc-seq',
+  electrical: 'text-disc-ele',
+  instrumentation: 'text-disc-ins',
+  hse: 'text-disc-hse',
 };
 
 export function DisciplineTag({ discipline }: DisciplineTagProps) {
-  const config = DISCIPLINE_CONFIG[discipline] || {
-    label: discipline.substring(0, 3).toUpperCase(),
-    color: 'text-muted',
-  };
+  // A value outside the six is data this system did not produce. Say so with
+  // a question mark rather than manufacturing a plausible three-letter code —
+  // that is how a discipline nobody defined ends up looking official.
+  const known = isDiscipline(discipline);
+  const label = known ? DISCIPLINE_SHORT[discipline] : '?';
+  const color = known ? DISCIPLINE_COLOR[discipline] : 'text-muted';
 
   return (
     <span
-      className={`font-mono text-[11px] px-[4px] py-[1px] border border-current rounded-[4px] uppercase ${config.color}`}
+      title={known ? undefined : `Unrecognised discipline: ${discipline}`}
+      className={`font-mono text-[11px] px-2 py-[1px] border border-current rounded-full uppercase ${color}`}
     >
-      {config.label}
+      {label}
     </span>
   );
 }

@@ -4,7 +4,8 @@ import { ApiError, api, errorDetail } from '../lib/api';
 import { ReviewItem, ScheduleActivity } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
-import { AlertCircle, Check, Plus, X, ArrowRight } from 'lucide-react';
+import { AlertCircle, Check, MessageCircleQuestion, Plus, X, ArrowRight } from 'lucide-react';
+import { usePageHeader } from '../hooks/usePageHeader';
 
 const PRIORITY_WEIGHT: Record<string, number> = {
   high: 3,
@@ -35,11 +36,14 @@ function HighlightedText({ text, highlight }: { text: string; highlight: string 
 }
 
 export default function Reconcile() {
+  usePageHeader('Reconcile', 'Field reports the matcher could not link on its own.');
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [newMode, setNewMode] = useState(false);
   const [newDesc, setNewDesc] = useState('');
+  const [askMode, setAskMode] = useState(false);
+  const [question, setQuestion] = useState('');
   const [resolvedCount, setResolvedCount] = useState(0);
   const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -105,6 +109,8 @@ export default function Reconcile() {
   useEffect(() => {
     if (selectedItem) {
       setNewMode(false);
+      setAskMode(false);
+      setQuestion('');
       setActionError(null);
       const sugg = selectedItem.suggested_activity_id;
       const alts = selectedItem.alternatives || [];
@@ -150,6 +156,45 @@ export default function Reconcile() {
       }
     },
   });
+
+  /**
+   * Asking is not resolving. The server leaves the item pending, so this does
+   * not count toward resolvedCount and does not advance to the next item —
+   * the planner stays on the row they just asked about.
+   */
+  const clarifyMutation = useMutation({
+    mutationFn: (variables: { id: string; question: string }) =>
+      api.askClarification(variables.id, { question: variables.question }),
+    onSuccess: (data) => {
+      addToast(`Question sent to the supervisor • ${data.reference}`);
+      queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+      // The field screens read the same question off /field/clarifications.
+      queryClient.invalidateQueries({ queryKey: ['clarifications'] });
+      setActionError(null);
+      setAskMode(false);
+      setQuestion('');
+    },
+    onError: (error) => {
+      if (error instanceof ApiError) {
+        setActionError(error.detail);
+      } else {
+        setActionError('An unexpected error occurred.');
+      }
+    },
+  });
+
+  const handleAsk = () => {
+    if (!selectedItem) return;
+    if (!askMode) {
+      setAskMode(true);
+      return;
+    }
+    if (!question.trim()) {
+      setActionError('A question is required to ask the supervisor.');
+      return;
+    }
+    clarifyMutation.mutate({ id: selectedItem.id, question: question.trim() });
+  };
 
   const handleConfirm = () => {
     if (!selectedItem || !selectedCandidate) return;
@@ -210,25 +255,32 @@ export default function Reconcile() {
         if (index >= 0 && index < candidates.length) {
           setSelectedCandidate(candidates[index]);
         }
-      } else if (e.key === 'Enter' && !newMode) {
+      } else if (e.key === 'Enter' && !newMode && !askMode) {
         e.preventDefault();
         handleConfirm();
       } else if (e.key === 'n') {
         e.preventDefault();
+        setAskMode(false);
         setNewMode(true);
         // Focus the input in the next tick
         setTimeout(() => document.getElementById('new-desc-input')?.focus(), 50);
       } else if (e.key === 'r') {
         e.preventDefault();
         handleReject();
-      } else if (e.key === 'Escape' && newMode) {
+      } else if (e.key === 'a') {
+        e.preventDefault();
         setNewMode(false);
+        setAskMode(true);
+        setTimeout(() => document.getElementById('ask-question-input')?.focus(), 50);
+      } else if (e.key === 'Escape' && (newMode || askMode)) {
+        setNewMode(false);
+        setAskMode(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [sortedQueue, selectedId, candidates, newMode, handleConfirm, handleReject]);
+  }, [sortedQueue, selectedId, candidates, newMode, askMode, handleConfirm, handleReject]);
 
   if (queueError) {
     return (
@@ -240,7 +292,7 @@ export default function Reconcile() {
         </div>
         <button
           onClick={() => queryClient.invalidateQueries({ queryKey: ['reviewQueue'] })}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
+          className="px-5 py-3 bg-accent text-accent-fg hover:bg-accent-hover font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -255,13 +307,13 @@ export default function Reconcile() {
           <div className="h-10 border-b border-hair" />
           <div className="p-4 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-raised rounded animate-pulse" />
+              <div key={i} className="h-12 bg-selected rounded-[8px] animate-pulse" />
             ))}
           </div>
         </div>
         <div className="flex-1 p-6 space-y-6">
-          <div className="h-24 bg-raised rounded animate-pulse" />
-          <div className="h-32 bg-raised rounded animate-pulse" />
+          <div className="h-24 bg-selected rounded-[10px] animate-pulse" />
+          <div className="h-32 bg-selected rounded-[10px] animate-pulse" />
         </div>
       </div>
     );
@@ -269,7 +321,7 @@ export default function Reconcile() {
 
   if (sortedQueue.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-surface">
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-raised border border-hair rounded-[10px]">
         <Check size={48} className="text-hair mb-4" />
         <div className="font-mono text-fg text-lg tracking-widest uppercase mb-2">Queue Clear</div>
         <div className="text-muted font-mono text-xs">
@@ -282,11 +334,11 @@ export default function Reconcile() {
   }
 
   return (
-    <div className="flex h-full w-full bg-surface relative">
+    <div className="flex h-full w-full bg-raised border border-hair rounded-[10px] relative overflow-hidden">
       {/* Toast Notifications */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
-          <div key={t.id} className="bg-fg text-surface px-4 py-3 rounded-[10px] shadow-lg border border-hair font-mono text-[12px] max-w-md pointer-events-auto flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+          <div key={t.id} className="bg-fg text-surface px-4 py-3 rounded-[10px] border border-hair font-mono text-[12px] max-w-md pointer-events-auto flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
             <Check size={14} className="mt-0.5 shrink-0" />
             <span>{t.message}</span>
           </div>
@@ -294,10 +346,10 @@ export default function Reconcile() {
       </div>
 
       {/* LEFT PANE - QUEUE */}
-      <div className="w-[38%] flex-shrink-0 border-r border-hair flex flex-col bg-surface z-10">
-        <div className="h-10 border-b border-hair flex items-center px-4 justify-between bg-surface sticky top-0">
-          <span className="font-bold text-fg uppercase tracking-wider text-[12px]">Review Queue</span>
-          <span className="bg-raised border border-hair px-1.5 py-0.5 rounded-[4px] font-mono text-[11px] text-muted">
+      <div className="w-[38%] flex-shrink-0 border-r border-hair flex flex-col bg-raised z-10">
+        <div className="h-10 border-b border-hair flex items-center px-4 justify-between bg-raised sticky top-0">
+          <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">Review Queue</span>
+          <span className="bg-selected text-accent px-2 py-0.5 rounded-full font-mono text-[11px]">
             {sortedQueue.length} PENDING
           </span>
         </div>
@@ -313,7 +365,7 @@ export default function Reconcile() {
                 className={`border-b border-hair p-4 cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
-                    : 'border-l-2 border-l-transparent hover:bg-raised'
+                    : 'border-l-2 border-l-transparent hover:bg-selected'
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
@@ -327,7 +379,7 @@ export default function Reconcile() {
                   {suggAct ? (
                     <DisciplineTag discipline={suggAct.discipline} />
                   ) : (
-                    <span className="font-mono text-[11px] text-muted border border-hair px-1 rounded-[4px]">UNKNOWN</span>
+                    <span className="font-mono text-[11px] text-muted border border-hair px-2 rounded-full">UNKNOWN</span>
                   )}
                   <span className="font-mono text-[11px] text-muted">
                     {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -337,14 +389,15 @@ export default function Reconcile() {
             );
           })}
         </div>
-        <div className="h-8 border-t border-hair flex items-center px-4 gap-4 text-[11px] font-mono text-muted uppercase bg-surface">
+        <div className="h-8 border-t border-hair flex items-center px-4 gap-4 text-[11px] font-mono text-muted uppercase bg-raised">
           <span><kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">↑↓</kbd> or <kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">j/k</kbd> Nav</span>
           <span><kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">Enter</kbd> Confirm</span>
+          <span><kbd className="border border-strong bg-raised text-fg px-1 rounded-[4px]">A</kbd> Ask</span>
         </div>
       </div>
 
       {/* RIGHT PANE - DETAIL */}
-      <div className="flex-1 flex flex-col bg-surface overflow-hidden relative">
+      <div className="flex-1 flex flex-col bg-raised overflow-hidden relative">
         {selectedItem ? (
           <>
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
@@ -352,19 +405,19 @@ export default function Reconcile() {
               {/* Section 1: SOURCE EVIDENCE */}
               <section>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-[12px] uppercase text-muted tracking-wider">Source Evidence</span>
-                  <span className="font-mono text-[11px] text-fg border border-hair px-2 py-0.5 bg-raised rounded-[4px]">
+                  <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">Source Evidence</span>
+                  <span className="font-mono text-[11px] bg-selected text-accent px-2 py-0.5 rounded-full">
                     REASON: {selectedItem.reason.toUpperCase()}
                   </span>
                 </div>
-                <div className="p-4 bg-raised border border-hair font-mono text-[14px] leading-relaxed text-fg">
+                <div className="p-4 bg-surface border border-hair rounded-[10px] font-mono text-[14px] leading-relaxed text-fg">
                   <HighlightedText text={selectedItem.raw_text} highlight={selectedItem.source_span} />
                 </div>
               </section>
 
               {/* Section 2: EXTRACTED */}
               <section>
-                <span className="font-mono text-[12px] uppercase text-muted tracking-wider mb-2 block">Extracted Metadata</span>
+                <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading mb-2 block">Extracted Metadata</span>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[12px] font-mono">
                   <div className="flex justify-between border-b border-hair pb-1">
                     <span className="text-muted">ID</span>
@@ -391,7 +444,7 @@ export default function Reconcile() {
 
               {/* Section 3: CANDIDATE ACTIVITIES */}
               <section className="pb-24">
-                <span className="font-mono text-[12px] uppercase text-muted tracking-wider mb-3 block">Candidate Activities</span>
+                <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading mb-3 block">Candidate Activities</span>
                 <div className="space-y-2">
                   {candidates.map((actId, idx) => {
                     const act = activityMap.get(actId);
@@ -402,22 +455,22 @@ export default function Reconcile() {
                       <div 
                         key={actId}
                         onClick={() => setSelectedCandidate(actId)}
-                        className={`p-4 border-2 cursor-pointer transition-colors ${
+                        className={`p-4 border rounded-[10px] cursor-pointer transition-colors ${
                           isSelected
                             ? 'border-accent bg-selected'
-                            : 'border-hair hover:border-strong bg-raised'
+                            : 'border-hair bg-raised hover:bg-selected'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-3">
-                            <span className="font-mono text-[12px] border border-strong text-fg px-1.5 py-0.5 rounded-[4px]">
+                            <span className="font-mono text-[12px] bg-selected text-accent px-2 py-0.5 rounded-full">
                               {idx + 1}
                             </span>
                             <span className={`font-mono text-[14px] font-bold ${isSelected ? 'text-fg' : 'text-muted'}`}>
                               {actId}
                             </span>
                             {isSuggested && (
-                              <span className="font-mono text-[11px] text-warn border border-current px-1 rounded-[4px] uppercase">Suggested</span>
+                              <span className="font-mono text-[11px] text-warn border border-current px-2 rounded-full uppercase">Suggested</span>
                             )}
                           </div>
                           {act && <DisciplineTag discipline={act.discipline} />}
@@ -452,7 +505,7 @@ export default function Reconcile() {
                     );
                   })}
                   {candidates.length === 0 && (
-                    <div className="p-4 border border-hair text-muted font-mono text-[12px] text-center bg-raised">
+                    <div className="p-4 border border-hair rounded-[10px] text-muted font-mono text-[12px] text-center bg-surface">
                       NO CANDIDATES IDENTIFIED
                     </div>
                   )}
@@ -461,15 +514,45 @@ export default function Reconcile() {
             </div>
 
             {/* Section 4: ACTIONS */}
-            <div className="absolute bottom-0 left-0 right-0 bg-surface border-t border-hair p-4 z-20">
+            <div className="absolute bottom-0 left-0 right-0 bg-raised border-t border-hair p-4 z-20">
               {actionError && (
-                <div className="mb-3 px-3 py-2 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] flex items-center gap-2">
+                <div className="mb-3 px-3 py-3 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] rounded-[8px] flex items-center gap-2">
                   <AlertCircle size={12} />
                   {actionError}
                 </div>
               )}
               
-              {newMode ? (
+              {askMode ? (
+                <div className="flex gap-2 items-center">
+                  <input
+                    id="ask-question-input"
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Ask the supervisor about this report..."
+                    className="rounded-[8px] flex-1 bg-raised border border-hair px-3 py-3 font-mono text-[14px] text-fg focus:outline-none focus:border-accent transition-colors"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAsk();
+                      if (e.key === 'Escape') setAskMode(false);
+                    }}
+                    disabled={clarifyMutation.isPending}
+                  />
+                  <button
+                    onClick={handleAsk}
+                    disabled={clarifyMutation.isPending}
+                    className="rounded-[8px] bg-raised border border-accent text-accent px-5 py-3 font-bold font-mono text-[12px] uppercase hover:bg-selected disabled:opacity-50 transition-colors"
+                  >
+                    {clarifyMutation.isPending ? 'Sending...' : 'Send Question'}
+                  </button>
+                  <button
+                    onClick={() => setAskMode(false)}
+                    disabled={clarifyMutation.isPending}
+                    className="rounded-[8px] bg-raised border border-accent text-accent px-5 py-3 font-bold font-mono text-[12px] uppercase hover:bg-selected transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : newMode ? (
                 <div className="flex gap-2 items-center">
                   <input
                     id="new-desc-input"
@@ -477,7 +560,7 @@ export default function Reconcile() {
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     placeholder="Enter short description for new activity..."
-                    className="rounded-[8px] flex-1 bg-raised border border-hair px-3 py-2 font-mono text-[14px] text-fg focus:outline-none focus:border-accent transition-colors"
+                    className="rounded-[8px] flex-1 bg-raised border border-hair px-3 py-3 font-mono text-[14px] text-fg focus:outline-none focus:border-accent transition-colors"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleNew();
                       if (e.key === 'Escape') setNewMode(false);
@@ -487,14 +570,14 @@ export default function Reconcile() {
                   <button 
                     onClick={handleNew}
                     disabled={resolveMutation.isPending}
-                    className="rounded-[8px] bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[12px] uppercase hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                    className="rounded-[8px] bg-accent text-accent-fg px-5 py-3 font-bold font-mono text-[12px] uppercase hover:bg-accent-hover disabled:opacity-50 transition-colors"
                   >
                     {resolveMutation.isPending ? 'Processing...' : 'Save Activity'}
                   </button>
                   <button 
                     onClick={() => setNewMode(false)}
                     disabled={resolveMutation.isPending}
-                    className="rounded-[8px] border border-hair text-muted px-4 py-2 font-bold font-mono text-[12px] uppercase hover:text-fg hover:border-strong transition-colors"
+                    className="rounded-[8px] bg-raised border border-accent text-accent px-5 py-3 font-bold font-mono text-[12px] uppercase hover:bg-selected transition-colors"
                   >
                     Cancel
                   </button>
@@ -505,7 +588,7 @@ export default function Reconcile() {
                     <button
                       onClick={handleConfirm}
                       disabled={!selectedCandidate || resolveMutation.isPending}
-                      className="rounded-[8px] bg-accent text-accent-fg px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                      className="rounded-[8px] bg-accent text-accent-fg px-5 py-3 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:bg-accent-hover disabled:opacity-50 transition-colors"
                     >
                       <Check size={14} />
                       Confirm Match
@@ -513,16 +596,26 @@ export default function Reconcile() {
                     <button
                       onClick={() => setNewMode(true)}
                       disabled={resolveMutation.isPending}
-                      className="rounded-[8px] border border-hair text-muted px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:text-fg hover:border-strong disabled:opacity-50 transition-colors"
+                      className="rounded-[8px] bg-raised border border-accent text-accent px-5 py-3 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:bg-selected disabled:opacity-50 transition-colors"
                     >
                       <Plus size={14} />
                       Mark New [N]
+                    </button>
+                    {/* Fourth action. It asks rather than resolves, so the
+                        item stays in the queue and stays selected. */}
+                    <button
+                      onClick={() => setAskMode(true)}
+                      disabled={resolveMutation.isPending || clarifyMutation.isPending}
+                      className="rounded-[8px] bg-raised border border-accent text-accent px-5 py-3 font-bold font-mono text-[12px] uppercase flex items-center gap-2 hover:bg-selected disabled:opacity-50 transition-colors"
+                    >
+                      <MessageCircleQuestion size={14} />
+                      Ask Supervisor [A]
                     </button>
                   </div>
                   <button
                     onClick={handleReject}
                     disabled={resolveMutation.isPending}
-                    className="rounded-[8px] border border-danger-line text-danger hover:bg-danger-bg px-4 py-2 font-bold font-mono text-[12px] uppercase flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    className="rounded-[8px] bg-raised border border-danger-line text-danger hover:bg-danger-bg px-5 py-3 font-bold font-mono text-[12px] uppercase flex items-center gap-2 disabled:opacity-50 transition-colors"
                   >
                     <X size={14} />
                     Reject [R]

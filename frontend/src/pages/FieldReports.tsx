@@ -19,7 +19,7 @@ const FILTERS = ['All', 'Processing', 'Needs Response', 'Confirmed'] as const;
 type Filter = (typeof FILTERS)[number];
 
 const STATUS_TONE: Record<string, string> = {
-  Confirmed: 'text-ok',
+  Confirmed: 'text-accent',
   'Needs Information': 'text-warn',
   Processing: 'text-muted',
   Rejected: 'text-danger',
@@ -64,8 +64,8 @@ export default function FieldReports() {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
       <div>
-        <h1 className="text-[20px] text-fg">My Reports</h1>
-        <p className="text-[14px] text-muted mt-0.5">
+        <h1 className="text-[24px] font-semibold leading-8 text-heading">My reports</h1>
+        <p className="text-[16px] text-muted mt-1 leading-6">
           Updates you have submitted, newest first.
         </p>
       </div>
@@ -77,9 +77,9 @@ export default function FieldReports() {
           { label: 'Processing', value: counts.processing, tone: 'text-fg' },
           { label: 'Needs Response', value: counts.needsResponse, tone: 'text-warn' },
         ].map((c) => (
-          <div key={c.label} className="border border-hair bg-raised p-2.5">
-            <div className={`font-mono text-[24px] leading-none ${c.tone}`}>{c.value}</div>
-            <div className="font-mono text-[11px] uppercase tracking-wider text-muted mt-1">
+          <div key={c.label} className="border border-hair bg-raised rounded-[10px] p-3">
+            <div className={`font-mono text-[24px] font-semibold leading-none ${c.tone}`}>{c.value}</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted mt-1.5">
               {c.label}
             </div>
           </div>
@@ -92,10 +92,10 @@ export default function FieldReports() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-[8px] shrink-0 px-2.5 py-1 border font-mono text-[12px] uppercase tracking-wider ${
+            className={`rounded-full shrink-0 px-4 py-1.5 border text-[14px] font-medium transition-colors ${
               filter === f
-                ? 'border-accent text-accent bg-selected'
-                : 'border-hair text-muted hover:text-fg'
+                ? 'border-accent bg-selected text-accent'
+                : 'border-hair bg-raised text-muted hover:bg-selected hover:text-accent'
             }`}
           >
             {f}
@@ -104,31 +104,31 @@ export default function FieldReports() {
       </div>
 
       {error ? (
-        <div className="border border-danger-line bg-danger-bg px-3 py-2.5 flex items-start gap-2">
-          <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
-          <span className="font-mono text-[12px] text-danger">{errorDetail(error)}</span>
+        <div className="border border-danger-line bg-danger-bg rounded-[10px] px-3 py-3 flex items-start gap-2">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" />
+          <span className="text-[14px] leading-5 text-danger">{errorDetail(error)}</span>
         </div>
       ) : isLoading ? (
         <div className="space-y-2 opacity-50">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 bg-raised animate-pulse" />
+            <div key={i} className="h-16 bg-selected rounded-[10px] animate-pulse" />
           ))}
         </div>
       ) : reports.length === 0 ? (
-        <div className="border border-hair bg-raised py-10 px-4 text-center flex flex-col items-center gap-2">
-          <div className="text-[15px] text-fg">No reports yet</div>
-          <div className="text-[14px] text-muted">
+        <div className="border border-hair bg-raised rounded-[10px] py-10 px-4 text-center flex flex-col items-center gap-2">
+          <div className="text-[20px] font-semibold text-heading">No reports yet</div>
+          <div className="text-[16px] text-muted">
             Your submitted updates will appear here.
           </div>
           <button
             onClick={() => navigate('/field')}
-            className="rounded-[8px] mt-2 bg-accent text-accent-fg font-mono text-[12px] uppercase tracking-wider px-4 py-2.5"
+            className="rounded-[8px] w-full mt-2 bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
           >
-            Create First Report
+            Create first report
           </button>
         </div>
       ) : shown.length === 0 ? (
-        <div className="py-8 text-center text-[14px] text-muted">
+        <div className="py-8 text-center text-[16px] text-muted">
           No reports with status &ldquo;{filter}&rdquo;.
         </div>
       ) : (
@@ -137,19 +137,19 @@ export default function FieldReports() {
             <button
               key={r.id}
               onClick={() => setOpenId(openId === r.id ? null : r.id)}
-              className="rounded-[8px] border border-hair bg-raised p-4 text-left flex flex-col gap-1.5"
+              className="rounded-[10px] border border-hair bg-raised p-4 text-left flex flex-col gap-2 hover:bg-selected transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="font-mono text-[12px] text-muted">{r.reference}</span>
                 <span
-                  className={`font-mono text-[11px] uppercase tracking-wider shrink-0 ${
+                  className={`rounded-full bg-selected px-3 py-1 text-[12px] font-medium uppercase tracking-[0.05em] shrink-0 ${
                     STATUS_TONE[r.status] ?? 'text-muted'
                   }`}
                 >
                   {r.status}
                 </span>
               </div>
-              <span className="text-[14px] text-fg leading-snug">{r.raw_text}</span>
+              <span className="text-[16px] text-fg leading-6">{r.raw_text}</span>
               {r.matched_activity_id && (
                 <span className="font-mono text-[12px] text-accent">
                   {r.matched_activity_id}
@@ -158,9 +158,7 @@ export default function FieldReports() {
                     : ''}
                 </span>
               )}
-              <span className="font-mono text-[11px] text-muted">
-                {when(r.submitted_at)}
-              </span>
+              <span className="text-[12px] text-muted">{when(r.submitted_at)}</span>
             </button>
           ))}
         </div>
@@ -168,9 +166,9 @@ export default function FieldReports() {
 
       {/* Detail */}
       {open && (
-        <section className="border border-hair bg-surface">
-          <div className="px-3 py-2 border-b border-hair flex items-center justify-between">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+        <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+          <div className="px-4 py-4 border-b border-hair flex items-center justify-between gap-3">
+            <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
               Report details
             </span>
             <span className="font-mono text-[12px] text-fg">{open.reference}</span>
@@ -199,18 +197,18 @@ export default function FieldReports() {
                 {open.clarification_question}
               </Detail>
               {!open.clarification_response && (
-                <div className="px-3 pb-3">
+                <div className="px-4 pb-4">
                   <button
                     onClick={() => navigate('/field/clarifications')}
-                    className="rounded-[8px] w-full bg-accent text-accent-fg font-mono text-[12px] uppercase tracking-wider py-2.5"
+                    className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
                   >
-                    Respond Now
+                    Respond now
                   </button>
                 </div>
               )}
             </>
           )}
-          <p className="px-3 py-2 border-t border-hair text-[12px] text-muted leading-relaxed">
+          <p className="px-4 py-4 border-t border-hair text-[12px] text-muted leading-relaxed">
             Every submitted update requires Planning Engineer confirmation before
             project data changes.
           </p>
@@ -222,11 +220,11 @@ export default function FieldReports() {
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="px-3 py-2.5 border-b border-hair flex flex-col gap-1">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+    <div className="px-4 py-4 border-b border-hair flex flex-col gap-1.5">
+      <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
         {label}
       </span>
-      <span className="text-[14px] text-fg leading-snug">{children}</span>
+      <span className="text-[16px] text-fg leading-6">{children}</span>
     </div>
   );
 }

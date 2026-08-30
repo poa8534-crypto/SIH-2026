@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Home, FileText, MessageCircleQuestion, User } from 'lucide-react';
 import { api } from '../lib/api';
 
 /**
@@ -10,10 +11,15 @@ import { api } from '../lib/api';
  * not a constant.
  */
 const TABS = [
-  { to: '/field', label: 'Home', end: true },
-  { to: '/field/reports', label: 'Reports', end: false },
-  { to: '/field/clarifications', label: 'Clarifications', end: false },
-  { to: '/field/profile', label: 'Profile', end: false },
+  { to: '/field', label: 'Home', end: true, icon: Home },
+  { to: '/field/reports', label: 'Reports', end: false, icon: FileText },
+  {
+    to: '/field/clarifications',
+    label: 'Clarifications',
+    end: false,
+    icon: MessageCircleQuestion,
+  },
+  { to: '/field/profile', label: 'Profile', end: false, icon: User },
 ];
 
 export function FieldNav() {
@@ -24,28 +30,29 @@ export function FieldNav() {
   const unanswered = data?.length ?? 0;
 
   return (
-    <nav className="shrink-0 h-14 border-t border-hair bg-surface flex items-stretch">
+    <nav className="shrink-0 h-16 border-t border-hair bg-raised flex items-stretch gap-1 px-2 py-1.5">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
           end={tab.end}
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center gap-0.5 relative ${
-              isActive
-                ? 'text-fg border-t-2 border-accent -mt-px'
-                : 'text-muted hover:text-fg'
+            `flex-1 min-w-0 flex flex-col items-center justify-center gap-1 rounded-[8px] transition-colors ${
+              isActive ? 'bg-selected text-accent' : 'text-muted hover:bg-selected'
             }`
           }
         >
-          <span className="font-mono text-[11px] uppercase tracking-wider">
+          <span className="relative">
+            <tab.icon size={20} strokeWidth={2} />
+            {tab.label === 'Clarifications' && unanswered > 0 && (
+              <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 bg-accent text-accent-fg rounded-full text-[10px] font-semibold flex items-center justify-center">
+                {unanswered}
+              </span>
+            )}
+          </span>
+          <span className="text-[12px] font-medium leading-4 truncate max-w-full px-0.5">
             {tab.label}
           </span>
-          {tab.label === 'Clarifications' && unanswered > 0 && (
-            <span className="absolute top-1.5 right-1/2 translate-x-[26px] min-w-[14px] h-[14px] px-1 bg-accent text-accent-fg font-mono text-[11px] flex items-center justify-center">
-              {unanswered}
-            </span>
-          )}
         </NavLink>
       ))}
     </nav>

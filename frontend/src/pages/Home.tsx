@@ -13,6 +13,8 @@ import {
 } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
+import { usePageHeader } from '../hooks/usePageHeader';
+import { DISCIPLINE_ORDER, DISCIPLINE_SHORT } from '../config';
 
 /**
  * Project control landing screen.
@@ -21,27 +23,6 @@ import { DisciplineTag } from '../components/DisciplineTag';
  * to an error line and leaves the rest of the page working. Nothing here is a
  * placeholder: every figure comes from a live call.
  */
-
-const DISCIPLINE_ORDER: Discipline[] = [
-  'civil',
-  'piping',
-  'static_equipment',
-  'electrical',
-  'instrumentation',
-  'hse',
-];
-
-const DISCIPLINE_LABEL: Record<Discipline, string> = {
-  civil: 'CIV',
-  piping: 'PIP',
-  static_equipment: 'SEQ',
-  electrical: 'ELE',
-  instrumentation: 'INS',
-  hse: 'HSE',
-};
-
-/** Our measured eval figure — correct AUTO_LINKs over all AUTO_LINKs. */
-const AUTO_LINK_PRECISION = '100%';
 
 const FIELD_LABEL: Record<string, string> = {
   actual_start: 'actual start',
@@ -102,12 +83,14 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`${span} border border-hair bg-surface flex flex-col min-w-0`}>
+    <section
+      className={`${span} border border-hair bg-raised rounded-[10px] overflow-hidden flex flex-col min-w-0`}
+    >
       <div className="px-4 py-2.5 border-b border-hair flex items-center justify-between gap-3">
-        <h3 className="font-mono text-[12px] uppercase tracking-wider text-muted flex items-center gap-2">
+        <h3 className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading flex items-center gap-2">
           {title}
           {badge !== undefined && badge > 0 && (
-            <span className="bg-danger text-surface font-mono text-[11px] px-1.5 py-0.5">
+            <span className="bg-danger text-surface font-mono text-[11px] px-2 py-0.5 rounded-full">
               {badge}
             </span>
           )}
@@ -151,7 +134,7 @@ function Skeleton({ rows, height = 'h-4' }: { rows: number; height?: string }) {
   return (
     <div className="p-4 space-y-2 opacity-50">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className={`${height} bg-raised animate-pulse`} />
+        <div key={i} className={`${height} bg-selected animate-pulse rounded-[4px]`} />
       ))}
     </div>
   );
@@ -174,12 +157,12 @@ function Tile({
 }) {
   return (
     <div
-      className={`border border-hair bg-surface p-4 flex flex-col justify-between h-24 ${
+      className={`border border-hair bg-raised rounded-[10px] p-4 flex flex-col justify-between h-24 ${
         accent ? 'border-l-2 border-l-danger' : ''
       }`}
     >
       {loading ? (
-        <div className="h-8 w-20 bg-raised animate-pulse mt-1" />
+        <div className="h-8 w-20 bg-selected animate-pulse rounded-[4px] mt-1" />
       ) : (
         <div
           className={`font-mono text-[36px] leading-none mt-1 ${
@@ -227,13 +210,13 @@ function NeedsAttention({
         return (
           <div
             key={item.id}
-            className="px-4 py-2.5 border-b border-hair last:border-0 flex items-center gap-3 min-w-0"
+            className="px-4 py-3 border-b border-hair last:border-0 flex items-center gap-3 min-w-0 hover:bg-selected transition-colors"
           >
             <span className="w-10 shrink-0">
               {act ? (
                 <DisciplineTag discipline={act.discipline} />
               ) : (
-                <span className="font-mono text-[11px] text-muted border border-hair px-1 rounded-[4px]">
+                <span className="font-mono text-[11px] text-muted border border-hair px-2 rounded-full">
                   ?
                 </span>
               )}
@@ -346,7 +329,7 @@ function RecentActivity({
       {rows.map((r, i) => (
         <div
           key={i}
-          className="px-4 py-2 border-b border-hair last:border-0 flex items-start gap-3"
+          className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 hover:bg-selected transition-colors"
         >
           <span className="flex-1 text-[14px] text-muted leading-relaxed min-w-0">
             {r.text}
@@ -385,17 +368,17 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
       {bars.map((b) => (
         <div key={b.discipline} className="flex items-center gap-3">
           <span className="w-10 shrink-0 font-mono text-[12px] text-muted text-right">
-            {DISCIPLINE_LABEL[b.discipline]}
+            {DISCIPLINE_SHORT[b.discipline]}
           </span>
           {b.mean === null ? (
             <span className="flex-1 text-[12px] text-muted italic">
               no activity with an actual finish yet
             </span>
           ) : (
-            <span className="flex-1 bg-raised h-2 relative block">
+            <span className="flex-1 bg-hair h-2 rounded-full relative block overflow-hidden">
               <span
-                className={`h-full absolute top-0 left-0 ${
-                  b.mean > 0 ? 'bg-danger' : b.mean < 0 ? 'bg-ok' : 'bg-strong'
+                className={`h-full absolute top-0 left-0 rounded-full ${
+                  b.mean > 0 ? 'bg-danger' : 'bg-accent'
                 }`}
                 style={{ width: `${Math.max(2, (Math.abs(b.mean) / maxAbs) * 100)}%` }}
               />
@@ -408,7 +391,7 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
                 : b.mean > 0
                   ? 'text-danger'
                   : b.mean < 0
-                    ? 'text-ok'
+                    ? 'text-accent'
                     : 'text-muted'
             }`}
           >
@@ -447,7 +430,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
             {['Activity', 'Field', 'Spreadsheet', 'Daily report', 'Stored', ''].map((h, i) => (
               <th
                 key={i}
-                className="text-left font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap"
+                className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
               >
                 {h}
               </th>
@@ -488,25 +471,25 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
             return (
               <tr
                 key={`${c.activity_id}-${c.field}-${c.detected_at}`}
-                className="border-b border-hair last:border-0 align-top"
+                className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors"
               >
-                <td className="px-3 py-2 min-w-[190px]">
+                <td className="px-3 py-3 min-w-[190px]">
                   <span className="font-mono text-[14px] text-fg">{c.activity_id}</span>
                   <span className="block text-[12px] text-muted">{c.description}</span>
                 </td>
-                <td className="px-3 py-2 font-mono text-[12px] text-muted whitespace-nowrap">
+                <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
                   {FIELD_LABEL[c.field] ?? c.field}
                 </td>
-                <td className="px-3 py-2 min-w-[160px]">{cell(sheet, 0)}</td>
-                <td className="px-3 py-2 min-w-[160px]">{cell(report, sheet ? 0 : 1)}</td>
-                <td className="px-3 py-2 font-mono text-[14px] text-fg whitespace-nowrap">
+                <td className="px-3 py-3 min-w-[160px]">{cell(sheet, 0)}</td>
+                <td className="px-3 py-3 min-w-[160px]">{cell(report, sheet ? 0 : 1)}</td>
+                <td className="px-3 py-3 font-mono text-[14px] text-fg whitespace-nowrap">
                   {shortDate(c.stored_value)}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   {/* Opens that activity's audit drawer on the Schedule screen. */}
                   <Link
                     to={`/schedule?activity=${encodeURIComponent(c.activity_id)}`}
-                    className="font-mono text-[11px] uppercase tracking-wider text-accent border border-hair px-2 py-1 hover:border-strong"
+                    className="inline-block bg-raised border border-accent text-accent rounded-[8px] px-5 py-3 font-mono text-[11px] uppercase tracking-wider hover:bg-selected transition-colors"
                   >
                     Resolve
                   </Link>
@@ -516,7 +499,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
           })}
         </tbody>
       </table>
-      <p className="px-3 py-2 border-t border-hair text-[12px] text-muted leading-relaxed">
+      <p className="px-3 py-3 border-t border-hair text-[12px] text-muted leading-relaxed">
         Two field sources asserted different values for the same field. The stored
         value is whichever was written last, not whichever is correct. The
         Primavera baseline is read-only and is never a side of a disagreement.
@@ -528,6 +511,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  usePageHeader('Project Control', 'Approved actuals compared with the locked baseline.');
   const schedule = useQuery({
     queryKey: ['schedule', 'home'],
     queryFn: () => api.getSchedule(undefined, false),
@@ -557,7 +541,7 @@ export default function Home() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-6 max-w-[1280px] w-full mx-auto flex flex-col gap-4">
+      <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
         {/* ROW 1 */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Tile
@@ -579,7 +563,15 @@ export default function Home() {
             error={Boolean(queue.error)}
             accent
           />
-          <Tile label="Auto-link precision" value={AUTO_LINK_PRECISION} />
+          {/* Every tile is a figure off /schedule or /review-queue. There is
+              no endpoint behind a matcher-precision number, so there is no
+              tile claiming one. */}
+          <Tile
+            label="Completed"
+            value={schedule.data?.activities_completed ?? null}
+            loading={schedule.isLoading}
+            error={Boolean(schedule.error)}
+          />
         </section>
 
         {/* ROW 2 */}

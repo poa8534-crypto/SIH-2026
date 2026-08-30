@@ -10,9 +10,11 @@ import {
   Upload,
 } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
-import { Discipline, ExtractedEvent, JobResponse } from '../types';
+import { ExtractedEvent, JobResponse } from '../types';
+import { isDiscipline } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
+import { usePageHeader } from '../hooks/usePageHeader';
 
 /** The only two the drop zone accepts. Narrower than the server, on purpose. */
 const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx'] as const;
@@ -20,19 +22,6 @@ const ACCEPTED_LABEL = '.txt and .xlsx';
 
 /** Milliseconds between trace lines. Long enough to read one before the next. */
 const TRACE_BEAT = 550;
-
-const KNOWN_DISCIPLINES: Discipline[] = [
-  'civil',
-  'piping',
-  'static_equipment',
-  'electrical',
-  'instrumentation',
-  'hse',
-];
-
-function isKnownDiscipline(d: string | null): d is Discipline {
-  return d !== null && (KNOWN_DISCIPLINES as string[]).includes(d);
-}
 
 function extensionOf(name: string): string {
   const i = name.lastIndexOf('.');
@@ -78,8 +67,8 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
   if (lines.length === 0) return null;
 
   return (
-    <div className="border border-hair bg-raised">
-      <div className="px-3 py-2 border-b border-hair font-mono text-[11px] uppercase tracking-wider text-muted">
+    <div className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+      <div className="px-3 py-3 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
         Pipeline
       </div>
       <div className="p-4 space-y-1.5">
@@ -145,6 +134,7 @@ type Status =
   | { kind: 'done'; job: JobResponse; bytes: number };
 
 export default function Ingest() {
+  usePageHeader('Ingest', 'Load a daily progress report or a discipline spreadsheet.');
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [dragging, setDragging] = useState(false);
@@ -262,7 +252,7 @@ export default function Ingest() {
 
   return (
     <div className="flex flex-col h-full w-full bg-surface overflow-y-auto">
-      <div className="max-w-[1280px] w-full mx-auto p-6 space-y-6">
+      <div className="max-w-[1280px] w-full mx-auto space-y-6">
         {/* DROP ZONE */}
         <div
           onDragOver={(e) => {
@@ -277,8 +267,8 @@ export default function Ingest() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
           }}
-          className={`border border-dashed p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-            dragging ? 'border-accent bg-selected' : 'border-strong hover:bg-raised'
+          className={`border border-dashed rounded-[10px] p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+            dragging ? 'border-accent bg-selected' : 'border-strong bg-raised hover:bg-selected'
           }`}
         >
           <Upload size={20} className={dragging ? 'text-accent' : 'text-muted'} />
@@ -303,14 +293,14 @@ export default function Ingest() {
 
         {/* STATES */}
         {status.kind === 'rejected' && (
-          <div className="border border-danger-line bg-danger-bg text-danger px-3 py-2.5 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-danger-line bg-danger-bg text-danger rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
             <AlertCircle size={12} className="mt-0.5 shrink-0" />
             <span>{status.message}</span>
           </div>
         )}
 
         {status.kind === 'error' && (
-          <div className="border border-danger-line bg-danger-bg text-danger px-3 py-2.5 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-danger-line bg-danger-bg text-danger rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
             <AlertCircle size={12} className="mt-0.5 shrink-0" />
             <span>{status.detail}</span>
           </div>
@@ -319,7 +309,7 @@ export default function Ingest() {
         {/* A duplicate is the guard working, not a failure — styled as
             information rather than as an error. */}
         {status.kind === 'duplicate' && (
-          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
             <Info size={12} className="mt-0.5 shrink-0 text-accent" />
             <span className="text-muted">
               <span className="text-fg">This file has already been ingested.</span> Identical
@@ -332,7 +322,7 @@ export default function Ingest() {
         )}
 
         {status.kind === 'uploading' && (
-          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[12px] text-muted flex items-center gap-2">
+          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] text-muted flex items-center gap-2">
             <FileText size={12} className="shrink-0" />
             Reading {status.filename}…
           </div>
@@ -343,7 +333,7 @@ export default function Ingest() {
 
         {/* Parsed but nothing extractable — a real outcome, worth naming. */}
         {job && job.event_count === 0 && (
-          <div className="border border-hair bg-raised px-3 py-2.5 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
             <Info size={12} className="mt-0.5 shrink-0 text-warn" />
             <span className="text-muted">
               <span className="text-fg">No progress events were extracted.</span> The file
@@ -355,9 +345,9 @@ export default function Ingest() {
 
         {/* EVENT TABLE */}
         {job && sortedEvents.length > 0 && (
-          <section className="border border-hair">
-            <div className="px-3 py-2 border-b border-hair flex items-center justify-between">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+          <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+            <div className="px-3 py-3 border-b border-hair flex items-center justify-between">
+              <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
                 Extracted events
               </span>
               <span className="font-mono text-[11px] text-muted">
@@ -371,7 +361,7 @@ export default function Ingest() {
                     {['Pos', 'Raw text', 'Extracted', 'Conf', 'Outcome'].map((h) => (
                       <th
                         key={h}
-                        className="text-left font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap"
+                        className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -380,26 +370,26 @@ export default function Ingest() {
                 </thead>
                 <tbody>
                   {sortedEvents.map((ev) => (
-                    <tr key={ev.id} className="border-b border-hair last:border-0 align-top">
-                      <td className="px-3 py-2 font-mono text-[12px] text-muted whitespace-nowrap">
+                    <tr key={ev.id} className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors">
+                      <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
                         {positionOf(ev)}
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg min-w-[280px] max-w-[420px]">
+                      <td className="px-3 py-3 text-[14px] text-fg min-w-[280px] max-w-[420px]">
                         {ev.raw_text}
                       </td>
-                      <td className="px-3 py-2 min-w-[220px]">
+                      <td className="px-3 py-3 min-w-[220px]">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          {isKnownDiscipline(ev.discipline) ? (
+                          {isDiscipline(ev.discipline) ? (
                             <DisciplineTag discipline={ev.discipline} />
                           ) : (
-                            <span className="font-mono text-[11px] text-muted border border-hair px-1 rounded-[4px] uppercase">
+                            <span className="font-mono text-[11px] text-muted border border-hair px-2 rounded-full uppercase">
                               {ev.discipline || 'unknown'}
                             </span>
                           )}
                           {ev.tags.map((t) => (
                             <span
                               key={t}
-                              className="font-mono text-[11px] text-muted border border-hair bg-raised px-1 rounded-[4px]"
+                              className="font-mono text-[11px] bg-selected text-accent px-2 rounded-full"
                             >
                               {t}
                             </span>
@@ -430,10 +420,10 @@ export default function Ingest() {
                             ev.quantity === null && <span className="italic">no date or quantity</span>}
                         </div>
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <ConfidenceBadge value={ev.confidence} />
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <Outcome ev={ev} />
                       </td>
                     </tr>
@@ -445,8 +435,8 @@ export default function Ingest() {
         )}
 
         {/* HISTORY */}
-        <section className="border border-hair">
-          <div className="px-3 py-2 border-b border-hair font-mono text-[11px] uppercase tracking-wider text-muted">
+        <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+          <div className="px-3 py-3 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
             Previously ingested
           </div>
           {historyError ? (
@@ -459,7 +449,7 @@ export default function Ingest() {
           ) : historyLoading ? (
             <div className="p-4 space-y-2 opacity-50">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-5 bg-raised rounded animate-pulse" />
+                <div key={i} className="h-5 bg-selected rounded-[4px] animate-pulse" />
               ))}
             </div>
           ) : !history || history.length === 0 ? (
@@ -475,7 +465,7 @@ export default function Ingest() {
                     {['File', 'Ingested', 'Events', 'Linked', 'Review', 'Status'].map((h) => (
                       <th
                         key={h}
-                        className="text-left font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap"
+                        className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -484,23 +474,23 @@ export default function Ingest() {
                 </thead>
                 <tbody>
                   {history.map((j) => (
-                    <tr key={j.id} className="border-b border-hair last:border-0">
-                      <td className="px-3 py-1.5 font-mono text-[12px] text-fg whitespace-nowrap">
+                    <tr key={j.id} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+                      <td className="px-3 py-3 font-mono text-[12px] text-fg whitespace-nowrap">
                         {j.filename}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[12px] text-muted whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
                         {new Date(j.created_at).toLocaleString()}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[12px] text-fg">
+                      <td className="px-3 py-3 font-mono text-[12px] text-fg">
                         {j.event_count}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[12px] text-fg">
+                      <td className="px-3 py-3 font-mono text-[12px] text-fg">
                         {j.linked_count}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[12px] text-muted">
+                      <td className="px-3 py-3 font-mono text-[12px] text-muted">
                         {j.review_count}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-[12px] whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-[12px] whitespace-nowrap">
                         {j.status === 'completed' ? (
                           <span className="text-muted">{j.status}</span>
                         ) : (

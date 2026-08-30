@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
+import { usePageHeader } from '../hooks/usePageHeader';
+import { DISCIPLINE_AXIS, DISCIPLINE_ORDER } from '../config';
 import {
   DelayReasonRow,
   DurationDistribution,
@@ -18,24 +20,6 @@ import {
  * says so in words rather than drawing an empty chart.
  */
 
-const DISCIPLINE_ORDER = [
-  'civil',
-  'piping',
-  'static_equipment',
-  'electrical',
-  'instrumentation',
-  'hse',
-];
-
-const DISCIPLINE_LABEL: Record<string, string> = {
-  civil: 'Civil',
-  piping: 'Piping',
-  static_equipment: 'Static Equip.',
-  electrical: 'Electrical',
-  instrumentation: 'Instrum.',
-  hse: 'HSE',
-};
-
 function Panel({
   title,
   span,
@@ -46,9 +30,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`${span} border border-hair bg-surface flex flex-col`}>
-      <div className="px-4 py-2.5 border-b border-hair">
-        <h3 className="font-mono text-[12px] uppercase tracking-wider text-muted">
+    <section className={`${span} border border-hair bg-raised rounded-[10px] overflow-hidden flex flex-col`}>
+      <div className="px-4 py-3 border-b border-hair">
+        <h3 className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
           {title}
         </h3>
       </div>
@@ -67,7 +51,7 @@ function NoData({ children }: { children: React.ReactNode }) {
 function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
   return (
     <th
-      className={`font-mono text-[11px] uppercase tracking-wider text-muted font-normal px-3 py-2 whitespace-nowrap ${
+      className={`text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap ${
         right ? 'text-right' : 'text-left'
       }`}
     >
@@ -114,7 +98,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
     <>
       <div className="overflow-auto max-h-[420px]">
         <table className="w-full border-collapse">
-          <thead className="sticky top-0 bg-surface">
+          <thead className="sticky top-0 bg-raised">
             <tr className="border-b border-hair">
               <Th>Activity type</Th>
               <Th right>Planned avg</Th>
@@ -128,18 +112,18 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
               const late = r.deltaDays > 0;
               const flat = Math.abs(r.deltaDays) < 0.05;
               return (
-                <tr key={r.activity_type} className="border-b border-hair last:border-0">
-                  <td className="px-3 py-1.5 font-mono text-[14px] text-fg whitespace-nowrap">
+                <tr key={r.activity_type} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+                  <td className="px-3 py-3 font-mono text-[14px] text-fg whitespace-nowrap">
                     {r.activity_type}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[14px] text-muted text-right">
+                  <td className="px-3 py-3 font-mono text-[14px] text-muted text-right">
                     {r.planned_mean_days.toFixed(1)}d
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[14px] text-fg text-right">
+                  <td className="px-3 py-3 font-mono text-[14px] text-fg text-right">
                     {r.actual_mean_days.toFixed(1)}d
                   </td>
                   <td
-                    className={`px-3 py-1.5 font-mono text-[14px] text-right ${
+                    className={`px-3 py-3 font-mono text-[14px] text-right ${
                       flat ? 'text-muted' : late ? 'text-danger' : 'text-ok'
                     }`}
                   >
@@ -149,7 +133,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
                           late ? '+' : ''
                         }${r.deltaPct.toFixed(0)}%`}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-[14px] text-muted text-right">
+                  <td className="px-3 py-3 font-mono text-[14px] text-muted text-right">
                     {r.actuals_count}/{r.count}
                   </td>
                 </tr>
@@ -159,7 +143,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
         </table>
       </div>
       {withoutActuals > 0 && (
-        <p className="px-3 py-2 border-t border-hair text-[12px] text-muted">
+        <p className="px-3 py-3 border-t border-hair text-[12px] text-muted">
           {withoutActuals} further activity type
           {withoutActuals === 1 ? '' : 's'} have no completed activity yet and are
           not listed.
@@ -194,7 +178,7 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
       {bars.map((b) => (
         <div key={b.discipline} className="flex items-center gap-3">
           <div className="w-24 shrink-0 text-[14px] text-fg text-right">
-            {DISCIPLINE_LABEL[b.discipline] ?? b.discipline}
+            {DISCIPLINE_AXIS[b.discipline] ?? b.discipline}
           </div>
 
           {b.slip === null ? (
@@ -202,10 +186,10 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
               no completed activities yet
             </div>
           ) : (
-            <div className="flex-1 bg-raised h-5 relative">
+            <div className="flex-1 bg-hair h-2 rounded-full relative overflow-hidden">
               <div
-                className={`h-full absolute top-0 ${
-                  b.slip > 0 ? 'bg-danger left-0' : 'bg-ok right-0'
+                className={`h-full absolute top-0 rounded-full ${
+                  b.slip > 0 ? 'bg-danger left-0' : 'bg-accent right-0'
                 }`}
                 style={{ width: `${(Math.abs(b.slip) / maxAbs) * 100}%` }}
               />
@@ -219,7 +203,7 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
                 : b.slip > 0
                   ? 'text-danger'
                   : b.slip < 0
-                    ? 'text-ok'
+                    ? 'text-accent'
                     : 'text-muted'
             }`}
           >
@@ -266,26 +250,26 @@ function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.reason} className="border-b border-hair last:border-0">
-              <td className="px-3 py-1.5 text-[14px] text-fg capitalize">{r.reason}</td>
-              <td className="px-3 py-1.5 font-mono text-[14px] text-fg text-right">
+            <tr key={r.reason} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+              <td className="px-3 py-3 text-[14px] text-fg capitalize">{r.reason}</td>
+              <td className="px-3 py-3 font-mono text-[14px] text-fg text-right">
                 {r.frequency}
               </td>
               <td
-                className={`px-3 py-1.5 font-mono text-[14px] text-right ${
+                className={`px-3 py-3 font-mono text-[14px] text-right ${
                   r.days_lost > 0 ? 'text-danger' : 'text-muted'
                 }`}
               >
                 {r.days_lost}d
               </td>
-              <td className="px-3 py-1.5 font-mono text-[12px] text-muted">
+              <td className="px-3 py-3 font-mono text-[12px] text-muted">
                 {r.affected_activities.join(', ') || '—'}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="px-3 py-2 border-t border-hair text-[12px] text-muted leading-relaxed">
+      <p className="px-3 py-3 border-t border-hair text-[12px] text-muted leading-relaxed">
         Days lost is the finish slip of the affected activities, attributed to
         this cause. Where an activity records more than one cause, its slip is
         counted against each, so treat these as an upper bound.
@@ -339,7 +323,7 @@ function SuggestedDurationPanel({
         <select
           value={selected}
           onChange={(e) => setActivityType(e.target.value)}
-          className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[14px] px-2 py-2 focus:outline-none focus:border-accent"
+          className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[14px] px-3 py-3 transition-colors focus:outline-none focus:border-accent"
         >
           {types.map((t) => (
             <option key={t.activity_type} value={t.activity_type}>
@@ -350,11 +334,11 @@ function SuggestedDurationPanel({
       </label>
 
       {isLoading && (
-        <div className="h-20 bg-raised animate-pulse" />
+        <div className="h-20 bg-selected rounded-[8px] animate-pulse" />
       )}
 
       {error && (
-        <div className="border border-danger-line bg-danger-bg px-3 py-2 font-mono text-[12px] text-danger">
+        <div className="border border-danger-line bg-danger-bg rounded-[10px] px-3 py-3 font-mono text-[12px] text-danger">
           {errorDetail(error)}
         </div>
       )}
@@ -366,7 +350,7 @@ function SuggestedDurationPanel({
       {!isLoading && !error && s !== null && (
         <>
           {/* Recommendation against baseline, so the difference is obvious. */}
-          <div className="border border-accent/40 bg-selected">
+          <div className="border border-accent/40 bg-selected rounded-[10px] overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-hair">
               <div className="p-4 flex flex-col items-center text-center gap-1">
                 <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
@@ -390,7 +374,7 @@ function SuggestedDurationPanel({
               </div>
             </div>
             {hasRecommendation && (
-              <div className="px-3 py-2 border-t border-hair flex items-center justify-between font-mono text-[12px]">
+              <div className="px-3 py-3 border-t border-hair flex items-center justify-between font-mono text-[12px]">
                 <span className="text-muted">P80</span>
                 <span className="text-fg">{s.p80_actual_days}d</span>
               </div>
@@ -424,6 +408,7 @@ function SuggestedDurationPanel({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Memory() {
+  usePageHeader('Memory', 'What past durations say about the ones still planned.');
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['memory', 'all'],
     queryFn: () => api.queryMemory({ query_type: 'all' }),
@@ -439,7 +424,7 @@ export default function Memory() {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 border border-hair hover:border-strong text-fg font-mono uppercase text-xs rounded-[8px] transition-colors"
+          className="px-5 py-3 bg-accent text-accent-fg hover:bg-accent-hover font-mono uppercase text-xs rounded-[8px] transition-colors"
         >
           Retry
         </button>
@@ -449,11 +434,11 @@ export default function Memory() {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-[1280px] mx-auto w-full grid grid-cols-12 gap-4 opacity-50">
-        <div className="col-span-8 h-72 bg-raised animate-pulse" />
-        <div className="col-span-4 h-72 bg-raised animate-pulse" />
-        <div className="col-span-6 h-56 bg-raised animate-pulse" />
-        <div className="col-span-6 h-56 bg-raised animate-pulse" />
+      <div className="max-w-[1280px] mx-auto w-full grid grid-cols-12 gap-4 opacity-50">
+        <div className="col-span-8 h-72 bg-selected rounded-[10px] animate-pulse" />
+        <div className="col-span-4 h-72 bg-selected rounded-[10px] animate-pulse" />
+        <div className="col-span-6 h-56 bg-selected rounded-[10px] animate-pulse" />
+        <div className="col-span-6 h-56 bg-selected rounded-[10px] animate-pulse" />
       </div>
     );
   }
@@ -464,11 +449,9 @@ export default function Memory() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-6 max-w-[1280px] w-full mx-auto flex flex-col gap-4">
+      <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
         <div className="mb-1">
-          <h2 className="text-[24px] text-fg mb-1">Project Memory</h2>
-          <p className="text-[15px] text-muted">What this project has learned so far.</p>
-          <p className="text-[14px] text-muted mt-1 max-w-3xl leading-relaxed">
+          <p className="text-[14px] text-muted max-w-3xl leading-relaxed">
             These patterns are computed from actual execution data the system
             captured from field reports and discipline spreadsheets — not from
             the baseline plan. The baseline appears only as the figure each
