@@ -1,0 +1,27 @@
+requirement,ps_source,status,evidence
+Ingest free-text daily progress reports (.txt),PS Expected Outcome 1,IMPLEMENTED,POST /ingest accepts DPR text; extraction/textio.py + extractor.py; 11 DPR files in dataset/
+Ingest discipline-wise spreadsheets (.xlsx),PS Expected Outcome 1,IMPLEMENTED,extraction/spreadsheet.py handles merged headers; civil_progress.xlsx + piping_progress.xlsx in dataset/
+Ingest scanned diaries / OCR,PS Expected Outcome 1,MISSING,Not implemented anywhere in the repo; explicitly out of MVP scope per PS (full OCR not required)
+Import Primavera / MS Project schedule (PMXML/XER),PS Background,MISSING,"Baseline schedule is a hand-written JSON (dataset/baseline_schedule.json); PMXML/XER parsing never built"
+Export updated schedule back to PMIS (PMXML+XER),PS Expected Outcome 4,IMPLEMENTED,POST /schedule/export writes PMXML and XER; ARCHITECTURE.md originally cut write-back, export path exists
+sha256 de-duplication of uploads,Robustness requirement,IMPLEMENTED,server/main.py: byte-identical content refused by sha256; documented in DEMO.md
+LLM-based conversational 'time agent' for supervisors,PS Expected Outcome 2,PARTIAL,POST /agent/turn slot-filling implemented (server/agent_slots.py); LLM is optional and off by default (EXTRACTION_PROVIDER=rules); dialogue logic is deterministic
+Voice interface for site supervisors,PS Expected Outcome 2,PARTIAL,Browser speech-to-text (Web Speech API) in frontend/src/hooks/useSpeech.ts with tested typing fallback; no server-side ASR
+Structured output from conversational capture,PS Expected Outcome 2,IMPLEMENTED,Agent produces structured slot card (discipline/location/status/date/qty) before any commit
+Extraction of actual start/end events,PS Expected Outcome 1,IMPLEMENTED,ExtractedEvent with START/FINISH/PROGRESS/BLOCKED types; extraction/models.py
+Per-event provenance (line / char span),Robustness requirement,IMPLEMENTED,Provenance with locator+char_span on every event; audit drawer cites exact line/row (DEMO.md section 4)
+Fuzzy-match discipline text to L5/L6 activity,PS Expected Outcome 3,IMPLEMENTED,matching/ hybrid retrieval + 6-feature scoring; Top-1 87.2% on 242 gold positives (research/data/eval_output.txt)
+Handle terminology differences (aliases),PS Expected Outcome 3,PARTIAL,Alias lexicon WRITTEN on planner correction (server/main.py) but never READ back by the matcher — learning loop is open (risk R7)
+Handle granularity mismatches (field vs WBS),PS Expected Outcome 3,IMPLEMENTED,Many-to-one quantity roll-up with unit requirement and partial-scope finish guard (matching/engine.py _apply_rollup)
+Flag unmatched / new activities for review,PS Expected Outcome 3,IMPLEMENTED,NEW_ACTIVITY outcome surfaces unplanned scope; 12 NO_MATCH mentions in ground truth, 1 correctly refused (8.3% rejection — known weakness R10)
+Auto-update actual dates in schedule,PS Expected Outcome 4,IMPLEMENTED,SERVER writes actual_start/actual_finish via roll-up; Actual Finish only at 100% quantity
+Confidence score per entry,PS Expected Outcome 4,IMPLEMENTED,final_score per candidate; thresholds tau_high=0.775 tau_low=0.5 margin_min=0.03 (eval.py)
+Audit trail per entry,PS Expected Outcome 4,IMPLEMENTED,Append-only AuditRecord: field, old->new, source file+line, confidence, auto vs confirmed
+Near-real-time update,PS Expected Outcome 4,IMPLEMENTED,Synchronous POST /ingest; measured 266 events in 1.86 s (~7 ms/event) + 4.4 s one-time model cold start (research/data/latency.json)
+Clean structured discipline-tagged progress dataset,PS Expected Outcome 5,IMPLEMENTED,LinkedEvent rows with discipline, quantity, dates, provenance, confidence
+Performance analytics / delay patterns,PS Expected Outcome 5,PARTIAL,GET /memory/query: duration overrun, slip by discipline, delay causes with counts (server/main.py); small sample (47/120 with both dates)
+Institutional memory repository,PS Expected Outcome 5,IMPLEMENTED,Memory screen computes suggested duration from completed activity types (e.g. PIP-HYT 5d baseline vs 6d suggested)
+Authentication / users / project isolation,Security hygiene,MISSING,No auth layer of any kind; any caller can POST /ingest or mutate schedule (risk R9)
+Prompt-injection resistance on LLM path,Security hygiene,PARTIAL,LLM output re-validated by deterministic parsers; LLM never writes dates/tags (extraction/llm_backend.py); guards tested in extraction/test_llm_guards.py
+Offline / venue operation,SIH practicality,IMPLEMENTED,Local MiniLM + rules default provider; offline-first loading (matching/retrieval.py local_files_only=True)
+Cross-upload conflict detection,Data quality,IMPLEMENTED,server/main.py compares prior audit writes across files; 25 conflicts surfaced on seeded corpus (21 spreadsheet vs DPR)

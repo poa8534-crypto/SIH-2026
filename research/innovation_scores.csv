@@ -1,0 +1,13 @@
+feature,industry_novelty,technical_difficulty,sih_demo_value,defensibility
+Hybrid retrieval + weighted RRF fusion (TAG 1.0 / BM25 0.7 / DENSE 0.7),6,7,6,7
+Line-lock tag rule (unique line+size match floors score at 0.93),7,6,8,8
+"Calibrated two-threshold + margin decision policy (measured, not guessed)",6,7,9,8
+Deterministic date/tag extraction with LLM confined to intent only,7,7,6,8
+Character-span provenance on every extracted event,6,5,8,7
+"Append-only audit trail (field, old->new, source line, confidence)",5,4,8,6
+Quantity-based many-to-one roll-up + partial-scope finish guard,7,7,6,8
+"Cross-upload conflict detection (earliest-start/latest-finish, disagreement recorded)",6,6,7,6
+"Institutional memory queries (durations, delays, suggested duration)",7,4,9,7
+Voice slot-filling field agent with typed fallback,6,5,8,5
+Alias lexicon learning loop (currently write-only),4,3,5,2
+"Rationale-list explanations (deterministic, not LLM prose)",5,4,6,6

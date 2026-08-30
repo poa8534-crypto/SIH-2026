@@ -1,0 +1,44 @@
+[
+  {
+    "tag_weight": 0.32,
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5289256198347108
+  },
+  {
+    "tag_weight": 0.28,
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5330578512396694
+  },
+  {
+    "tag_weight": 0.24,
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5371900826446281
+  },
+  {
+    "tag_weight": 0.2,
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5454545454545454
+  },
+  {
+    "tag_weight": 0.16,
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5454545454545454
+  },
+  {
+    "tag_weight": 0.12,
+    "top1": 0.8760330578512396,
+    "auto_precision": 1.0,
+    "coverage": 0.5371900826446281
+  },
+  {
+    "tag_weight": 0.08,
+    "top1": 0.8760330578512396,
+    "auto_precision": 1.0,
+    "coverage": 0.5330578512396694
+  }
+]

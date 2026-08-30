@@ -22,10 +22,54 @@ back. The sidebar also has a **Force Mobile View** toggle.
 
 ## Resetting between rehearsals
 
-Resolving review items changes the database. Two ways back to a known state —
-both clear ingest data and re-ingest `dataset/`, and **neither needs the server
-stopped**. They clear rows rather than deleting the file, so there is no
+Resolving review items changes the database. Three ways back to a known state —
+all of them clear ingest data and re-ingest `dataset/`, and **none needs the
+server stopped**. They clear rows rather than deleting the file, so there is no
 held-file-handle problem on Windows and no restart.
+
+### Demo reset
+
+The one to run before demoing: it resets, re-ingests a fixed file set in a fixed
+order, and then reads the numbers back so there is something to check rather
+than trust. Needs the server up **with reset enabled**:
+
+```powershell
+# terminal 1 — API, with the reset route turned on
+$env:NAVIS_ENABLE_RESET = "1"
+python -m uvicorn server.main:app --reload
+
+# terminal 2 — from the project root
+.\scripts\demo_reset.ps1
+```
+
+Windows PowerShell 5.1, no arguments. Add `-BaseUrl http://127.0.0.1:8001` if
+the API is on another port. It takes about three seconds, or ten on the first
+call after a server restart while MiniLM loads.
+
+The last three lines are the point:
+
+```
+         2 ingested here, 11 already present, 0 failed
+SUMMARY  activities=120  with actuals=67  review queue=118
+Demo state is clean. Reload the browser -- no restart needed.
+```
+
+**`11 already present` is expected, not a warning.** `POST /admin/reset` is not a
+clear-only call — it clears the ingest rows and then re-ingests `dataset/`
+itself, and its only knob is `?dpr_only=true`. So the script asks reset for the
+least it can do (the eleven DPR text files), then POSTs all thirteen files in a
+fixed order of its own. `POST /ingest` refuses byte-identical content by sha256,
+so re-POSTing the eleven is a deliberate no-op and the two spreadsheets are what
+the script actually ingests. Spreadsheets go last, matching the order the server
+uses, because on a source conflict the stored value is whichever source was
+ingested last — that is what makes the conflict rows on Home reproducible.
+
+If the SUMMARY line reads anything other than `120 / 67 / 118`, the script says
+so on the next line; check `dataset/` before assuming the run failed.
+
+Exit codes: `0` reset and all thirteen ingests succeeded; `1` they did not (API
+unreachable, reset not enabled, or a file failed to ingest) — the state is not
+clean; `2` a dataset file is missing and nothing was touched.
 
 ### From a terminal
 

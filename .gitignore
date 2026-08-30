@@ -12,3 +12,7 @@ dataset/uploads/
 
 # Local secrets and provider config (see .env.example)
 .env
+
+# Large local backup archive (do not commit)
+*.7z
+

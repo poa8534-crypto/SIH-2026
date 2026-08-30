@@ -1,0 +1,62 @@
+[
+  {
+    "gate": 6,
+    "coverage": 0.9488188976377953,
+    "auto_precision": 0.9294605809128631,
+    "nomatch_autolinked": 3
+  },
+  {
+    "gate": 8,
+    "coverage": 0.8307086614173228,
+    "auto_precision": 0.9383886255924171,
+    "nomatch_autolinked": 2
+  },
+  {
+    "gate": 10,
+    "coverage": 0.7559055118110236,
+    "auto_precision": 0.953125,
+    "nomatch_autolinked": 2
+  },
+  {
+    "gate": 12,
+    "coverage": 0.5511811023622047,
+    "auto_precision": 0.9714285714285714,
+    "nomatch_autolinked": 1
+  },
+  {
+    "gate": 14,
+    "coverage": 0.35039370078740156,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  },
+  {
+    "gate": 16,
+    "coverage": 0.27165354330708663,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  },
+  {
+    "gate": 18,
+    "coverage": 0.18503937007874016,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  },
+  {
+    "gate": 20,
+    "coverage": 0.14960629921259844,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  },
+  {
+    "gate": 24,
+    "coverage": 0.07086614173228346,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  },
+  {
+    "gate": 28,
+    "coverage": 0.007874015748031496,
+    "auto_precision": 1.0,
+    "nomatch_autolinked": 0
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "cold_start_s": 4.392906600001879,
+  "files": [
+    {
+      "file": "dpr_day_01.txt",
+      "events": 13,
+      "extract_s": 0.08021809999991092,
+      "match_s": 0.08878820000245469
+    },
+    {
+      "file": "dpr_day_02.txt",
+      "events": 15,
+      "extract_s": 0.002096299998811446,
+      "match_s": 0.10042769999927259
+    },
+    {
+      "file": "dpr_day_03.txt",
+      "events": 18,
+      "extract_s": 0.0027153999981237575,
+      "match_s": 0.13378670000020065
+    },
+    {
+      "file": "dpr_day_04.txt",
+      "events": 9,
+      "extract_s": 0.0014494999995804392,
+      "match_s": 0.06188130000009551
+    },
+    {
+      "file": "dpr_day_05.txt",
+      "events": 22,
+      "extract_s": 0.002587900002254173,
+      "match_s": 0.1346897999974317
+    },
+    {
+      "file": "dpr_day_06.txt",
+      "events": 27,
+      "extract_s": 0.0032957000003079884,
+      "match_s": 0.18273620000036317
+    },
+    {
+      "file": "dpr_day_07.txt",
+      "events": 23,
+      "extract_s": 0.0026276999997207895,
+      "match_s": 0.1402008000004571
+    },
+    {
+      "file": "dpr_day_08.txt",
+      "events": 31,
+      "extract_s": 0.002884599998651538,
+      "match_s": 0.16792899999927613
+    },
+    {
+      "file": "dpr_day_09.txt",
+      "events": 22,
+      "extract_s": 0.0027015999985451344,
+      "match_s": 0.14437399999951595
+    },
+    {
+      "file": "dpr_day_10.txt",
+      "events": 18,
+      "extract_s": 0.0023043999972287565,
+      "match_s": 0.11406129999886616
+    },
+    {
+      "file": "dpr_day_11_messy.txt",
+      "events": 16,
+      "extract_s": 0.0023450000007869676,
+      "match_s": 0.10638950000065961
+    },
+    {
+      "file": "civil_progress.xlsx",
+      "events": 22,
+      "extract_s": 0.00860629999806406,
+      "match_s": 0.1565468000007968
+    },
+    {
+      "file": "piping_progress.xlsx",
+      "events": 30,
+      "extract_s": 0.007921799999166979,
+      "match_s": 0.20388269999966724
+    }
+  ],
+  "total_events": 266,
+  "total_s": 1.8574482999902102
+}

@@ -1,0 +1,14 @@
+{
+  "shipped": {
+    "top1": 0.871900826446281,
+    "auto_precision": 1.0,
+    "coverage": 0.5039370078740157,
+    "nomatch_not_autolinked": 1.0
+  },
+  "dense_filled": {
+    "top1": 0.8966942148760331,
+    "auto_precision": 1.0,
+    "coverage": 0.5196850393700787,
+    "nomatch_not_autolinked": 1.0
+  }
+}
