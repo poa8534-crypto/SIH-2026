@@ -1052,6 +1052,36 @@ never built (H-004).
 - `server/db.py :: _now()` uses the deprecated `datetime.utcnow()`, producing ~17,600
   `DeprecationWarning`s per test run. Cosmetic, but it drowns real warnings.
 
+### 10. `0/0 nos → 100.0%` is real but is NOT the bug it looks like
+
+`FINDINGS.md` F7 flags `PIP-PCD-1053` showing `0/0 nos` at `100.0%` in the roll-up
+table, and proposes guarding "the percent-complete path so `planned_qty == 0` cannot
+produce a quantity-derived percentage".
+
+**The observation is correct; the diagnosis is not, and applying the proposed fix
+literally would break D-008.** That 100% is not quantity-derived. `PIP-PCD-1053` is
+*"P&ID Punch List Close-out"* with `planned_qty = 0` — a milestone. The path is the
+deliberate unquantified-node rule in `RollupAccumulator.add()`:
+
+```python
+elif event.status is not None and event.status.value == "completed":
+    if rec.planned_qty > 0:
+        ...  # partial scope — NOT applied (D-008)
+    else:
+        # Unquantified node (a milestone): a completion claim is all
+        # the evidence there is or ever will be.
+        acc["pct_events"].append(100.0)
+```
+
+`results()` then reaches it through `elif acc["pct_events"]`, never through the
+`installed / planned_qty` branch, which is guarded by `rec.planned_qty > 0`. Gating
+that branch on `planned_qty == 0` would change nothing; gating the `pct_events`
+branch would make every milestone in the schedule permanently un-completable.
+
+**The real defect is presentational:** the roll-up table renders `installed/planned`
+as `0/0 nos` for a node that has no quantity dimension at all. Fix the display — show
+`—` or `milestone` — not the roll-up logic. Same for `eval.py :: print_rollup`.
+
 ---
 
 ## 14. Documentation status — which files are current and which are dated
@@ -1064,7 +1094,8 @@ trusted. So:
 | `CLAUDE.md` | **CURRENT** | Binding operating rules |
 | `DECISIONS.md` | **CURRENT** | D-series = current reasoning; Part 0 H-series = reconstructed history |
 | `FLOW.md` (this file) | **CURRENT** | §1–§8 verified against commit `1de9b4d`; §0 and §9–§16 verified 2026-08-31 |
-| `Audit-1.md` | **CURRENT** | Independent gap analysis, 11 open findings, reproduction commands in its appendix |
+| `Audit-1.md` | **CURRENT** | Independent gap analysis, 11 open findings (F-01…F-11), reproduction commands in its appendix |
+| `FINDINGS.md` | **CURRENT** | Second independent review (2026-08-31), F1–F7 plus a ranked last-day order of work. Overlaps `Audit-1.md` by design; its **F1** is the sharpest statement of `Audit-1.md` F-06, its **F7** is new (see §13.10), and its F3/F4 restate F-10/F-03. Its numbers come from `research/data/eval_output.txt` — i.e. the **eval** operating point, not the server's (§10, H-014). All line citations verified 2026-08-31. |
 | `research/` | **CURRENT** | Eight reproducible harnesses; `EVIDENCE.md` labels every claim MEASURED / AUDITED / RUBRIC / NOT CLAIMED |
 | `SETUP.md`, `DEMO.md` | **CURRENT** | Runbooks |
 | `SIH-2026-PS.txt` | **CURRENT** | The actual problem statement — the authority on scope |
@@ -1304,6 +1335,32 @@ H-014   four threshold sets; the live server is NOT at the headline operating po
 `Audit-1.md`'s eleven findings remain open, and every item in §13 was deliberately
 left in place (D-014). The recommended order of work is in **§15 → Planned next
 step**; the demo-blocking one is **§13.1**.
+
+### Addendum — 2026-08-31, second commit
+
+`FINDINGS.md` (a second independent review of the pushed branch) was added to the
+repository in a follow-up commit. Documentation-only; no code changed.
+
+```
+NEW:       FINDINGS.md      F1-F7 + a ranked last-day order of work
+MODIFIED:  CLAUDE.md        one row in Related Documentation
+MODIFIED:  FLOW.md          §14 doc-status row; §13.10 (below)
+```
+
+All five of its line citations were verified against the source before it was
+committed (`matching/engine.py:296`, `:330`; `server/main.py:1301`;
+`research/graphs/make_graphs.py:253`, `:321`) — all correct.
+
+Two cross-checks the next agent should carry forward:
+
+- **Its F7 diagnosis is wrong even though its observation is right.** See §13.10.
+  Applying the fix as written would make every milestone un-completable.
+- **Its numbers are the eval operating point**, taken from
+  `research/data/eval_output.txt` (0.775/0.5/0.03 on gold mentions), not the
+  server's 0.70/0.40/0.03. Its funnel `254 → 128 → 76 → 11` is therefore an
+  `eval.py` funnel; the seeded database's figures will differ. See §10 and H-014.
+  This does not weaken F1 — the `max(acc["dates"])` fallback at `engine.py:330` is
+  threshold-independent — but the count "eleven" is.
 
 ---
 

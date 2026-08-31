@@ -268,6 +268,7 @@ stated in the final response.
 | `FLOW.md` | How execution actually travels through the code |
 | `ARCHITECTURE.md` | Original system specification, contracts, and a candid Known Limitations section |
 | `Audit-1.md` | Independent gap analysis against the problem statement (2026-08-30) |
+| `FINDINGS.md` | Second independent review against the PS, from the pushed branch (2026-08-31). F1–F7 with a ranked last-day order of work |
 | `research/` | Reproducible experiments, evidence, and the technical audit |
 | `SETUP.md` / `DEMO.md` | Environment setup and demo runbook |
 | `SIH-2026-PS.txt` | The problem statement this project answers |
