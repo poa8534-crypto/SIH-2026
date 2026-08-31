@@ -6,8 +6,169 @@ This file tells you **how execution travels** — deep enough to answer:
 > When this action happens, what exact code runs next?
 
 Every file, function and class named here was verified against the codebase on
-**2026-08-30** (commit `1de9b4d`). **Never add a path to this file that you have not
-read in the source.**
+**2026-08-30** (commit `1de9b4d`) for §1–§8, and re-verified on **2026-08-31** along
+with the new §0 and §9–§15. **Never add a path to this file that you have not read in
+the source.**
+
+### How to read this file
+
+| If you need to… | Start at |
+|---|---|
+| trace a request end to end | **§2** (ingest), **§3** (reconcile), **§4** (agent), **§5** (reads) |
+| understand *why* the pipeline has these stages | **§0** — the designs it replaced |
+| know what loads at boot and what is lazy | **§9** |
+| quote an accuracy or coverage number | **§10 first** — four threshold sets exist |
+| know a module's obligations and failure behaviour | **§11** |
+| follow one object from source line to screen | **§12** |
+| know what is broken, dead, or hard-coded | **§13** |
+| know which docs to trust | **§14** |
+| pick up where the last session stopped | **§15** |
+
+Historical material is confined to **§0**, **§13**, **§14** and **§15** and is labelled
+as such. §1–§12 describe running code only.
+
+---
+
+## 0. Execution flow evolution — how the pipeline got this shape
+
+Sections 1–8 describe the **current** flow. This section describes the flows that
+came before it, because the current architecture only makes sense as a reaction to
+them. Full reasoning is in `DECISIONS.md` Part 0 (H-001 … H-027); this is the
+execution-path view.
+
+Nothing in this section is currently running. Everything here is either **planned and
+never built** or **built and replaced**.
+
+---
+
+### V0 — planned, never built (2026-08-22)
+
+The original product, specified in `SIH26122_7Day_Build_Plan_v2.md`. A completely
+different system on a completely different stack.
+
+```
+field engineer types a WhatsApp-style message (+ optional photo)
+    ↓
+Lovable-generated React app
+    ↓
+Supabase Storage (photo)          Supabase Edge Function `parse-update`
+    ↓                                  ↓
+vision call: "describe, don't      Claude API, WITH THE WHOLE 40-TASK SCHEDULE
+conclude" → caption                INJECTED INTO THE PROMPT
+    ↓                                  ↓
+    └──────────► proposals table ◄─────┘  { matched_task_id, match_confidence,
+                     ↓                      alternatives, proposed_status,
+              review queue UI               proposed_percent, reasoning,
+                     ↓                      needs_clarification }
+              site engineer clicks Confirm
+                     ↓
+       DETERMINISTIC CPM RECALCULATION (topological sort → forward pass)
+                     ↓
+       projected_start / projected_finish written back
+                     ↓
+       frappe-gantt redraws: baseline bar vs projected bar, project end date moves
+                     ↓
+              audit_log row
+```
+
+**What survived into the shipped system:** the review queue, the mandatory human
+gate, "low confidence is a valid answer", and the honesty policy about never claiming
+autonomous verification.
+
+**What did not survive:**
+
+| V0 stage | Fate | Reference |
+|---|---|---|
+| Lovable + Supabase + Edge Functions | replaced by FastAPI + SQLite, local | H-002 |
+| one LLM call picks the task | replaced by hybrid retrieval + feature scoring | H-003 |
+| CPM recalculation + cascade | **never built at all** | H-004 |
+| frappe-gantt chart | **never built** — `Schedule.tsx` is a TanStack table | H-004 |
+| photo upload + vision caption | **never built** | H-005 |
+| WhatsApp-shaped chat input | replaced by `POST /agent/turn` slot filling | H-001 |
+
+---
+
+### V1 — specified in the architecture, partly built, immediately corrected (~2026-08-27 → 08-28)
+
+The first Python implementation, at commit `c16d5f4`. The retrieval → ranking →
+decision structure was already right; the **data flow through it was broken**.
+
+```
+DPR .txt
+    ↓  open(..., errors="replace")            ← D-010: destroys cp1252 bytes at ingest
+Extractor._parse_text_spans
+    ↓
+_prepass_span → hints{tags, dates, quantities, ...}
+    ↓
+_merge_event
+    ↓
+ExtractedEvent(reported_date=None)            ← H-015: THE DATE WAS NEVER BOUND
+    ↓
+MatchingEngine.match_event
+    ├─ _date_proximity(reported=None)      → None → feature dropped, weights renormalise
+    └─ _predecessor_plausibility(None)     → None → feature dropped
+    ↓
+RollupAccumulator
+    ↓
+    no actual_start, no actual_finish, no audit row for any date
+    ↓
+Schedule screen shows a baseline with zero actuals
+```
+
+Three defects were fixed in sequence, each changing the execution path:
+
+| Commit | Path change | Entry |
+|---|---|---|
+| `2da3c92` | `_merge_event` now binds `reported_date` (span date, else DPR header date); `_row_to_event` binds it from the completion column, else commencement | H-015 |
+| `e664dd8` | one date becomes two claims: `_bind_assertion_dates` produces `asserted_start` / `asserted_finish`; `is_forecast_language()` short-circuits both to `None`; `DateAssertion` carries file+line+row through the roll-up | H-017 |
+| `8928df7` | `extraction/textio.py :: read_text()` replaces `errors="replace"` with `utf-8-sig → cp1252 → latin-1` | D-010 |
+
+The V1 conflict path was also wrong in a way that produced a false clean bill of
+health, and was replaced:
+
+```
+V1 (superseded, D-011a)                     V2 (current, D-011)
+RollupAccumulator._describe_conflicts       _prior_write(db, activity_id, field)
+  sees only assertions from ONE /ingest       reads the most recent audit row
+       ↓                                            ↓
+  cross-upload disagreement invisible         _cross_file_conflict(prior, new, file)
+       ↓                                            ↓
+  reported 0 of 24 real conflicts             25 conflicts, 21 spreadsheet-vs-DPR
+```
+
+---
+
+### V1a — the agent wrote directly to the schedule (superseded, D-009a)
+
+Briefly, `POST /agent/turn` committed on the turn that filled the last slot:
+
+```
+last slot fills
+    ↓
+_create_event_from_slots                     ← immediately, no confirmation
+    ↓
+LinkedEvent + DIRECT WRITE of actual_start / actual_finish  (auto_applied=True)
+    ↓
+_upsert_alias(...)                           ← learned from an unreviewed guess
+    ↓
+NO ReviewQueueItem — the update never reached a planner
+```
+
+Replaced by the two-call proposal flow in §4. See D-009.
+
+---
+
+### V2 — current
+
+Sections 1–8. The invariants that came out of the above and must not be reversed:
+
+```
+extraction never decides         matching never touches the database
+matching never writes            only /review/{id}/resolve commits an actual date
+the LLM never supplies tags      the LLM never supplies dates
+a forecast is never an actual    a finish is never written below 100%
+audit rows are never mutated     a lossy decode is never used on an input path
+```
 
 ---
 
@@ -219,8 +380,21 @@ server/main.py :: agent_turn()                                     [line 2213]
            → LinkedEvent + ReviewQueueItem
            → does NOT touch actual_start / actual_finish
     ↓
-AgentTurnResponse { reply, slots, proposal, extracted_intent }
+AgentTurnResponse (server/schemas.py) {
+    session_id, turn_number, agent_message, slots: SlotState, pending_slots[],
+    event_created, linked_event_id, confidence,
+    awaiting_confirmation,        ← true when the proposal is on the table and
+                                    NOTHING has been written; the client then
+                                    renders the structured card and sends
+                                    confirm: true on the next turn
+    activity_description, match_outcome, review_item_id,
+    discipline_label, status_label, choices
+}
 ```
+
+> Corrected 2026-08-31: this block previously read
+> `{ reply, slots, proposal, extracted_intent }`. None of those four field names
+> exist on `AgentTurnResponse`.
 
 **Invariant (D-009):** the agent never commits an actual date. Only
 `POST /review/{item_id}/resolve` does. A voice update always surfaces in the planner's
@@ -355,7 +529,785 @@ research/data/*.py                   8 reproducible experiment harnesses
 
 ---
 
+---
+
+## 9. Application startup — what loads, when, and in what order
+
+Two processes. Neither serves the other; they are joined only by CORS (H-021).
+
+### Backend
+
+```
+python -m uvicorn server.main:app --reload
+    ↓
+IMPORT TIME (server/main.py)
+    ├─ sys.path.insert(0, <repo root>)              main.py:46 — lets `python server/main.py` work
+    ├─ from .db import ...                          server/db.py imported
+    │      └─ create_engine(f"sqlite:///{DB_PATH}")
+    │         DB_PATH = $EPC_DB_PATH or <repo>/dataset/epc_progress.db
+    │         Anchored to the repo root, NOT the CWD: a CWD-relative URL
+    │         silently creates a second, empty database.
+    ├─ DATA_DATE = date(2026, 9, 15)                main.py:179 — hard-coded; see §13
+    ├─ MATCHING_THRESHOLDS = Thresholds(0.70/0.40/0.03)   main.py:237 — see §10
+    └─ CORSMiddleware installed                     main.py:147–176
+    ↓
+@app.on_event("startup") :: startup()               main.py:182
+    ├─ Base.metadata.create_all(bind=engine)
+    │      Creates MISSING TABLES ONLY. It never adds a missing COLUMN to an
+    │      existing table — the failure mode D-012 describes, and the reason
+    │      server/demo.py :: _schema_matches() exists.
+    └─ _seed_schedule_if_empty(db)                  main.py:195
+           if activities table is empty:
+               read_text(dataset/baseline_schedule.json)   ← explicit decode, D-010
+               → 120 Activity rows → db.commit()
+           else: return immediately
+    ↓
+SERVER READY.  Note what has NOT happened yet:
+    ✗ no schedule index built
+    ✗ no BM25 corpus
+    ✗ no embedding model loaded
+    ✗ no LLM client created
+```
+
+**The matching engine is lazy.** `_MATCHING_ENGINE` is a module-level singleton built
+on **first use**, not at startup:
+
+```
+first POST /ingest  (or first POST /agent/turn that fills its last slot)
+    ↓
+get_matching_engine()                                main.py:247
+    ↓
+MatchingEngine(SCHEDULE_PATH, thresholds=MATCHING_THRESHOLDS)
+    ├─ ScheduleIndex.from_json(dataset/baseline_schedule.json)
+    │      per activity: prepass_extract_tags(desc + detail) → tag_variants → parse_tag
+    │      builds  records[] · line_index · full_key_index · by_id · tokens
+    │      builds  BM25Okapi(corpus)
+    └─ HybridRetriever(index)
+           MiniLMEmbedder._load()
+               1. SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+               2. on failure → download once (needs network)
+               3. on failure → _hashed_embeddings()  SILENT degradation, H-010
+           _embed_docs() → doc_matrix (120 × 384, L2-normalised)
+    ↓
+~4.4 s cold start, ONCE PER PROCESS  (research/data/latency.json)
+```
+
+Consequences worth knowing:
+
+- The **first** ingest of a session is ~4.4 s slower than every later one. Warm it
+  before a demo by ingesting anything, or by running `scripts/healthcheck.py`.
+- A machine with no cached model and no network still starts, still serves, and still
+  matches — with a hashed-trigram embedder and materially worse dense recall, and
+  **nothing in the API says so**. The only routine signal is the line `eval.py` prints:
+  `dense: sentence-transformers all-MiniLM-L6-v2 (local, offline)`.
+- The engine holds `dataset/baseline_schedule.json` in memory and **never re-reads
+  it**. Editing that file requires a server restart; editing the `activities` table
+  does not affect matching at all, because `matching/` never reads the database.
+
+### Frontend
+
+```
+cd frontend && npm run dev          → vite --port=5173 --host=0.0.0.0
+    ↓
+index.html → src/main.tsx → QueryClientProvider → App.tsx (react-router)
+    ↓
+src/config.ts resolves the API base URL (VITE_API_URL, else same-host:8000)
+    ↓
+useTheme / useDevice read two localStorage keys (the ONLY client persistence, H-024)
+```
+
+### Offline / non-server entry points
+
+```
+python scripts/seed.py            rebuilds the DB in-process, no server needed;
+                                  uses the same code paths as POST /ingest
+python scripts/reset_demo.py      clears ROWS (not the file) so it can run while the
+                                  server is up; rebuilds the schema first if any
+                                  model column is missing (server/demo.py::_schema_matches)
+python scripts/healthcheck.py     needs the server up; probes 8 endpoints
+                                  non-destructively (re-uploads a known-duplicate
+                                  file; probes a 404 review id)
+scripts/demo_reset.ps1            Windows demo wrapper
+python eval.py                    builds its OWN MatchingEngine — never touches the DB
+```
+
+---
+
+## 10. Threshold configuration map — read this before quoting a metric
+
+The single most confusing thing in this codebase: **four different threshold sets
+exist and they are not interchangeable.** Full reasoning in `DECISIONS.md` H-014.
+
+```
+matching/models.py :: Thresholds        DEFAULTS  0.78 / 0.42 / 0.06
+    │   used by any MatchingEngine(...) built without explicit thresholds
+    ├──► research/data/ablation.py
+    ├──► research/data/bm25gate.py
+    ├──► research/data/disagree.py
+    └──► research/data/hypothesis.py
+
+server/main.py:237 :: MATCHING_THRESHOLDS         0.70 / 0.40 / 0.03   ◄── THE LIVE SERVER
+    │   calibrated on EXTRACTION SPANS (the real pipeline)
+    │   measured: 96.6% auto-link precision, 48% coverage
+    └──► POST /ingest · POST /agent/turn · scripts/seed.py · scripts/reset_demo.py
+         → therefore: the demo database, every screen, every audit row
+
+eval.py :: calibrate() grid search                0.775 / 0.5 / 0.03   ◄── THE HEADLINE NUMBER
+    │   calibrated on GROUND-TRUTH MENTIONS ("extraction alignment noise is
+    │   deliberately excluded" — eval.py docstring)
+    │   measured: 100.0% auto-link precision, 50.4% coverage, 0 wrong AUTO_LINKs
+    └──► research/data/eval_output.txt · EVIDENCE.md · the slide
+
+research/data/densefix.py, weights.py             0.775 / 0.5 / 0.03  (hard-coded to match eval.py)
+matching/test_matching.py                         0.8   / 0.45 / 0.06 (one unit test)
+```
+
+**Rules for anyone quoting a number:**
+
+1. `100% auto-link precision` describes `eval.py` at 0.775 on gold mentions. Say so.
+2. The running demo is at 0.70. Its measured precision is 96.6%, not 100%.
+3. Absolute coverage figures from `ablation.py` / `bm25gate.py` / `disagree.py` /
+   `hypothesis.py` use the 0.78 defaults and are **not** comparable to
+   `eval_output.txt`. Their arm-vs-arm *comparisons* are valid, which is all they claim.
+4. Changing any of these requires re-running `python eval.py` and recording the
+   movement in `DECISIONS.md` (`CLAUDE.md`, Verification section).
+
+---
+
+## 11. Module contracts
+
+The formal contract for each module boundary. §6 gives the call graph; this gives the
+obligations.
+
+```
+MODULE: extraction/
+
+Purpose            Turn heterogeneous source documents into a uniform ExtractedEvent
+                   stream with mandatory provenance. It DECIDES NOTHING about the
+                   schedule — it does not know what an activity_id means.
+Called by          server/main.py :: ingest_file()  ·  server/demo.py :: reset_demo()
+                   (eval.py uses extraction/prepass.py only, not Extractor)
+Inputs             a file path (.txt .md .log .xlsx .csv) + optionally
+                   dataset/baseline_schedule.json for context (now unused, H-019)
+Outputs            ExtractionResult { events: list[ExtractedEvent], errors, warnings }
+Calls              textio.read_text · prepass.* · spreadsheet.SpreadsheetParser
+                   llm_backend.make_backend_from_env  (NullBackend unless opted in)
+Downstream         matching/engine.py
+State              Extractor holds self.schedule / self.schedule_context in memory and
+                   one LLMBackend. No database. No cache. Idempotent per file.
+Failure behaviour  Unsupported suffix → ExtractionResult with an error, no exception.
+                   Spreadsheet parse error → caught, appended to result.errors.
+                   LLM failure at ANY layer (unreachable, timeout, non-JSON, schema
+                   mismatch) → LLMBackend._fallback() returns an empty LLMEventOutput
+                   and the deterministic pre-pass result stands. Never raises.
+                   .csv → returns an error: _extract_csv is an UNIMPLEMENTED STUB,
+                   even though POST /ingest accepts .csv. See §13.
+Invariants         Every event carries a Provenance. Tags come only from the regex
+                   pre-pass (D-006). No file is ever decoded lossily (D-010).
+```
+
+```
+MODULE: matching/
+
+Purpose            Entity resolution: resolve one ExtractedEvent to one L5/L6 node,
+                   with a calibrated confidence and an auditable reason — then
+                   aggregate many events into one node's progress.
+Called by          server/main.py :: ingest_file(), _match_slots()
+                   eval.py  ·  research/data/*.py
+Inputs             ExtractedEvent (duck-typed — matching never imports extraction's
+                   models, only reads attributes), dataset/baseline_schedule.json
+Outputs            LinkDecision per event;  RollupResult per activity
+Calls              retrieval.HybridRetriever · features.compute_features/final_score/
+                   blend_with_line_lock · schedule_index.ScheduleIndex · textutils
+Downstream         server/main.py persistence · review queue · audit trail · eval.py
+State              MatchingEngine is a long-lived singleton in the server: an in-memory
+                   ScheduleIndex, a BM25 corpus, and a 120×384 embedding matrix, all
+                   built once. RollupAccumulator is per-request and disposable.
+                   ** READS NOTHING FROM THE DATABASE. ** This is why AliasLexicon
+                   cannot influence a match (Audit-1 F-03), and why the engine is
+                   testable without a server.
+Failure behaviour  Empty candidate list → NEW_ACTIVITY with rationale ["no_candidates"].
+                   Missing embedding model → hashed-trigram fallback, silent (H-010).
+                   Absent feature → None → excluded from the blend, weights
+                   renormalise. This is by design and is also how H-015 hid for a
+                   commit and how Audit-1 F-01 hides today.
+Invariants         Pure over the baseline JSON. Never writes. Never calls an LLM.
+                   Never mutates its input event.
+```
+
+```
+MODULE: server/
+
+Purpose            HTTP surface, persistence, the audit trail, and the ONLY place a
+                   schedule field is ever mutated.
+Entry              server/main.py — FastAPI app, 17 routes
+Calls              extraction/ · matching/ · db.py · schemas.py · agent_slots.py ·
+                   agent_llm.py · demo.py
+Persists           activities · jobs · linked_events · audit_records · review_queue ·
+                   alias_lexicon · conversation_turns · (memory_cache — declared,
+                   never written; see §13)
+Outputs            Pydantic response models from server/schemas.py
+Downstream         frontend/
+State              One SQLite file; one MatchingEngine singleton; one Extractor per
+                   ingest request.
+Failure behaviour  HTTPException → job.status="failed", re-raised with its own status.
+                   Any other exception during ingest → job.error_message recorded,
+                   HTTP 500. The Job row always reflects the outcome.
+                   IntegrityError from db.py validators → the write is refused; the
+                   roll-up continues with the remaining fields.
+Invariants         Every schedule mutation writes an AuditRecord (D-004).
+                   AuditRecord is append-only — there is no UPDATE path anywhere.
+                   Only resolve_review_item() commits an actual date from a review.
+                   REVIEW / NEW_ACTIVITY outcomes never mutate the schedule.
+```
+
+```
+MODULE: frontend/
+
+Purpose            Two role surfaces over one API (H-023).
+Entry              src/main.tsx → App.tsx (react-router)
+Calls              src/lib/api.ts — the single place any URL is constructed
+State              TanStack Query cache only. localStorage holds exactly two UI
+                   preferences (theme, device-view override) and NO project data.
+Failure behaviour  A failed field submit preserves the supervisor's text and claims
+                   nothing (H-024). Speech unavailable →
+                   typed fallback, an explicit designed state.
+Known mismatch     src/lib/api.ts :: resolveReview sends action names the server does
+                   not accept. See §13, item 1 — this is a LIVE BUG.
+```
+
+```
+BOUNDARY: eval.py → matching/
+
+eval.py deliberately bypasses extraction/. It rebuilds ExtractedEvents from
+ground_truth.csv mentions using the SAME prepass functions the extractor uses
+(extract_tags, extract_quantities, extract_percentages, extract_fractions,
+infer_discipline, infer_status), so that what is measured is the MATCHER, not the
+extractor's span segmentation. That separation is why eval.py's operating point
+differs from the server's — see §10.
+```
+
+---
+
+## 12. Data object lifecycle
+
+```
+a file on disk  /  a supervisor's sentence
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ExtractedEvent                       extraction/models.py                   │
+│ created:  Extractor._merge_event()   |  SpreadsheetParser._row_to_event()   │
+│           server/main.py::_create_event_from_slots()  (agent path)          │
+│           eval.py::_build_event()                     (evaluation path)     │
+│                                                                             │
+│ raw_text          the exact span — this is what gets matched                │
+│ tags              REGEX ONLY, never the LLM (D-006) — near-decisive         │
+│ reported_date     when the line was written (span date, else header date)   │
+│ asserted_start /  what the line CLAIMS about start/finish; None unless a     │
+│ asserted_finish   claim was actually made; both None on forecast text (H-017)│
+│ quantity + uom    a unitless quantity cannot drive progress (D-007)         │
+│ discipline        soft signal; inference from field prose is noisy          │
+│ status            authoritative for finish claims (H-017)                   │
+│ percentage        explicit % or a parsed fraction                           │
+│ provenance        MANDATORY — file, line|row, exact span, extraction method  │
+│ activity_id /     V1 residue (H-003): filled later by the matcher, or never  │
+│  confidence /     read at all (`reasoning`, `activity_description`);         │
+│  alternatives /   `alternatives` from the LLM is OVERWRITTEN by the matcher's │
+│  reasoning        own candidates in server/main.py                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+        │  MatchingEngine.match_event()
+        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LinkCandidate[]  (≤ 20)              matching/models.py                     │
+│ activity_id · retrieval_sources[TAG|BM25|DENSE] · rrf_score · rank          │
+│ features: FeatureVector — every field Optional; None means SIGNAL ABSENT     │
+│           and the weight renormalises out. `line_locked` is a bool FLOOR,    │
+│           not a weight, which is why a bad tag cannot be down-weighted away. │
+│ final_score = weighted blend, then blend_with_line_lock():                   │
+│           unique full line match → floor 0.93;  any line lock → floor 0.46   │
+└─────────────────────────────────────────────────────────────────────────────┘
+        │  decide_outcome(scored, thresholds)   ← §10: WHICH thresholds matters
+        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LinkDecision                          matching/models.py                    │
+│ outcome ∈ {AUTO_LINK, REVIEW, NEW_ACTIVITY}   (Decision.REJECTED exists in   │
+│           server/db.py's comment vocabulary but NOT in the Decision enum)    │
+│ chosen_activity_id — for REVIEW this is a PROPOSAL, not a link              │
+│ confidence · margin · thresholds (embedded, so the decision is reproducible) │
+│ rationale — closed vocabulary only (D-003)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+        │
+        ├── AUTO_LINK ──────► RollupAccumulator.add()
+        │                        DateAssertion{field, value, file, line|row, span}
+        │                        kept individually so disagreement stays visible
+        │                              ▼
+        │                     RollupResult   percent_complete · actual_start ·
+        │                        actual_finish (ONLY at 100%, D-008) · notes ·
+        │                        conflicts · start/finish_assertions
+        │                              ▼
+        │                     _apply_rollup_to_schedule()
+        │                              ▼
+        │            ┌──────────────────────────────────────────┐
+        │            │ Activity  (server/db.py)   MUTATED HERE   │
+        │            │ actual_start · actual_finish · actual_qty │
+        │            │ + compute_variance(DATA_DATE)             │
+        │            └──────────────────────────────────────────┘
+        │                              │ every field change
+        │                              ▼
+        │            ┌──────────────────────────────────────────┐
+        │            │ AuditRecord — APPEND ONLY, NO UPDATE PATH │
+        │            │ FK linked_event_id (NULL for aggregate    │
+        │            │ writes) + denormalised file/line/row/span │
+        │            │ + confidence + auto_applied + conflict    │
+        │            │ + contributing_sources                    │
+        │            └──────────────────────────────────────────┘
+        │                              │ projected per request
+        │                              ▼
+        │              ScheduleActivityResponse.link_confidence
+        │              (NOT stored — safe only because audit is append-only)
+        │
+        └── REVIEW / NEW_ACTIVITY ──► LinkedEvent (activity_id NULL for AUTO_LINK
+                                       only; a REVIEW proposal is not committed)
+                                          ▼
+                                     ReviewQueueItem   status=pending
+                                          │
+                        ┌─────────────────┴─────────────────┐
+                        │                                   │
+              POST /review/{id}/clarify           POST /review/{id}/resolve
+                        │                                   │
+              clarification_question set,        confirm | reassign | create | ignore
+              item stays PENDING                          │
+                        ▼                                  ├─► AuditRecord
+              /field/clarifications                        ├─► _apply_confirmed_event_to_schedule()
+                        ▼                                  │     ← THE ONLY PLACE AN ACTUAL
+              …/respond → clarification_response           │       DATE IS COMMITTED FROM A REVIEW
+                        └──────────────────────────────────┘
+                                                           └─► AliasLexicon row
+                                                                 ⚠ WRITE-ONLY.
+                                                                 Nothing in matching/
+                                                                 ever reads it.
+                                                                 (Audit-1 F-03)
+```
+
+**The agent path produces the same objects by a different route:**
+
+```
+SlotState (server/schemas.py)  ──_match_slots()──►  a synthetic sentence
+                                                     ▼
+                                            MatchingEngine (the real one)
+                                                     ▼
+                                            proposal only — NOTHING WRITTEN
+                               ──confirm:true──►  _create_event_from_slots()
+                                                     ▼
+                                            ExtractedEvent → LinkedEvent
+                                                            + ReviewQueueItem
+                                            and still no actual date (D-009)
+```
+
+**Objects that exist but go nowhere** — knowing this saves an hour of tracing:
+
+| Object | Status |
+|---|---|
+| `MemoryCache` (`server/db.py`) | table declared, imported into `main.py`, **never read or written**. Memory queries are computed live on every request. |
+| `ScheduleIndex.full_key_index` | built at index time, **read by nothing**. `line_index` does the work. |
+| `ExtractedEvent.reasoning` / `.activity_description` | populated only by the LLM; read by nothing downstream. |
+| `AliasLexicon` | written by all three resolve actions; read by nothing. |
+| `Job` | written and read within the same synchronous request (H-007). |
+
+---
+
+## 13. Technical debt, dead code, and live defects
+
+Everything below was **verified in the source on 2026-08-31** and deliberately left in
+place (D-014). Items marked **LIVE BUG** affect running behaviour; the rest are dead
+weight or hard-coded assumptions.
+
+`Audit-1.md` carries eleven findings (F-01 … F-11) and is not repeated here. These are
+**additional** and none of them appear there.
+
+### 1. LIVE BUG — two of the four planner resolve actions cannot succeed
+
+The frontend and the server disagree on the action vocabulary of
+`POST /review/{item_id}/resolve`.
+
+| Server accepts (`server/main.py`, `ResolveRequest`) | Frontend sends (`frontend/src/pages/Reconcile.tsx`) |
+|---|---|
+| `confirm` | `confirm` ✅ |
+| `reassign` | — |
+| `create` (requires `new_activity_id` **and** `new_description`) | `new_activity` (sends only `new_description`) ❌ |
+| `ignore` | `reject` ❌ |
+
+```
+Reconcile.tsx :: handleNew()     → { action: 'new_activity', new_description }
+Reconcile.tsx :: handleReject()  → { action: 'reject' }
+        ↓ api.ts :: resolveReview — passes the body through verbatim
+        ↓ POST /review/{id}/resolve
+        ↓ resolve_review_item()
+        └─ falls through every elif → raise HTTPException(400, f"Unknown action: {req.action}")
+```
+
+Even after renaming `new_activity` → `create`, the request would still 400 because the
+UI never collects a `new_activity_id`. The frontend's own TypeScript signature bakes
+the wrong vocabulary in:
+`action: 'confirm' | 'new_activity' | 'reject'` (`frontend/src/lib/api.ts`).
+
+**Why it survived:** no test covers either path. `server/test_server.py` exercises
+`confirm`, `reassign`, `create` and `ignore` against the API directly;
+`frontend/src/test/reconcile.test.tsx` covers only the clarification flow. Nothing
+tests the two together.
+
+**Effect on the demo:** the "New activity" and "Reject" buttons on the reconciliation
+screen fail. Only "Confirm" works. `reassign`, which the server supports and which is
+the strongest training signal for `_upsert_alias`, **has no UI at all**.
+
+### 2. LIVE BUG (latent) — `.csv` is accepted for upload and cannot be parsed
+
+`POST /ingest` permits `.csv` (`server/main.py`, suffix allow-list), and
+`Extractor.extract` dispatches it to `_extract_csv`, which is a stub:
+
+```python
+def _extract_csv(self, filepath: str) -> ExtractionResult:
+    """Placeholder for future CSV parsing."""
+    result = ExtractionResult(source_file=Path(filepath).name)
+    result.errors.append("CSV extraction not yet implemented")
+    return result
+```
+
+The upload succeeds, a `Job` row is created, zero events are extracted, and the user
+gets a completed job with nothing in it. Either implement it or remove `.csv` from the
+allow-list; the current state is the worst of the two.
+
+### 3. Dead code — the unreachable `_dense_cos` / `_unique_line` duplicate
+
+`matching/engine.py:155–169`, physically inside `_rationale()` **after its `return`**
+on line 153, indented as methods of a class that is not there. Unreachable, and it
+duplicates the two live `MatchingEngine` helpers at lines 88–99.
+
+This is the same `_dense_cos` that `Audit-1.md` F-01 says needs fixing (+2.5 pts Top-1,
+measured in `research/data/densefix.json`). **Anyone fixing F-01 must edit the copy at
+line 88, not the one at line 157.** Deleting the dead block first would remove the
+trap.
+
+### 4. Dead code — the unreachable `REJECTED` branch in `ingest_file`
+
+`server/main.py:838`, `else:  # REJECTED — preserve event + decision in history only`.
+`matching.models.Decision` has exactly three members — `AUTO_LINK`, `REVIEW`,
+`NEW_ACTIVITY` — and the preceding `if/elif/elif` covers all three. The branch can
+never run, so **no `field="event_rejected"` audit row can ever be written by ingest.**
+
+`REJECTED` also appears as a fourth value in `server/db.py`'s `decision` column comment,
+in `_create_event_from_slots`'s reason map, and in a `server/test_agent.py` assertion —
+all of them describing a state the enum does not have.
+
+### 5. Incomplete implementation — the predecessor integrity warning is unconditional
+
+`server/db.py :: validate_actual_start()` appends *"Predecessor {id} has not started
+yet"* for **every** predecessor, unconditionally, with the reason in the code:
+
+```python
+for pred_id in activity.predecessor_list():
+    pred = None
+    # We need a session to query — caller handles this
+    # Just return the warning with the predecessor ID
+    warnings.append(IntegrityWarning(...))
+```
+
+No caller ever performs that lookup. The warning therefore fires whether or not the
+predecessor actually started, so `integrity_warnings` on any activity with
+predecessors is noise. The hard block in the same function (`Actual Start` after the
+data date) *is* correct and does work.
+
+### 6. Dead schema and dead index
+
+- **`MemoryCache`** (`server/db.py`) — table declared, created by `create_all`,
+  imported into `server/main.py`, and **never read or written anywhere**. Memory
+  queries are recomputed on every request. Either wire it or drop it; as it stands it
+  implies a caching layer that does not exist.
+- **`ScheduleIndex.full_key_index`** (`matching/schedule_index.py`) — built on every
+  index construction, **read by nothing**. `line_index` carries the tag channel.
+
+### 7. Dead dependency
+
+`recharts` is in `frontend/package.json` and is **imported by no file** in
+`frontend/src`. It was the charting library for the Gantt/analytics visuals that were
+never built (H-004).
+
+### 8. Hard-coded demo constants
+
+| Constant | Where | Risk |
+|---|---|---|
+| `DATA_DATE = date(2026, 9, 15)` | `server/main.py:179` — *"Latest date in our dataset"* | Every variance calculation, the `Actual Start` hard block, and the planned dates of planner-created activities are pinned to the seeded corpus. Ingesting anything dated after 2026-09-15 raises `IntegrityError` on the start write. |
+| `reference_date = date(2026, 8, 15)` | `Extractor.__init__` — *"midpoint of our DPR range"* | Resolves year-less and relative dates. Wrong corpus → wrong year on every bare "12 Sep". |
+| 12 delay keywords | `_compute_delay_reasons` | The entire delay taxonomy. See `Audit-1.md` F-04/F-05. |
+| CORS origin list + regex | `server/main.py:147–176` | Deliberately permissive for demo hosts (H-021). Not a production posture — and there is no authentication behind it (`Audit-1.md` F-11). |
+
+### 9. Stale comments and prompts
+
+- `extraction/llm_backend.py :: SYSTEM_PROMPT` rule 3 — *"Use the schedule context to
+  infer discipline and status"*. No schedule context has been sent since `ab137ee`
+  (H-019). Harmless, but it instructs the model to use something it never receives.
+- `server/main.py` module docstring — *"POST /schedule/export emit PMXML (XER as
+  stretch)"*. XER shipped.
+- `server/db.py :: _now()` uses the deprecated `datetime.utcnow()`, producing ~17,600
+  `DeprecationWarning`s per test run. Cosmetic, but it drowns real warnings.
+
+---
+
+## 14. Documentation status — which files are current and which are dated
+
+`CLAUDE.md`'s rule is that stale documentation is worse than none, because it is
+trusted. So:
+
+| File | Status | How to read it |
+|---|---|---|
+| `CLAUDE.md` | **CURRENT** | Binding operating rules |
+| `DECISIONS.md` | **CURRENT** | D-series = current reasoning; Part 0 H-series = reconstructed history |
+| `FLOW.md` (this file) | **CURRENT** | §1–§8 verified against commit `1de9b4d`; §0 and §9–§16 verified 2026-08-31 |
+| `Audit-1.md` | **CURRENT** | Independent gap analysis, 11 open findings, reproduction commands in its appendix |
+| `research/` | **CURRENT** | Eight reproducible harnesses; `EVIDENCE.md` labels every claim MEASURED / AUDITED / RUBRIC / NOT CLAIMED |
+| `SETUP.md`, `DEMO.md` | **CURRENT** | Runbooks |
+| `SIH-2026-PS.txt` | **CURRENT** | The actual problem statement — the authority on scope |
+| `ARCHITECTURE.md` §0, §1, §3–§6 | **DATED (2026-08-28)** | The original specification, including the parts that were rejected. Excellent reasoning; **not** a description of the current code. See H-008 to H-012 for what diverged. |
+| `ARCHITECTURE.md` §2 (Data Contracts) | **HISTORICAL — do not code against it** | Field names, `event_type`, `date_basis`, `asserted_date`, `delay_signal`, `uom_compatible` and the `extractor{}` block never existed in code. Divergence table in H-009. |
+| `ARCHITECTURE.md` §7 (Known Limitations) | **MOSTLY CURRENT, partly overtaken** | Names `_fill_slots_from_message`, a symbol that no longer exists (it is `_fill_slots` + `server/agent_slots.py`). Its "asks for three things only" paragraph was superseded within the same document by "the agent asks for what it needs". |
+| `research/NAVIS_TECHNICAL_AUDIT.md` | **CURRENT with one caveat** | Attributes `tau_high=0.775` to `matching/models.py` and to the shipped system. Both are loose — see §10 and H-014. |
+| `SIH context.txt` | **SUPERSEDED CONCEPT (2026-08-22)** | Describes a WhatsApp/photo/Gantt product. Its competitive analysis, risk list and honesty policy are still good; its product description is not this system. H-001. |
+| `SIH26122_7Day_Build_Plan*.md` / `*.pdf` | **SUPERSEDED PLAN (2026-08-22)** | A different stack, a different architecture, and features that were never built. Read only as history. H-002 … H-005. |
+| `Design/` (22 mockups) | **SPECIFICATION, partly refused** | Where a mockup and the code disagree, the code is authoritative. `field_supervisor_update_pending_sync` describes a state that deliberately does not exist (H-024). |
+
+---
+
+## 15. Historical handoff — state at the end of the reconstruction session (2026-08-31)
+
+Written per the handoff requirement so the next agent inherits an accurate picture
+rather than an optimistic one.
+
+### Last major task attempted
+Reconstruct the project's history into `DECISIONS.md` and `FLOW.md` from Git,
+the source, and the repository's own planning and research documents (D-014).
+
+### Completed
+- `DECISIONS.md` Part 0: **27 historical entries (H-001 … H-027)** covering the
+  planning era, the pre-Git build week, and every code commit from `c16d5f4` to
+  `1de9b4d`, each naming its evidence.
+- `DECISIONS.md` D-014 recording the handoff method and why defects were not fixed.
+- Cross-links added from D-001, D-002 and D-005 to the historical entries that
+  qualify them.
+- Two documentation corrections in `DECISIONS.md`: the stale symbol
+  `_fill_slots_from_message`, and a prominent warning on D-002's operating point.
+- `FLOW.md` §0 (execution-flow evolution V0 → V1 → V1a → V2), §9 (startup), §10
+  (threshold map), §11 (module contracts), §12 (data lifecycle), §13 (technical debt),
+  §14 (documentation status), and this section.
+
+### Partially completed
+- **Verification of `ARCHITECTURE.md` §7 against current code.** Its stale paragraphs
+  are identified in §14 but the file itself was **not edited** — it is a dated
+  document by design (D-014) and editing it would destroy the record it holds.
+- **`research/NAVIS_TECHNICAL_AUDIT.md`'s threshold attribution** is flagged in §10
+  and §14 but not corrected in that file.
+
+### Not started
+- Every one of the eleven `Audit-1.md` findings.
+- Every defect in §13 above.
+- The inter-annotator agreement test proposed in `ARCHITECTURE.md` §5.B, which would
+  quantify the ground-truth circularity (H-013). Never run.
+- The BM25 + feature-scoring / no-dense arm (`Audit-1.md` F-01, H-027). Never run.
+
+### Known failing tests
+**None.** `python -m pytest -q` → **264 passed** (40.9 s, 17,924 warnings — almost all
+`datetime.utcnow()` deprecations from `server/db.py :: _now()`).
+
+### Known bugs
+See §13. In priority order for a demo:
+1. `new_activity` / `reject` buttons on `/reconcile` return HTTP 400 (§13.1) — **the
+   most likely thing to break on stage.**
+2. `.csv` upload silently produces an empty job (§13.2).
+3. Unconditional predecessor integrity warnings (§13.5).
+4. `Audit-1.md` F-01 — `_dense_cos` returns `None` for candidates outside the dense
+   channel; the measured fix is +2.5 pts Top-1 and is **not applied**.
+5. `Audit-1.md` F-05 — a planner's resolution note can never introduce a new delay
+   cause.
+
+### Known technical debt
+§13 items 3, 4, 6, 7, 8, 9. Plus the two structural gaps that are decisions rather
+than defects: the alias lexicon is write-only (`Audit-1.md` F-03) and there is no
+authentication or project isolation (`Audit-1.md` F-11).
+
+### Temporary workarounds in place
+- The hashed-trigram embedder standing in for MiniLM, **silently** (H-010).
+- `DATA_DATE` and `reference_date` pinned to the seeded corpus (§13.8).
+- `scripts/reset_demo.py` rebuilding the schema on drift instead of a migration —
+  deliberate, since everything in that database is regenerable (D-012).
+- Two calibrated operating points instead of one (H-014).
+
+### Planned next step (recommended order)
+1. **Fix §13.1.** One line in `Reconcile.tsx`/`api.ts` plus a UI field for
+   `new_activity_id`, and a test that exercises the frontend body against the server
+   route. It is a demo-blocking bug with a five-minute fix.
+2. **Resolve H-014 consciously.** Either align `MATCHING_THRESHOLDS` with the
+   calibrated point and re-run `eval.py`, or document the two points everywhere a
+   number is quoted. Do not leave it implicit.
+3. **Delete the dead `_dense_cos` at `matching/engine.py:155–169`, then apply
+   `Audit-1.md` F-01** to the live copy at line 88. Re-run `eval.py` and record the
+   movement in `DECISIONS.md`. This is the largest measured win available (+2.5 pts
+   Top-1, +1.6 pts coverage, auto-precision unchanged).
+4. **Close the alias-lexicon loop (`Audit-1.md` F-03).** It converts a write-only
+   table into the PS's stated learning claim. Note the constraint: `matching/` reads
+   nothing from the database by design (§11), so the lexicon must be injected into
+   `MatchingEngine` rather than queried from inside it.
+5. Fix `Audit-1.md` F-05 (one-line loop bug), then F-06 (zero-day durations).
+
+### Component status at handoff
+
+| Area | Status |
+|---|---|
+| **Extraction** | Working. Rules-only by default; LLM opt-in and guarded. `.csv` is a stub (§13.2). No OCR, by decision (H-005). |
+| **Matching** | Working. 87.2% Top-1, 100% auto-link precision at the eval operating point / 96.6% at the server's. One measured, unapplied improvement (F-01). |
+| **Roll-up + integrity** | Working. Partial-scope guard, unitless-quantity guard, UOM-mismatch guard, cross-file conflict detection all live. |
+| **Persistence + audit** | Working. Append-only, 259 rows on the seeded corpus, 165 with an exact position. No dangling foreign keys. |
+| **Review queue** | Working server-side (4 actions). **UI reaches only 1 of them** (§13.1). |
+| **Clarification loop** | Working both directions. |
+| **Agent / voice** | Working. Slot filling is deterministic; the LLM layer is optional and re-validated. Browser speech with a typed fallback. Proposals only, never writes (D-009). |
+| **Institutional memory** | Working, and statistically thin by admission (H-006, `Audit-1.md` F-04). |
+| **Export** | Working (PMXML + XER). **No import path** (H-008, F-10). |
+| **Frontend** | Working, 55 vitest tests. No offline capture, by decision (H-024). One live contract bug (§13.1). |
+| **Database** | SQLite, 8 tables, 1 of them (`memory_cache`) unused. No auth, no multi-project isolation (F-11). |
+| **Evaluation** | Working and reproducible: `eval.py` plus 8 harnesses in `research/data/`. Ground truth is partly circular and the mitigation test was never run (H-013). |
+| **Documentation** | Current for `CLAUDE.md` / `DECISIONS.md` / `FLOW.md` / `Audit-1.md` / `research/`. Dated for `ARCHITECTURE.md` and the build plans (§14). |
+
+### Environment assumptions the next agent should verify first
+
+```
+python -m pytest -q                   expect: 264 passed
+cd frontend && npx vitest run         expect: 55 passed
+python eval.py | head -20             expect the line:
+    dense: sentence-transformers all-MiniLM-L6-v2 (local, offline)
+    ↑ if this says anything else, the hashed fallback is active (H-010) and
+      NO metric from that run is comparable to a published one.
+```
+
+---
+
 ## Current Modification Area
+
+**Task:** One-time knowledge handoff — reconstruct the project's history from Git,
+the source, and the repository's own planning and research documents, and persist it
+into `DECISIONS.md` and `FLOW.md`.
+**Date:** 2026-08-31 · **Decision:** D-014
+
+### Current path
+
+```
+Documentation only — NO runtime execution path was modified.
+No source file, schema, route, contract, dependency or config was touched.
+
+DECISIONS.md   + Part 0: H-001 … H-027  (planning era, pre-Git build week,
+                 every code commit c16d5f4 → 1de9b4d), each naming its evidence
+               + D-014  (why history was backfilled as an H-series, and why the
+                 defects found were documented rather than fixed)
+               + cross-links from D-001 / D-002 / D-005 into the H-series
+               + 2 corrections: the stale symbol `_fill_slots_from_message`,
+                 and a warning on D-002's operating point (see H-014)
+
+FLOW.md        + §0   execution flow evolution: V0 (planned) → V1 → V1a → V2
+               + §9   application startup: eager vs lazy, cold start, degradation
+               + §10  threshold configuration map — four sets, only one is live
+               + §11  module contracts incl. failure behaviour and invariants
+               + §12  data object lifecycle, incl. objects that go nowhere
+               + §13  technical debt, dead code, and two live defects
+               + §14  documentation status: current vs dated vs superseded
+               + §15  historical handoff state
+               + 1 correction: the AgentTurnResponse field list in §4
+```
+
+### Upstream
+
+```
+None. No module calls into these files at runtime.
+Read by: human developers and AI agents before making changes.
+```
+
+### Downstream
+
+```
+None at runtime.
+Process-level: CLAUDE.md's Prime Rule. Additionally, three claims elsewhere in the
+repository are now qualified by this task and should be read together with it:
+  research/NAVIS_TECHNICAL_AUDIT.md  threshold attribution  → FLOW.md §10, H-014
+  research/EVIDENCE.md               "100% auto-link precision" → FLOW.md §10
+  ARCHITECTURE.md §2, §7             dated / partly overtaken  → FLOW.md §14
+```
+
+### Files currently modified
+
+```
+MODIFIED:  DECISIONS.md   645 → ~2,050 lines
+MODIFIED:  FLOW.md        438 → ~1,250 lines
+UNCHANGED: CLAUDE.md      (its rules already cover this workflow — D-013; nothing
+                           was missing, so nothing was added)
+UNCHANGED: all source, all tests, all data, all config
+```
+
+### Interfaces changed
+
+```
+None.
+```
+
+### API behaviour changed
+
+```
+None. No route, request model or response model was touched.
+```
+
+### Database changes
+
+```
+None. No schema, model, column or migration was touched.
+```
+
+### Verification performed
+
+```
+python -m pytest -q            → 264 passed (40.9 s)
+cd frontend && npx vitest run  →  55 passed (4 files)
+cd frontend && npx tsc --noEmit → clean, exit 0
+git status                     → only DECISIONS.md and FLOW.md modified
+Git archaeology                → git log --all --stat, per-commit diffs, and
+                                 git log -S on MATCHING_THRESHOLDS and the
+                                 Thresholds field defaults
+Symbol verification            → every file, function, class, constant, route and
+                                 line number named in the new sections confirmed
+                                 present by reading the source or by grep
+Absence verification           → CPM/topological/projected/cascade, photo/vision/
+                                 OCR, gantt, recharts imports, AliasLexicon reads
+                                 in matching/, MemoryCache reads, and
+                                 full_key_index reads all confirmed ABSENT
+```
+
+### New findings this task produced (none previously recorded anywhere)
+
+```
+H-014   four threshold sets; the live server is NOT at the headline operating point
+§13.1   LIVE BUG — /reconcile "New activity" and "Reject" send action names the
+        server rejects with HTTP 400; only "Confirm" works, and `reassign` has no UI
+§13.2   .csv is an accepted upload type behind an unimplemented extractor stub
+§13.4   the REJECTED branch in ingest_file is unreachable (Decision has 3 members)
+§13.5   validate_actual_start warns on every predecessor unconditionally
+§13.6   MemoryCache and ScheduleIndex.full_key_index are dead
+§13.7   recharts is a dead dependency
+```
+
+### Known open items (not addressed by this task)
+
+`Audit-1.md`'s eleven findings remain open, and every item in §13 was deliberately
+left in place (D-014). The recommended order of work is in **§15 → Planned next
+step**; the demo-blocking one is **§13.1**.
+
+---
+
+## Previous Modification Area (2026-08-30, D-013) — retained for history
 
 **Task:** Establish permanent repository memory (`CLAUDE.md`, `DECISIONS.md`,
 `FLOW.md`) and the read-before / update-after / commit-and-push workflow.
