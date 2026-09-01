@@ -3236,3 +3236,186 @@ never cost auto-link precision.
 `AbstentionModel`), `matching/engine.py` (`abstention_features`,
 `decide_outcome` abstainer branch, `_calibrated`), `research/bench/harness.py`
 (`ece`, `brier`, `reliability_table`, `pooled_no_match`).
+
+---
+
+## 2026-09-01 / D-030 - One design system: six type steps, six spacing steps, three radii, and five button jobs
+
+### Status
+Implemented. Visual tokens and shared primitives only - no layout, IA, copy,
+routing, data-flow or component-boundary changes in this pass.
+
+### Context
+A read-only audit of the frontend measured the drift rather than describing it.
+The palette was already clean - 27 semantic colour utilities, zero hex literals
+in `src/**.tsx` - but everything above the palette had accumulated one value per
+call site:
+
+| category | before | after |
+|---|---:|---:|
+| font sizes | 13 | **6** |
+| padding/gap steps | 26 padding + 10 gap | **6** |
+| border radii | 5 | **3** |
+| button treatments | 13 | **5 variants, 1 primitive** |
+| empty states | 16 | **1** |
+| loading states | 7 | **1** |
+| error states | 8 | **1 primitive, 3 modes** |
+| card-header paddings | 6 | **1** |
+| section-title systems | 2 | **1** |
+
+The mixing was the real problem, not the count: bracket sizes (`text-[15px]`)
+sat next to Tailwind-scale sizes (`text-xs`) with no rule for choosing, so the
+next screen could not be written correctly even by someone trying.
+
+### Decisions
+
+**1. The type scale is enforced by the compiler, not by review.**
+`@theme { --text-*: initial; }` clears Tailwind's built-in font sizes, then six
+are defined: `--text-label` 12, `--text-body` 14, `--text-lead` 16, `--text-h3`
+20, `--text-h2` 24, `--text-h1` 32. `text-xs`, `text-sm` and `text-lg` no longer
+compile, so a straggler fails visibly instead of quietly becoming a seventh
+size. Verified against the built stylesheet: exactly six `font-size` utilities
+are emitted and none of the Tailwind-scale names survive.
+
+Values are the ones already most common in the codebase. The one-offs folded
+into their nearest neighbour: 10px and 11px into `label`, 15px into `lead`, 28px
+into `h2`, 36px into `h1`.
+
+**2. The spacing scale is NOT compiler-enforced, deliberately.**
+The scale is 1, 2, 3, 4, 5, 8 (4/8/12/16/20/32px) and every padding and gap in
+`src` now uses only those. It is *not* locked with `--spacing-*: initial`,
+because in Tailwind v4 the same namespace drives `w-`, `h-`, `inset-`,
+`translate-` and `m-`; clearing it would break `w-24`, `h-16`, `-left-4` and
+about forty other sizing utilities that this pass does not touch. Sizing is not
+the spacing scale and collapsing it was not the task. Enforced by the primitives
+and by review instead, and said so in `index.css` rather than left implied.
+
+Two padding values survive off-scale and are not drift: `pb-24` on Reconcile's
+candidate list and `pr-12` on the Field text input. Both clear an
+absolutely-positioned child; changing either moves content under a control.
+
+**3. Radii are three, by role.** `rounded-sm` (8px) is anything a cursor or
+finger acts on; `rounded-lg` (10px) is anything that contains; `rounded-full`
+is pills and dots. 4px existed only on skeletons and is gone. Three radii were
+removed outright rather than remapped, because in each case the radius was doing
+nothing or actively wrong: the sole `rounded-sm` on an inline text highlight,
+`rounded-[8px]` on two sidebar buttons that have no background and no padding
+(so the corners could never render), and rounded corners on the Schedule
+integrity banner, which is full-bleed and also draws `border-b`.
+
+**4. One `Button`, five variants, shape and size as props.**
+`primary | secondary | danger | ghost | icon`, with `size` (`md` = the 16px
+mobile control, `sm` = the planner's dense mono control) and `shape`
+(`rect | pill`). A third size, `xs`, exists only for controls inside a
+fixed-height toolbar row - `sm` is 42px tall and would have changed the Schedule
+filter bar's `h-11` layout, which this pass is not allowed to do.
+
+The four pill toggles collapse to `shape="pill"` plus an `active` prop, which is
+`boolean | undefined`: undefined means "not a toggle" and keeps the plain
+variant, which is what separates the agent's suggestion chips from the filter
+chips above them. `FieldProfile`'s language buttons were square where the other
+three renderings of the same control were pills; they are pills now.
+
+`Button` renders a `Link` when given `to`, which is how the sole 11px
+link-as-button on Home and the "Answer Question" link in the field context
+blocks stopped being bespoke.
+
+**5. Empty states pick the sentence-case voice.** The 16 variants split into two
+voices - sentence-case prose, and UPPERCASE MONO with `tracking-widest`. Mono
+uppercase is this app's voice for machine data; an empty queue is not machine
+data and is not a fault, and rendering it like one is why "QUEUE CLEAR" read as
+a crash. Sentence case wins. Three strings changed case only, no wording:
+`NO CANDIDATES IDENTIFIED`, `Queue Clear` and `Select an item from the queue`.
+
+`NeedsYourResponse` used to `return null` when nothing was outstanding, so it
+had no empty state at all and the card appeared or vanished under the microphone
+as the query resolved, shifting the page. It renders the shared empty state and
+holds its place now.
+
+**6. Skeletons stop stacking opacity.** Every skeleton group wrapped its bars in
+`opacity-50` *and* animated them with `animate-pulse`, which itself cycles
+opacity 1 -> 0.5. The two multiplied and floored the bars near 0.25 - close to
+invisible on a projector. The wrapper is gone; the pulse alone carries it. The
+`opacity-50` on the field context blocks' `dimmed` state is a different thing
+and is unchanged.
+
+**7. The font declaration now names what ships.** `index.css` declared Inter and
+nothing ever loaded it - no `<link>`, no `@font-face`, no `@import`, no package -
+so every screen has in fact been rendering in Helvetica since the stylesheet was
+written. Two options: self-host Inter, or tell the truth. **Chose to tell the
+truth** and declare the system-UI stack. Adding a Google Fonts link would put a
+network fetch on first paint that fails silently at a venue with no internet and
+degrades to exactly the Helvetica the app already shows; self-hosting means
+committing binary font files for a cosmetic change during a freeze. The
+declaration is now honest and the rendering is unchanged.
+
+**8. The toast animation is real now.** Reconcile's toast carried
+`animate-in fade-in slide-in-from-top-2`, which are `tailwindcss-animate`
+classes. That package is not a dependency and is not installed, so all three
+compiled to nothing. Replaced with one `@keyframes navis-toast-in` in
+`index.css` - same intent, no dependency to install, nothing to fetch offline.
+
+### Status colour: one inconsistency fixed, one reported and left
+
+`text-ok` = a good outcome that completed; `text-warn` = needs a human;
+`text-danger` = late or failed; `text-accent` = ahead of plan, and interactive.
+
+**Fixed:** `Memory.tsx` rendered an early finish as `text-ok` while the three
+other variance renderers (`Schedule.tsx` `VarianceCell`, `Home.tsx`
+`ScheduleHealth`, `Memory.tsx` `SlipByDiscipline`) rendered the same fact as
+`text-accent`. In the dark theme those are visibly different colours - teal
+against blue - for one fact. Now `text-accent` everywhere.
+
+**Reported, not changed:** `Reconcile.tsx` renders the "Suggested" badge in
+`text-warn`. Suggested is the matcher's top-ranked candidate, not something
+needing attention, and it sits inches from `ConfidenceBadge` where `text-warn`
+means specifically "medium confidence, 0.5-0.775" - so amber on that row reads
+as a confidence band it is not. It is left as-is because the obvious
+alternative, `text-accent`, is already what marks the *selected* candidate in
+that same list, so recolouring it needs a design decision about what the badge
+means. That is a meaning change, not a token change, and out of scope here.
+
+### Not unified, and why
+
+- **The Planner|Field segmented control** (`App.tsx`). Two halves sharing one
+  border and one overflow clip. Expressing that needs a segmented-control
+  primitive, not a sixth button variant.
+- **The two sidebar utility buttons** (`App.tsx`, Force Mobile View / theme).
+  They are muted text rows with no padding and no background. `ghost` would make
+  them accent-coloured boxes and put two accent controls in the sidebar footer -
+  a visible chrome change, not a token collapse.
+- **The Schedule integrity banner.** A full-width clickable banner that is also
+  a filter toggle. Not a button shape.
+- **Field's `serverErrorBox`.** It is a content panel, not a generic error: it
+  carries "This update was not saved." Routing it through `ErrorState` would
+  delete that line, which is a copy change. Its Retry is the `Button` primitive
+  and its box uses the shared radius and danger tokens.
+- **The mic tap-card and the context disclosure header** (`Field.tsx`). Cards
+  that happen to be tap targets, not buttons.
+
+### Verification
+
+`node_modules/typescript/bin/tsc --noEmit` clean. `vite build` succeeds; the
+emitted stylesheet was inspected directly and carries exactly six font-size
+utilities, exactly three radius utilities, and the toast keyframe.
+
+Frontend tests: **52 passed, 3 failed - identical to the untouched baseline**,
+confirmed by stashing the whole change and re-running. The three failures are
+`field.test.tsx > profile`, failing on `localStorage` being undefined inside
+`useDevice.ts:20` under jsdom. Pre-existing, unrelated to visual tokens, and not
+worked around - no test was modified.
+
+Note for anyone running the suite on macOS: `node_modules/@rollup` in this tree
+contained only `win32` binaries, so vitest and vite could not start at all until
+`@rollup/rollup-darwin-x64` was installed with `--no-save`. That is npm's
+optional-dependency bug, not a project change; `package.json` and
+`package-lock.json` are untouched.
+
+### Affected Areas
+`frontend/src/index.css` (type scale, radii, spacing note, font stack, toast
+keyframe) - `frontend/src/components/ui/Button.tsx` (new) -
+`frontend/src/components/ui/primitives.tsx` (new: `SectionTitle`, `Panel`,
+`PanelHeader`, `Skeleton`, `SkeletonRows`, `EmptyState`, `ErrorState`) -
+`frontend/src/components/ui/index.ts` (new) - `App.tsx` -
+`pages/{Home,Reconcile,Schedule,Ingest,Memory,Field,FieldReports,FieldClarifications,FieldProfile}.tsx`
+- `components/{FieldContextBlocks,FieldNav,ConfidenceBadge,DisciplineTag}.tsx`

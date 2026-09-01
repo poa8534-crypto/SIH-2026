@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, errorDetail } from '../lib/api';
 import { useDevice } from '../hooks/useDevice';
 import { useSpeech } from '../hooks/useSpeech';
+import { Button, PanelHeader } from '../components/ui';
 
 /**
  * Who is reporting, and on what.
@@ -17,11 +18,11 @@ import { useSpeech } from '../hooks/useSpeech';
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="px-4 py-4 border-b border-hair last:border-0 flex flex-col gap-1.5">
-      <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+    <div className="px-4 py-4 border-b border-hair last:border-0 flex flex-col gap-2">
+      <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
         {label}
       </span>
-      <span className="text-[16px] leading-6 text-fg">{children}</span>
+      <span className="text-lead leading-6 text-fg">{children}</span>
     </div>
   );
 }
@@ -48,27 +49,25 @@ export default function FieldProfile() {
       {/* The role this surface serves and the work front it reports on.
           There is no authentication and no profile endpoint in this system,
           so there is no person to name here and none is invented. */}
-      <section className="border border-hair bg-raised rounded-[10px] p-4 flex flex-col gap-2">
+      <section className="border border-hair bg-raised rounded-lg p-4 flex flex-col gap-2">
         <div
-          className={`text-[20px] font-semibold ${
+          className={`text-h3 font-semibold ${
             error ? 'text-danger' : 'text-heading'
           }`}
           title={error ? errorDetail(error) : undefined}
         >
           {fromServer(schedule?.project)}
         </div>
-        <div className="text-[16px] text-muted">{SUPERVISOR.role}</div>
+        <div className="text-lead text-muted">{SUPERVISOR.role}</div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-selected text-accent px-3 py-1 text-[12px] font-medium">
+          <span className="rounded-full bg-selected text-accent px-3 py-1 text-label font-medium">
             {PROJECT.location}
           </span>
         </div>
       </section>
 
-      <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-        <div className="px-4 py-4 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-          Current assignment
-        </div>
+      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+        <PanelHeader title="Current assignment" />
         <Row label="Project">{fromServer(schedule?.project)}</Row>
         <Row label="Project code">
           <span className="font-mono">{PROJECT.code}</span>
@@ -80,52 +79,43 @@ export default function FieldProfile() {
         <Row label="Details">Shift: {SUPERVISOR.shift}</Row>
       </section>
 
-      <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-        <div className="px-4 py-4 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-          Language &amp; input
-        </div>
+      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+        <PanelHeader title={<>Language &amp; input</>} />
         <div className="px-4 py-4 flex flex-col gap-3">
-          <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
             Preferred language for voice
           </span>
           <div className="flex gap-2">
             {LANGUAGES.map((l) => (
-              <button
+              <Button
                 key={l.code}
+                variant="secondary"
+                shape="pill"
+                active={speech.lang === l.code}
+                className="flex-1"
                 onClick={() => speech.setLang(l.code)}
-                className={`rounded-[8px] flex-1 border px-5 py-3 text-[16px] font-medium transition-colors ${
-                  speech.lang === l.code
-                    ? 'border-accent bg-selected text-accent'
-                    : 'border-hair bg-raised text-muted hover:bg-selected hover:text-accent'
-                }`}
               >
                 {l.label}
-              </button>
+              </Button>
             ))}
           </div>
-          <span className="text-[12px] text-muted leading-relaxed">
+          <span className="text-label text-muted leading-relaxed">
             Speech recognition runs in the browser. Nothing is recorded or sent
             to a speech service.
           </span>
-          <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
             Preferred languages: {LANGUAGES.map((l) => l.label).join(', ')}
           </span>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
-        <button
-          onClick={() => setOverride('desktop')}
-          className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
-        >
+        <Button variant="primary" block onClick={() => setOverride('desktop')}>
           Return to role selection
-        </button>
-        <button
-          onClick={() => navigate('/field')}
-          className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
-        >
+        </Button>
+        <Button variant="secondary" block onClick={() => navigate('/field')}>
           Back to home
-        </button>
+        </Button>
       </section>
     </div>
   );

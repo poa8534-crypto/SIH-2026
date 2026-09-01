@@ -169,6 +169,40 @@
   --color-disc-ins: var(--disc-ins);
   --color-disc-hse: var(--disc-hse);
 
+  /* ==========================================================================
+     TYPE SCALE — six steps, and there is no seventh.
+
+     `--text-*: initial` clears Tailwind's built-in font sizes, so `text-xs`,
+     `text-sm`, `text-lg` and friends stop compiling. That is deliberate: the
+     audit found 13 sizes in use because bracket values (`text-[15px]`) and
+     Tailwind-scale values were mixed freely. Only the six below resolve now,
+     and a stray `text-sm` fails visibly rather than quietly re-introducing a
+     seventh size.
+
+     Values are the ones already most common in the codebase; the one-offs
+     were folded into their nearest neighbour (10 and 11 -> label, 15 -> lead,
+     28 -> h2, 36 -> h1).
+     ======================================================================= */
+  --text-*: initial;
+  --text-label: 12px;    /* labels, table headers, metadata, mono chrome */
+  --text-body: 14px;     /* planner body copy                            */
+  --text-lead: 16px;     /* mobile body copy and every mobile control    */
+  --text-h3: 20px;       /* card and panel headings                      */
+  --text-h2: 24px;       /* page headings                                */
+  --text-h1: 32px;       /* display metrics                              */
+
+  /* ==========================================================================
+     RADII — three, by role.
+
+     `rounded-sm` is anything a finger or cursor acts on (buttons, inputs,
+     chips, skeletons). `rounded-lg` is anything that contains (cards, panels,
+     drawers, banners). `rounded-full` is pills and dots and stays a static
+     Tailwind utility. The namespace is not reset here because `rounded-full`
+     is not part of it.
+     ======================================================================= */
+  --radius-sm: 8px;
+  --radius-lg: 10px;
+
   /* Legacy aliases. The original theme called muted text "text" and primary
      text "hl", which inverts the naming used above — so these are mapped
      explicitly rather than by name to keep the existing look intact. */
@@ -183,8 +217,14 @@
 body {
   background-color: var(--bg);
   color: var(--text-muted);
-  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  /* Inter was declared here for months and never loaded — no <link>, no
+     @font-face, no @import, no package — so every screen has in fact been
+     rendering in Helvetica. Rather than add a network dependency that fails
+     silently on a venue projector with no internet, the declaration now names
+     what actually ships. See D-030. */
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--text-body);
   margin: 0;
   height: 100vh;
   overflow: hidden;
@@ -203,3 +243,42 @@ body {
   color: var(--text-muted);
   opacity: 1; /* Firefox dims placeholders by default, which fails contrast */
 }
+
+/* ============================================================================
+   TOAST ENTRANCE
+
+   Reconcile's toast carried `animate-in fade-in slide-in-from-top-2`, which
+   are tailwindcss-animate classes. That package is not a dependency and is not
+   installed, so all three compiled to nothing and the toast snapped in. This
+   is the same intent as one keyframe, with no dependency to install and
+   nothing to fetch at a venue with no network.
+   ========================================================================= */
+
+@keyframes navis-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-toast-in {
+  animation: navis-toast-in 180ms ease-out both;
+}
+
+/* ============================================================================
+   SPACING SCALE — 1, 2, 3, 4, 5, 8 (4, 8, 12, 16, 20, 32px)
+
+   Padding and gap use these six steps and nothing else. The namespace is
+   deliberately NOT reset with `--spacing-*: initial`: in Tailwind v4 the same
+   scale also drives width, height, inset, translate and margin, and clearing
+   it would break `w-24`, `h-16`, `-left-4` and around forty other sizing
+   utilities that this pass does not touch. The scale is therefore enforced by
+   the primitives in components/ui and by review, not by the compiler.
+
+   Fractional steps (0.5, 1.5, 2.5) and the large one-offs (6, 10, 16) were
+   folded into the nearest step. See D-030.
+   ========================================================================= */

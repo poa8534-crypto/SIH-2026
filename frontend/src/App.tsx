@@ -17,6 +17,7 @@ import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
 import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
+import { Button, ErrorState } from './components/ui';
 
 // Placeholder route components
 
@@ -63,16 +64,16 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-full bg-surface text-muted overflow-hidden font-sans">
       <div className="w-[240px] flex-shrink-0 border-r border-hair flex flex-col">
         {/* Project identity. The name is the real one off /schedule. */}
-        <div className="px-4 pt-6 pb-4">
+        <div className="px-4 pt-5 pb-4">
           <h1
-            className={`text-[20px] font-semibold leading-7 truncate ${
+            className={`text-h3 font-semibold leading-7 truncate ${
               headerError ? 'text-danger' : 'text-heading'
             }`}
             title={headerError ? errorDetail(headerError) : projectName}
           >
             {headerError ? 'Project unavailable' : projectName}
           </h1>
-          <p className="text-[12px] font-medium leading-4 tracking-[0.05em] text-muted truncate">
+          <p className="text-label font-medium leading-4 tracking-[0.05em] text-muted truncate">
             {PLANNER_ROLE}
           </p>
         </div>
@@ -85,7 +86,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`mx-3 flex items-center gap-3 rounded-[8px] px-3 py-2 text-[16px] font-medium leading-6 transition-colors ${
+                className={`mx-3 flex items-center gap-3 rounded-sm px-3 py-2 text-lead font-medium leading-6 transition-colors ${
                   active
                     ? 'bg-accent text-accent-fg'
                     : 'text-muted hover:bg-selected hover:text-fg'
@@ -99,7 +100,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-hair">
-          <div className="text-[12px] font-mono uppercase mb-1 text-muted">Data Date</div>
+          <div className="text-label font-mono uppercase mb-1 text-muted">Data Date</div>
           <div
             className={`font-mono ${headerError ? 'text-danger' : 'text-fg'}`}
             title={headerError ? errorDetail(headerError) : undefined}
@@ -109,7 +110,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 
           <button
             onClick={() => setOverride('mobile')}
-            className="rounded-[8px] mt-4 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
+            className="mt-4 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
           >
             <Smartphone size={12} />
             Force Mobile View
@@ -117,7 +118,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
 
           <button
             onClick={toggleTheme}
-            className="rounded-[8px] mt-2 flex items-center gap-2 text-[12px] font-mono uppercase text-muted hover:text-fg transition-colors"
+            className="mt-2 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
           >
             {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -126,32 +127,27 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 bg-surface">
-        <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between gap-6 px-6">
+        <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between gap-5 px-5">
           <div className="min-w-0">
-            <h2 className="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-heading truncate">
+            <h2 className="text-h2 font-semibold leading-9 tracking-[-0.01em] text-heading truncate">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-[14px] leading-5 text-muted truncate">{subtitle}</p>
+              <p className="text-body leading-5 text-muted truncate">{subtitle}</p>
             )}
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {headerError && (
-              <span
-                className="font-mono text-[11px] text-danger max-w-[420px] truncate"
-                title={errorDetail(headerError)}
-              >
-                {errorDetail(headerError)}
-              </span>
+              <ErrorState error={headerError} mode="bare" className="max-w-[420px]" />
             )}
-            <div className="flex rounded-[8px] border border-hair overflow-hidden">
-              <span className="px-3 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.05em] bg-accent text-accent-fg">
+            <div className="flex rounded-sm border border-hair overflow-hidden">
+              <span className="px-3 py-2 font-mono text-label font-bold uppercase tracking-[0.05em] bg-accent text-accent-fg">
                 Planner
               </span>
               <button
                 onClick={() => setOverride('mobile')}
-                className="px-3 py-1.5 font-mono text-[12px] font-bold uppercase tracking-[0.05em] text-muted hover:bg-selected hover:text-fg transition-colors"
+                className="px-3 py-2 font-mono text-label font-bold uppercase tracking-[0.05em] text-muted hover:bg-selected hover:text-fg transition-colors"
               >
                 Field
               </button>
@@ -160,7 +156,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <PageHeaderContext.Provider value={setPageHeader}>
-          <main className="flex-1 overflow-auto p-6">{children}</main>
+          <main className="flex-1 overflow-auto p-5">{children}</main>
         </PageHeaderContext.Provider>
       </div>
     </div>
@@ -196,38 +192,34 @@ function MobileShell({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-screen w-full bg-surface text-muted overflow-hidden font-sans">
       <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between px-4 bg-raised">
         <span className="flex items-center gap-2 min-w-0">
-          <span className="w-8 h-8 shrink-0 rounded-[8px] bg-accent text-accent-fg flex items-center justify-center font-semibold text-[16px]">
+          <span className="w-8 h-8 shrink-0 rounded-sm bg-accent text-accent-fg flex items-center justify-center font-semibold text-lead">
             N
           </span>
           <span className="flex flex-col min-w-0">
             <span
-              className={`text-[16px] font-semibold leading-5 truncate ${
+              className={`text-lead font-semibold leading-5 truncate ${
                 headerError ? 'text-danger' : 'text-heading'
               }`}
               title={headerError ? errorDetail(headerError) : projectName}
             >
               {projectName}
             </span>
-            <span className="text-[12px] font-medium leading-4 tracking-[0.05em] text-muted truncate">
+            <span className="text-label font-medium leading-4 tracking-[0.05em] text-muted truncate">
               {FIELD_ROLE}
             </span>
           </span>
         </span>
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={toggleTheme}
-            className="rounded-[8px] text-muted hover:bg-selected hover:text-accent p-2 transition-colors"
-            title="Toggle Theme"
-          >
+          <Button variant="icon" onClick={toggleTheme} title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="icon"
             onClick={() => setOverride('desktop')}
-            className="rounded-[8px] text-muted hover:bg-selected hover:text-accent p-2 transition-colors"
             title="Force Desktop View"
           >
             <Monitor size={18} />
-          </button>
+          </Button>
         </div>
       </header>
       {/* min-h-0 so the field screen owns its own scrolling rather than

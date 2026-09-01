@@ -1256,6 +1256,97 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Collapse the frontend onto one design system - visual tokens and
+shared primitives only. No layout, IA, copy, routing, data-flow or component-
+boundary changes.
+**Date:** 2026-09-01 - **Decisions:** D-030
+
+### Current path - how a screen gets its look, after the change
+
+```
+frontend/src/index.css
+  @theme
+    --color-*        27 semantic colour tokens        UNCHANGED this pass
+    --text-*: initial                                 NEW - clears Tailwind's
+    --text-label|body|lead|h3|h2|h1                   built-in sizes, then
+                                                      defines exactly six
+    --radius-sm (8px) / --radius-lg (10px)            NEW - with rounded-full,
+                                                      the only three radii
+  body { font-family: system-ui stack }               was 'Inter', which was
+                                                      never loaded anywhere
+  @keyframes navis-toast-in / .animate-toast-in       NEW - replaces the
+                                                      tailwindcss-animate
+                                                      classes that were never
+                                                      installed
+        |
+        v
+frontend/src/components/ui/
+  Button.tsx
+    Button({ variant, size, shape, active, tone, block, to })
+      variant  primary | secondary | danger | ghost | icon
+      size     md (16px mobile) | sm (12px planner mono) | xs (toolbar row)
+      shape    rect | pill
+      active   boolean -> toggle styling; undefined -> plain variant
+      to       renders react-router <Link> with identical classes
+  primitives.tsx
+    SectionTitle          the one section-title treatment
+    Panel / PanelHeader   the one card + the one header padding (px-4 py-3)
+    Skeleton / SkeletonRows   one loading bar, one radius, no opacity stacking
+    EmptyState            icon? + title? + line + action?, sentence case
+    ErrorState            mode: bare | inline | full; calls errorDetail() itself
+  index.ts                barrel
+        |
+        v
+every page and component imports from '../components/ui'
+```
+
+### What each screen now delegates
+
+```
+App.tsx              ErrorState(bare) header failure - Button(icon) x2
+pages/Home.tsx       Panel x4 - SkeletonRows - ErrorState(bare) x4
+                     EmptyState x3 - Button(secondary/sm, to=) "Resolve"
+                     local Panel / PanelError / PanelEmpty / Skeleton DELETED
+                     (PanelEmpty had never been called)
+pages/Reconcile.tsx  PanelHeader queue - ErrorState(full|inline) - Skeleton
+                     EmptyState x3 - Button x9 - SectionTitle x3
+                     'Sending...'/'Processing...' -> 'Sending…'/'Processing…'
+                     toast: animate-in ... -> animate-toast-in
+pages/Schedule.tsx   ErrorState(full|inline) - Skeleton x2 - EmptyState x2
+                     Button(icon) drawer close - Button(secondary/xs) export
+                     SectionTitle x2  <- were mono/12px/muted, the second system
+pages/Ingest.tsx     Panel(Pipeline) - PanelHeader x2 - ErrorState x3
+                     SkeletonRows - EmptyState
+pages/Memory.tsx     Panel x4 (local copy deleted) - ErrorState(full|inline)
+                     Skeleton x4 - NoData now wraps EmptyState (was left-aligned)
+                     early-finish variance text-ok -> text-accent (D-030)
+pages/Field.tsx      Button x16 - PanelHeader - SectionTitle - ErrorState
+pages/FieldReports.tsx        Button(pill toggle) - EmptyState x2 - ErrorState
+                              SkeletonRows - PanelHeader
+pages/FieldClarifications.tsx Button(pill toggle) x2 - EmptyState x2
+                              ErrorState x2 - SkeletonRows - PanelHeader
+pages/FieldProfile.tsx        Button(pill toggle) language x3 - PanelHeader x2
+components/FieldContextBlocks.tsx
+                     PanelHeader x2 - ErrorState(bare) x2 - SkeletonRows x2
+                     EmptyState x2  <- NeedsYourResponse returned null before,
+                     so it had no empty state and shifted the page on load
+```
+
+### Still rendering their own markup, on purpose
+
+```
+App.tsx:148          Planner|Field segmented control - two halves, one border
+App.tsx:111,119      sidebar utility text buttons - no bg, no padding
+Schedule.tsx:620     integrity banner - full-bleed clickable filter row
+Field.tsx:445,655    context disclosure header, mic tap-card - cards, not buttons
+Field.tsx:590        serverErrorBox - carries "This update was not saved."
+FieldReports.tsx:127 report row rendered as a button - a list row
+```
+
+See D-030 for why each of these is left alone.
+
+## Previous Modification Area (2026-09-01, D-025-D-029) - retained for history
+
 **Task:** Make the matching engine measurably stronger and measurably faster,
 with every change justified on the held-out test split and an ablation showing
 what it contributed alone.

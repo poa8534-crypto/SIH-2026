@@ -35,7 +35,7 @@ export function DisciplineTag({ discipline }: DisciplineTagProps) {
   return (
     <span
       title={known ? undefined : `Unrecognised discipline: ${discipline}`}
-      className={`font-mono text-[11px] px-2 py-[1px] border border-current rounded-full uppercase ${color}`}
+      className={`font-mono text-label px-2 py-[1px] border border-current rounded-full uppercase ${color}`}
     >
       {label}
     </span>

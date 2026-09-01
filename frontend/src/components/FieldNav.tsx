@@ -30,14 +30,14 @@ export function FieldNav() {
   const unanswered = data?.length ?? 0;
 
   return (
-    <nav className="shrink-0 h-16 border-t border-hair bg-raised flex items-stretch gap-1 px-2 py-1.5">
+    <nav className="shrink-0 h-16 border-t border-hair bg-raised flex items-stretch gap-1 px-2 py-2">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
           end={tab.end}
           className={({ isActive }) =>
-            `flex-1 min-w-0 flex flex-col items-center justify-center gap-1 rounded-[8px] transition-colors ${
+            `flex-1 min-w-0 flex flex-col items-center justify-center gap-1 rounded-sm transition-colors ${
               isActive ? 'bg-selected text-accent' : 'text-muted hover:bg-selected'
             }`
           }
@@ -45,12 +45,12 @@ export function FieldNav() {
           <span className="relative">
             <tab.icon size={20} strokeWidth={2} />
             {tab.label === 'Clarifications' && unanswered > 0 && (
-              <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 bg-accent text-accent-fg rounded-full text-[10px] font-semibold flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 bg-accent text-accent-fg rounded-full text-label font-semibold flex items-center justify-center">
                 {unanswered}
               </span>
             )}
           </span>
-          <span className="text-[12px] font-medium leading-4 truncate max-w-full px-0.5">
+          <span className="text-label font-medium leading-4 truncate max-w-full px-1">
             {tab.label}
           </span>
         </NavLink>

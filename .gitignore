@@ -23,3 +23,4 @@ dataset/uploads/
 # keyed by content hash, never a source of truth.
 .cache/
 .DS_Store
+.venv/

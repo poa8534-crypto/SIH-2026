@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle,
   ArrowUpRight,
   Check,
   FileText,
@@ -15,6 +14,7 @@ import { isDiscipline } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
+import { EmptyState, ErrorState, Panel, PanelHeader, SkeletonRows } from '../components/ui';
 
 /** The only two the drop zone accepts. Narrower than the server, on purpose. */
 const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx'] as const;
@@ -67,17 +67,14 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
   if (lines.length === 0) return null;
 
   return (
-    <div className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-      <div className="px-3 py-3 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-        Pipeline
-      </div>
-      <div className="p-4 space-y-1.5">
+    <Panel title="Pipeline">
+      <div className="p-4 flex flex-col gap-2">
         {lines.map((line, i) => {
           const visible = i < shown;
           return (
             <div
               key={line.label}
-              className={`flex items-baseline gap-3 font-mono text-[14px] transition-all duration-300 ${
+              className={`flex items-baseline gap-3 font-mono text-body transition-all duration-300 ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
               }`}
             >
@@ -91,7 +88,7 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -104,7 +101,7 @@ function Outcome({ ev }: { ev: ExtractedEvent }) {
       <Link
         to={`/schedule?activity=${encodeURIComponent(ev.activity_id)}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 font-mono text-[12px] text-ok hover:underline"
+        className="inline-flex items-center gap-1 font-mono text-label text-ok hover:underline"
       >
         <span className="uppercase">Auto-linked</span>
         <span className="text-fg">{ev.activity_id}</span>
@@ -114,13 +111,13 @@ function Outcome({ ev }: { ev: ExtractedEvent }) {
   }
   if (ev.decision === 'NEW_ACTIVITY') {
     return (
-      <span className="font-mono text-[12px] uppercase text-warn">Flagged as new</span>
+      <span className="font-mono text-label uppercase text-warn">Flagged as new</span>
     );
   }
   if (ev.decision === 'REJECTED') {
-    return <span className="font-mono text-[12px] uppercase text-muted">Rejected</span>;
+    return <span className="font-mono text-label uppercase text-muted">Rejected</span>;
   }
-  return <span className="font-mono text-[12px] uppercase text-accent">Sent to review</span>;
+  return <span className="font-mono text-label uppercase text-accent">Sent to review</span>;
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -252,7 +249,7 @@ export default function Ingest() {
 
   return (
     <div className="flex flex-col h-full w-full bg-surface overflow-y-auto">
-      <div className="max-w-[1280px] w-full mx-auto space-y-6">
+      <div className="max-w-[1280px] w-full mx-auto space-y-5">
         {/* DROP ZONE */}
         <div
           onDragOver={(e) => {
@@ -267,22 +264,22 @@ export default function Ingest() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
           }}
-          className={`border border-dashed rounded-[10px] p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`border border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
             dragging ? 'border-accent bg-selected' : 'border-strong bg-raised hover:bg-selected'
           }`}
         >
           <Upload size={20} className={dragging ? 'text-accent' : 'text-muted'} />
-          <div className="font-mono text-[14px] text-fg">
+          <div className="font-mono text-body text-fg">
             Drop a file here, or click to browse
           </div>
-          <div className="font-mono text-[12px] text-muted uppercase tracking-wider">
+          <div className="font-mono text-label text-muted uppercase tracking-wider">
             Accepts {ACCEPTED_LABEL} only
           </div>
           <input
             ref={inputRef}
             type="file"
             accept={ACCEPTED_EXTENSIONS.join(',')}
-            className="rounded-[8px] hidden"
+            className="rounded-sm hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) upload(file);
@@ -293,23 +290,15 @@ export default function Ingest() {
 
         {/* STATES */}
         {status.kind === 'rejected' && (
-          <div className="border border-danger-line bg-danger-bg text-danger rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
-            <AlertCircle size={12} className="mt-0.5 shrink-0" />
-            <span>{status.message}</span>
-          </div>
+          <ErrorState error={new Error(status.message)} />
         )}
 
-        {status.kind === 'error' && (
-          <div className="border border-danger-line bg-danger-bg text-danger rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
-            <AlertCircle size={12} className="mt-0.5 shrink-0" />
-            <span>{status.detail}</span>
-          </div>
-        )}
+        {status.kind === 'error' && <ErrorState error={new Error(status.detail)} />}
 
         {/* A duplicate is the guard working, not a failure — styled as
             information rather than as an error. */}
         {status.kind === 'duplicate' && (
-          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label flex items-start gap-2">
             <Info size={12} className="mt-0.5 shrink-0 text-accent" />
             <span className="text-muted">
               <span className="text-fg">This file has already been ingested.</span> Identical
@@ -322,7 +311,7 @@ export default function Ingest() {
         )}
 
         {status.kind === 'uploading' && (
-          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] text-muted flex items-center gap-2">
+          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label text-muted flex items-center gap-2">
             <FileText size={12} className="shrink-0" />
             Reading {status.filename}…
           </div>
@@ -333,7 +322,7 @@ export default function Ingest() {
 
         {/* Parsed but nothing extractable — a real outcome, worth naming. */}
         {job && job.event_count === 0 && (
-          <div className="border border-hair bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] flex items-start gap-2">
+          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label flex items-start gap-2">
             <Info size={12} className="mt-0.5 shrink-0 text-warn" />
             <span className="text-muted">
               <span className="text-fg">No progress events were extracted.</span> The file
@@ -345,15 +334,15 @@ export default function Ingest() {
 
         {/* EVENT TABLE */}
         {job && sortedEvents.length > 0 && (
-          <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-            <div className="px-3 py-3 border-b border-hair flex items-center justify-between">
-              <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-                Extracted events
-              </span>
-              <span className="font-mono text-[11px] text-muted">
-                {sortedEvents.length} from {job.filename}
-              </span>
-            </div>
+          <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+            <PanelHeader
+              title="Extracted events"
+              right={
+                <span className="font-mono text-label text-muted shrink-0">
+                  {sortedEvents.length} from {job.filename}
+                </span>
+              }
+            />
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -361,7 +350,7 @@ export default function Ingest() {
                     {['Pos', 'Raw text', 'Extracted', 'Conf', 'Outcome'].map((h) => (
                       <th
                         key={h}
-                        className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                        className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -371,31 +360,31 @@ export default function Ingest() {
                 <tbody>
                   {sortedEvents.map((ev) => (
                     <tr key={ev.id} className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors">
-                      <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
                         {positionOf(ev)}
                       </td>
-                      <td className="px-3 py-3 text-[14px] text-fg min-w-[280px] max-w-[420px]">
+                      <td className="px-3 py-3 text-body text-fg min-w-[280px] max-w-[420px]">
                         {ev.raw_text}
                       </td>
                       <td className="px-3 py-3 min-w-[220px]">
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
                           {isDiscipline(ev.discipline) ? (
                             <DisciplineTag discipline={ev.discipline} />
                           ) : (
-                            <span className="font-mono text-[11px] text-muted border border-hair px-2 rounded-full uppercase">
+                            <span className="font-mono text-label text-muted border border-hair px-2 rounded-full uppercase">
                               {ev.discipline || 'unknown'}
                             </span>
                           )}
                           {ev.tags.map((t) => (
                             <span
                               key={t}
-                              className="font-mono text-[11px] bg-selected text-accent px-2 rounded-full"
+                              className="font-mono text-label bg-selected text-accent px-2 rounded-full"
                             >
                               {t}
                             </span>
                           ))}
                         </div>
-                        <div className="mt-1 font-mono text-[11px] text-muted space-x-2">
+                        <div className="mt-1 font-mono text-label text-muted space-x-2">
                           {ev.asserted_start && (
                             <span>
                               start <span className="text-fg">{ev.asserted_start}</span>
@@ -435,28 +424,17 @@ export default function Ingest() {
         )}
 
         {/* HISTORY */}
-        <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-          <div className="px-3 py-3 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-            Previously ingested
-          </div>
+        <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+          <PanelHeader title="Previously ingested" />
           {historyError ? (
-            <div className="px-3 py-4 flex items-start gap-2">
-              <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
-              <span className="font-mono text-[12px] text-danger">
-                {errorDetail(historyError)}
-              </span>
-            </div>
+            <ErrorState error={historyError} mode="bare" className="px-3 py-4" />
           ) : historyLoading ? (
-            <div className="p-4 space-y-2 opacity-50">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-5 bg-selected rounded-[4px] animate-pulse" />
-              ))}
-            </div>
+            <SkeletonRows rows={3} height="h-5" />
           ) : !history || history.length === 0 ? (
-            <div className="py-8 text-center text-[14px] text-muted leading-relaxed px-4">
+            <EmptyState>
               No files have been ingested yet. Drop a .txt or .xlsx above and it
               will appear here.
-            </div>
+            </EmptyState>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
@@ -465,7 +443,7 @@ export default function Ingest() {
                     {['File', 'Ingested', 'Events', 'Linked', 'Review', 'Status'].map((h) => (
                       <th
                         key={h}
-                        className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                        className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                       >
                         {h}
                       </th>
@@ -475,22 +453,22 @@ export default function Ingest() {
                 <tbody>
                   {history.map((j) => (
                     <tr key={j.id} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
-                      <td className="px-3 py-3 font-mono text-[12px] text-fg whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-label text-fg whitespace-nowrap">
                         {j.filename}
                       </td>
-                      <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
                         {new Date(j.created_at).toLocaleString()}
                       </td>
-                      <td className="px-3 py-3 font-mono text-[12px] text-fg">
+                      <td className="px-3 py-3 font-mono text-label text-fg">
                         {j.event_count}
                       </td>
-                      <td className="px-3 py-3 font-mono text-[12px] text-fg">
+                      <td className="px-3 py-3 font-mono text-label text-fg">
                         {j.linked_count}
                       </td>
-                      <td className="px-3 py-3 font-mono text-[12px] text-muted">
+                      <td className="px-3 py-3 font-mono text-label text-muted">
                         {j.review_count}
                       </td>
-                      <td className="px-3 py-3 font-mono text-[12px] whitespace-nowrap">
+                      <td className="px-3 py-3 font-mono text-label whitespace-nowrap">
                         {j.status === 'completed' ? (
                           <span className="text-muted">{j.status}</span>
                         ) : (

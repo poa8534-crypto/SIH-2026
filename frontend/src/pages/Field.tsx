@@ -22,6 +22,7 @@ import { AgentTurnResponse, Discipline, ReviewItem, SlotState } from '../types';
 import { SPEECH_LANGUAGES, useSpeech } from '../hooks/useSpeech';
 import { DISCIPLINES, SUPERVISOR, WORK_FRONTS, agentContext } from '../config';
 import { NeedsYourResponse, RecentUpdates } from '../components/FieldContextBlocks';
+import { Button, ErrorState, PanelHeader, SectionTitle } from '../components/ui';
 
 /**
  * Field supervisor screen — the "time agent" the problem statement mandates.
@@ -160,13 +161,15 @@ function StructuredCard({
   ];
 
   return (
-    <section className="border border-hair bg-raised rounded-[10px] overflow-hidden">
-      <div className="px-5 py-4 border-b border-hair flex items-center gap-2">
-        <Cpu size={18} className="text-accent shrink-0" />
-        <h2 className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-          STRUCTURED UPDATE
-        </h2>
-      </div>
+    <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+      <PanelHeader
+        title={
+          <>
+            <Cpu size={18} className="text-accent shrink-0" />
+            STRUCTURED UPDATE
+          </>
+        }
+      />
 
       {/* One labelled row per extracted slot. Each is its own tap target for
           a correction, which goes back through the agent as another turn. */}
@@ -176,26 +179,27 @@ function StructuredCard({
             key={r.key}
             className="flex justify-between items-start gap-4 px-5 py-4 border-b border-hair"
           >
-            <div className="flex flex-col gap-1.5 min-w-0">
-              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+            <div className="flex flex-col gap-2 min-w-0">
+              <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
                 {r.label}
               </span>
-              <span className="text-[16px] leading-6 text-fg break-words">{r.value}</span>
+              <span className="text-lead leading-6 text-fg break-words">{r.value}</span>
             </div>
-            <button
+            <Button
+              variant="icon"
+              tone="accent"
               onClick={() => onEdit(r.key)}
               aria-label={`Correct ${r.label.toLowerCase()}`}
-              className="rounded-[8px] p-2 text-accent hover:bg-selected shrink-0 transition-colors"
             >
               <Pencil size={16} />
-            </button>
+            </Button>
           </div>
         ))}
 
         {slots.quantity_over_planned && (
           <div className="px-5 py-4 border-b border-hair flex items-start gap-2">
             <AlertCircle size={16} className="mt-0.5 shrink-0 text-warn" />
-            <span className="text-[14px] leading-5 text-warn">
+            <span className="text-body leading-5 text-warn">
               Completed exceeds the planned total — the Planning Engineer will
               check this
             </span>
@@ -205,36 +209,28 @@ function StructuredCard({
         {/* No pencil: confidence is computed by the matching engine and is not
             the supervisor's to change. */}
         <div className="flex justify-between items-start gap-4 px-5 py-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+          <div className="flex flex-col gap-2">
+            <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
               Confidence
             </span>
-            <span className="text-[16px] leading-6 font-mono text-accent">
+            <span className="text-lead leading-6 font-mono text-accent">
               {(confidence * 100).toFixed(1)}%
             </span>
           </div>
-          <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted mt-1 shrink-0">
+          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted mt-1 shrink-0">
             {outcome === 'AUTO_LINK' ? 'strong match' : 'planner confirms'}
           </span>
         </div>
       </div>
 
       <div className="px-5 py-5 border-t border-hair bg-surface flex flex-col gap-3">
-        <button
-          onClick={onSubmit}
-          disabled={submitting}
-          className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover disabled:opacity-50 transition-colors"
-        >
+        <Button variant="primary" block onClick={onSubmit} disabled={submitting}>
           {submitting ? 'Submitting…' : 'CONFIRM & SUBMIT'}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={submitting}
-          className="rounded-[8px] w-full text-[16px] font-medium text-accent px-5 py-3 hover:bg-selected disabled:opacity-50 transition-colors"
-        >
+        </Button>
+        <Button variant="ghost" block onClick={onCancel} disabled={submitting}>
           Cancel
-        </button>
-        <p className="text-[12px] text-muted leading-relaxed text-center">
+        </Button>
+        <p className="text-label text-muted leading-relaxed text-center">
           Submitting confirms the report information only. The Planning Engineer
           must review it before any project data changes.
         </p>
@@ -445,14 +441,12 @@ export default function Field() {
   // ── Sub-views ─────────────────────────────────────────────────────────────
 
   const contextBlock = (
-    <div className="border border-hair bg-raised rounded-[10px] overflow-hidden">
+    <div className="border border-hair bg-raised rounded-lg overflow-hidden">
       <button
         onClick={() => setContextOpen((v) => !v)}
         className="w-full px-5 py-4 flex items-center justify-between hover:bg-selected transition-colors"
       >
-        <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-          Current Context
-        </span>
+        <SectionTitle>Current Context</SectionTitle>
         {contextOpen ? (
           <ChevronUp size={18} className="text-accent" />
         ) : (
@@ -461,14 +455,14 @@ export default function Field() {
       </button>
       {contextOpen ? (
         <div className="px-5 pb-5 pt-4 flex flex-col gap-4 border-t border-hair">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+          <label className="flex flex-col gap-2">
+            <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
               Work front
             </span>
             <select
               value={workFront}
               onChange={(e) => setWorkFront(e.target.value)}
-              className="rounded-[8px] bg-raised border border-hair text-fg text-[16px] px-4 py-3 transition-colors focus:outline-none focus:border-accent"
+              className="rounded-sm bg-raised border border-hair text-fg text-lead px-4 py-3 transition-colors focus:outline-none focus:border-accent"
             >
               {WORK_FRONTS.map((w) => (
                 <option key={w} value={w}>
@@ -477,14 +471,14 @@ export default function Field() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+          <label className="flex flex-col gap-2">
+            <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
               Discipline
             </span>
             <select
               value={discipline}
               onChange={(e) => setDiscipline(e.target.value as Discipline)}
-              className="rounded-[8px] bg-raised border border-hair text-fg text-[16px] px-4 py-3 transition-colors focus:outline-none focus:border-accent"
+              className="rounded-sm bg-raised border border-hair text-fg text-lead px-4 py-3 transition-colors focus:outline-none focus:border-accent"
             >
               {DISCIPLINES.map((d) => (
                 <option key={d.value} value={d.value}>
@@ -496,11 +490,11 @@ export default function Field() {
         </div>
       ) : (
         <div className="px-5 pb-4 pt-4 flex flex-col gap-2 border-t border-hair">
-          <div className="flex justify-between gap-3 text-[16px]">
+          <div className="flex justify-between gap-3 text-lead">
             <span className="text-muted">Work front</span>
             <span className="text-fg text-right">{workFront}</span>
           </div>
-          <div className="flex justify-between gap-3 text-[16px]">
+          <div className="flex justify-between gap-3 text-lead">
             <span className="text-muted">Discipline</span>
             <span className="text-fg text-right">
               {DISCIPLINES.find((d) => d.value === discipline)?.label}
@@ -521,16 +515,18 @@ export default function Field() {
           if (e.key === 'Enter') send(typed);
         }}
         placeholder={grow ? 'Type your update' : 'Or type your update'}
-        className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] placeholder:text-muted px-4 pr-12 py-3 transition-colors focus:outline-none focus:border-accent"
+        className="rounded-sm w-full bg-raised border border-hair text-fg text-lead placeholder:text-muted px-4 pr-12 py-3 transition-colors focus:outline-none focus:border-accent"
       />
-      <button
+      <Button
+        variant="icon"
+        tone="accent"
         onClick={() => send(typed)}
         disabled={!typed.trim() || thinking}
         aria-label="Send"
-        className="rounded-[8px] absolute right-2 p-2 text-accent hover:bg-selected disabled:opacity-40 transition-colors"
+        className="absolute right-2"
       >
         <Send size={18} />
-      </button>
+      </Button>
     </div>
   );
 
@@ -543,73 +539,68 @@ export default function Field() {
 
   /** No microphone at all. Quiet and neutral — typing is the whole answer. */
   const micUnavailableBox = (
-    <div className="border border-hair bg-raised rounded-[10px] px-5 py-6 flex flex-col items-center gap-2 text-center">
+    <div className="border border-hair bg-raised rounded-lg px-5 py-5 flex flex-col items-center gap-2 text-center">
       <span className="w-16 h-16 rounded-full bg-surface border border-hair flex items-center justify-center">
         <MicOff size={26} className="text-muted" />
       </span>
-      <span className="text-[20px] font-semibold text-heading mt-1">
+      <span className="text-h3 font-semibold text-heading mt-1">
         Microphone unavailable
       </span>
-      <span className="text-[16px] text-muted">Typing works just as well.</span>
+      <span className="text-lead text-muted">Typing works just as well.</span>
     </div>
   );
 
   /** The mic worked, the recording did not. The session is still live. */
   const notUnderstoodBox = (
-    <div className="border border-warn bg-raised rounded-[10px] px-5 py-5 flex flex-col items-center gap-3 text-center">
-      <span className="self-end flex items-center gap-1.5 rounded-full bg-selected px-3 py-1 text-[12px] font-medium uppercase tracking-[0.05em] text-accent">
+    <div className="border border-warn bg-raised rounded-lg px-5 py-5 flex flex-col items-center gap-3 text-center">
+      <span className="self-end flex items-center gap-2 rounded-full bg-selected px-3 py-1 text-label font-medium uppercase tracking-[0.05em] text-accent">
         <span className="w-1.5 h-1.5 rounded-full bg-accent" />
         Active
       </span>
       <span className="w-16 h-16 rounded-full bg-selected flex items-center justify-center">
         <MicOff size={26} className="text-warn" />
       </span>
-      <span className="text-[20px] font-semibold leading-7 text-heading">
+      <span className="text-h3 font-semibold leading-7 text-heading">
         We couldn&rsquo;t understand that recording
       </span>
-      <span className="text-[16px] text-muted">
+      <span className="text-lead text-muted">
         Try speaking again, or type your response.
       </span>
       <div className="w-full flex flex-col gap-2 mt-1">
-        <button
+        <Button
+          variant="primary"
+          block
           onClick={() => {
             speech.clearFailure();
             speech.start();
             setStage('listening');
           }}
-          className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
         >
           Record Again
-        </button>
-        <button
-          onClick={() => speech.clearFailure()}
-          className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
-        >
+        </Button>
+        <Button variant="secondary" block onClick={() => speech.clearFailure()}>
           Type Response
-        </button>
+        </Button>
       </div>
     </div>
   );
 
   /** The server never answered. Nothing was written, and his text is kept. */
   const serverErrorBox = serverError && (
-    <div className="border border-danger-line bg-danger-bg rounded-[10px] px-5 py-5 flex flex-col items-center gap-3 text-center">
+    <div className="border border-danger-line bg-danger-bg rounded-lg px-5 py-5 flex flex-col items-center gap-3 text-center">
       <span className="w-16 h-16 rounded-full bg-raised border border-danger-line flex items-center justify-center">
         <WifiOff size={26} className="text-danger" />
       </span>
-      <span className="text-[20px] font-semibold leading-7 text-danger">
+      <span className="text-h3 font-semibold leading-7 text-danger">
         Could not reach the server — try again
       </span>
-      <span className="text-[16px] text-danger">This update was not saved.</span>
-      <span className="font-mono text-[12px] text-danger opacity-80 break-all">
+      <span className="text-lead text-danger">This update was not saved.</span>
+      <span className="font-mono text-label text-danger opacity-80 break-all">
         {serverError}
       </span>
-      <button
-        onClick={() => send(typed)}
-        className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
-      >
+      <Button variant="primary" block onClick={() => send(typed)}>
         Retry
-      </button>
+      </Button>
     </div>
   );
 
@@ -619,23 +610,22 @@ export default function Field() {
     <div className="flex flex-col h-full w-full bg-surface overflow-hidden">
       {/* Context sub-header */}
       <div className="shrink-0 px-4 py-2 bg-raised border-b border-hair flex items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5 min-w-0">
+        <span className="flex items-center gap-2 min-w-0">
           <MapPin size={14} className="text-muted shrink-0" />
-          <span className="text-[14px] text-muted truncate">{workFront}</span>
+          <span className="text-body text-muted truncate">{workFront}</span>
         </span>
         <div className="flex items-center gap-1 shrink-0">
           {SPEECH_LANGUAGES.map((l) => (
-            <button
+            <Button
               key={l.code}
+              variant="secondary"
+              size="sm"
+              shape="pill"
+              active={speech.lang === l.code}
               onClick={() => speech.setLang(l.code)}
-              className={`rounded-full text-[12px] font-medium px-3 py-1 border transition-colors ${
-                speech.lang === l.code
-                  ? 'border-accent bg-selected text-accent'
-                  : 'border-transparent text-muted hover:bg-selected'
-              }`}
             >
               {l.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -646,10 +636,10 @@ export default function Field() {
             <div>
               {/* No auth and no profile endpoint: the app does not know who
                   is holding the phone, so it does not pretend to. */}
-              <h1 className="text-[24px] font-semibold leading-8 text-heading">
+              <h1 className="text-h2 font-semibold leading-8 text-heading">
                 Report an update
               </h1>
-              <p className="text-[16px] text-muted mt-1 leading-6">
+              <p className="text-lead text-muted mt-1 leading-6">
                 Report progress for the work fronts you supervise.
               </p>
             </div>
@@ -668,16 +658,16 @@ export default function Field() {
                   speech.start();
                   setStage('listening');
                 }}
-                className="group border border-hair bg-raised rounded-[10px] px-5 py-8 flex flex-col items-center gap-5 text-center hover:bg-selected transition-colors"
+                className="group border border-hair bg-raised rounded-lg px-5 py-8 flex flex-col items-center gap-5 text-center hover:bg-selected transition-colors"
               >
                 <span className="w-24 h-24 rounded-full bg-accent text-accent-fg flex items-center justify-center group-hover:bg-accent-hover group-active:scale-95 transition-all">
                   <Mic size={36} />
                 </span>
                 <span className="flex flex-col items-center gap-1">
-                  <span className="text-[20px] font-semibold text-heading">
+                  <span className="text-h3 font-semibold text-heading">
                     Tap &amp; Speak
                   </span>
-                  <span className="text-[16px] text-muted">
+                  <span className="text-lead text-muted">
                     Describe what happened on site
                   </span>
                 </span>
@@ -689,7 +679,7 @@ export default function Field() {
             {contextBlock}
             <NeedsYourResponse />
             <RecentUpdates />
-            <p className="flex items-start gap-2 text-[12px] text-muted leading-relaxed">
+            <p className="flex items-start gap-2 text-label text-muted leading-relaxed">
               <ShieldCheck size={14} className="mt-px shrink-0" />
               Every submitted update requires Planning Engineer confirmation
               before project data changes.
@@ -698,59 +688,61 @@ export default function Field() {
         )}
 
         {stage === 'listening' && (
-          <div className="relative border border-hair bg-raised rounded-[10px] overflow-hidden px-5 py-5 flex flex-col items-center gap-4">
+          <div className="relative border border-hair bg-raised rounded-lg overflow-hidden px-5 py-5 flex flex-col items-center gap-4">
             {/* Accent rule across the top: this panel is the live one. */}
             <span className="absolute top-0 left-0 w-full h-1 bg-accent" aria-hidden />
 
             <div className="w-full flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-danger rounded-full animate-pulse" />
-                <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-danger">
+                <span className="text-label font-semibold uppercase tracking-[0.05em] text-danger">
                   Listening
                 </span>
               </span>
-              <span className="font-mono text-[20px] font-semibold text-accent">
+              <span className="font-mono text-h3 font-semibold text-accent">
                 {mmss(speech.elapsed)}
               </span>
             </div>
 
             <Waveform />
 
-            <div className="min-h-[80px] flex flex-col items-center justify-center text-center w-full gap-1.5">
-              <p className="text-[20px] leading-7 text-fg">
+            <div className="min-h-[80px] flex flex-col items-center justify-center text-center w-full gap-2">
+              <p className="text-h3 leading-7 text-fg">
                 {speech.transcript ? (
                   `“${speech.transcript}”`
                 ) : (
-                  <span className="text-muted text-[16px]">Speak now…</span>
+                  <span className="text-muted text-lead">Speak now…</span>
                 )}
               </p>
               {/* A pause does not end the recording, so say so rather than
                   leaving him wondering whether it stopped. */}
               {speech.silent && (
-                <span className="text-[14px] text-muted">still listening…</span>
+                <span className="text-body text-muted">still listening…</span>
               )}
             </div>
 
-            <button
+            <Button
+              variant="primary"
+              block
               onClick={() => {
                 speech.stop();
                 setDraftTranscript(speech.transcript);
                 setStage('transcript');
               }}
-              className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover flex items-center justify-center gap-2 transition-colors"
             >
               <StopCircle size={18} />
               Stop &amp; Process
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              block
               onClick={() => {
                 speech.cancel();
                 setStage('idle');
               }}
-              className="rounded-[8px] w-full text-[16px] font-medium text-accent px-5 py-2 hover:bg-selected transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         )}
 
@@ -764,12 +756,12 @@ export default function Field() {
 
         {stage === 'transcript' && (
           <>
-            <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
+            <div className="border border-hair bg-raised rounded-lg px-5 py-5 flex flex-col gap-4">
               <div>
-                <h1 className="text-[20px] font-semibold text-heading">
+                <h1 className="text-h3 font-semibold text-heading">
                   Check your transcript
                 </h1>
-                <p className="text-[16px] text-muted mt-1 leading-6">
+                <p className="text-lead text-muted mt-1 leading-6">
                   Check this before sending — speech recognition can mishear
                   equipment numbers.
                 </p>
@@ -778,26 +770,28 @@ export default function Field() {
                 value={draftTranscript}
                 onChange={(e) => setDraftTranscript(e.target.value)}
                 rows={5}
-                className="rounded-[8px] w-full bg-raised border border-hair text-fg text-[16px] leading-6 p-4 transition-colors focus:outline-none focus:border-accent resize-none"
+                className="rounded-sm w-full bg-raised border border-hair text-fg text-lead leading-6 p-4 transition-colors focus:outline-none focus:border-accent resize-none"
               />
-              <button
+              <Button
+                variant="primary"
+                block
                 onClick={() => send(draftTranscript)}
                 disabled={!draftTranscript.trim()}
-                className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover disabled:opacity-50 transition-colors"
               >
                 Use This Transcript
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                block
                 onClick={() => {
                   setDraftTranscript('');
                   speech.clearFailure();
                   speech.start();
                   setStage('listening');
                 }}
-                className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
               >
                 Record Again
-              </button>
+              </Button>
             </div>
 
             <NeedsYourResponse dimmed />
@@ -811,17 +805,18 @@ export default function Field() {
                 agent stalled on a slot, idle was unreachable for the rest of
                 the session. */}
             <div className="flex items-center justify-between border-b border-hair pb-3">
-              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+              <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
                 Data Entry Session
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={resetSession}
                 aria-label="Close session"
-                className="rounded-[8px] flex items-center gap-1 px-2 py-1 text-[12px] font-medium uppercase tracking-[0.05em] text-accent hover:bg-selected transition-colors"
               >
                 Close
                 <X size={14} />
-              </button>
+              </Button>
             </div>
 
             {/* What the agent has captured so far, as read-only chips, so the
@@ -831,7 +826,7 @@ export default function Field() {
                 {collected.map((c) => (
                   <span
                     key={c.label}
-                    className="rounded-full bg-selected text-accent px-3 py-1 text-[12px] font-medium"
+                    className="rounded-full bg-selected text-accent px-3 py-1 text-label font-medium"
                   >
                     <span className="uppercase tracking-[0.05em] opacity-80">
                       {c.label}
@@ -844,10 +839,10 @@ export default function Field() {
 
             {stage === 'conversation' && lastSaid && (
               <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+                <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
                   Supervisor
                 </span>
-                <p className="text-[16px] leading-6 text-fg">{lastSaid}</p>
+                <p className="text-lead leading-6 text-fg">{lastSaid}</p>
               </div>
             )}
 
@@ -855,25 +850,26 @@ export default function Field() {
                 returned rendered as tappable chips. A supervisor answering on
                 site needs the open question, not a scrollback of the exchange. */}
             {stage === 'conversation' && currentQuestion && !thinking && (
-              <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
-                <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
+              <div className="border border-hair bg-raised rounded-lg px-5 py-5 flex flex-col gap-4">
+                <span className="flex items-center gap-2 text-label font-semibold uppercase tracking-[0.05em] text-accent">
                   <Cpu size={14} />
                   NAVIS Assistant
                 </span>
-                <p className="text-[20px] leading-7 font-semibold text-heading">
+                <p className="text-h3 leading-7 font-semibold text-heading">
                   {currentQuestion}
                 </p>
                 {suggestions.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {suggestions.map((sug) => (
-                      <button
+                      <Button
                         key={sug}
+                        variant="secondary"
+                        shape="pill"
                         onClick={() => send(sug)}
                         disabled={thinking}
-                        className="rounded-full border border-accent bg-raised text-accent text-[16px] px-4 py-2 hover:bg-selected disabled:opacity-50 transition-colors"
                       >
                         {sug}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -881,9 +877,9 @@ export default function Field() {
             )}
 
             {thinking && (
-              <div className="border border-hair bg-raised rounded-[10px] px-5 py-4 flex items-center gap-3">
+              <div className="border border-hair bg-raised rounded-lg px-5 py-4 flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
-                <span className="text-[16px] text-muted">
+                <span className="text-lead text-muted">
                   NAVIS Assistant is thinking…
                 </span>
               </div>
@@ -893,34 +889,31 @@ export default function Field() {
             {serverErrorBox}
 
             {stage === 'ready' && turn && (
-              <div className="border border-hair bg-raised rounded-[10px] px-5 py-5 flex flex-col gap-4">
+              <div className="border border-hair bg-raised rounded-lg px-5 py-5 flex flex-col gap-4">
                 <span className="flex items-center gap-2">
                   <Check size={16} className="text-accent" />
-                  <span className="text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
+                  <span className="text-label font-semibold uppercase tracking-[0.05em] text-accent">
                     READY TO DRAFT
                   </span>
                 </span>
-                <p className="text-[16px] leading-6 text-fg">
+                <p className="text-lead leading-6 text-fg">
                   I have enough to prepare the update.
                 </p>
-                <button
-                  onClick={() => setStage('card')}
-                  className="rounded-[8px] w-full bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover flex items-center justify-center gap-2 transition-colors"
-                >
+                <Button variant="primary" block onClick={() => setStage('card')}>
                   Review Structured Update
                   <ArrowRight size={18} />
-                </button>
+                </Button>
               </div>
             )}
 
             {stage === 'card' && turn && (
               <>
                 <div className="flex flex-col gap-2">
-                  <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-accent">
+                  <span className="flex items-center gap-2 text-label font-semibold uppercase tracking-[0.05em] text-accent">
                     <Cpu size={14} />
                     NAVIS Assistant
                   </span>
-                  <p className="text-[16px] leading-6 text-fg">
+                  <p className="text-lead leading-6 text-fg">
                     Got it. I&rsquo;ve extracted the structured data from your
                     update. Please review it below.
                   </p>
@@ -947,17 +940,18 @@ export default function Field() {
                 {micBlocked && micUnavailableBox}
                 {textInput(micBlocked)}
                 {!micBlocked && speech.failure !== 'no-speech' && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    block
                     onClick={() => {
                       speech.clearFailure();
                       speech.start();
                       setStage('listening');
                     }}
-                    className="rounded-[8px] w-full bg-raised border border-accent text-accent text-[16px] font-semibold px-5 py-3 hover:bg-selected flex items-center justify-center gap-2 transition-colors"
                   >
                     <Mic size={18} />
                     Answer by voice
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -966,28 +960,25 @@ export default function Field() {
 
         {stage === 'submitted' && (
           <>
-            <div className="border border-hair bg-raised rounded-[10px] px-5 py-8 flex flex-col items-center text-center gap-3">
+            <div className="border border-hair bg-raised rounded-lg px-5 py-8 flex flex-col items-center text-center gap-3">
               <span className="w-16 h-16 rounded-full bg-selected flex items-center justify-center">
                 <Check size={30} className="text-accent" />
               </span>
-              <h1 className="text-[24px] font-semibold text-heading mt-1">
+              <h1 className="text-h2 font-semibold text-heading mt-1">
                 Update submitted
               </h1>
               {reference && (
-                <p className="w-full rounded-[8px] border border-hair bg-surface px-3 py-2 font-mono text-[12px] text-muted break-all">
+                <p className="w-full rounded-sm border border-hair bg-surface px-3 py-2 font-mono text-label text-muted break-all">
                   Report reference: {reference}
                 </p>
               )}
-              <p className="text-[16px] text-fg">Sent for Planning Engineer review.</p>
-              <p className="text-[16px] text-muted">
+              <p className="text-lead text-fg">Sent for Planning Engineer review.</p>
+              <p className="text-lead text-muted">
                 The project schedule has not been changed.
               </p>
-              <button
-                onClick={resetSession}
-                className="rounded-[8px] w-full mt-2 bg-accent text-accent-fg text-[16px] font-semibold px-5 py-3 hover:bg-accent-hover transition-colors"
-              >
+              <Button variant="primary" block className="mt-2" onClick={resetSession}>
                 Return Home
-              </button>
+              </Button>
             </div>
 
             <NeedsYourResponse />

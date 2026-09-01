@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { AlertCircle, AlertTriangle, Download, Lock, X } from 'lucide-react';
+import { AlertTriangle, Download, Lock, X } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
 import {
   AuditRecord,
@@ -20,6 +20,7 @@ import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
+import { Button, EmptyState, ErrorState, SectionTitle, Skeleton } from '../components/ui';
 
 /** Which audit fields represent an actual-date write, for the trail's header. */
 const FIELD_LABEL: Record<string, string> = {
@@ -112,9 +113,9 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 opacity-50">
+      <div className="flex flex-col gap-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-14 bg-selected rounded-[8px] animate-pulse" />
+          <Skeleton key={i} height="h-14" />
         ))}
       </div>
     );
@@ -122,17 +123,14 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
   if (error) {
     return (
-      <div className="px-3 py-3 border border-danger-line bg-danger-bg text-danger font-mono text-[12px] rounded-[10px] flex items-start gap-2">
-        <AlertCircle size={12} className="mt-0.5 shrink-0" />
-        {errorDetail(error)}
-      </div>
+      <ErrorState error={error} />
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-4 border border-hair bg-raised rounded-[10px] text-muted font-mono text-[12px] text-center">
-        No actual dates recorded yet.
+      <div className="border border-hair bg-raised rounded-lg">
+        <EmptyState>No actual dates recorded yet.</EmptyState>
       </div>
     );
   }
@@ -157,7 +155,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
               />
 
               <div
-                className={`border bg-raised rounded-[10px] px-3 py-3 font-mono text-[12px] leading-relaxed ${
+                className={`border bg-raised rounded-lg px-3 py-3 font-mono text-label leading-relaxed ${
                   isConflict ? 'border-danger-line' : 'border-hair'
                 }`}
               >
@@ -205,7 +203,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
                 {/* How it was applied */}
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                   <span
-                    className={`px-2 border rounded-full text-[11px] uppercase ${
+                    className={`px-2 border rounded-full text-label uppercase ${
                       rec.auto_applied
                         ? 'border-hair text-muted'
                         : 'border-accent text-accent'
@@ -229,8 +227,8 @@ function AuditTrail({ activityId }: { activityId: string }) {
                 )}
 
                 {rec.contributing_sources.length > 1 && (
-                  <div className="mt-1.5 pt-1.5 border-t border-hair text-muted">
-                    <div className="uppercase text-[11px] mb-0.5">
+                  <div className="mt-1.5 pt-2 border-t border-hair text-muted">
+                    <div className="uppercase text-label mb-0.5">
                       {rec.contributing_sources.length} sources asserted this field
                     </div>
                     {rec.contributing_sources.map((src, i) => (
@@ -246,7 +244,7 @@ function AuditTrail({ activityId }: { activityId: string }) {
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 text-muted font-mono text-[11px] uppercase tracking-wider">
+      <div className="mt-3 flex items-center gap-2 text-muted font-mono text-label uppercase tracking-wider">
         <Lock size={10} />
         Append-only · {data.length} record{data.length === 1 ? '' : 's'} · never edited
       </div>
@@ -258,9 +256,9 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</span>
-      <span className="font-mono text-[14px] text-fg break-words">{children}</span>
+    <div className="flex flex-col gap-1">
+      <span className="font-mono text-label uppercase tracking-wider text-muted">{label}</span>
+      <span className="font-mono text-body text-fg break-words">{children}</span>
     </div>
   );
 }
@@ -281,26 +279,20 @@ function AuditDrawer({
       {/* Header */}
       <div className="border-b border-hair px-4 py-3 flex items-start justify-between gap-3 shrink-0">
         <div className="min-w-0">
-          <div className="font-mono text-[15px] text-fg">{activity.activity_id}</div>
-          <div className="text-[14px] text-muted mt-0.5">{activity.description}</div>
+          <div className="font-mono text-lead text-fg">{activity.activity_id}</div>
+          <div className="text-body text-muted mt-0.5">{activity.description}</div>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded-[8px] text-muted hover:text-fg shrink-0 p-1"
-          aria-label="Close"
-        >
+        <Button variant="icon" onClick={onClose} aria-label="Close">
           <X size={16} />
-        </button>
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* DETAIL */}
         <section>
-          <div className="font-mono text-[12px] uppercase tracking-wider text-muted mb-2.5">
-            Detail
-          </div>
+          <SectionTitle className="mb-3">Detail</SectionTitle>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-3">
             <Field label="WBS Path">{activity.wbs_path}</Field>
             {activity.wbs_level !== null && (
               <Field label="WBS Level">L{activity.wbs_level}</Field>
@@ -315,22 +307,22 @@ function AuditDrawer({
 
           {/* Planned against actual. Planned is read-only baseline and is
               rendered muted so the actual column is the one that reads. */}
-          <div className="mt-3 border border-hair rounded-[8px] overflow-hidden">
+          <div className="mt-3 border border-hair rounded-sm overflow-hidden">
             <div className="grid grid-cols-3 border-b border-hair bg-raised">
-              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted" />
-              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted border-l border-hair">
+              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted" />
+              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
                 Planned
               </div>
-              <div className="px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted border-l border-hair">
+              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
                 Actual
               </div>
             </div>
             <div className="grid grid-cols-3 border-b border-hair">
-              <div className="px-2 py-1.5 font-mono text-[12px] text-muted">Start</div>
-              <div className="px-2 py-1.5 font-mono text-[12px] text-muted border-l border-hair">
+              <div className="px-2 py-2 font-mono text-label text-muted">Start</div>
+              <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
                 {activity.planned_start ?? <Absent />}
               </div>
-              <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
+              <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
                 <DateCell
                   value={activity.actual_start}
                   basis={activity.actual_start_basis}
@@ -339,11 +331,11 @@ function AuditDrawer({
               </div>
             </div>
             <div className="grid grid-cols-3">
-              <div className="px-2 py-1.5 font-mono text-[12px] text-muted">Finish</div>
-              <div className="px-2 py-1.5 font-mono text-[12px] text-muted border-l border-hair">
+              <div className="px-2 py-2 font-mono text-label text-muted">Finish</div>
+              <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
                 {activity.planned_finish ?? <Absent />}
               </div>
-              <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
+              <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
                 <DateCell
                   value={activity.actual_finish}
                   basis={activity.actual_finish_basis}
@@ -353,7 +345,7 @@ function AuditDrawer({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-3 mt-3">
             <Field label="Planned Qty">
               {activity.planned_qty} {activity.uom}
             </Field>
@@ -383,7 +375,7 @@ function AuditDrawer({
           </div>
 
           <div className="mt-3">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+            <span className="font-mono text-label uppercase tracking-wider text-muted">
               Predecessors
             </span>
             <div className="mt-1 flex flex-wrap gap-1">
@@ -391,13 +383,13 @@ function AuditDrawer({
                 activity.predecessors.map((p) => (
                   <span
                     key={p}
-                    className="font-mono text-[12px] text-accent bg-selected rounded-full px-2 py-0.5"
+                    className="font-mono text-label text-accent bg-selected rounded-full px-2 py-1"
                   >
                     {p}
                   </span>
                 ))
               ) : (
-                <span className="font-mono text-[12px] text-muted">None</span>
+                <span className="font-mono text-label text-muted">None</span>
               )}
             </div>
           </div>
@@ -405,9 +397,7 @@ function AuditDrawer({
 
         {/* AUDIT TRAIL */}
         <section>
-          <div className="font-mono text-[12px] uppercase tracking-wider text-muted mb-2.5">
-            Audit Trail
-          </div>
+          <SectionTitle className="mb-3">Audit Trail</SectionTitle>
           <AuditTrail activityId={activity.activity_id} />
         </section>
       </div>
@@ -614,29 +604,22 @@ export default function Schedule() {
   // ── Error ─────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-        <AlertCircle size={32} className="text-danger mb-4" />
-        <div className="font-mono text-fg mb-2">Error loading schedule</div>
-        <div className="text-muted text-sm mb-6 max-w-md">
-          {errorDetail(error)}
-        </div>
-        <button
-          onClick={() => refetch()}
-          className="px-5 py-3 bg-accent text-accent-fg hover:bg-accent-hover font-mono uppercase text-xs rounded-[8px] transition-colors"
-        >
-          Retry
-        </button>
-      </div>
+      <ErrorState
+        error={error}
+        mode="full"
+        title="Error loading schedule"
+        onRetry={() => refetch()}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-[10px] relative overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-lg relative overflow-hidden">
       {/* INTEGRITY BANNER */}
       {warnings.length > 0 && (
         <button
           onClick={() => setOnlyFlagged((v) => !v)}
-          className={`rounded-[8px] shrink-0 h-8 px-4 flex items-center gap-2 border-b text-left font-mono text-[12px] transition-colors ${
+          className={`shrink-0 h-8 px-4 flex items-center gap-2 border-b text-left font-mono text-label transition-colors ${
             onlyFlagged
               ? 'bg-danger-bg border-danger-line text-danger'
               : 'bg-raised border-hair text-muted hover:text-fg'
@@ -662,7 +645,7 @@ export default function Schedule() {
         <select
           value={discipline}
           onChange={(e) => setDiscipline(e.target.value)}
-          className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 transition-colors focus:outline-none focus:border-accent"
+          className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2 transition-colors focus:outline-none focus:border-accent"
           aria-label="Filter by discipline"
         >
           <option value="">All disciplines</option>
@@ -678,43 +661,44 @@ export default function Schedule() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search descriptions"
-          className="rounded-[8px] h-7 w-64 bg-raised border border-hair px-2 font-mono text-[12px] text-fg transition-colors focus:outline-none focus:border-accent"
+          className="rounded-sm h-7 w-64 bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
         />
 
-        <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[12px] text-muted hover:text-fg">
+        <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg">
           <input
             type="checkbox"
             checked={onlyActuals}
             onChange={(e) => setOnlyActuals(e.target.checked)}
-            className="rounded-[8px] accent-accent"
+            className="rounded-sm accent-accent"
           />
           Only activities with actuals
         </label>
 
         <div className="ml-auto flex items-center gap-2">
           {exportState.kind === 'done' && (
-            <span className="font-mono text-[12px] text-ok">Wrote {exportState.name}</span>
+            <span className="font-mono text-label text-ok">Wrote {exportState.name}</span>
           )}
           {exportState.kind === 'error' && (
-            <span className="font-mono text-[12px] text-danger">{exportState.detail}</span>
+            <span className="font-mono text-label text-danger">{exportState.detail}</span>
           )}
           <select
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as 'pmxml' | 'xer')}
-            className="rounded-[8px] h-7 bg-raised border border-hair text-fg font-mono text-[12px] px-2 transition-colors focus:outline-none focus:border-accent"
+            className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2 transition-colors focus:outline-none focus:border-accent"
             aria-label="Export format"
           >
             <option value="pmxml">PMXML</option>
             <option value="xer">XER</option>
           </select>
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={handleExport}
             disabled={exportState.kind === 'busy'}
-            className="rounded-[8px] h-7 flex items-center gap-1.5 bg-raised border border-accent text-accent px-3 font-mono text-[12px] uppercase hover:bg-selected disabled:opacity-50 transition-colors"
           >
             <Download size={12} />
             {exportState.kind === 'busy' ? 'Exporting…' : 'Export'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -728,7 +712,7 @@ export default function Schedule() {
                   <th
                     key={h.id}
                     style={{ width: h.getSize() }}
-                    className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                    className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -743,7 +727,7 @@ export default function Schedule() {
                 <tr key={i} className="border-b border-hair">
                   {columns.map((_c, j) => (
                     <td key={j} className="px-3 py-3">
-                      <div className="h-3 bg-selected rounded-[4px] animate-pulse" />
+                      <Skeleton height="h-3" />
                     </td>
                   ))}
                 </tr>
@@ -772,7 +756,7 @@ export default function Schedule() {
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className="px-3 py-3 text-[14px] whitespace-nowrap max-w-0"
+                        className="px-3 py-3 text-body whitespace-nowrap max-w-0"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
@@ -784,14 +768,12 @@ export default function Schedule() {
         </table>
 
         {!isLoading && rows.length === 0 && (
-          <div className="py-16 text-center font-mono text-[12px] uppercase tracking-wider text-muted">
-            No activities match the filter
-          </div>
+          <EmptyState>No activities match the filter.</EmptyState>
         )}
       </div>
 
       {/* FOOTER */}
-      <div className="shrink-0 h-7 border-t border-hair px-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-muted">
+      <div className="shrink-0 h-7 border-t border-hair px-4 flex items-center gap-4 font-mono text-label uppercase tracking-wider text-muted">
         <span>
           {rows.length} of {data?.total_activities ?? 0} activities
         </span>

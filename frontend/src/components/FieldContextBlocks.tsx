@@ -1,9 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Info, RefreshCw, TriangleAlert } from 'lucide-react';
-import { api, errorDetail } from '../lib/api';
+import { CheckCircle2, Info, RefreshCw, TriangleAlert } from 'lucide-react';
+import { api } from '../lib/api';
 import { FieldReport } from '../types';
+import { Button, EmptyState, ErrorState, PanelHeader, SkeletonRows } from './ui';
 
 /**
  * "Needs Your Response" and "Recent Updates", shown below the input.
@@ -45,51 +45,49 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
 
   const item = data?.[0];
 
-  // Nothing outstanding is the common case; showing an empty card every time
-  // would push the recent updates off the screen for no reason.
-  if (!error && !isLoading && !item) return null;
+  // This used to `return null` when nothing was outstanding, so the block had
+  // no empty state at all — the card appeared and disappeared under the mic as
+  // the query resolved, shifting everything below it. It renders the shared
+  // empty state now and holds its place.
 
   return (
     <section
-      className={`border border-hair bg-raised rounded-[10px] overflow-hidden transition-opacity ${
+      className={`border border-hair bg-raised rounded-lg overflow-hidden transition-opacity ${
         dimmed ? 'opacity-50 pointer-events-none' : ''
       }`}
       aria-hidden={dimmed}
     >
-      <div className="px-4 py-4 border-b border-hair flex items-center justify-between gap-3">
-        <span className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-          Needs Your Response
-        </span>
-        {data && data.length > 0 && (
-          <span className="bg-selected text-accent text-[12px] font-medium px-3 py-1 rounded-full shrink-0">
-            {data.length} {data.length === 1 ? 'Question' : 'Questions'}
-          </span>
-        )}
-      </div>
+      <PanelHeader
+        title="Needs Your Response"
+        right={
+          data && data.length > 0 ? (
+            <span className="bg-selected text-accent text-label font-medium px-3 py-1 rounded-full shrink-0">
+              {data.length} {data.length === 1 ? 'Question' : 'Questions'}
+            </span>
+          ) : undefined
+        }
+      />
 
       {error ? (
-        <div className="px-4 py-4 flex items-start gap-2">
-          <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" />
-          <span className="text-[14px] leading-5 text-danger">{errorDetail(error)}</span>
-        </div>
+        <ErrorState error={error} mode="bare" className="px-4 py-4" />
       ) : isLoading ? (
-        <div className="p-4">
-          <div className="h-10 bg-selected rounded-[8px] animate-pulse" />
-        </div>
+        <SkeletonRows rows={1} height="h-10" />
       ) : item ? (
         <div className="px-4 py-4 flex flex-col gap-2">
-          <span className="font-mono text-[12px] text-muted">{item.reference}</span>
-          <span className="text-[16px] text-fg leading-6">
+          <span className="font-mono text-label text-muted">{item.reference}</span>
+          <span className="text-lead text-fg leading-6">
             &ldquo;{item.question}&rdquo;
           </span>
-          <Link
-            to="/field/clarifications"
-            className="mt-2 w-full text-center bg-raised border border-accent text-accent rounded-[8px] text-[16px] font-semibold px-5 py-3 hover:bg-selected transition-colors"
-          >
+          <Button variant="secondary" block className="mt-2" to="/field/clarifications">
             Answer Question
-          </Link>
+          </Button>
         </div>
-      ) : null}
+      ) : (
+        <EmptyState>
+          Nothing outstanding. Questions the Planning Engineer asks about your
+          reports appear here.
+        </EmptyState>
+      )}
     </section>
   );
 }
@@ -110,31 +108,22 @@ export function RecentUpdates({
 
   return (
     <section
-      className={`border border-hair bg-raised rounded-[10px] overflow-hidden transition-opacity ${
+      className={`border border-hair bg-raised rounded-lg overflow-hidden transition-opacity ${
         dimmed ? 'opacity-50 pointer-events-none' : ''
       }`}
       aria-hidden={dimmed}
     >
-      <div className="px-4 py-4 border-b border-hair text-[16px] font-semibold uppercase tracking-[0.05em] text-heading">
-        {title}
-      </div>
+      <PanelHeader title={title} />
 
       {error ? (
-        <div className="px-4 py-4 flex items-start gap-2">
-          <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" />
-          <span className="text-[14px] leading-5 text-danger">{errorDetail(error)}</span>
-        </div>
+        <ErrorState error={error} mode="bare" className="px-4 py-4" />
       ) : isLoading ? (
-        <div className="p-4 space-y-2 opacity-50">
-          {[0, 1].map((i) => (
-            <div key={i} className="h-7 bg-selected rounded-[8px] animate-pulse" />
-          ))}
-        </div>
+        <SkeletonRows rows={2} height="h-7" />
       ) : recent.length === 0 ? (
-        <div className="px-4 py-6 text-center text-[16px] text-muted leading-6">
+        <EmptyState>
           Nothing submitted yet. Updates you send appear here with their review
           status.
-        </div>
+        </EmptyState>
       ) : (
         <div className="flex flex-col">
           {recent.map((r) => (
@@ -143,12 +132,12 @@ export function RecentUpdates({
               className="px-4 py-3 border-b border-hair last:border-0 flex items-center justify-between gap-3 hover:bg-selected transition-colors"
             >
               <div className="flex flex-col min-w-0">
-                <span className="text-[16px] leading-6 text-fg truncate">{r.raw_text}</span>
-                <span className="text-[12px] text-muted mt-0.5">
+                <span className="text-lead leading-6 text-fg truncate">{r.raw_text}</span>
+                <span className="text-label text-muted mt-0.5">
                   {when(r.submitted_at)}
                 </span>
               </div>
-              <span className="flex items-center gap-1.5 shrink-0 text-[12px] font-medium uppercase tracking-[0.05em] text-muted">
+              <span className="flex items-center gap-2 shrink-0 text-label font-medium uppercase tracking-[0.05em] text-muted">
                 {STATUS_ICON[r.status]}
                 {STATUS_SHORT[r.status] ?? r.status}
               </span>

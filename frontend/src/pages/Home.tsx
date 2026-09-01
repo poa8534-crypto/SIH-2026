@@ -15,6 +15,7 @@ import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { DISCIPLINE_ORDER, DISCIPLINE_SHORT } from '../config';
+import { Button, EmptyState, ErrorState, Panel, Skeleton, SkeletonRows } from '../components/ui';
 
 /**
  * Project control landing screen.
@@ -69,74 +70,21 @@ function position(side: { source_line: number | null; source_row: number | null 
 
 // ── Shared panel chrome ─────────────────────────────────────────────────────
 
-function Panel({
-  title,
-  span,
-  badge,
-  action,
-  children,
-}: {
-  title: string;
-  span: string;
-  badge?: number;
-  action?: { to: string; label: string };
-  children: React.ReactNode;
-}) {
+/**
+ * This screen's panels are the shared `Panel`; the local copy that used to
+ * live here (header `px-4 py-2.5`) was one of six card-header paddings. The
+ * local `PanelError`, `PanelEmpty` and `Skeleton` are gone the same way —
+ * `PanelEmpty` had never been called by anything.
+ */
+function PanelAction({ to, label }: { to: string; label: string }) {
   return (
-    <section
-      className={`${span} border border-hair bg-raised rounded-[10px] overflow-hidden flex flex-col min-w-0`}
+    <Link
+      to={to}
+      className="font-mono text-label uppercase tracking-wider text-accent hover:underline flex items-center gap-1"
     >
-      <div className="px-4 py-2.5 border-b border-hair flex items-center justify-between gap-3">
-        <h3 className="text-[16px] font-semibold uppercase tracking-[0.05em] text-heading flex items-center gap-2">
-          {title}
-          {badge !== undefined && badge > 0 && (
-            <span className="bg-danger text-surface font-mono text-[11px] px-2 py-0.5 rounded-full">
-              {badge}
-            </span>
-          )}
-        </h3>
-        {action && (
-          <Link
-            to={action.to}
-            className="font-mono text-[11px] uppercase tracking-wider text-accent hover:underline flex items-center gap-1"
-          >
-            {action.label}
-            <ArrowRight size={10} />
-          </Link>
-        )}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Per-panel failure, so one dead endpoint cannot blank the page. */
-function PanelError({ error }: { error: unknown }) {
-  return (
-    <div className="px-4 py-4 flex items-start gap-2">
-      <AlertCircle size={12} className="mt-0.5 shrink-0 text-danger" />
-      <span className="font-mono text-[12px] text-danger">
-        {errorDetail(error)}
-      </span>
-    </div>
-  );
-}
-
-function PanelEmpty({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="px-4 py-8 text-center font-mono text-[12px] uppercase tracking-wider text-muted">
-      {children}
-    </div>
-  );
-}
-
-function Skeleton({ rows, height = 'h-4' }: { rows: number; height?: string }) {
-  return (
-    <div className="p-4 space-y-2 opacity-50">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className={`${height} bg-selected animate-pulse rounded-[4px]`} />
-      ))}
-    </div>
+      {label}
+      <ArrowRight size={10} />
+    </Link>
   );
 }
 
@@ -157,22 +105,22 @@ function Tile({
 }) {
   return (
     <div
-      className={`border border-hair bg-raised rounded-[10px] p-4 flex flex-col justify-between h-24 ${
+      className={`border border-hair bg-raised rounded-lg p-4 flex flex-col justify-between h-24 ${
         accent ? 'border-l-2 border-l-danger' : ''
       }`}
     >
       {loading ? (
-        <div className="h-8 w-20 bg-selected animate-pulse rounded-[4px] mt-1" />
+        <Skeleton height="h-8" className="w-20 mt-1" />
       ) : (
         <div
-          className={`font-mono text-[36px] leading-none mt-1 ${
+          className={`font-mono text-h1 leading-none mt-1 ${
             error ? 'text-danger' : accent ? 'text-danger' : 'text-fg'
           }`}
         >
           {error ? '—' : value}
         </div>
       )}
-      <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</div>
+      <div className="font-mono text-label uppercase tracking-wider text-muted">{label}</div>
     </div>
   );
 }
@@ -195,9 +143,9 @@ function NeedsAttention({
 
   if (lowest.length === 0) {
     return (
-      <div className="px-4 py-8 text-center text-[14px] text-muted leading-relaxed">
+      <EmptyState>
         Queue clear — every extracted event has been matched or resolved.
-      </div>
+      </EmptyState>
     );
   }
 
@@ -216,12 +164,12 @@ function NeedsAttention({
               {act ? (
                 <DisciplineTag discipline={act.discipline} />
               ) : (
-                <span className="font-mono text-[11px] text-muted border border-hair px-2 rounded-full">
+                <span className="font-mono text-label text-muted border border-hair px-2 rounded-full">
                   ?
                 </span>
               )}
             </span>
-            <span className="flex-1 text-[14px] text-fg truncate" title={item.raw_text}>
+            <span className="flex-1 text-body text-fg truncate" title={item.raw_text}>
               {item.raw_text}
             </span>
             <span className="shrink-0">
@@ -317,10 +265,10 @@ function RecentActivity({
 
   if (rows.length === 0) {
     return (
-      <div className="px-4 py-8 text-center text-[14px] text-muted leading-relaxed">
+      <EmptyState>
         Nothing recorded yet. Writes to the schedule and file ingests appear
         here as they happen.
-      </div>
+      </EmptyState>
     );
   }
 
@@ -331,10 +279,10 @@ function RecentActivity({
           key={i}
           className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 hover:bg-selected transition-colors"
         >
-          <span className="flex-1 text-[14px] text-muted leading-relaxed min-w-0">
+          <span className="flex-1 text-body text-muted leading-relaxed min-w-0">
             {r.text}
           </span>
-          <span className="shrink-0 font-mono text-[11px] text-muted text-right whitespace-nowrap pt-0.5">
+          <span className="shrink-0 font-mono text-label text-muted text-right whitespace-nowrap pt-1">
             {clock(r.at)}
           </span>
         </div>
@@ -364,14 +312,14 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
   const maxAbs = Math.max(1, ...bars.map((b) => (b.mean === null ? 0 : Math.abs(b.mean))));
 
   return (
-    <div className="p-4 flex flex-col gap-2.5">
+    <div className="p-4 flex flex-col gap-3">
       {bars.map((b) => (
         <div key={b.discipline} className="flex items-center gap-3">
-          <span className="w-10 shrink-0 font-mono text-[12px] text-muted text-right">
+          <span className="w-10 shrink-0 font-mono text-label text-muted text-right">
             {DISCIPLINE_SHORT[b.discipline]}
           </span>
           {b.mean === null ? (
-            <span className="flex-1 text-[12px] text-muted italic">
+            <span className="flex-1 text-label text-muted italic">
               no activity with an actual finish yet
             </span>
           ) : (
@@ -385,7 +333,7 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
             </span>
           )}
           <span
-            className={`w-14 shrink-0 font-mono text-[12px] text-right ${
+            className={`w-14 shrink-0 font-mono text-label text-right ${
               b.mean === null
                 ? 'text-muted'
                 : b.mean > 0
@@ -397,12 +345,12 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
           >
             {b.mean === null ? '—' : `${b.mean > 0 ? '+' : ''}${b.mean.toFixed(1)}d`}
           </span>
-          <span className="w-8 shrink-0 font-mono text-[11px] text-muted text-right">
+          <span className="w-8 shrink-0 font-mono text-label text-muted text-right">
             {b.n || ''}
           </span>
         </div>
       ))}
-      <p className="text-[12px] text-muted border-t border-hair pt-2 leading-relaxed">
+      <p className="text-label text-muted border-t border-hair pt-2 leading-relaxed">
         Average finish variance across each discipline&rsquo;s activities that have an
         actual finish. The right-hand figure is how many that is.
       </p>
@@ -415,10 +363,10 @@ function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
 function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
   if (conflicts.length === 0) {
     return (
-      <div className="px-4 py-8 text-center text-[14px] text-muted leading-relaxed">
+      <EmptyState>
         No two field sources have contradicted each other. Conflicts appear
         once a spreadsheet and a report disagree about the same field.
-      </div>
+      </EmptyState>
     );
   }
 
@@ -430,7 +378,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
             {['Activity', 'Field', 'Spreadsheet', 'Daily report', 'Stored', ''].map((h, i) => (
               <th
                 key={i}
-                className="text-left text-[12px] font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
               >
                 {h}
               </th>
@@ -453,13 +401,13 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
               return (
                 <>
                   <span
-                    className={`font-mono text-[14px] ${
+                    className={`font-mono text-body ${
                       s.value === c.stored_value ? 'text-fg' : 'text-danger'
                     }`}
                   >
                     {shortDate(s.value)}
                   </span>
-                  <span className="block font-mono text-[11px] text-muted break-all">
+                  <span className="block font-mono text-label text-muted break-all">
                     {s.source_file}
                     {pos && ` · ${pos}`}
                     {!side && ` · ${SOURCE_KIND_LABEL[s.source_kind]}`}
@@ -474,32 +422,33 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
                 className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors"
               >
                 <td className="px-3 py-3 min-w-[190px]">
-                  <span className="font-mono text-[14px] text-fg">{c.activity_id}</span>
-                  <span className="block text-[12px] text-muted">{c.description}</span>
+                  <span className="font-mono text-body text-fg">{c.activity_id}</span>
+                  <span className="block text-label text-muted">{c.description}</span>
                 </td>
-                <td className="px-3 py-3 font-mono text-[12px] text-muted whitespace-nowrap">
+                <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
                   {FIELD_LABEL[c.field] ?? c.field}
                 </td>
                 <td className="px-3 py-3 min-w-[160px]">{cell(sheet, 0)}</td>
                 <td className="px-3 py-3 min-w-[160px]">{cell(report, sheet ? 0 : 1)}</td>
-                <td className="px-3 py-3 font-mono text-[14px] text-fg whitespace-nowrap">
+                <td className="px-3 py-3 font-mono text-body text-fg whitespace-nowrap">
                   {shortDate(c.stored_value)}
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
                   {/* Opens that activity's audit drawer on the Schedule screen. */}
-                  <Link
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     to={`/schedule?activity=${encodeURIComponent(c.activity_id)}`}
-                    className="inline-block bg-raised border border-accent text-accent rounded-[8px] px-5 py-3 font-mono text-[11px] uppercase tracking-wider hover:bg-selected transition-colors"
                   >
                     Resolve
-                  </Link>
+                  </Button>
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      <p className="px-3 py-3 border-t border-hair text-[12px] text-muted leading-relaxed">
+      <p className="px-3 py-3 border-t border-hair text-label text-muted leading-relaxed">
         Two field sources asserted different values for the same field. The stored
         value is whichever was written last, not whichever is correct. The
         Primavera baseline is read-only and is never a side of a disagreement.
@@ -579,12 +528,12 @@ export default function Home() {
           <Panel
             title="Needs your attention"
             span="lg:col-span-3"
-            action={{ to: '/reconcile', label: 'Reconcile' }}
+            action={<PanelAction to="/reconcile" label="Reconcile" />}
           >
             {queue.error ? (
-              <PanelError error={queue.error} />
+              <ErrorState error={queue.error} mode="bare" className="px-4 py-4" />
             ) : queue.isLoading ? (
-              <Skeleton rows={5} />
+              <SkeletonRows rows={5} />
             ) : (
               <NeedsAttention items={queue.data ?? []} activities={activityMap} />
             )}
@@ -592,13 +541,13 @@ export default function Home() {
 
           <Panel title="Recent activity" span="lg:col-span-2">
             {audit.error && jobs.error ? (
-              <PanelError error={audit.error} />
+              <ErrorState error={audit.error} mode="bare" className="px-4 py-4" />
             ) : audit.error ? (
-              <PanelError error={audit.error} />
+              <ErrorState error={audit.error} mode="bare" className="px-4 py-4" />
             ) : jobs.error ? (
-              <PanelError error={jobs.error} />
+              <ErrorState error={jobs.error} mode="bare" className="px-4 py-4" />
             ) : audit.isLoading || jobs.isLoading ? (
-              <Skeleton rows={6} height="h-3" />
+              <SkeletonRows rows={6} height="h-3" />
             ) : (
               <RecentActivity audit={audit.data ?? []} jobs={jobs.data ?? []} />
             )}
@@ -606,11 +555,11 @@ export default function Home() {
         </section>
 
         {/* ROW 3 */}
-        <Panel title="Schedule health" span="">
+        <Panel title="Schedule health">
           {schedule.error ? (
-            <PanelError error={schedule.error} />
+            <ErrorState error={schedule.error} mode="bare" className="px-4 py-4" />
           ) : schedule.isLoading ? (
-            <Skeleton rows={6} height="h-3" />
+            <SkeletonRows rows={6} height="h-3" />
           ) : (
             <ScheduleHealth activities={schedule.data?.activities ?? []} />
           )}
@@ -619,21 +568,20 @@ export default function Home() {
         {/* ROW 4 — surfaced with a count, not buried in a footer. */}
         <Panel
           title="Source conflicts"
-          span=""
           badge={conflicts.data?.length}
-          action={{ to: '/schedule', label: 'Schedule' }}
+          action={<PanelAction to="/schedule" label="Schedule" />}
         >
           {conflicts.error ? (
-            <PanelError error={conflicts.error} />
+            <ErrorState error={conflicts.error} mode="bare" className="px-4 py-4" />
           ) : conflicts.isLoading ? (
-            <Skeleton rows={4} />
+            <SkeletonRows rows={4} />
           ) : (
             <SourceConflicts conflicts={conflicts.data ?? []} />
           )}
         </Panel>
 
         {conflicts.data && conflicts.data.length > 0 && (
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted flex items-center gap-1.5">
+          <p className="font-mono text-label uppercase tracking-wider text-muted flex items-center gap-2">
             <AlertTriangle size={10} className="text-warn" />
             {conflicts.data.length} activities have contradictory field evidence
           </p>
