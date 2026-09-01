@@ -1,0 +1,40 @@
+DAILY PROGRESS REPORT  (01/11/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Windy, 28C, gusts 30 km/h  |  Prepared by: M. Rahman
+
+1. PIPING WORKS
+   a) Field weld and NDT, crude header rack welds 1-18, finished 5 Nov 2026, JMR raised.
+   b) Work front opened for Erect line 20"-P-2001-A1A, Unit 2 production header on 31 Oct 2026.
+   c) Work front opened for Erect Line 24"-P-1001-A1A, Unit 2 rack on 30 Oct 2026.
+   d) Erect the twenty inch line, progressing at the ten test location as of 29 Oct.
+   e) Erect the twelve inch line, test separator loop, finished 2026-10-24, JMR raised.
+   f) Hydrotest package 2, Unit 2, lines sixteen and twelve portion only, balance still open.
+   g) Pneumatic leak test with nitrogen, flare header, 1 nos out of 2 complete so far, as of 31/10/2026.
+   h) Field weld and RT, Unit 2 header welds 19-34 under way at the work front.
+   i) Support fabrication and installation, line 24"-P-1001-A1A — progress slow, 35% only.
+   j) Bolt torque and gasket joint assembly, Unit 2 manifold closed out 2 Nov.
+   k) Erect crude header the twenty four inch line, tank farm approach, 17 of 36 m complete so far, as of 2026-10-31.
+   l) 20"-P-2001-A1A — Pipe supports and guides, Unit 2 rack stretch — completed on 29 Oct.
+
+2. STATIC EQUIPMENT
+   a) Flare pilot ignition and pilot line purge test (FST-1301) — completed on 05/Nov/2026.
+   b) Tightness and pressure test, the separators vessel and under way at the work front.
+
+3. ELECTRICAL WORKS
+   a) Install conduits and flexible connections, Unit 1/2 equipment, 11 nos out of 38 complete so far.
+
+4. INSTRUMENTS
+   a) TE-1301 — Install temperature elements TE-1301 to TE-1312, 10 nos out of 12 complete so far, as of 1 Nov.
+   b) FE-1401 — Install flow meter elements FE-1401 to FE-1408, Unit 2 — 6 nos out of 8 done.
+
+5. SAFETY
+   a) Mechanical Completion Unit 1 is done and signed off.
+
+6. GENERAL / SITE NARRATIVE
+   a) Extra crash barrier at the tanker turning circle, quoted separately.
+   b) As-built markup received from the survey team for checking.
+   c) Mock fire drill conducted at the temporary office, 3 minutes response.
+
+REMARKS
+   - Manpower: 192 nos on site.
+   - Equipment: 6 nos deployed.

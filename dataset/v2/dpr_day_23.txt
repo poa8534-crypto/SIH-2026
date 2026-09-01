@@ -1,0 +1,39 @@
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 27/Dec/2026
+Weather: Humid, 34C, brief shower midday
+Contractor: M/s ABC Infrastructure
+Site Engineer: R. Gogoi
+
+1. MECHANICAL - PIPING
+   a) Erect the twenty four inch, gas service, 1 manifold portion only, balance still open.
+   b) Install restriction orifice spools and sampling connections, Unit 1 stopped, material shortage at store.
+
+2. MECHANICAL - EQUIPMENT
+   a) 72-hour integrated reliability run, process train — commenced 2027-01-05.
+
+3. INSTRUMENTS
+   a) Cause and effect testing, ESD shutdown matrix started this morning.
+   b) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A in progress, 22 nos out of 28 achieved.
+   c) Install pressure transmitters transmitter to the pressure transmitter, Unit 1, finished 4 Dec, JMR raised.
+   d) Fire and gas detection system function test in progress, 10 nos out of 32 achieved.
+   e) Instrument loops certified (RFSI) started 24 Dec.
+   f) Loop check, Unit 2 loops progressing at the 1 location as of 27/Dec/2026.
+   g) Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A — 6 nos out of 10 done.
+   h) Install fire and gas detectors, wellhead and manifold completed 2026-12-04.
+   i) Crew deployed on Integrated ESD and blowdown function test.
+   j) Crew deployed on Calibrate transmitters and switches, workshop bench.
+
+4. HSE
+   a) RFSU Unit 1 in progress, about 77% complete, as of 2026-12-26.
+   b) Compilation of handover dossiers and O&M manuals in progress, about 56% complete.
+   c) As-built markup verification and red-line transfer in progress, about 63% complete.
+   d) Pre-startup safety review (PSSR) walkthrough — completed on 24 Dec.
+   e) Operations training and familiarization, OIL staff, 14 nos out of 24 complete so far.
+
+5. GENERAL / SITE NARRATIVE
+   a) Transporter detention charges under discussion with logistics.
+   b) Fog delayed the morning shift start by two hours.
+
+REMARKS
+   - Manpower: 212 nos on site.
+   - Equipment: 5 nos deployed.

@@ -1,0 +1,27 @@
+Progress report - 15/09/2026
+ABC Infra Pvt. Ltd. / OIL Duliajan
+
+1. MECHANICAL - PIPING
+   * Erect 12"-P-2102-A1A, TK-2102 manifold tie-in stopped, material shortage at store.
+   - Alloy weld and PMI, flare header, welds 20-31 under way at the work front.
+   Erect the eight inch line, glycol feed to contactor the separator vessel completed 14 Sep. aaj shuru kiya.
+   * tank farm manifold the twelve inch line, inlet/outlet the storage tank completed 2026-09-15. labour kam tha aaj.
+   - Field welds and UT, tank farm manifold, welds 40-52, 6 nos out of 13 complete so far, as of 15/Sep/2026.
+   Suction and discharge piping, pumps P-1401A/B to manifold (P-1401A) stopped, material shortage at store. kaam chalu hai.
+
+2. MECHANICAL - EQUIPMENT
+   * TK-2102 — Water fill and calib strapping, TK-2102 held up, awaiting client RFI clearance. baaki kal karenge.
+
+3. INSTRUMENTATION
+   * Pull home-run cables, the junction box to control room FTA started this morning. thoda delay hua.
+   * pull instrument cables, rack tier 2 to junction boxes jb-101 to jb-108 delayed by 5 days, crane availability. baaki kal karenge.
+   * terminate field instrs at jb-101 to jb-108 closed out 15/sep/2026.
+
+4. GENERAL / SITE NARRATIVE
+   - Consumables inventory check carried out at the fabrication shed.
+   Crane operator on leave, replacement mobilised from Guwahati.
+   Site coordination meeting minutes circulated to all agencies.
+
+REMARKS
+   - Manpower: 91 nos on site.
+   - Equipment: 6 nos deployed.

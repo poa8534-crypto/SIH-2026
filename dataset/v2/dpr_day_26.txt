@@ -1,0 +1,34 @@
+DAILY PROGRESS REPORT
+Date: 05/Feb/2027  Weather: Hot, 38C
+prepared: Vikram Saikia
+
+1. STATIC EQUIPMENT
+   - 72-hour integrated reliability run, process train — progress slow, 34% only.
+
+2. INSTRUMENTATION
+   - Instrument loops certified (RFSI) in progress, about 74% complete. labour kam tha aaj.
+   - Loop check, Unit 2 loops, 1 portion only, balance still open.
+   - Cause and effect testing, ESD shutdown matrix — completed on 29 Dec 2026.
+   * calibrate transmitters and switches, workshop bench — 37 nos out of 60 done.
+   * crew deployed on install pressure transmitters pt-1101 to pt-1114, unit 1, tag pt-1101.
+   install fire and gas detectors, wellhead and manifold — closed out this week.
+   Fire and gas detection system function test stopped, material shortage at store. aaj shuru kiya.
+   integrated esd and blowdown function test completed 3 jan.
+   * install instrument air tubing stubs and manifolds, takeoffs from the two inch line in progress, 15 nos out of 28 achieved. baaki kal karenge.
+
+3. HSE / SAFETY
+   - As-built drawing submission and document close-out to OIL — completed on 3 Mar.
+   * Operations training and familiarization, OIL staff held up, awaiting client RFI clearance. labour kam tha aaj.
+   * Punchlist closure, category A and B items in progress, 25 nos out of 38 achieved, as of 5 Feb.
+   - Provisional handover to Operations in progress, about 63% complete, as of 2027-02-03.
+   * RFSU Unit 2, 1 portion only, balance still open.
+   Pre-startup safety review (PSSR) walkthrough — completed on 24/12/2026.
+   - RFSU Unit 1 — this is the 2 one, 20% done.
+
+4. GENERAL / SITE NARRATIVE
+   - High wind warning issued, crane operations suspended.
+   - Client requested additional bollards near the gatehouse, not in contract scope.
+
+REMARKS
+   - Manpower: 204 nos on site.
+   - Equipment: 6 nos deployed.

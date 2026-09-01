@@ -69,6 +69,8 @@ transcript of earlier design conversations. Nothing here is presented as recolle
 | D-017 | A second baseline is adopted as a version, not as a replacement | Active |
 | D-018 | Baselines are read through a provider, never by `json.load` at the call site | Active |
 | D-019 | Refuse to evaluate a baseline the ground truth does not describe | Active |
+| D-020 | The v2 evaluation corpus is generated as one family, from one seed | Active |
+| D-021 | Thresholds are tuned on dev and reported on test | Active (qualifies D-002) |
 
 **Historical entries H-001 … H-027 are indexed separately at the top of Part 0,
 immediately below.** Four of them qualify a D-entry directly and should be read with
@@ -2475,4 +2477,127 @@ truth with nothing in it cannot vouch for a baseline.
 The guard is the thing that makes re-labelling `ground_truth.csv` against v2 a
 deliberate project rather than an accident. When that work happens, this check
 is what proves it finished.
+
+---
+
+## 2026-09-01 / D-020 — The v2 evaluation corpus is generated as one family, from one seed
+
+### Context
+`baseline_schedule_v2.json` was adopted as a second baseline (D-017), but
+nothing could be measured against it: `dataset/ground_truth.csv` references 141
+activity ids, none of which exist in v2, and D-019's guard correctly refuses to
+evaluate that combination.
+
+The schedule, the daily reports, the spreadsheets and the ground truth are one
+artifact family. Regenerating any one of them alone produces a corpus that still
+loads, still runs, and reports numbers that describe nothing.
+
+### Decision
+`generate_v2_dataset.py` writes the whole family into `dataset/v2/` from a
+single seed (20260901), and validates it before the run is allowed to count:
+
+| artefact | count |
+|---|---|
+| daily progress reports | 29 (`dpr_day_01..29.txt`), 4 deliberately messy |
+| discipline registers | 5 `.xlsx`, merged headers, mixed date formats, blank cells |
+| labelled mentions | 700 — 632 gold positives, 68 hard negatives |
+| activity coverage | 218 of 218 activities mentioned at least once |
+| near-miss mentions | 35 |
+
+`dataset/` and every v1 file is untouched; v1's metrics are byte-for-byte
+unchanged (Top-1 87.2%, auto-link precision 100.0%, coverage 50.4%).
+
+**Two columns the v1 key does not have:**
+
+- **`mention_date`** — the date stated *inside* the mention text, separate from
+  the report date. This is the fix for the harness artefact found in D-015: the
+  v1 harness gave every event only the report date, so every finish resolved as
+  `DEFAULTED_TO_REPORT_DATE` and the roll-up withheld all of them. On v2, 41.6%
+  of test mentions now resolve `EXPLICIT` and real finish dates are written.
+- **`split`** — see D-021.
+
+**Hard negatives are plausible construction text, never gibberish**: unplanned
+scope and variation orders, site logistics, safety observations, weather, and
+quality/documentation narrative. 68 of them, and **0 auto-link** at default
+thresholds.
+
+### Reason
+A generator rather than hand-authoring, because 700 mentions across 218
+activities cannot be hand-written consistently, and because the family has to be
+reproducible: a corpus nobody can regenerate is a corpus nobody can correct.
+
+### Two extractor defects this corpus exposed
+Both were found while generating, both are **reported and deliberately not
+fixed** — they live in `extraction/prepass.py`, feed `tag_overlap` and
+`percentage`, and changing either would move v1's published numbers.
+
+1. **`extract_tags` cannot see v2's equipment tags.** `EQUIPMENT_TAG_RE` allows
+   a 1-3 digit suffix. Every v1 tag fits (`V-101`, `TK-1`, `CS-01`) and all 12
+   are recognised; v2 numbers equipment with four digits, so **18 of its 40
+   distinct tags** (`V-1101`, `PT-1101`, `TK-2101`, `PK-2401`, `FST-1301` …)
+   sit in the text unread. `tag_overlap` is the near-decisive ranker feature, so
+   on v2 the tag channel is roughly half blind.
+2. **`FRACTION_RE` reads the digit inside a unit suffix.** It is
+   `(\d+)\s+(?:of|out of|of total)\s+(\d+)`, so `40 m3 of 120 m3` parses as
+   **3/120 = 2.5%** instead of 33%, and `320 m2 of 480 m2` as **0.4%**. It hits
+   every unit ending in a digit — m2 and m3, 42 of v2's 218 activities and most
+   of the civil scope. `percentage` gates `actual_finish` (D-008/D-015), so a
+   real DPR written the natural way silently under-reports completion. The
+   corpus phrases quantities as `40 of 120 m3` to avoid the collision.
+
+### Known limitation — the corpus does not yet stress the ranker
+Held-out Top-1 is **99.2%** (123/124) with **one** wrong suggestion. That is not
+a result to celebrate; it says the corpus is easier than v1, whose Top-1 is
+87.2%. Measured lexical overlap between a mention and its gold activity is
+*lower* on v2 (mean 0.644 vs 0.757; 1.1% verbatim vs v1's 38.0%), so the cause
+is not copying — it is that v2's descriptions are longer and far more
+distinctive, and that only 35 of 700 mentions are near-misses, 5 of which land
+in test. Pooled 5-fold CV over all 700 gives a more stable Top-1 of **97.0%**.
+
+Raising the difficulty is the next dataset task: many more near-miss pairs, and
+sibling activities whose discriminator the mention genuinely omits.
+
+### Affected Areas
+New: `generate_v2_dataset.py`, `dataset/v2/` (29 DPRs, 5 xlsx,
+`ground_truth_v2.csv`, `splits.json`, `VALIDATION.md`). Modified: `eval.py`.
+**Nothing in `dataset/` and nothing in `matching/` changed.**
+
+---
+
+## 2026-09-01 / D-021 — Thresholds are tuned on dev and reported on test
+
+### Context
+`eval.py` calibrated thresholds on the full labelled set and then reported
+metrics on that same set (D-002's grid search). With 254 hand-written mentions
+that was a known and stated simplification. With 700 generated mentions it stops
+being defensible: a threshold chosen on the rows it is then scored against is
+not a measurement of the system, it is a memory of those rows.
+
+### Decision
+`ground_truth_v2.csv` carries a `split` column — **train 423 / dev 140 /
+test 137** — stratified by discipline *and* by match/no-match, seed 20260901,
+written to `dataset/v2/splits.json`.
+
+When the key carries splits, `eval.py` calibrates on **dev only** and reports
+the headline on **held-out test only**. When it does not — the v1 key — the old
+whole-set behaviour is unchanged, so v1's published numbers still reproduce.
+
+**Identical mention text is kept in a single split.** Stratifying rows alone
+would let the same sentence appear in both dev and test, which is the leak that
+makes a held-out number meaningless.
+
+### Reason
+The project's central claim is 100% auto-link precision. That claim is only
+worth anything if the operating point was chosen without seeing the rows it is
+quoted on.
+
+### Trade-offs
+The headline now rests on 137 mentions, so it moves by ~0.7 points per row.
+Pooled 5-fold CV over all 700 is the more stable estimate and is one flag away
+(`--cv`); the split figure is the honest headline, the CV figure is the tighter
+one, and both are reported rather than whichever looks better.
+
+### Affected Areas
+`eval.py` (`--ground-truth`, split-aware calibration, `print_date_basis`),
+`dataset/v2/ground_truth_v2.csv`, `dataset/v2/splits.json`.
 

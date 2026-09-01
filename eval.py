@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -77,15 +78,16 @@ GOLD_NO_MATCH = "GOLD_NO_MATCH"   # mention must NOT be linked (NO_MATCH)
 def ground_truth_activity_ids(path=None) -> list[str]:
     """Every activity id the ground truth references, NO_MATCH excluded."""
     ids: list[str] = []
-    with open(path or GROUND_TRUTH, encoding="cp1252", newline="") as f:
-        for row in csv.DictReader(f):
-            aid = (row.get("activity_id") or "").strip()
-            if aid and aid != "NO_MATCH":
-                ids.append(aid)
+    for row in _open_ground_truth(path):
+        aid = (row.get("activity_id") or "").strip()
+        if aid and aid != "NO_MATCH":
+            ids.append(aid)
     return ids
 
 
-def assert_baseline_matches_ground_truth(engine: MatchingEngine) -> None:
+def assert_baseline_matches_ground_truth(
+    engine: MatchingEngine, ground_truth_path=None
+) -> None:
     """Refuse to evaluate a baseline the ground truth does not describe.
 
     `load_ground_truth` skips any labelled mention whose activity id is not in
@@ -103,7 +105,7 @@ def assert_baseline_matches_ground_truth(engine: MatchingEngine) -> None:
     """
     agreement = check_ground_truth_agreement(
         engine.index,
-        ground_truth_activity_ids(),
+        ground_truth_activity_ids(ground_truth_path),
         baseline=engine.index.baseline,
     )
     if agreement.ok:
@@ -115,32 +117,54 @@ def assert_baseline_matches_ground_truth(engine: MatchingEngine) -> None:
     sys.exit(2)
 
 
-def load_ground_truth(engine: MatchingEngine) -> list[dict]:
+def _open_ground_truth(path):
+    """Ground-truth files differ in encoding: the v1 key is cp1252, the v2 key
+    is written as UTF-8. Decode explicitly rather than by platform default —
+    a mangled activity id is a silently unresolvable label."""
+    path = path or GROUND_TRUTH
+    for encoding in ("utf-8-sig", "utf-8", "cp1252"):
+        try:
+            with open(path, encoding=encoding, newline="") as f:
+                return list(csv.DictReader(f))
+        except UnicodeDecodeError:
+            continue
+    with open(path, encoding="cp1252", errors="replace", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def load_ground_truth(engine: MatchingEngine, path=None) -> list[dict]:
     """Load ground truth and build one ExtractedEvent per labelled mention."""
     rows: list[dict] = []
     unresolved = 0
-    with open(GROUND_TRUTH, encoding="cp1252", newline="") as f:
-        for i, row in enumerate(csv.DictReader(f)):
-            mention = (row["raw_mention"] or "").strip()
-            if not mention:
-                continue
-            gold_raw = (row["activity_id"] or "").strip()
-            gold = engine.index.resolve_id(gold_raw)
-            if gold_raw == "NO_MATCH":
-                gold_class, gold = GOLD_NO_MATCH, None
-            elif gold:
-                gold_class = GOLD_POSITIVE
-            else:
-                unresolved += 1
-                continue  # cannot evaluate against a non-existent activity
-            rows.append({
-                "source": row["source"],
-                "gold": gold,
-                "gold_class": gold_class,
-                "event": _build_event(mention, row["source"], row.get("source_date")),
-                "mention": mention,
-                "index": i,
-            })
+    for i, row in enumerate(_open_ground_truth(path)):
+        mention = (row["raw_mention"] or "").strip()
+        if not mention:
+            continue
+        gold_raw = (row["activity_id"] or "").strip()
+        gold = engine.index.resolve_id(gold_raw)
+        if gold_raw == "NO_MATCH":
+            gold_class, gold = GOLD_NO_MATCH, None
+        elif gold:
+            gold_class = GOLD_POSITIVE
+        else:
+            unresolved += 1
+            continue  # cannot evaluate against a non-existent activity
+        rows.append({
+            "source": row["source"],
+            "gold": gold,
+            "gold_class": gold_class,
+            "event": _build_event(mention, row["source"], row.get("source_date")),
+            "mention": mention,
+            "index": i,
+            # Present only in the v2 key. Absent → every row is usable for
+            # both calibration and reporting, which is v1's behaviour.
+            "split": (row.get("split") or "").strip().lower(),
+            # The date the mention text itself states, as the generator
+            # recorded it. Not fed to the matcher — it is the check that
+            # eval's own date resolution agrees with the corpus.
+            "mention_date": (row.get("mention_date") or "").strip(),
+            "discipline": (row.get("discipline") or "").strip(),
+        })
     if unresolved:
         print(f"NOTE: {unresolved} rows skipped (gold id not in schedule)")
     return rows
@@ -490,6 +514,41 @@ def print_pr_curve(points: list[dict], operating: Thresholds):
     print("  Read: raising tau_high trades coverage for precision.")
 
 
+def print_date_basis(rows: list[dict]):
+    """How the dates on these mentions were obtained.
+
+    The v1 harness could not answer this: its events carried only the report
+    date, so every finish came out DEFAULTED_TO_REPORT_DATE and the roll-up
+    withheld all of them. The v2 key states the date inside the mention text,
+    so this table is the check that the corpus and the extractor agree.
+    """
+    from extraction.models import DateBasis
+
+    title("DATE BASIS - WHERE EACH DATE CAME FROM")
+    counts = Counter()
+    stated = 0
+    agreed = 0
+    for r in rows:
+        ev = r["event"]
+        basis = ev.asserted_finish_basis or ev.asserted_start_basis
+        counts[basis.value if basis else "no date asserted"] += 1
+        if r.get("mention_date"):
+            stated += 1
+            asserted = ev.asserted_finish or ev.asserted_start
+            if asserted and asserted.isoformat() == r["mention_date"]:
+                agreed += 1
+    table(
+        ["Basis", "Mentions", "Share"],
+        [[k, v, pct(v / len(rows))] for k, v in counts.most_common()],
+        aligns=["<", ">", ">"],
+    )
+    print()
+    print(f"  {stated} mentions state a date in their own text;")
+    print(f"  {agreed} of those resolve to exactly the date the corpus recorded.")
+    print("  A date the text states is EXPLICIT or RELATIVE_RESOLVED and may be")
+    print("  written; one defaulted to the report date is withheld (D-015).")
+
+
 def _dated(value, basis) -> str:
     """A date with a marker when it was inferred rather than asserted."""
     if value is None:
@@ -604,6 +663,9 @@ def main():
     ap.add_argument("--schedule", default=str(SCHEDULE),
                     help="baseline schedule to evaluate against "
                          "(default: dataset/baseline_schedule.json)")
+    ap.add_argument("--ground-truth", default=str(GROUND_TRUTH),
+                    help="labelled mentions to evaluate with "
+                         "(default: dataset/ground_truth.csv)")
     args = ap.parse_args()
 
     print("Loading schedule + ground truth ...")
@@ -619,29 +681,48 @@ def main():
         # produced it. Print it before the metrics, not in a footnote.
         print(f"  baseline: {baseline.describe()}")
     print(f"  schedule: {len(_ENGINE.index.records)} activities | dense: {embed_info}")
-    assert_baseline_matches_ground_truth(_ENGINE)
+    assert_baseline_matches_ground_truth(_ENGINE, args.ground_truth)
 
-    rows = load_ground_truth(_ENGINE)
-    print(f"  ground truth: {len(rows)} labelled mentions")
+    rows = load_ground_truth(_ENGINE, args.ground_truth)
+    print(f"  ground truth: {Path(args.ground_truth).name} — "
+          f"{len(rows)} labelled mentions")
 
     print("Scoring candidates (hybrid retrieval + feature scoring) ...")
     decisions = _ENGINE.match_events([r["event"] for r in rows])
     for r, d in zip(rows, decisions):
         r["decision"] = d
 
+    # Splits, when the key carries them. Thresholds are tuned on dev and the
+    # headline is reported on test — a threshold chosen on the rows it is then
+    # scored against is not a measurement, it is a memory of them.
+    dev = [r for r in rows if r["split"] == "dev"]
+    test = [r for r in rows if r["split"] == "test"]
+    split_mode = bool(dev and test)
+
     if args.cv:
         t = run_cv(rows)
         m = _CV_METRICS or evaluate(rows, t)
         mode = "5-fold cross-validated thresholds (pooled held-out)"
+        report_rows = rows
+    elif split_mode:
+        t = calibrate(dev, coverage_floor=args.coverage_floor)
+        m = evaluate(test, t)
+        mode = (f"thresholds calibrated on dev ({len(dev)} mentions), "
+                f"metrics reported on HELD-OUT test ({len(test)} mentions)")
+        report_rows = test
+        print(f"  splits: train {sum(1 for r in rows if r['split'] == 'train')} | "
+              f"dev {len(dev)} | test {len(test)}")
     else:
         t = calibrate(rows, coverage_floor=args.coverage_floor)
         m = evaluate(rows, t)
         mode = "calibrated + evaluated on the full dataset"
+        report_rows = rows
 
     print_headline(m, t, mode)
     print_confusion(m)
-    print_pr_curve(precision_at_coverage(rows, t), t)
-    print_rollup(rows, t)
+    print_pr_curve(precision_at_coverage(report_rows, t), t)
+    print_date_basis(report_rows)
+    print_rollup(report_rows, t)
     print()
     print(rule("="))
     print(" Definitions: precision = correct suggestions / all concrete")

@@ -1,0 +1,38 @@
+DAILY PROGRESS REPORT  (21/07/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Windy, 28C, gusts 30 km/h  |  Prepared by: K. Baruah
+
+1. PIPING
+   a) Nitrogen line 3"-P-2302-A6A, package to header ongoing.
+   b) Instrument air header the two inch line, rack to Unit 2, finished 2026-07-22, JMR raised.
+   c) Chemical injection piping 1"-P-2501-A6A, skids to injection points, finished 07/07/2026, JMR raised.
+
+2. MECHANICAL - EQUIPMENT
+   a) CS-2501 — Set chemical injection skids CS-2501 and CS-2502, wellhead U1/U2 delayed by 2 days, crane availability.
+
+3. E&I - ELECTRICAL
+   a) Set and terminate the transformer, 11/0.433 kV — 1 nos out of 1 done.
+   b) Install MCC panels and switchboard, substation room, finished 17 Jul, JMR raised.
+   c) Glanding and termination, LV panels, substation held up, awaiting client RFI clearance.
+   d) Core termination and lacing, MCC-1 and MCC-2 completed 2026-08-05.
+   e) Emergency lighting and exit signage, control building — closed out this week.
+   f) Pull LV power cables, pump motors P-1401A/B, tag P-1401A started this morning.
+   g) Crew deployed on Cable glanding, MCC-1 and MCC-2 feeders.
+   h) Pull MV cable 11 kV, substation to transformer T-1 — progress slow, 54% only.
+   i) Set and terminate transformer T-1, 11/0.433 kV — 1 nos out of 1 done.
+   j) Crew deployed on Pull MV cable 11 kV, substation to transformer T-2.
+   k) WHCP-2101 — Pull LV power cables, wellhead panel WHCP-2101 feeders, Unit 2 — closed out this week.
+   l) Install cable tray ladder 600 mm, rack tier 3 is done and signed off.
+   m) Install cable tray ladder 600 — this is the 3, Unit 2 stretch one, 66% done.
+
+4. INSTRUMENTATION
+   a) Install instrument cable tray 300 mm, rack tier 2 is done and signed off.
+
+5. GENERAL / SITE NARRATIVE
+   a) Coating DFT gauge sent out for recalibration.
+   b) Waterlogging in the excavation, dewatering pumps deployed overnight.
+   c) Temporary diesel bowser stand fabricated at the laydown, unplanned scope.
+
+REMARKS
+   - Manpower: 110 nos on site.
+   - Equipment: 11 nos deployed.

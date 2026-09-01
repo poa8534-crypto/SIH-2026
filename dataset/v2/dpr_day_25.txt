@@ -1,0 +1,37 @@
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 24/01/2027
+Weather: Heavy rain 1400-1600
+Contractor: ABC Infra
+Site Engineer: P. Deka
+
+1. EQUIPMENT
+   a) 72-hour integrated reliability run, process train — 1 nos out of 1 done.
+   b) First crude transfer to TK-2101 held up, awaiting client RFI clearance.
+
+2. E&I - INSTRUMENTATION
+   a) Install fire and gas detectors, wellhead and manifold, 9 nos out of 32 complete so far.
+   b) Loop check, Unit 1 loops L-1101 to L-1128 in progress, 12 nos out of 28 achieved.
+   c) Fire and gas detection system function test — closed out this week.
+   d) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A — completed on 2 Dec.
+   e) Integrated ESD and blowdown function test completed 2027-01-03.
+   f) Cause and effect testing, ESD shutdown matrix closed out 29/Dec/2026.
+   g) Work front opened for Instrument loops certified (RFSI) on 22 Jan.
+   h) Install pressure transmitters PT-1101 to PT-1114, Unit 1, tag PT-1101 delayed by 5 days, crane availability.
+   i) Calibrate transmitters and switches, workshop bench, 32 nos out of 60 complete so far.
+
+3. HSE / SAFETY
+   a) Punchlist closure, category A and B items stopped, material shortage at store.
+   b) As-built drawing submission and document close-out to OIL — completed on 03/Mar/2027.
+   c) Provisional handover to Operations, finished 27 Feb, JMR raised.
+   d) Operations training and familiarization, OIL staff is done and signed off.
+   e) Pre-startup safety review (PSSR) walkthrough in progress, 1 nos out of 1 achieved.
+   f) RFSU Unit 2 completed 2027-02-04.
+   g) RFSU Unit 2 — this is the 1 one, 58% done.
+
+4. GENERAL / SITE NARRATIVE
+   a) Rework of the guardhouse plinth after client comment, VO pending.
+   b) Site ambulance serviced and returned to standby.
+
+REMARKS
+   - Manpower: 78 nos on site.
+   - Equipment: 4 nos deployed.

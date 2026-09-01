@@ -1,0 +1,33 @@
+DAILY PROGRESS REPORT  (19/08/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Heavy rain 1400-1600  |  Prepared by: J. Tamuly
+
+1. PIPING
+   a) Tank farm manifold the twelve inch line, inlet/outlet the storage tank — closed out this week.
+   b) Erect drain header 4"-P-1303-C5B, closed drain in progress, 12 of 36 m achieved.
+   c) Erect flare header the eighteen inch line, manifold to KO drum — completed on 25 Aug.
+   d) Erect the six inch line, fuel gas skid inlet, finished 18 Aug, JMR raised.
+   e) Work front opened for Suction and discharge piping, the pumps to manifold on 28 Aug 2026.
+   f) Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs is done and signed off.
+   g) Alloy weld and PMI, flare header, welds 20-31 — commenced 1 Sep 2026.
+
+2. E&I - ELECTRICAL
+   a) Core termination and lacing, MCC-1 and MCC-2 under way at the work front.
+   b) Set and terminate the transformer, progressing at the kV location as of 16 Aug.
+   c) Set and terminate transformer T-1, 11/0.433 kV in progress, 1 nos out of 1 achieved.
+   d) Mobilised for Glanding and termination, LV panels, substation.
+   e) Cable glanding, MCC-1 and MCC-2 feeders, finished 2026-08-05, JMR raised.
+
+3. INSTRUMENTATION
+   a) Install junction boxes box to the junction box, field under way at the work front.
+   b) Pull home-run cables, JB-101 to JB-108 to control room FTA started 05/Sep/2026.
+   c) Terminate field instruments at the junction box to under way at the work front.
+   d) Pull instrument cables, rack tier 2 to junction boxes JB-101 to JB-108 closed out 28 Aug.
+
+4. GENERAL / SITE NARRATIVE
+   a) Weld map updated for the revised isometric issue.
+   b) Additional 40 m of boundary drain built on the north side at OIL request.
+
+REMARKS
+   - Manpower: 123 nos on site.
+   - Equipment: 4 nos deployed.

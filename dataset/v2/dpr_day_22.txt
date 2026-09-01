@@ -1,0 +1,38 @@
+DAILY PROGRESS REPORT
+Date: 17/Dec/2026  Weather: Heavy rain 1400-1600
+prepared: R. Gogoi
+
+1. PIPING
+   Install restriction orifice spools and sampling connections, Unit 1 completed.
+   * Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold in progress, 33 of 54 m achieved. thoda delay hua.
+
+2. MECHANICAL - EQUIPMENT
+   * 72-hour integrated reliability run, process train — completed on 5 Jan.
+
+3. E&I - INSTRUMENTATION
+   Fire and gas detection system function test — progress slow, 42% only.
+   Calibrate transmitters and switches, workshop bench — completed on 12 Dec 2026.
+   Loop check, Unit 1 loops L-1101 to L-1128 closed out 16 Dec. thoda delay hua.
+   - Crew deployed on Cause and effect testing, ESD shutdown matrix.
+   - Integrated ESD and blowdown function test stopped, material shortage at store. baaki kal karenge.
+   work front opened for instr loops certified (rfsi) on 20 dec 2026. aaj shuru kiya.
+   * install pressure transmitters pt-1101 to pt-1114, unit 1 (pt-1101) closed out 4 dec 2026.
+   - Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A taken up at site.
+   Install instrument air tubing stubs and manifolds, takeoffs from the two inch line — completed on 2 Dec.
+   Install fire and gas detectors, wellhead and manifold in progress, 24 nos out of 32 achieved. material ka issue tha.
+
+4. HSE
+   pre-startup safety review (pssr) walkthrough, finished 2026-12-22, jmr raised.
+   * Operations training and familiarization, OIL staff completed. baaki kal karenge.
+   * rfsu unit 1 taken up at site.
+   - Compilation of handover dossiers and O&M manuals delayed by 5 days, crane availability.
+   - As-built markup verification and red-line transfer stopped, material shortage at store. aaj shuru kiya.
+
+5. GENERAL / SITE NARRATIVE
+   Client comments on the P&ID revision under incorporation.
+   * Access road washed out after overnight rain, grading needed.
+   Snake sighting reported near the tank farm, area cordoned.
+
+REMARKS
+   - Manpower: 60 nos on site.
+   - Equipment: 4 nos deployed.

@@ -1256,6 +1256,86 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Regenerate the evaluation dataset — schedule, daily reports,
+spreadsheets and ground truth — as one mutually consistent family against
+`dataset/baseline_schedule_v2.json`.
+**Date:** 2026-09-01 · **Decisions:** D-020, D-021
+
+### Current path
+
+```
+generate_v2_dataset.py                 NEW — the whole family, one seed (20260901)
+  make_tag_free() / _tidy_substitutions()   tag-free mention variants
+  literal_tags()                       a tag as a HUMAN reads it, independent of
+                                       what extract_tags recognises
+  build_mention()                      completion / progress / start / delay /
+                                       narrative, mixed date formats
+  build_near_miss_mention()            text that reads like a sibling activity
+  HARD_NEGATIVES                       68 plausible non-scope lines
+  build_spreadsheet()                  merged headers, mixed dates, blank cells
+  validate()                           7 checks; writes dataset/v2/VALIDATION.md
+        ↓
+dataset/v2/
+  dpr_day_01..29.txt                   29 reports, 4 deliberately messy
+  civil|piping|equipment|eni|hse_progress.xlsx
+  ground_truth_v2.csv                  700 mentions; + mention_date, + split
+  splits.json                          train 423 / dev 140 / test 137
+  VALIDATION.md
+        ↓
+eval.py
+  --ground-truth                       NEW
+  _open_ground_truth()                 NEW — v1 is cp1252, v2 is utf-8
+  split-aware main()                   calibrate on dev, report on test
+  print_date_basis()                   NEW — EXPLICIT vs DEFAULTED_TO_REPORT_DATE
+```
+
+### Upstream
+
+```
+python generate_v2_dataset.py   → dataset/v2/*  (reads baseline_schedule_v2.json)
+python eval.py --schedule dataset/baseline_schedule_v2.json \
+               --ground-truth dataset/v2/ground_truth_v2.csv
+```
+
+### Downstream
+
+```
+dataset/            UNTOUCHED — v1 metrics reproduce byte-for-byte
+matching/           UNTOUCHED — no engine change
+D-015 date gate     now exercised: 41.6% EXPLICIT on test, finish dates written
+```
+
+### Verification performed
+
+```
+python -m pytest -q                    513 passed (unchanged)
+python eval.py                         v1 unchanged: Top-1 87.2%, coverage 50.4%,
+                                       auto-link precision 100.0%
+python eval.py --schedule v2 --ground-truth v2
+                                       test split: Top-1 99.2%, auto-link
+                                       precision 100.0%, coverage 80.3%,
+                                       NO_MATCH rejection 53.8%
+python eval.py --schedule v2 (v1 key)  still refused, exit 2 (D-019 guard holds)
+dataset/v2/VALIDATION.md               7 checks, all pass
+```
+
+### Known limitations
+
+- **The corpus does not yet stress the ranker.** Held-out Top-1 99.2%, one wrong
+  suggestion. Cause is not lexical copying (overlap is *lower* than v1); it is
+  v2's more distinctive descriptions and only 35 near-misses in 700. Pooled CV
+  over all 700 gives 97.0%.
+- **Two live extractor defects the corpus exposed**, reported not fixed:
+  `extract_tags` misses all 4-digit equipment tags (18 of v2's 40), and
+  `FRACTION_RE` reads the digit inside `m2`/`m3` so "40 m3 of 120 m3" parses as
+  2.5%. Both are in `extraction/prepass.py` and would move v1's numbers.
+- **NO_MATCH rejection is 53.8%** on test — better than v1's 8.3%, still the
+  weakest metric.
+
+---
+
+## Previous Modification Area (2026-09-01, D-017/D-018/D-019) — retained for history
+
 **Task:** Adopt the 218-activity Duliajan P6 schedule as a second, versioned
 baseline without breaking the existing 120-activity one.
 **Date:** 2026-09-01 · **Decisions:** D-017, D-018, D-019

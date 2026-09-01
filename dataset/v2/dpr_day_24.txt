@@ -1,0 +1,38 @@
+DAILY PROGRESS REPORT  (11/01/2027)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra
+Weather: Fog till 0900, then clear  |  Prepared by: A. Bhuyan
+
+1. PIPING
+   a) Install restriction orifice spools and sampling connections, Unit 1 — closed out this week.
+   b) Erect the twenty four inch, gas service, 1 manifold portion only, balance still open.
+
+2. STATIC EQUIPMENT
+   a) First crude transfer to TK-2101 — progress slow, 37% only.
+   b) 72-hour integrated reliability run, process train completed 08/Jan/2027.
+
+3. INSTRUMENTATION
+   a) Cause and effect testing, ESD shutdown matrix held up, awaiting client RFI clearance.
+   b) Install fire and gas detectors, wellhead and manifold completed 04/12/2026.
+   c) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line ongoing.
+   d) Install pressure transmitters PT-1101 to PT-1114, Unit 1 (PT-1101) — 10 nos out of 14 done, as of 10/Jan/2027.
+   e) Calibrate transmitters and switches, workshop bench completed 12 Dec 2026.
+   f) Crew deployed on Integrated ESD and blowdown function test.
+   g) Fire and gas detection system function test started this morning.
+   h) Crew deployed on Loop check, Unit 1 loops L-1101 to L-1128.
+   i) Instrument loops certified (RFSI) started yesterday.
+
+4. HSE / SAFETY
+   a) RFSU Unit 2 closed out 2027-02-04.
+   b) Provisional handover to Operations — completed on 27 Feb.
+   c) Operations training and familiarization, OIL staff started 11 Jan 2027.
+   d) RFSU Unit 2 progressing at the 1 location as of 10/01/2027.
+   e) Pre-startup safety review (PSSR) walkthrough taken up at site.
+
+5. GENERAL / SITE NARRATIVE
+   a) Welder qualification tests conducted for four new welders.
+   b) Vendor representative for the compressor arrives next Tuesday.
+   c) Housekeeping drive carried out across all work fronts.
+
+REMARKS
+   - Manpower: 226 nos on site.
+   - Equipment: 3 nos deployed.

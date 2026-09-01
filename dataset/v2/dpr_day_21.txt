@@ -1,0 +1,27 @@
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 30/Nov/2026
+Weather: Overcast, light drizzle after 4pm
+Contractor: ABC Infra Pvt. Ltd.
+Site Engineer: A. Bhuyan
+
+1. PIPING WORKS
+   a) Install restriction orifice spools and sampling connections, Unit 1 in progress, 2 nos out of 6 achieved.
+   b) Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold, 45 of 54 m complete so far, as of 28 Nov.
+
+2. INSTRUMENTS
+   a) PT-1101 — Install pressure transmitters PT-1101 to PT-1114, Unit 1 in progress, 5 nos out of 14 achieved, as of 28 Nov.
+   b) Install fire and gas detectors, wellhead and manifold, 11 nos out of 32 complete so far, as of 28 Nov.
+   c) Crew deployed on Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A.
+   d) Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A, 5 nos out of 10 complete so far.
+
+3. HSE
+   a) Compilation of handover dossiers and O&M manuals held up, awaiting client RFI clearance.
+   b) As-built markup verification and red-line transfer completed 25/11/2026.
+
+4. GENERAL / SITE NARRATIVE
+   a) Scaffolding material returned to the hire company, 8 loads.
+   b) Material test certificates for the imported valves under verification.
+
+REMARKS
+   - Manpower: 239 nos on site.
+   - Equipment: 9 nos deployed.

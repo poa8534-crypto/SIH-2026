@@ -1,0 +1,36 @@
+DAILY PROGRESS REPORT
+Date: 06/Mar/2027  |  Weather: Overcast, light drizzle after 4pm
+Contractor: ABC Infra  |  Project: OIL Well-Site Duliajan
+Prepared by: K. Baruah, Site Engineer
+
+1. STATIC EQUIPMENT
+   a) First crude transfer to TK-2101 — completed on 22/Feb/2027.
+   b) 72-hour integrated reliability run, process train closed out 8 Jan.
+
+2. INSTRUMENTS
+   a) Cause and effect testing, ESD shutdown matrix, finished 29 Dec, JMR raised.
+   b) Integrated ESD and blowdown function test — commenced 03/Mar/2027.
+   c) Work front opened for Instrument loops certified (RFSI) on 2027-03-06.
+   d) Loop check, Unit 1 loops L-1101 to L-1128 under way at the work front.
+   e) Calibrate transmitters and switches, workshop bench, 37 nos out of 60 complete so far.
+   f) Crew deployed on Install fire and gas detectors, wellhead and manifold.
+   g) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A closed out 02/12/2026.
+   h) Install pressure transmitters PT-1101 to PT-1114, Unit 1 (PT-1101) — progress slow, 30% only.
+   i) Fire and gas detection system function test started 3 Mar.
+
+3. HSE / SAFETY
+   a) RFSU Unit 1 started 2027-03-03.
+   b) As-built drawing submission and document close-out to OIL delayed by 2 days, crane availability.
+   c) Pre-startup safety review (PSSR) walkthrough closed out 2026-12-24.
+   d) Operations training and familiarization, OIL staff — commenced 5 Mar.
+   e) Punchlist closure, category A and B items completed 01/Mar/2027.
+   f) Provisional handover to Operations closed out 27 Feb 2027.
+   g) RFSU Unit 1 — this is the 2 one, 50% done.
+
+4. GENERAL / SITE NARRATIVE
+   a) Near miss reported: dropped spanner at the rack, no injury.
+   b) Rework of the guardhouse plinth after client comment, VO pending.
+
+REMARKS
+   - Manpower: 114 nos on site.
+   - Equipment: 5 nos deployed.

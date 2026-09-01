@@ -1,0 +1,26 @@
+DAILY PROGRESS REPORT
+Date: 02/Aug/2026  |  Weather: Fog till 0900, then clear
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: R. Gogoi, Site Engineer
+
+1. PIPING
+   a) Instrument air header 2"-P-2301-A6A, rack to Unit 2 completed 25 Jul.
+   b) Nitrogen line 3"-P-2302-A6A, package to header, finished 27 Jul 2026, JMR raised.
+
+2. E&I - ELECTRICAL
+   a) Cable glanding, MCC-1 and MCC-2 feeders under way at the work front.
+   b) Pull MV cable 11 kV, — this is the transformer one, 35% done.
+   c) Pull LV power cables, pump motors, 85 of 320 m complete so far.
+   d) Glanding and termination, LV panels, substation, finished 01/08/2026, JMR raised.
+   e) Emergency lighting and exit signage, control building taken up at site.
+   f) Core termination and lacing, MCC-1 and MCC-2 under way at the work front.
+   g) Set and terminate transformer T-1, 11/0.433 kV completed 31 Jul.
+   h) Set and terminate transformer T-2, 11/0.433 kV delayed by 2 days, crane availability.
+
+3. GENERAL / SITE NARRATIVE
+   a) Site query raised on the foundation bolt projection detail.
+   b) Night shift cancelled due to lighting tower breakdown.
+
+REMARKS
+   - Manpower: 131 nos on site.
+   - Equipment: 6 nos deployed.

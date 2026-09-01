@@ -1,0 +1,40 @@
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 27/Aug/2026
+Weather: Humid, 34C, brief shower midday
+Contractor: ABC Infra Pvt Ltd
+Site Engineer: A. Bhuyan
+
+1. MECHANICAL - PIPING
+   a) Erect 12"-P-2102-A1A, TK-2102 manifold tie-in — closed out this week.
+   b) Field welds and UT, tank farm manifold, welds 40-52 — commenced 17 Sep.
+   c) Erect line 8"-P-1004-A6A, glycol feed to contactor V-1201 under way at the work front.
+   d) Mobilised for Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs.
+   e) Erect flare header the eighteen inch line, manifold to KO drum ongoing.
+   f) Tank farm manifold the twelve inch line, inlet/outlet the storage tank, finished 10/09/2026, JMR raised.
+   g) Erect the six inch line, fuel gas skid inlet under way at the work front.
+   h) Erect drain header 4"-P-1303-C5B, closed drain held up, awaiting client RFI clearance.
+   i) Alloy weld and PMI, flare header, welds 20-31 — 3 nos out of 12 done.
+   j) Suction and discharge piping, pumps P-1401A/B to manifold, tag P-1401A stopped, material shortage at store.
+
+2. EQUIPMENT
+   a) Water fill and calibration strapping, the storage tank started 18 Sep.
+
+3. ELECTRICAL
+   a) Set and terminate the transformer, 11/0.433 kV under way at the work front.
+   b) Crew deployed on Pull MV cable 11 kV, substation to transformer T-2.
+   c) Core termination and lacing, the MCC and, finished 8 Aug, JMR raised.
+
+4. INSTRUMENTS
+   a) Terminate field instruments at JB-101 to JB-108 started this morning.
+   b) Pull instrument cables, rack tier 2 to junction boxes JB-101 to JB-108 started 28 Aug.
+   c) Mobilised for Install junction boxes JB-101 to JB-108, field.
+   d) Pull home-run cables, the junction box to control room FTA in progress, 237 of 480 m achieved.
+
+5. GENERAL / SITE NARRATIVE
+   a) Client asked for a second wash bay, awaiting commercial approval.
+   b) Method statement for tank erection resubmitted after comments.
+   c) Unplanned soil replacement below the store shed, 60 m3 removed.
+
+REMARKS
+   - Manpower: 144 nos on site.
+   - Equipment: 8 nos deployed.
