@@ -83,6 +83,9 @@ from matching.providers import (
     ScheduleProvider,
     validate_activities,
 )
+from matching.config import production
+from matching.schedule_index import ScheduleIndex
+from matching.textutils import alias_key
 
 from .db import (
     Activity,
@@ -384,10 +387,27 @@ _MATCHING_ENGINE: Optional[MatchingEngine] = None
 
 
 def get_matching_engine() -> MatchingEngine:
-    """Lazily build the schedule-linking engine (loads MiniLM once)."""
+    """Lazily build the schedule-linking engine.
+
+    Built once per process. The MiniLM weights are held by a module-level
+    singleton in matching.retrieval, so even a rebuild here does not reload
+    them.
+
+    `production()` supplies the fitted ranker and calibrator ONLY when the
+    active baseline is the one they were fitted against; against any other
+    schedule it returns the hand-set blend. The server still defaults to the
+    v1 baseline while the artefacts are fitted on v2, so today this
+    deliberately resolves to the hand-set behaviour — the guard is what makes
+    that a decision rather than an accident.
+    """
     global _MATCHING_ENGINE
     if _MATCHING_ENGINE is None:
-        _MATCHING_ENGINE = MatchingEngine(SCHEDULE_PATH, thresholds=MATCHING_THRESHOLDS)
+        index = ScheduleIndex.from_json(SCHEDULE_PATH)
+        sha = index.baseline.sha256 if index.baseline else None
+        _MATCHING_ENGINE = MatchingEngine(
+            SCHEDULE_PATH, thresholds=MATCHING_THRESHOLDS,
+            config=production(sha), index=index,
+        )
     return _MATCHING_ENGINE
 
 
@@ -1626,8 +1646,15 @@ def _upsert_alias(
     discipline: str,
     tags: list[str],
 ) -> int:
-    """Insert or update an alias lexicon entry. Returns 1 if created/updated."""
-    normalized = source_text.lower().strip()[:500]
+    """Insert or update an alias lexicon entry. Returns 1 if created/updated.
+
+    The key comes from `matching.textutils.alias_key`, not from a local
+    expression, because the matcher now READS this table as a retrieval
+    channel. A write-side normalisation and a read-side normalisation that
+    drift apart would silently stop planner corrections from ever being
+    found again, and nothing would fail loudly to say so.
+    """
+    normalized = alias_key(source_text)
     existing = db.query(AliasLexicon).filter(
         AliasLexicon.source_text == normalized,
         AliasLexicon.mapped_activity_id == activity_id,

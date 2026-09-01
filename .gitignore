@@ -18,3 +18,7 @@ dataset/uploads/
 
 # Added by code-review-graph
 .code-review-graph/
+
+# Derived embedding matrices: rebuilt from the baseline on demand,
+# keyed by content hash, never a source of truth.
+.cache/

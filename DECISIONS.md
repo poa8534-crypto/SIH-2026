@@ -2859,3 +2859,380 @@ against a corpus with almost no ambiguous text in it.**
 No threshold was lowered and no near-miss was removed to raise a score.
 `matching/` untouched.
 
+---
+
+## 2026-09-01 / D-025 - Two more tag-normalisation defects, found by auditing for the assumption rather than the symptom
+
+### Status
+Implemented. Completes the work D-023 began.
+
+### Context
+D-023 widened `TAG_NUM` to 1-5 digits and `LINE_NUM` to 3-5 so v2's four-digit
+equipment tags would be read. That fixed the *symptom* it was looking at. An
+audit for the same *assumption* elsewhere - "a tag number has at most three
+digits" - found it still living in two more places, both silently discarding
+tag evidence on the strongest ranking feature the engine has.
+
+### The two defects
+
+**A. `EQUIPMENT_TAG_RE` swallowed the head of the next tag.** The optional
+`(?:/[A-Z])?` exists to capture a variant suffix: `P-101A/B` means P-101A and
+P-101B. On `V-1101/V-1201` it matched the leading `V` of the *second* tag,
+producing the junk tag `V-1101/V` - which resolves to no schedule line at all -
+and losing `V-1201` entirely. 6 v2 activities and 3 labelled mentions.
+
+Fixed by requiring that a variant letter is not followed by a tag number.
+
+**B. `matching/textutils._SLASH_VARIANT_RE` capped digits at 1-3.** So
+`P-1401A/B` never expanded to its two variants; it was normalised whole to the
+key `p-1401ab`, matching nothing. 6 activities and 7 mentions.
+
+Fixed to 1-4 letters and 1-5 digits, matching `EQUIPMENT_TAG_RE`.
+
+**C.** `_PIP_FULL_RE` / `_PIP_BARE_RE` still read 3-4 digits where the prepass
+reads 3-5. Latent - v2 uses four - but the normaliser is the second half of the
+same convention and must carry the same bound. Aligned.
+
+### Measured
+Held-out test top-1 and near-miss top-1 **did not move**; coverage moved
+41.4% to 40.9%. The affected tags are ~10 mentions in 814, mostly in train.
+
+This is reported as it came out. The defects were real and the fix is correct -
+`V-1101/V-1201` now yields both tags, `P-1401A/B` both variants - but on this
+corpus the correction is worth approximately nothing, and saying otherwise
+would be inventing a result. The value is that the strongest feature is no
+longer silently wrong on a tag convention the v2 baseline actually uses.
+
+### Why the bound is generous rather than exact
+A digit count is a property of one project's numbering convention, not of what
+a tag IS. Both fixes chose the loosest bound that cannot match ordinary prose.
+
+### Affected Areas
+`extraction/prepass.py` (`EQUIPMENT_TAG_RE`), `matching/textutils.py`
+(`_SLASH_VARIANT_RE`, `_PIP_FULL_RE`, `_PIP_BARE_RE`).
+
+---
+
+## 2026-09-01 / D-026 - The dense channel was 86% of latency because it encoded one mention at a time
+
+### Status
+Implemented.
+
+### Context
+Profiling before changing anything (`research/bench/profile_latency.py`)
+attributed **86% of warm per-event latency to the dense channel** - and almost
+all of that to per-CALL overhead, not per-token work. Encoding one 12-word
+mention costs nearly what encoding sixty costs.
+
+### Decisions
+
+**1. One forward pass per FILE, not per event.** `HybridRetriever.retrieve_many`
+encodes every mention of a document together. `match_event` is now
+`match_events` with a batch of one rather than a second implementation - two
+separate paths had drifted apart in the sixth decimal of the cosine, because
+BLAS accumulates a matrix-vector product differently from a matrix-matrix one.
+Never enough to change a decision; exactly enough to make an eval number
+describe something other than what the server runs. One path cannot drift from
+itself. `matching/test_equivalence.py` asserts the remaining equality.
+
+**2. The activity embedding matrix is cached on disk**, keyed by a sha256 over
+the model name and the exact document strings - not by file path or mtime, so
+invalidation is automatic and total. Read back with `mmap_mode="r"`.
+
+**3. One model per process.** `retrieval.shared_embedder()` is a module-level
+singleton and loading is lazy, so constructing an engine imports nothing.
+
+**4. BM25 is precomputed as a term x document score matrix at startup.** Every
+factor in the Okapi score depends only on (term, document); rank_bm25 recomputed
+it on every call. Bit-exact against `BM25Okapi.get_scores` (max abs difference
+0.000e+00 over 814 queries) and **47x faster**.
+
+**5. Feature scoring is a matrix operation.** One `rapidfuzz.process.cdist`
+call replaces 2 x pool-size Python-level calls; date, predecessor and
+discipline features became masked numpy reductions over column arrays built at
+index construction. `FeatureVector.model_construct` skips pydantic validation on
+values this module produced itself.
+
+**6. Short circuit on an unambiguous tag** - implemented, and **it barely
+fires**: 4.7% of v2 mentions, 0.4% of v1. A line number in this domain names an
+*equipment item*, not a task; V-1101 is referenced by its excavation,
+foundation, erection, piping, cabling and testing. 343 of 814 mentions carry a
+line the schedule knows and only 38 name a line belonging to one activity. It is
+kept as a correctness-preserving fast path (38/38 correct) but it is **not** a
+speed lever, and the latency table shows batch encoding is what pays.
+
+### Measured
+
+| | v1 before | v1 after | v2 before | v2 after |
+|---|---:|---:|---:|---:|
+| per-event, batched | 5.85 ms | **2.09 ms** | 7.14 ms | **2.84 ms** |
+| per DPR file | 123.9 ms | **44.3 ms** | 169.9 ms | **68.0 ms** |
+| throughput | 170.8 ev/s | **477.9 ev/s** | 140.9 ev/s | **352.0 ev/s** |
+
+Cold start, fresh process (v2): 8557 ms to 7966 ms. The embedding cache removes
+372 ms of it. **The remaining 7.5 s is the `import torch` that
+sentence-transformers pulls in, and no cache can remove it** while a dense
+channel exists - a process that must encode an unseen query has to have the
+runtime loaded. Reported rather than hidden: the honest cold-start win is small
+and the warm win is 2.5-2.9x.
+
+### What this is NOT
+No FAISS, no Chroma, no vector database. At 218 x 384 the similarity is a numpy
+dot product that costs microseconds; a vector store would add a dependency, a
+process and an index-consistency problem to accelerate something that is not the
+bottleneck. The bottleneck was per-call encoder overhead, and batching fixed it.
+
+### Affected Areas
+`matching/retrieval.py` (rewritten), `matching/embedcache.py` (new),
+`matching/config.py` (new), `matching/features.py` (`score_pool`,
+`blend_matrix`, `matrix_to_vectors`), `matching/schedule_index.py`
+(`ensure_bm25`, `_build_bm25_matrix`, `bm25_scores`, `ensure_ngram`,
+`_build_feature_columns`, `index_of`), `matching/engine.py`,
+`matching/test_equivalence.py` (new, 13 tests), `.gitignore` (`.cache/`),
+`research/bench/profile_latency.py`, `research/bench/cold_start.py` (new).
+
+---
+
+## 2026-09-01 / D-027 - Recall@20 is 100%, so retrieval tuning cannot help and discipline gating actively hurts
+
+### Status
+Implemented. Constrains D-001 (retrieval and ranking as separate stages) with a
+measurement about where the error actually lives.
+
+### The measurement that reframed the work
+
+| split | recall@1 | @3 | @5 | @10 | @20 |
+|---|---:|---:|---:|---:|---:|
+| train (387) | 0.907 | 0.969 | 0.982 | 0.997 | **1.000** |
+| dev (172) | 0.744 | 0.849 | 0.919 | 1.000 | **1.000** |
+| test (185) | 0.714 | 0.881 | 0.951 | 0.995 | **1.000** |
+
+Per channel on test: BM25 100%, char n-gram 100%, DENSE 93.5%, TAG 54.1%,
+fusion **100%**.
+
+**The gold activity is always already in the pool.** Every remaining error is a
+ranking error. Retrieval can only affect top-1 by changing which 20 candidates
+are present - it cannot add a gold that is already there.
+
+### Consequences, each measured on held-out test
+
+| change | delta top-1 | verdict |
+|---|---:|---|
+| tuned BM25 (k1, b), grid-searched on train | **+0.00** | no headroom - revert |
+| tuned RRF (k, channel weights), fitted on train | **+0.00** | no headroom - revert |
+| char 3-5 gram channel | **+0.00**, +0.50 ms/event | costs latency for nothing - revert |
+| discipline soft gate | **-4.32** [-7.0, -1.6] | **actively harmful - reverted** |
+
+The tuner does move what it is asked to move: fusion MRR@20 on train goes
+0.9339 to 0.9466. It does not move top-1, because MRR over the retrieved pool is
+not an input to the final score - the feature stage rescores the pool from
+scratch. Tuning a quantity that nothing downstream reads is the definition of a
+number that is not a result.
+
+### Why discipline gating hurts
+Discipline is *inferred from field text* and the inference is noisy - "pipe
+rack" reads as piping inside a civil sentence. Gating the pool on a noisy label
+removes the gold candidate more often than it removes a distractor. The soft
+escape (fall back when fewer than 6 candidates survive) limits the damage but
+does not reverse it: the interval [-7.0, -1.6] excludes zero, so this is a real
+regression, not noise.
+
+Discipline remains a low-weight *feature* and a *conflict guard on auto-link*,
+which is where a noisy signal belongs: it can veto, it cannot select.
+
+### Decision
+Every knob above stays in `RetrievalConfig` with its default at the pre-existing
+value, so the negative results stay reproducible rather than being deleted along
+with the code that produced them. `discipline_gate` defaults to `False` and the
+docstring says why.
+
+### Affected Areas
+`matching/config.py`, `matching/retrieval.py` (`ngram_channel`, discipline
+gate), `matching/schedule_index.py` (`ensure_ngram`),
+`research/bench/tune_retrieval.py` (new), `research/bench/ablation.py` (new).
+
+---
+
+## 2026-09-01 / D-028 - The learned ranker is selected under the precision floor, not on top-1
+
+### Status
+Implemented. Refines D-002 (the hand-set weighted blend).
+
+### Decision
+Replace the hand-set `FEATURE_WEIGHTS` blend with a pointwise logistic
+regression fitted on the train split, together with the five extra features,
+and **select it under the >= 99% auto-link precision constraint rather than on
+top-1**.
+
+### Measured - held-out test (198 mentions, 185 positives, 68 near-miss)
+
+| configuration | top-1 | delta [95% CI] | near-miss | coverage | auto-P | ms/ev |
+|---|---:|---|---:|---:|---:|---:|
+| baseline (hand-tuned) | 71.4 | - | 26.5 | 39.4 | 100.0 | 2.07 |
+| learned, logistic | 72.4 | +1.08 [-3.2, +5.4] | 26.5 | 47.5 | 98.9 | 2.26 |
+| learned, gradient-boosted | 74.1 | +2.70 [-2.2, +7.6] | 29.4 | **58.6** | **97.4** | 4.23 |
+| extra features, hand-weighted | 71.4 | +0.00 [-2.7, +2.7] | 26.5 | 39.9 | 100.0 | 2.14 |
+| **extra features, learned (selected)** | **74.1** | +2.70 [-1.6, +7.6] | **29.4** | **47.0** | **100.0** | **2.50** |
+
+### What the constraint rejected
+The gradient-boosted ranker reaches the same 74.1% top-1 with **58.6%**
+coverage - the highest in the table - at **97.4%** auto-link precision. On 198
+test mentions that is 3 wrong auto-links where the floor permits at most 1. It
+is the most attractive row and it is not shippable: a wrong auto-link writes a
+false actual date onto the schedule, and no amount of top-1 buys that back.
+
+### Honest reading of the selected row
+The top-1 interval **[-1.6, +7.6] spans zero**, as does the near-miss interval
+[-8.8, +14.7]. At n=185 and n=68 a 2.7-point move is directional, not
+established. What IS established, with non-overlapping intervals, is
+**coverage +7.6 points at an unchanged 100% precision** and the NO_MATCH result
+in D-029. "All the rest" (non-near-miss) reaches 100.0% (117/117) from 97.4%.
+
+### Which features turned out to be worthless
+Learned coefficients (standardised inputs, so comparable to each other):
+
+| feature | hand | learned |
+|---|---:|---:|
+| tag_overlap | 0.320 | **+2.41** |
+| fuzzy_similarity | 0.200 | **+2.10** |
+| quantity_proximity | 0.050 (new) | +1.16 |
+| predecessor_progress | 0.030 (new) | +0.53 |
+| embedding_cosine | 0.220 | **+0.18** |
+| date_proximity | 0.100 | +0.10 |
+| discipline_agreement | 0.060 | +0.10 |
+| uom_compatibility | 0.050 (new) | +0.09 |
+| report_position | 0.030 (new) | **-0.04** |
+| area_match | 0.040 (new) | **+0.01** |
+
+- **`embedding_cosine` is badly overweighted by hand** (0.22, third largest) and
+  the model gives it a twelfth of tag_overlap's weight. Dense similarity is a
+  *retrieval* signal here, not a discriminating one - every candidate in the pool
+  is already semantically close, which is how it got there.
+- **`report_position` and `area_match` earn nothing** and are the two extras to
+  drop if the feature set is ever trimmed.
+- **`quantity_proximity` is the one genuinely new signal that pays**: a mention
+  reporting 120 m against a 40 m node is evidence against that node, and nothing
+  else in the feature set expressed it.
+
+### `rationale` is unchanged
+It remains a list of deterministic feature names. A fitted model changes how
+features are *weighed*; it never becomes the explanation. See D-003.
+
+### Guards
+`config.production(baseline_sha256)` refuses to apply the artefacts to any
+baseline other than the one they were fitted against - v2 has 218 activities and
+four-digit tags, v1 has 120 and three-digit ones, and the server still defaults
+to v1. A silent cross-baseline transfer is the exact failure this exercise
+exists to measure away. Missing artefacts fall back to the hand-set blend.
+
+### The alias lexicon: implemented, contribution 0.000, and the reason matters
+Planner corrections are now READ back as a fourth retrieval channel, closing the
+loop that `server/main.py:_upsert_alias` had been writing into since D-004. Its
+measured contribution on this corpus is **exactly 0.000**, because the v2
+generator gave every mention unique text: **0 of 198 test mentions share their
+normalised text with any train mention**, and 0 share even a full token-set
+signature. No held-out mention *can* match a train-split alias.
+
+That is a property of the corpus, not of the channel, and the two are only
+distinguishable with direct evidence - so `matching/test_learned.py` exercises
+the channel with a lexicon that does contain the mention and asserts that it
+fires, that it is recorded as an `ALIAS` retrieval source, and that it does
+**not** bypass feature scoring. Keep it: it costs +0.04 ms with an empty
+lexicon, it is the only path by which a planner correction re-enters the system,
+and this corpus cannot evidence it either way.
+
+The read key and the write key are now one function, `textutils.alias_key`. They
+were two expressions that happened to agree; if they had drifted, corrections
+would have stopped being findable and nothing would have failed.
+
+### Cross-encoder: cost measured, gain not
+`cross-encoder/ms-marco-MiniLM-L-6-v2` is not cached on this machine and there
+is no route to huggingface.co, so **the accuracy gain is unmeasured and no
+number is reported for it**. What is measured: a forward pass over the same 20
+pairs per event, using the architecturally identical `all-MiniLM-L6-v2` encoder,
+costs **45 ms/event** - a lower bound, and **20x the entire current pipeline**.
+The degradation contract is tested: an uncached model logs once, latches, and
+leaves the feature-scored order untouched.
+
+Recommendation: do not enable by default. It would rerank a pool whose gold
+activity is already present 100% of the time, against a learned ranker that
+reaches the same top-1 for +0.22 ms.
+
+### Affected Areas
+`matching/learned.py` (new), `matching/config.py` (`production`),
+`matching/features.py` (five extra features), `matching/models.py`
+(FeatureVector fields), `matching/engine.py` (ranker, cross-encoder,
+abstention), `matching/artifacts/` (new), `matching/test_learned.py` (new, 20
+tests), `server/main.py` (`_upsert_alias` key, `get_matching_engine`),
+`eval.py` (`--production`), `research/bench/fit_production.py` (new).
+
+---
+
+## 2026-09-01 / D-029 - Confidence becomes a probability; the abstention model earns nothing on top of it
+
+### Status
+Implemented.
+
+### Calibration
+Isotonic regression fitted on **dev**, reported on **test**:
+
+| mapping | ECE | Brier |
+|---|---:|---:|
+| raw score | 0.1286 | 0.1220 |
+| Platt | 0.1786 | 0.1125 |
+| **isotonic** | **0.0420** | **0.0842** |
+
+**ECE improves 3.1x and Brier 31%.** Platt makes ECE *worse*: a single sigmoid
+cannot fit a score distribution that is bimodal by construction - the engine
+either identifies a line number or it does not, and there is almost nothing in
+between. Isotonic is monotone-but-free-form and fits it.
+
+Reliability on test, the claim against the delivery:
+
+| band | n | claimed | actual |
+|---|---:|---:|---:|
+| 0.0-0.1 | 14 | 0.006 | 0.000 |
+| 0.1-0.2 | 3 | 0.149 | 0.667 |
+| 0.2-0.3 | 46 | 0.216 | 0.283 |
+| 0.3-0.4 | 22 | 0.332 | 0.409 |
+| 0.9-1.0 | 113 | 0.983 | **1.000** |
+
+The band the design rests on is the last one: on 113 mentions the system claims
+98.3% and delivers 100%. The 0.1-0.2 row is 3 mentions and should not be read.
+The empty 0.4-0.9 region is the bimodality, not missing data.
+
+Labels count NO_MATCH mentions as 0, so a confident answer on a mention with no
+correct activity is penalised - which is the case the whole design rests on.
+
+### NO_MATCH rejection, pooled over 5-fold CV (all 70 negatives)
+
+| rule | rejection [95% CI] | positives wrongly refused |
+|---|---|---|
+| threshold rule, hand-tuned baseline | 80.0% [70.0, 88.6] | 0/185 |
+| threshold rule, learned ranker | **100.0% [100.0, 100.0]** | 1/185 |
+| + explicit abstention model | 100.0% [100.0, 100.0] | 1/185 |
+
+Pooled, not reported on the 13 negatives in the test split: a rate on 13 items
+has an interval roughly +/-25 points and would be reporting the split rather
+than the system.
+
+### The abstention model earns nothing, and that is the finding
+An explicit reject-option classifier was built exactly as specified - top-1
+score, top1-minus-top2 margin, top-5 entropy, tag presence, whether the tag
+resolved, discipline agreement, pool mean and standard deviation. **It adds
+nothing**, because the ranker already separates the classes completely:
+negatives score in [0.309, 0.751] and positives in [0.518, 0.993] under the
+hand-set blend, and the learned ranker's probability scale separates them
+entirely. There is no headroom for a second model to recover.
+
+It is kept in the codebase, defaulted off, because the separation is a property
+of *this* corpus's negatives and a harder negative set would reopen the gap. The
+decision rule is written so that an abstainer **can only ever refuse** - it never
+promotes anything to AUTO_LINK - so a miscalibrated one costs coverage and can
+never cost auto-link precision.
+
+### Affected Areas
+`matching/learned.py` (`fit_calibrator`, `fit_abstention`, `Calibrator`,
+`AbstentionModel`), `matching/engine.py` (`abstention_features`,
+`decide_outcome` abstainer branch, `_calibrated`), `research/bench/harness.py`
+(`ece`, `brier`, `reliability_table`, `pooled_no_match`).

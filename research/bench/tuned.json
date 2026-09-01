@@ -1,0 +1,11 @@
+{
+  "bm25_k1": 1.5,
+  "bm25_b": 0.9,
+  "rrf_k": 10,
+  "w_tag": 1.0,
+  "w_bm25": 1.0,
+  "w_dense": 1.0,
+  "_fitted_on": "train split of dataset/v2/ground_truth_v2.csv",
+  "_train_recall20": 1.0,
+  "_train_mrr20": 0.9466
+}

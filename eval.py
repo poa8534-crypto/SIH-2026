@@ -751,10 +751,23 @@ def main():
     ap.add_argument("--ground-truth", default=str(GROUND_TRUTH),
                     help="labelled mentions to evaluate with "
                          "(default: dataset/ground_truth.csv)")
+    ap.add_argument("--production", action="store_true",
+                    help="use the fitted ranker + calibrator from "
+                         "matching/artifacts (only applies to the baseline they "
+                         "were fitted against; otherwise falls back and says so)")
     args = ap.parse_args()
 
     print("Loading schedule + ground truth ...")
-    _ENGINE = MatchingEngine(args.schedule)
+    cfg = None
+    if args.production:
+        from matching.config import production
+        from matching.schedule_index import ScheduleIndex
+        sha = ScheduleIndex.from_json(args.schedule).baseline.sha256
+        cfg = production(sha)
+        print("  ranking: fitted ranker + calibrator"
+              if cfg.ranker_path else
+              "  ranking: hand-set blend (no artefact for this baseline)")
+    _ENGINE = MatchingEngine(args.schedule, config=cfg)
     embed_info = (
         "sentence-transformers all-MiniLM-L6-v2 (local, offline)"
         if _ENGINE.retriever.embedder.is_neural

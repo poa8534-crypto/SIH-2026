@@ -1256,6 +1256,166 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Make the matching engine measurably stronger and measurably faster,
+with every change justified on the held-out test split and an ablation showing
+what it contributed alone.
+**Date:** 2026-09-01 - **Decisions:** D-025, D-026, D-027, D-028, D-029
+
+### Current path - document ingestion, after the change
+
+```
+server/main.py :: get_matching_engine()
+  ScheduleIndex.from_json(SCHEDULE_PATH)
+        |                 _build()                 records, tag_keys, tokens
+        |                 ensure_bm25(k1, b)       BM25Okapi  +  NEW
+        |                   _build_bm25_matrix()   term x doc score matrix,
+        |                                          built ONCE at startup
+        |                 _pos_by_id               NEW  O(1) activity_id -> row
+        |                 _build_feature_columns() NEW  planned_lo/hi, planned_qty,
+        |                                          padded predecessor start/finish
+        |                                          matrices - schedule-only facts
+        |                                          hoisted out of the scoring loop
+        |
+  config.production(baseline.sha256)               NEW - fitted ranker +
+        |                                          calibrator, but ONLY for the
+        |                                          baseline they were fitted
+        |                                          against; otherwise DEFAULT
+  MatchingEngine(..., index=index, config=cfg)
+        |
+  HybridRetriever.__init__
+        |   retrieval.shared_embedder()            NEW  process-wide singleton,
+        |                                          lazy - ctor loads nothing
+        |   _embed_docs()
+        |       embedcache.content_key(model, docs)   sha256 over model name +
+        |       embedcache.load(key)                  exact doc strings
+        |         hit  -> np.load(mmap_mode="r")      ~10 ms
+        |         miss -> encode_normalized + store   ~370 ms
+        |
+link_events_to_activities()
+  engine.match_events(events)                      the whole file at once
+        |
+        v
+HybridRetriever.retrieve_many(texts, tags, disciplines)
+   1. unambiguous_tag_hit() per event              short circuit: answered
+                                                   without touching the encoder
+                                                   (fires 4.7% on v2, 0.4% v1)
+   2. dense_channel_many(remaining)                ONE forward pass for the file
+        embedder.encode_normalized(texts)
+        sims = Q @ doc_matrix.T
+        np.argpartition(-sims, k)                  O(n) top-k per row
+   3. retrieve(text, tags, dense_hits=...) each
+        tag_channel()      line_index dict lookup, O(tags)
+        bm25_channel()     index.bm25_scores() - row gather + sum on the
+                           precomputed matrix (bit-exact vs rank_bm25, 47x)
+        ngram_channel()    OFF by default (w_ngram=0.0) - D-027
+        alias_channel()    OFF unless a lexicon is supplied; reads
+                           textutils.alias_key(text), the SAME function
+                           server.main._upsert_alias writes with
+        RRF fusion over enabled channels
+        discipline gate    OFF by default - measured -4.32 top-1, D-027
+        |
+        v
+MatchingEngine._decide -> _score(event, cand_ids, info)
+        features.score_pool()                      NEW  matrix, not a loop
+            tag_overlap        event keys parsed ONCE, then per candidate
+            discipline         vector compare
+            date_proximity     masked numpy over col_planned_lo/hi
+            predecessor_*      bucketed min over the padded matrices
+            fuzzy_similarity   ONE rapidfuzz.process.cdist for the pool
+            embedding_cosine   from the dense hits
+            + 5 extra features when config.extra_features
+        ranker.score(M)  OR  features.blend_matrix(M)
+        blend_with_line_lock()                     unchanged near-decisive rule
+        _cross_encode()                            OFF by default; degrades to a
+                                                   no-op when uncached
+        features.matrix_to_vectors()               FeatureVector.model_construct
+        |
+        v
+engine.decide_outcome(scored, thresholds, abstainer)
+        abstainer.should_abstain()                 OFF by default; can ONLY
+                                                   refuse, never promote
+        tau_low / tau_high / margin_min            unchanged rule
+        |
+engine._calibrated()                               isotonic score -> probability;
+                                                   rewrites confidence ONLY,
+                                                   never the choice
+```
+
+### Measurement path (new, research/bench/)
+
+```
+harness.py            corpus + splits, bootstrap CIs, near-miss split,
+                      recall@k, risk-coverage, ECE/Brier/reliability,
+                      pooled_no_match (5-fold over all 70 negatives)
+   |
+   +-- profile_latency.py   per-stage warm latency, batched throughput
+   +-- cold_start.py        phase-by-phase cold start in a FRESH process
+   +-- tune_retrieval.py    BM25 (k1,b) and RRF grid search, TRAIN only
+   +-- fit_production.py    fits ranker (train) + calibrator (dev),
+   |                        writes matching/artifacts/
+   +-- ablation.py          the full report -> ABLATION_RESULTS.txt
+```
+
+### Verification performed
+
+```
+python -m pytest -q                              580 passed
+  matching/test_equivalence.py    13  vectorised == scalar, batch == single,
+                                      BM25 matrix == rank_bm25 (atol 1e-12),
+                                      short circuit never changes the winner,
+                                      one model per process
+  matching/test_learned.py        20  alias channel fires and does NOT bypass
+                                      scoring; ranker falls back when broken;
+                                      abstainer can only refuse; calibration
+                                      never changes a choice; cross-encoder
+                                      degrades to a no-op
+python eval.py                                   v1 byte-identical to baseline
+python eval.py --production --schedule ...v2     top-1 74.1 | near-miss 29.4
+                                                 | rest 100.0 | auto-P 100.0
+                                                 | NO_MATCH 13/13
+python scripts/healthcheck.py                    22 passed, 1 failed
+                                                 (server not running - expected)
+```
+
+### Headline numbers, held-out test split (198 mentions, 185 positives)
+
+```
+                        baseline    selected (D-028)
+top-1                     71.4%       74.1%   [-1.6, +7.6]  spans zero
+near-miss top-1 (n=68)    26.5%       29.4%   [-8.8, +14.7] spans zero
+all the rest   (n=117)    97.4%      100.0%
+coverage                  39.4%       47.0%
+auto-link precision      100.0%      100.0%   floor holds
+NO_MATCH (pooled, n=70)   80.0%      100.0%   intervals do not overlap
+ECE                       0.129       0.042
+per-event, batched     2.07 ms     2.50 ms
+```
+
+### Known limitations
+
+- **The top-1 gain is not statistically established.** [-1.6, +7.6] at n=185.
+  The coverage and NO_MATCH gains are; the top-1 and near-miss moves are
+  directional only. This is stated wherever the number appears.
+- **Retrieval has no remaining headroom on this corpus.** recall@20 is 100% on
+  every split, so four of the planned retrieval improvements measured exactly
+  +0.00 and are shipped OFF. On a corpus where retrieval misses, they would
+  have to be re-measured rather than assumed dead.
+- **The cross-encoder is unmeasured for accuracy** - not cached, no network.
+  Only its cost (45 ms/event lower bound) and its degradation path are known.
+- **The alias channel cannot be measured on this corpus at all**: zero lexical
+  overlap between splits by construction. Its behaviour is proven by unit test
+  instead.
+- **The fitted artefacts are valid for `baseline_schedule_v2` only.** The server
+  still defaults to v1, so `production()` deliberately resolves to the hand-set
+  blend there. Re-run `fit_production.py` after any change to the feature set,
+  the retrieval config, or the baseline.
+- **Cold start is still ~8 s**, dominated by `import torch`. The embedding cache
+  removes 372 ms of it and nothing available removes the rest.
+
+---
+
+## Previous Modification Area (2026-09-01, D-024) - retained for history
+
 **Task:** Raise near-misses to at least 150 of the v2 corpus, concentrated in
 dev and test, and report top-1 three ways.
 **Date:** 2026-09-01 - **Decision:** D-024

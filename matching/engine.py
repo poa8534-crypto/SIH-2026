@@ -1,12 +1,23 @@
-"""The matching engine: retrieval → feature scoring → calibrated decision.
+"""The matching engine core: retrieval → feature scoring → calibrated decision.
 
 Decision rule (precision-first — a wrong auto-link corrupts the schedule,
 a review-queue item only costs a planner ~10 seconds):
 
-  NEW_ACTIVITY   top-1 score < tau_low
+  NEW_ACTIVITY   top-1 score < tau_low, or the abstention model says no
+                 correct activity exists
   AUTO_LINK      top-1 >= tau_high AND margin(top1, top2) >= margin_min
                  AND no discipline conflict on the winner
   REVIEW         everything in between, incl. high score but ambiguous margin
+
+Two execution paths, one set of numbers:
+
+  `match_event`   one event; used by the interactive server path
+  `match_events`  a whole file; encodes every mention in ONE forward pass
+
+They must agree exactly, so `match_event` IS `match_events` with a batch of
+one rather than a second implementation of it. `matching/test_equivalence.py`
+asserts that, because a batch path that quietly disagrees with the interactive
+path would make every measured number describe something the demo does not do.
 
 The `matching` entry point consumes extraction.models.ExtractedEvent objects
 and uses the schedule loaded from dataset/baseline_schedule.json.
@@ -14,16 +25,23 @@ and uses the schedule loaded from dataset/baseline_schedule.json.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
+import numpy as np
+
+from .config import DEFAULT, EngineConfig
 from .features import (
+    blend_matrix,
     blend_with_line_lock,
-    compute_features,
-    final_score,
+    matrix_to_vectors,
+    score_pool,
 )
 from .models import Decision, LinkCandidate, LinkDecision, Thresholds
 from .retrieval import HybridRetriever
 from .schedule_index import ScheduleIndex
+
+logger = logging.getLogger(__name__)
 
 
 class MatchingEngine:
@@ -32,56 +50,185 @@ class MatchingEngine:
         schedule_path: str | Path,
         thresholds: Thresholds | None = None,
         embedder=None,
+        config: EngineConfig | None = None,
+        index: ScheduleIndex | None = None,
     ):
-        self.index = ScheduleIndex.from_json(schedule_path)
-        self.retriever = HybridRetriever(self.index, embedder=embedder)
+        self.config = config or DEFAULT
+        self.index = index if index is not None else ScheduleIndex.from_json(schedule_path)
+        self.retriever = HybridRetriever(
+            self.index,
+            embedder=embedder,
+            config=self.config.retrieval,
+            alias_lexicon=self.config.alias_lexicon,
+        )
         self.thresholds = thresholds or Thresholds()
+        self._cross_encoder = None
+        self._cross_encoder_failed = False
+        # In-memory objects win over paths: an experiment passes the model it
+        # just fitted, production passes a path to the one it shipped.
+        self._ranker = self.config.ranker or _load_pickle(
+            self.config.ranker_path, "ranker")
+        self._abstainer = self.config.abstainer or _load_pickle(
+            self.config.abstention_path, "abstention model")
+        self._calibrator = self.config.calibrator or _load_pickle(
+            self.config.calibrator_path, "calibrator")
+        # Which activities own a line number no other activity shares. Read by
+        # the near-decisive tag rule; computed once, not per candidate.
+        self._unique_line_flags = [
+            any(len(self.index.line_index.get(line, ())) == 1 for line in rec.line_keys)
+            for rec in self.index.records
+        ]
 
     # ── Public API ───────────────────────────────────────────────────────────
 
     def match_event(self, event, event_index: int = 0) -> LinkDecision:
-        """Resolve one ExtractedEvent against the schedule."""
-        cand_ids, info = self.retriever.retrieve(event.raw_text, event.tags)
-        reported = event.reported_date
+        """Resolve one ExtractedEvent against the schedule.
 
-        scored: list[LinkCandidate] = []
-        for idx in cand_ids:
-            rec = self.index.records[idx]
-            fv = compute_features(
-                self.index, event, rec, reported,
-                embedding_cosine=self._dense_cos(idx, info),
-            )
-            score = final_score(fv)
-            score = blend_with_line_lock(score, fv, unique_line=self._unique_line(idx))
-            scored.append(LinkCandidate(
-                activity_id=rec.activity_id,
-                retrieval_sources=info[idx]["sources"],
-                rrf_score=round(info[idx]["rrf"], 6),
-                features=fv,
-                final_score=score,
-            ))
+        Routed through the batch path with a batch of one, rather than kept as
+        a parallel implementation. A matrix-vector product and a matrix-matrix
+        product accumulate in different orders, so two separate code paths
+        drifted apart in the sixth decimal of the cosine — never enough to
+        change a decision, and exactly the kind of difference that makes an
+        eval number describe something other than what the server runs. One
+        path cannot drift from itself.
+        """
+        cand_ids, info = self.retriever.retrieve_many(
+            [event.raw_text], [event.tags], [_discipline_of(event)]
+        )[0]
+        return self._decide(event, event_index, cand_ids, info)
 
-        scored.sort(key=lambda c: (-c.final_score, c.activity_id))
-        for rank, c in enumerate(scored, 1):
-            c.rank = rank
+    def match_events(self, events) -> list[LinkDecision]:
+        """Resolve a whole file's mentions, encoding them in one forward pass."""
+        events = list(events)
+        if not events:
+            return []
+        retrieved = self.retriever.retrieve_many(
+            [e.raw_text for e in events],
+            [e.tags for e in events],
+            [_discipline_of(e) for e in events],
+        )
+        return [
+            self._decide(e, i, cand_ids, info)
+            for i, (e, (cand_ids, info)) in enumerate(zip(events, retrieved))
+        ]
 
-        outcome, chosen, margin, rationale = decide_outcome(scored, self.thresholds)
-        d = LinkDecision(
+    # ── Scoring + decision ───────────────────────────────────────────────────
+
+    def _decide(self, event, event_index, cand_ids, info) -> LinkDecision:
+        scored = self._score(event, cand_ids, info)
+        outcome, chosen, margin, rationale = decide_outcome(
+            scored, self.thresholds, abstainer=self._abstainer
+        )
+        confidence = scored[0].final_score if scored else 0.0
+        if self._calibrator is not None and scored:
+            confidence = self._calibrated(scored)
+        return LinkDecision(
             event_index=event_index,
             raw_text=event.raw_text,
             source_file=event.provenance.source_file if event.provenance else "",
             thresholds=self.thresholds,
             outcome=outcome,
             chosen_activity_id=chosen,
-            confidence=scored[0].final_score if scored else 0.0,
+            confidence=confidence,
             margin=margin,
             rationale=rationale,
             candidates=scored,
         )
-        return d
 
-    def match_events(self, events) -> list[LinkDecision]:
-        return [self.match_event(e, i) for i, e in enumerate(events)]
+    def _score(self, event, cand_ids, info) -> list[LinkCandidate]:
+        """Score the whole candidate pool as a matrix, then wrap the result in
+        the per-candidate audit contract."""
+        if not cand_ids:
+            return []
+        extra = self.config.extra_features
+        dense_cos = [
+            info[i].get("dense_cos") if "DENSE" in info[i]["sources"] else None
+            for i in cand_ids
+        ]
+        M, _present, locked = score_pool(
+            self.index, event, cand_ids, event.reported_date, dense_cos, extra=extra
+        )
+        if self._ranker is not None:
+            scores = self._ranker.score(M)
+        else:
+            scores = blend_matrix(M, extra=extra)
+
+        # Near-decisive tag rule, applied per candidate exactly as before.
+        unique = np.array([self._unique_line_flags[i] for i in cand_ids])
+        fvs = matrix_to_vectors(M, locked, extra=extra)
+        final = [
+            blend_with_line_lock(float(scores[r]), fvs[r], bool(unique[r]))
+            for r in range(len(cand_ids))
+        ]
+
+        if self.config.cross_encoder:
+            final = self._cross_encode(event.raw_text, cand_ids, final)
+
+        scored = [
+            LinkCandidate(
+                activity_id=self.index.records[i].activity_id,
+                retrieval_sources=info[i]["sources"],
+                rrf_score=round(info[i]["rrf"], 6),
+                features=fvs[r],
+                final_score=final[r],
+            )
+            for r, i in enumerate(cand_ids)
+        ]
+        scored.sort(key=lambda c: (-c.final_score, c.activity_id))
+        for rank, c in enumerate(scored, 1):
+            c.rank = rank
+        return scored
+
+    # ── Cross-encoder rerank (optional, degrading) ───────────────────────────
+
+    def _load_cross_encoder(self):
+        if self._cross_encoder is not None or self._cross_encoder_failed:
+            return self._cross_encoder
+        try:
+            from sentence_transformers import CrossEncoder
+            self._cross_encoder = CrossEncoder(
+                self.config.cross_encoder_model, local_files_only=True
+            )
+        except Exception as e:
+            # Same contract as the dense retriever: an uncached model is a
+            # missing OPTION, never an outage. The hand-scored order stands.
+            logger.warning(
+                "cross-encoder %s unavailable (%s) — keeping the feature-scored "
+                "order", self.config.cross_encoder_model, e,
+            )
+            self._cross_encoder_failed = True
+        return self._cross_encoder
+
+    def _cross_encode(self, text: str, cand_ids: list[int], final: list[float]) -> list[float]:
+        model = self._load_cross_encoder()
+        if model is None:
+            return final
+        n = min(self.config.cross_encoder_top_n, len(cand_ids))
+        order = sorted(range(len(cand_ids)), key=lambda r: -final[r])[:n]
+        pairs = [
+            [text, f"{self.index.records[cand_ids[r]].description} "
+                   f"{self.index.records[cand_ids[r]].detail}".strip()]
+            for r in order
+        ]
+        raw = model.predict(pairs, show_progress_bar=False)
+        # ms-marco cross-encoders emit an unbounded logit; a sigmoid puts it
+        # on the same [0, 1] scale as every feature score, so the blend below
+        # is a blend and not an argmax by magnitude.
+        ce = 1.0 / (1.0 + np.exp(-np.asarray(raw, dtype=np.float64)))
+        w = self.config.cross_encoder_weight
+        out = list(final)
+        for slot, r in enumerate(order):
+            out[r] = round((1.0 - w) * final[r] + w * float(ce[slot]), 6)
+        return out
+
+    # ── Calibration ──────────────────────────────────────────────────────────
+
+    def _calibrated(self, scored: list[LinkCandidate]) -> float:
+        feats = _abstention_features(scored)
+        try:
+            return float(self._calibrator.predict_proba(feats))
+        except Exception:
+            return scored[0].final_score
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -93,14 +240,77 @@ class MatchingEngine:
         return info[idx].get("dense_cos")
 
     def _unique_line(self, idx: int) -> bool:
-        rec = self.index.records[idx]
-        return any(
-            len(self.index.line_index.get(line, [])) == 1
-            for line in rec.line_keys
-        )
+        return self._unique_line_flags[idx]
 
 
-def decide_outcome(scored: list[LinkCandidate], t: Thresholds):
+def _discipline_of(event) -> str | None:
+    d = getattr(event, "discipline", None)
+    return getattr(d, "value", None)
+
+
+def _load_pickle(path, what: str):
+    if path is None:
+        return None
+    try:
+        import joblib
+        return joblib.load(path)
+    except Exception as e:
+        logger.warning("could not load %s from %s (%s) — falling back to the "
+                       "hand-set behaviour", what, path, e)
+        return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Decision
+# ══════════════════════════════════════════════════════════════════════════════
+
+def abstention_features(scored: list[LinkCandidate]) -> np.ndarray:
+    """The evidence an abstention model reads: is there ANY correct activity?
+
+    Deliberately NOT the top-1 score alone. A score is a statement about one
+    candidate; whether the right answer is in the pool at all is a statement
+    about the SHAPE of the pool — how far ahead the leader is, how flat the
+    tail is, whether a tag resolved. Those are different questions, and
+    inferring the second from a threshold on the first is why NO_MATCH
+    rejection is the weakest metric the engine has.
+    """
+    return _abstention_features(scored)
+
+
+def _abstention_features(scored: list[LinkCandidate]) -> np.ndarray:
+    if not scored:
+        return np.zeros((1, 9))
+    s = np.array([c.final_score for c in scored], dtype=np.float64)
+    top1 = float(s[0])
+    top2 = float(s[1]) if len(s) > 1 else 0.0
+    top5 = s[:5]
+    # Entropy of the top-5 scores read as a distribution: a flat top-5 means
+    # the pool has no opinion, which is exactly the NO_MATCH signature.
+    p = top5 / top5.sum() if top5.sum() > 0 else np.full(len(top5), 1.0 / len(top5))
+    entropy = float(-(p * np.log(p + 1e-12)).sum())
+    f = scored[0].features
+    has_tag = 1.0 if f.tag_overlap is not None else 0.0
+    tag_resolved = 1.0 if (f.tag_overlap or 0.0) >= 0.85 else 0.0
+    disc = f.discipline_agreement
+    disc_agree = 0.5 if disc is None else float(disc)
+    return np.array([[
+        top1,
+        top1 - top2,
+        entropy,
+        has_tag,
+        tag_resolved,
+        disc_agree,
+        float(s.mean()),
+        float(s.std()),
+        float(len(s)),
+    ]])
+
+
+def decide_outcome(
+    scored: list[LinkCandidate],
+    t: Thresholds,
+    abstainer=None,
+):
     """Core decision rule over scored candidates.
 
     Returns (outcome, chosen_activity_id, margin, rationale).
@@ -122,6 +332,18 @@ def decide_outcome(scored: list[LinkCandidate], t: Thresholds):
         top1.features.discipline_agreement is not None
         and top1.features.discipline_agreement == 0.0
     )
+
+    # An explicit abstention model, when one is fitted, replaces the "low
+    # score means no match" inference. It can only ever REFUSE — it never
+    # promotes anything to AUTO_LINK — so a miscalibrated abstainer costs
+    # coverage and can never cost auto-link precision.
+    if abstainer is not None:
+        try:
+            if abstainer.should_abstain(_abstention_features(scored)):
+                return (Decision.NEW_ACTIVITY, None, margin,
+                        ["abstention_model_no_match"] + rationale[:2])
+        except Exception:
+            pass
 
     if s1 < t.tau_low:
         return Decision.NEW_ACTIVITY, None, margin, ["below_tau_low"] + rationale[:2]
@@ -150,23 +372,17 @@ def _rationale(c: LinkCandidate) -> list[str]:
         r.append("high_fuzzy_similarity")
     if f.embedding_cosine is not None and f.embedding_cosine >= 0.6:
         r.append("high_embedding_similarity")
+    if f.uom_compatibility == 1.0:
+        r.append("uom_compatible")
+    if f.uom_compatibility == 0.0:
+        r.append("uom_conflict")
+    if f.quantity_proximity is not None and f.quantity_proximity >= 0.9:
+        r.append("quantity_within_planned")
+    if f.area_match == 1.0:
+        r.append("area_match")
+    if "ALIAS" in c.retrieval_sources:
+        r.append("planner_confirmed_alias")
     return r or ["weak_evidence"]
-
-    # ── Helpers ──────────────────────────────────────────────────────────────
-
-    def _dense_cos(self, idx: int, info: dict[int, dict]) -> float | None:
-        """Cosine similarity of the dense channel for this candidate (None if
-        the candidate did not surface in the dense channel)."""
-        if "DENSE" not in info[idx]["sources"]:
-            return None
-        return info[idx].get("dense_cos")
-
-    def _unique_line(self, idx: int) -> bool:
-        rec = self.index.records[idx]
-        return any(
-            len(self.index.line_index.get(line, [])) == 1
-            for line in rec.line_keys
-        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

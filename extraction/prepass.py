@@ -44,8 +44,14 @@ PIPE_BARE_RE = re.compile(
 # The PREFIX is 1-4 letters, not 1-3: WHCP-2101 is a real v2 tag and a
 # three-letter bound dropped it. Uppercase only, deliberately — lower-casing
 # the prefix would start matching ordinary hyphenated prose ("unit-1").
+# The optional '/X' captures a VARIANT SUFFIX ('P-101A/B' means P-101A and
+# P-101B). It must not swallow the head of the NEXT tag: on 'V-1101/V-1201'
+# the bare '/[A-Z]' matched the leading V of V-1201, yielding the junk tag
+# 'V-1101/V' and losing V-1201 entirely — 6 v2 activities and 3 labelled
+# mentions carried a tag that resolves to no schedule line at all. A variant
+# letter is only a variant letter when a tag number does not follow it.
 EQUIPMENT_TAG_RE = re.compile(
-    r'\b([A-Z]{1,4})[-–](' + TAG_NUM + r'[A-Z]?(?:/[A-Z])?)\b'
+    r'\b([A-Z]{1,4})[-–](' + TAG_NUM + r'[A-Z]?(?:/[A-Z](?![-–]?\d))?)\b'
 )
 
 # Matches: JB-01, PSV-01 (v1) and PT-1101, LT-1201, TE-1301, FE-1401 (v2).

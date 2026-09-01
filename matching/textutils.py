@@ -13,11 +13,15 @@ import re
 
 # ── Tag parsing ──────────────────────────────────────────────────────────────
 
+# Digit bounds mirror extraction.prepass.LINE_NUM (3-5). They were 3-4 here
+# while the prepass reads 3-5, so a five-digit line number would be extracted
+# by one module and dropped by the other — the normaliser is the second half
+# of the same convention and has to carry the same bound.
 _PIP_FULL_RE = re.compile(
-    r"^(\d{1,2})\s*[\"”]?\s*[-–]?\s*p[\s-]*(\d{3,4})\s*[-–]?\s*([a-z]\d[a-z])?$",
+    r"^(\d{1,2})\s*[\"”]?\s*[-–]?\s*p[\s-]*(\d{3,5})\s*[-–]?\s*([a-z]\d[a-z])?$",
     re.IGNORECASE,
 )
-_PIP_BARE_RE = re.compile(r"^p[\s-]*(\d{3,4})$", re.IGNORECASE)
+_PIP_BARE_RE = re.compile(r"^p[\s-]*(\d{3,5})$", re.IGNORECASE)
 
 
 def parse_tag(tag: str) -> dict:
@@ -58,7 +62,11 @@ def extract_size_mentions(text: str) -> set[int]:
     return sizes
 
 
-_SLASH_VARIANT_RE = re.compile(r"^([A-Za-z]{1,3}[-\s]?\d{1,3})([A-Za-z])?/([A-Za-z])$")
+# Prefix 1-4 letters and 1-5 digits, matching extraction.prepass.EQUIPMENT_TAG_RE.
+# At 1-3 digits this never fired on v2's four-digit numbering: 'P-1401A/B' was
+# normalised whole to the key 'p-1401ab', which matches no schedule line, so
+# the 6 activities and 7 mentions carrying it lost their tag evidence outright.
+_SLASH_VARIANT_RE = re.compile(r"^([A-Za-z]{1,4}[-\s]?\d{1,5})([A-Za-z])?/([A-Za-z])$")
 
 
 def tag_variants(tag: str) -> list[str]:
@@ -127,6 +135,26 @@ def tokenize(text: str) -> list[str]:
         expanded = SYNONYMS.get(raw, raw)
         tokens.append(expanded)
     return tokens
+
+
+# ── Alias lexicon key ────────────────────────────────────────────────────────
+
+_ALIAS_WS_RE = re.compile(r"\s+")
+
+
+def alias_key(text: str) -> str:
+    """Normalise a raw field mention to the key the alias lexicon is stored
+    under.
+
+    `server.main._upsert_alias` writes `source_text.lower().strip()[:500]`, so
+    that is the shape a lookup has to reproduce, plus whitespace collapsing:
+    the same DPR line re-typed with a double space is the same correction, and
+    a lexicon that misses it teaches the planner that corrections do not
+    stick. Anything more aggressive (dropping punctuation, stemming) would
+    change what the server writes, and the two halves of the key must be
+    defined together or not at all.
+    """
+    return _ALIAS_WS_RE.sub(" ", (text or "").lower().strip())[:500]
 
 
 # ── UOM normalisation (for quantity-based rollup) ────────────────────────────

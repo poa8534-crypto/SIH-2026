@@ -47,6 +47,15 @@ class FeatureVector(BaseModel):
     fuzzy_similarity: Optional[float] = None     # rapidfuzz token-set ratio
     embedding_cosine: Optional[float] = None     # MiniLM cosine similarity
 
+    # Optional extras, populated only when EngineConfig.extra_features is on.
+    # None here means either "signal absent" or "feature not enabled"; the
+    # blend treats both the same way, which is why they can share a value.
+    uom_compatibility: Optional[float] = None
+    quantity_proximity: Optional[float] = None
+    predecessor_progress: Optional[float] = None
+    report_position: Optional[float] = None
+    area_match: Optional[float] = None
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "tag_overlap": self.tag_overlap,

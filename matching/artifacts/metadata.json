@@ -1,0 +1,20 @@
+{
+  "selected_row": "8b. extra features + learned logistic ranker",
+  "ranker": "logistic regression, pointwise, class_weight=balanced",
+  "calibrator": "isotonic",
+  "extra_features": true,
+  "fitted_on": {
+    "ranker": "train split, n=8600 candidate rows",
+    "calibrator": "dev split, n=186 mentions"
+  },
+  "held_out_test": {
+    "n_mentions": 198,
+    "top1": 0.7405405405405405,
+    "near_miss_top1": 0.29411764705882354,
+    "recall_at_20": 1.0
+  },
+  "corpus": "dataset/v2/ground_truth_v2.csv",
+  "baseline": "dataset/baseline_schedule_v2.json",
+  "baseline_sha256": "831f0fac2fae9779b52b0dbf50cf62672f3c49971acad2455927c59a8632dcc6",
+  "WARNING": "These artefacts are fitted against baseline_schedule_v2 and its feature set. Changing either invalidates them. The engine falls back to the hand-set blend when they cannot be loaded, so a stale or missing file degrades rather than fails \u2014 but a stale one that still LOADS is the dangerous case, which is why this file records what it was fitted against."
+}

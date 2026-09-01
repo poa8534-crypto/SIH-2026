@@ -90,13 +90,33 @@ class ScheduleIndex:
                     ).append(i)
 
         # ── BM25 over tokenised descriptions ──
-        corpus = [rec.tokens for rec in self.records]
-        self.bm25 = BM25Okapi(corpus) if corpus and any(corpus) else None
+        # Built ONCE here, at index construction, never per query. `ensure_bm25`
+        # rebuilds it only when a retriever asks for different (k1, b).
+        self._bm25_params: tuple[float, float] | None = None
+        self.bm25 = None
+        self._bm25_matrix = None
+        self._bm25_vocab: dict[str, int] = {}
+        self.ensure_bm25()
 
         # ── Predecessor graph ──
         self.by_id: dict[str, ActivityRecord] = {
             rec.activity_id: rec for rec in self.records
         }
+        # Position of each activity in `records`, so a retrieval channel that
+        # knows an activity_id (the alias lexicon) can reach its row without
+        # scanning. O(1), like every other lookup on this class.
+        self._pos_by_id: dict[str, int] = {
+            rec.activity_id: i for i, rec in enumerate(self.records)
+        }
+
+        # ── Character n-gram matrix (built on demand: only the n-gram
+        # retrieval channel needs it, and it is not on by default) ──
+        self._ngram_vectorizer = None
+        self._ngram_matrix = None
+        self._ngram_params: tuple[int, int] | None = None
+
+        # ── Column arrays for vectorised feature scoring ──
+        self._build_feature_columns()
 
     # ── Construction ─────────────────────────────────────────────────────────
 
@@ -169,7 +189,169 @@ class ScheduleIndex:
             rec.tokens = tokenize(f"{desc} {detail} {' '.join(raw_tags)}")
             self.records.append(rec)
 
+    # ── Startup-built structures ─────────────────────────────────────────────
+
+    def ensure_bm25(self, k1: float = 1.5, b: float = 0.75) -> None:
+        """Build the BM25 index for these (k1, b), reusing it if unchanged.
+
+        rank_bm25 bakes k1 and b into the fitted object, so tuning them means
+        refitting. That refit belongs at startup — this is the only place it
+        happens, and a retriever asking for parameters already in force is a
+        no-op rather than a rebuild.
+        """
+        if self._bm25_params == (k1, b) and self.bm25 is not None:
+            return
+        corpus = [rec.tokens for rec in self.records]
+        self.bm25 = BM25Okapi(corpus, k1=k1, b=b) if corpus and any(corpus) else None
+        self._bm25_params = (k1, b)
+        self._build_bm25_matrix(k1, b)
+
+    def _build_bm25_matrix(self, k1: float, b: float) -> None:
+        """Precompute the term x document BM25 score matrix.
+
+        Every factor in the Okapi score
+
+            idf(t) * tf(t,d) * (k1+1) / (tf(t,d) + k1 * (1 - b + b*|d|/avgdl))
+
+        depends only on (term, document) — never on the query. rank_bm25
+        recomputes it inside `get_scores` on every call, which made BM25 11%
+        of batched per-event latency for a quantity that had not changed since
+        startup. Precomputed here, a query score is a row gather and a sum.
+
+        The IDF is rank_bm25's own (BM25Okapi's floor-corrected variant), read
+        off the fitted object rather than reimplemented, so this matrix and
+        `self.bm25.get_scores` cannot disagree about what BM25 means.
+        """
+        import numpy as np
+
+        self._bm25_matrix = None
+        self._bm25_vocab: dict[str, int] = {}
+        if self.bm25 is None or not self.records:
+            return
+
+        n_docs = len(self.records)
+        vocab = sorted({t for rec in self.records for t in rec.tokens})
+        if not vocab:
+            return
+        pos = {t: i for i, t in enumerate(vocab)}
+        avgdl = self.bm25.avgdl or 1.0
+        doc_len = np.asarray(self.bm25.doc_len, dtype=np.float64)
+        denom_len = k1 * (1.0 - b + b * doc_len / avgdl)      # (n_docs,)
+
+        M = np.zeros((len(vocab), n_docs), dtype=np.float64)
+        for d, freqs in enumerate(self.bm25.doc_freqs):
+            for term, tf in freqs.items():
+                j = pos.get(term)
+                if j is None:
+                    continue
+                M[j, d] = tf * (k1 + 1.0) / (tf + denom_len[d])
+        idf = np.array([self.bm25.idf.get(t, 0.0) for t in vocab], dtype=np.float64)
+        self._bm25_matrix = M * idf[:, None]
+        self._bm25_vocab = pos
+
+    def bm25_scores(self, query_tokens: list[str]):
+        """BM25 scores for one query against every activity.
+
+        Numerically identical to `self.bm25.get_scores(query_tokens)`; see
+        matching/test_equivalence.py, which asserts that over the corpus.
+        """
+        import numpy as np
+
+        if self._bm25_matrix is None:
+            return None
+        rows = [self._bm25_vocab[t] for t in query_tokens if t in self._bm25_vocab]
+        if not rows:
+            return np.zeros(len(self.records))
+        return self._bm25_matrix[rows].sum(axis=0)
+
+    def ensure_ngram(self, ngram_min: int = 3, ngram_max: int = 5) -> None:
+        """Fit the character n-gram TF-IDF matrix over the activity docs.
+
+        `char_wb` keeps n-grams inside word boundaries, which is what makes
+        this a spelling-error channel rather than a bag of cross-word noise.
+        The matrix is L2-normalised by TfidfVectorizer, so a sparse dot
+        product against a normalised query IS the cosine.
+        """
+        if self._ngram_params == (ngram_min, ngram_max) and self._ngram_matrix is not None:
+            return
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+        except ImportError:      # scikit-learn absent → channel simply off
+            self._ngram_vectorizer = None
+            self._ngram_matrix = None
+            self._ngram_params = (ngram_min, ngram_max)
+            return
+        docs = [f"{r.doc} {' '.join(r.tags)}" for r in self.records]
+        vec = TfidfVectorizer(
+            analyzer="char_wb",
+            ngram_range=(ngram_min, ngram_max),
+            lowercase=True,
+            min_df=1,
+            sublinear_tf=True,
+        )
+        self._ngram_matrix = vec.fit_transform(docs)
+        self._ngram_vectorizer = vec
+        self._ngram_params = (ngram_min, ngram_max)
+
+    def ngram_similarities(self, text: str):
+        """Cosine of `text` against every activity, or None when the channel
+        was never built (scikit-learn missing, or ensure_ngram not called)."""
+        if self._ngram_vectorizer is None or self._ngram_matrix is None:
+            return None
+        q = self._ngram_vectorizer.transform([text])
+        if q.nnz == 0:
+            return None
+        return (self._ngram_matrix @ q.T).toarray().ravel()
+
+    def _build_feature_columns(self) -> None:
+        """Per-activity column arrays, so feature scoring is a matrix op.
+
+        Everything here is a property of the SCHEDULE alone — it does not
+        depend on the event — so it is computed once at startup instead of
+        once per (event, candidate) pair inside a Python loop.
+        """
+        import numpy as np
+
+        n = len(self.records)
+        self.col_planned_lo = np.full(n, np.nan)   # planned_start ordinal
+        self.col_planned_hi = np.full(n, np.nan)   # planned_finish ordinal
+        self.col_planned_qty = np.zeros(n)
+        self.disciplines = [r.discipline for r in self.records]
+        self.uoms = [r.uom for r in self.records]
+
+        for i, r in enumerate(self.records):
+            if r.planned_start is not None:
+                self.col_planned_lo[i] = r.planned_start.toordinal()
+            if r.planned_finish is not None:
+                self.col_planned_hi[i] = r.planned_finish.toordinal()
+            self.col_planned_qty[i] = r.planned_qty
+
+        # Predecessor windows as a padded (n_activities x max_preds) matrix.
+        # Ragged predecessor lists are why this stage was a nested Python
+        # loop; padding with NaN makes the whole thing one masked reduction.
+        widths = [len(r.predecessors) for r in self.records] or [0]
+        w = max(max(widths), 1)
+        self.col_pred_start = np.full((n, w), np.nan)
+        self.col_pred_finish = np.full((n, w), np.nan)
+        self.col_has_pred = np.zeros(n, dtype=bool)
+        for i, r in enumerate(self.records):
+            slot = 0
+            for pid in r.predecessors:
+                pred = self.by_id.get(str(pid).strip())
+                if pred is None or pred.planned_finish is None:
+                    continue
+                pf = pred.planned_finish.toordinal()
+                ps = pred.planned_start.toordinal() if pred.planned_start else pf
+                self.col_pred_finish[i, slot] = pf
+                self.col_pred_start[i, slot] = ps
+                slot += 1
+            self.col_has_pred[i] = slot > 0
+
     # ── Lookup helpers ───────────────────────────────────────────────────────
+
+    def index_of(self, activity_id: str) -> int | None:
+        """Row position of an activity id, or None. O(1)."""
+        return self._pos_by_id.get(activity_id)
 
     def resolve_id(self, activity_id: str) -> str | None:
         """Resolve a (possibly shortened) activity id to a schedule id.
