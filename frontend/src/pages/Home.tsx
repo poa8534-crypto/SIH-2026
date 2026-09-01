@@ -485,7 +485,22 @@ export default function Home() {
           />
         </section>
 
-        {/* ROW 2 */}
+        {/* ROW 2 — surfaced with a count, not buried in a footer. */}
+        <Panel
+          title="Source conflicts"
+          badge={conflicts.data?.length}
+          action={<PanelAction to="/schedule" label="Schedule" />}
+        >
+          {conflicts.error ? (
+            <ErrorState error={conflicts.error} mode="bare" className="px-4 py-4" />
+          ) : conflicts.isLoading ? (
+            <SkeletonRows rows={4} />
+          ) : (
+            <SourceConflicts conflicts={conflicts.data ?? []} />
+          )}
+        </Panel>
+
+        {/* ROW 3 */}
         <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <Panel
             title="Needs your attention"
@@ -515,21 +530,6 @@ export default function Home() {
             )}
           </Panel>
         </section>
-
-        {/* Surfaced with a count, not buried in a footer. */}
-        <Panel
-          title="Source conflicts"
-          badge={conflicts.data?.length}
-          action={<PanelAction to="/schedule" label="Schedule" />}
-        >
-          {conflicts.error ? (
-            <ErrorState error={conflicts.error} mode="bare" className="px-4 py-4" />
-          ) : conflicts.isLoading ? (
-            <SkeletonRows rows={4} />
-          ) : (
-            <SourceConflicts conflicts={conflicts.data ?? []} />
-          )}
-        </Panel>
 
     </div>
   );

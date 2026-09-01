@@ -4175,3 +4175,71 @@ modified.
    answerable at all.
 3. `/uploads/{filename}` needs a route or static mount, or
    `ExportResponse.download_url` should be dropped as unusable.
+
+---
+
+## 2026-09-01 / D-041 — Projector legibility: conflicts above the fold, and a banner that reads as detection
+
+### Status
+Implemented. Presentation-only. No data path, query, computation, or token was
+touched; every figure on screen is byte-identical to before.
+
+> D-040 is reserved by the recall@k work on the unpushed branch
+> `measure/recall-at-planner-depth`, so this entry takes D-041 to avoid a
+> collision when both land.
+
+### Context
+Three changes made for the 4 Sep demo, which runs on a 1280×800 projector.
+
+Source conflicts is the project's differentiator and rendered last on Home, so
+it sat below the fold. The Schedule integrity banner read "91 integrity
+warnings", which a judge parses as "91 things are broken" when the number is in
+fact the system *detecting* problems other tools miss. And the sidebar `<h1>`
+carried `truncate` at `text-h3` in a 240px column, clipping the real project
+name to "OIL Well-Site Duliaj…".
+
+### Decision
+- Home: the `Source conflicts` panel moves from last to directly beneath the
+  KPI tiles; the ROW comments renumber to match. Pure block move — no JSX,
+  `className`, `span`, or hook order changed.
+- Schedule: the banner reads `{warnings.length} items flagged for review`, and
+  `AlertTriangle` is replaced by `ListFilter` at the same `size={12}` with the
+  same `onlyFlagged ? 'text-danger' : 'text-warn'` expression. `AlertTriangle`
+  had no other use in the file and was dropped from the import. The breakdown
+  text, `onClick`, filter styling, and "Click to filter" label are unchanged.
+- App: the sidebar `<h1>` swaps `truncate`/`leading-7` for
+  `line-clamp-2`/`leading-tight`, so the name wraps to at most two lines. The
+  `PLANNER_ROLE` `<p>` beneath it keeps `truncate`, and the mobile/field header
+  is untouched.
+
+### Reason
+"Integrity warnings" names the finding as a defect in NAVIS; "items flagged for
+review" names it as a detection, which is what it is and what the demo argues.
+The colour logic is deliberately left alone — the danger/warn distinction still
+carries the severity, only the noun changed.
+
+### Verification
+- `npm run lint` (`tsc --noEmit`) — clean.
+- `npm test` — 55/55, five consecutive runs. No test was modified: nothing
+  asserted on the old banner string or panel order. One flake was observed in
+  `src/test/reconcile.test.tsx:103` (a `findByPlaceholderText` race in a file
+  this change does not touch); it does not reproduce on this branch or on a
+  clean `origin/main`.
+- `npm run build` — succeeds; 464.53 kB JS / 24.74 kB CSS.
+- Browser at 1280×800, both themes, Home and Schedule: tiles read
+  120 / 67 / 135 / 38 and the conflicts badge reads 18, unchanged. Tiles and the
+  Source Conflicts table are both visible without scrolling. The banner reads
+  "91 items flagged for review — 68 source conflicts, 23 date warnings" and
+  clicking it still filters to 53 of 120. `line-clamp-2` measured at 25px for
+  one line and 50px for two, with the sidebar holding 240px and no horizontal
+  overflow.
+
+### Affected Areas
+`frontend/src/pages/Home.tsx`, `frontend/src/pages/Schedule.tsx`,
+`frontend/src/App.tsx`, `DECISIONS.md`. No change to `server/`, `matching/`,
+`extraction/`, `eval.py`, or `index.css`. No dependency added.
+
+### Not done
+The requested "collapse the four empty Schedule Health rows" change has no
+target on `origin/main`: commit `e7a849c` removed the `ScheduleHealth` component
+and its panel from `Home.tsx` entirely. See the task report for detail.

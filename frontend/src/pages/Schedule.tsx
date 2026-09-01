@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { AlertTriangle, Download, Lock, X } from 'lucide-react';
+import { Download, ListFilter, Lock, X } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
 import {
   AuditRecord,
@@ -672,8 +672,8 @@ export default function Schedule() {
               : 'bg-raised border-hair text-muted hover:text-fg'
           }`}
         >
-          <AlertTriangle size={12} className={onlyFlagged ? 'text-danger' : 'text-warn'} />
-          <span className="text-fg">{warnings.length} integrity warnings</span>
+          <ListFilter size={12} className={onlyFlagged ? 'text-danger' : 'text-warn'} />
+          <span className="text-fg">{warnings.length} items flagged for review</span>
           <span>
             — {warningBreakdown.conflict} source conflict
             {warningBreakdown.conflict === 1 ? '' : 's'}, {warningBreakdown.warning} date

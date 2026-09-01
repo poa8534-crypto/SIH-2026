@@ -71,7 +71,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
         {/* Project identity. The name is the real one off /schedule. */}
         <div className="px-4 pt-5 pb-4">
           <h1
-            className={`text-h3 font-semibold leading-7 truncate ${
+            className={`text-h3 font-semibold leading-tight line-clamp-2 ${
               headerError ? 'text-danger' : 'text-heading'
             }`}
             title={headerError ? errorDetail(headerError) : projectName}
