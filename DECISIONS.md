@@ -3901,3 +3901,64 @@ one, and this corpus cannot support it.
 ### Affected Areas
 `METRICS.md` (§3.3 correction, §3.4a new, §8), `README.md`, `DECISIONS.md`.
 `AUDIT_CODEX.md` retained as received. No application code changed.
+
+---
+
+## 2026-09-01 / D-038 — The resolver rejected the Reconcile screen's own verb
+
+### Status
+Implemented. Two demo-path defects in `server/main.py`; no architectural change.
+
+### Context
+Both were found by reading the live demo path rather than by a failing test.
+
+**Fix A.** `Reconcile.tsx` sends `{action:'reject'}` for "not this", but
+`_resolve_defaulted_finish` accepted only `confirm` and `ignore` and raised a 400
+on everything else. This was found by tracing the Reconcile screen's `reject`
+verb against the resolver's accepted actions. `ResolveRequest.action` is a plain
+`str`, so nothing upstream caught the mismatch — the 400 came from the resolver
+itself and painted an error banner on the screen. The 17 `defaulted_finish_date`
+items that hit this path exist because of D-015: the roll-up withholds an Actual
+Finish when no source named the date, and routes it to a planner instead.
+FINDINGS.md F6 has the presenter deliberately reject a wrong suggestion, so the
+defect sat directly on the rehearsed demo.
+
+**Fix B.** `ReviewQueueItem.priority` is a string column, so
+`.priority.desc()` sorted `'medium'` above `'high'` and `GET /review-queue`
+returned high-priority items last. The Reconcile screen masked this by
+re-sorting client-side with its own weight map, so it was an API correctness
+bug rather than a visible one.
+
+### Decision
+On a withheld finish date, normalise `reject` to `ignore` before the guard: both
+mean "leave the node complete with no Actual Finish", so they are the same
+answer under two names. The guard still refuses the link-editing actions —
+`new_activity` and `reassign` remain 400, only the message now names `reject`.
+Order the review queue by a `case()` expression mapping high/medium/low to 3/2/1
+rather than by the string itself.
+
+### Reason
+The alternative to Fix A — changing the frontend's verb — is a `frontend/` edit
+under feature freeze, and it would leave the API still rejecting a verb it
+documents nowhere. Normalising at the resolver keeps the fix on one side of the
+boundary. `reject` is deliberately *not* widened into the link-editing actions:
+D-009's rule that only a planner's resolve call writes an actual date is
+unchanged, and confirm remains the only path that writes one.
+
+### Verification
+- `python -m pytest -q` — 583 passed (was 580; three tests added). Both new
+  behavioural tests were confirmed to fail against the unfixed `main.py`.
+- `python eval.py` — 87.2 / 50.4 / 100.0 / 8.3, unchanged. Auto-link precision
+  still 100.0%.
+- `scripts/demo_reset.ps1` — `activities=120  with actuals=67  review queue=135`.
+- `GET /review-queue?status=pending` — first item is `high`; all 89 high items
+  precede all 46 medium. Live `reject` on a `defaulted_finish_date` item returns
+  200 with `resolution: "ignore"` and writes no `actual_finish`; `new_activity`
+  on the same item still returns 400.
+- `case()` with a dict and `value=` was checked against the pinned
+  SQLAlchemy 2.0.52 before use.
+
+### Affected Areas
+`server/main.py` (`_resolve_defaulted_finish`, `get_review_queue`, one import),
+`server/test_date_basis.py`, `server/test_server.py`, `DEMO.md`, `DECISIONS.md`.
+No change to `matching/`, `extraction/` or `frontend/`.

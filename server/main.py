@@ -39,7 +39,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 import sys
@@ -1254,10 +1254,14 @@ def get_review_queue(
     if priority:
         query = query.filter(ReviewQueueItem.priority == priority)
 
-    items = query.order_by(
-        ReviewQueueItem.priority.desc(),
-        ReviewQueueItem.created_at,
-    ).all()
+    # priority is a string column: .desc() would sort 'medium' above 'high'.
+    # Rank by meaning instead.
+    priority_rank = case(
+        {"high": 3, "medium": 2, "low": 1},
+        value=ReviewQueueItem.priority,
+        else_=0,
+    )
+    items = query.order_by(priority_rank.desc(), ReviewQueueItem.created_at).all()
 
     results = []
     for item in items:
@@ -1493,23 +1497,29 @@ def _resolve_defaulted_finish(
                 records source="planner_review", auto_applied=False and the
                 basis DEFAULTED_TO_REPORT_DATE, so the trail still says the
                 date was inferred rather than asserted.
-      ignore  — leave the node complete with no Actual Finish.
+      ignore  — leave the node complete with no Actual Finish. The Reconcile
+                screen's 'reject' is the same answer and is treated as 'ignore'.
 
     This is the same rule as D-009: a proposal only becomes an actual date
     through a planner's resolve call.
     """
-    if req.action not in ("confirm", "ignore"):
+    # The Reconcile screen sends 'reject' for "not this". On a withheld finish
+    # date that means exactly what 'ignore' means — leave the node complete with
+    # no Actual Finish — so normalise before the guard rather than 400 on the
+    # UI's own verb.
+    action = "ignore" if req.action == "reject" else req.action
+    if action not in ("confirm", "ignore"):
         raise HTTPException(
             400,
             f"Review item {item.id} is a withheld finish date; "
-            "the only actions are 'confirm' and 'ignore'",
+            "the only actions are 'confirm', 'reject' and 'ignore'",
         )
 
     audit_count = 0
     activity_id = item.activity_id
     proposed = le.asserted_finish or le.reported_date
 
-    if req.action == "ignore":
+    if action == "ignore":
         item.status = "ignored"
         item.resolution = "ignore"
         item.resolution_note = req.note

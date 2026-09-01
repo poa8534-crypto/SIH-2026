@@ -342,6 +342,51 @@ class TestReviewQueue:
         response = client.get("/review-queue?status=pending&priority=high")
         assert response.status_code == 200
 
+    def test_review_queue_orders_high_before_medium(self):
+        # priority is a string column, so ordering by it descending would put
+        # 'medium' above 'high'. The medium item is created first, so a
+        # lexicographic sort and a by-meaning sort disagree on the answer.
+        item_id = self._setup_review_item()
+        if not item_id:
+            pytest.skip("No review items created")
+
+        db = TestSession()
+        try:
+            linked_event_id = (
+                db.query(ReviewQueueItem)
+                .filter(ReviewQueueItem.id == item_id)
+                .first()
+                .linked_event_id
+            )
+            now = _now()
+            medium = ReviewQueueItem(
+                id=_uuid(),
+                linked_event_id=linked_event_id,
+                reason="manual_flag",
+                priority="medium",
+                status="pending",
+                created_at=now,
+            )
+            high = ReviewQueueItem(
+                id=_uuid(),
+                linked_event_id=linked_event_id,
+                reason="manual_flag",
+                priority="high",
+                status="pending",
+                created_at=now + timedelta(seconds=1),
+            )
+            db.add(medium)
+            db.add(high)
+            db.commit()
+            medium_id, high_id = medium.id, high.id
+        finally:
+            db.close()
+
+        response = client.get("/review-queue?status=pending")
+        assert response.status_code == 200
+        returned = [i["id"] for i in response.json()]
+        assert returned.index(high_id) < returned.index(medium_id)
+
     def test_resolve_confirm(self):
         item_id = self._setup_review_item()
         if not item_id:

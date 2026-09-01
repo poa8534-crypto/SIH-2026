@@ -203,7 +203,8 @@ Worth saying while the queue is on screen: **135 items is the system declining
 to guess, not the system failing.** Part of that queue is the withheld-finish
 rule — a node can be 100% complete and still not get an Actual Finish, because
 no source ever named the date. Those go to a planner rather than being stamped
-with the day the report was typed.
+with the day the report was typed. Rejecting works on those withheld-finish
+items too — it leaves the node complete with no Actual Finish (D-038).
 
 Confirming an item writes an `alias_lexicon` row as a training signal. Be
 precise about what that does today: it is **stored, and not yet read back at

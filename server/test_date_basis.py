@@ -154,11 +154,54 @@ class TestPlannerResolvesAWithheldFinish:
         )
         assert act.actual_finish == before
 
+    def test_reject_is_accepted_and_leaves_the_finish_unwritten(
+        self, client, ingested
+    ):
+        # The Reconcile screen sends 'reject' for "not this". On a withheld
+        # finish date that is the same answer as 'ignore', so it must resolve
+        # rather than 400 on the UI's own verb.
+        item = self._one_item(ingested)
+        item_id = item.id
+        activity_id = item.activity_id
+        before = (
+            ingested.query(Activity)
+            .filter(Activity.activity_id == activity_id)
+            .first()
+            .actual_finish
+        )
+        response = client.post(f"/review/{item_id}/resolve", json={"action": "reject"})
+        assert response.status_code == 200, response.text
+
+        ingested.expire_all()
+        act = (
+            ingested.query(Activity)
+            .filter(Activity.activity_id == activity_id)
+            .first()
+        )
+        assert act.actual_finish == before
+
+        resolved = (
+            ingested.query(ReviewQueueItem)
+            .filter(ReviewQueueItem.id == item_id)
+            .first()
+        )
+        assert resolved.status == "ignored"
+
     def test_a_link_action_is_refused_on_a_date_item(self, client, ingested):
         item = self._one_item(ingested)
         response = client.post(
             f"/review/{item.id}/resolve",
             json={"action": "reassign", "activity_id": "CIV-SIT-1001"},
+        )
+        assert response.status_code == 400
+
+    def test_new_activity_is_still_refused_on_a_date_item(self, client, ingested):
+        # Normalising 'reject' must not widen the guard: creating an activity
+        # is still meaningless for a date the planner is adjudicating.
+        item = self._one_item(ingested)
+        response = client.post(
+            f"/review/{item.id}/resolve",
+            json={"action": "new_activity", "new_description": "Anything"},
         )
         assert response.status_code == 400
 

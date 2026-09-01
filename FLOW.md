@@ -1256,6 +1256,56 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Two demo-path defects in `server/main.py`: the withheld-finish
+resolver 400'd on the Reconcile screen's own `reject` verb, and the review
+queue was ordered by the priority *string* rather than by priority.
+**Date:** 2026-09-01 - **Decisions:** D-038
+
+### What changed
+
+Two edits in `server/main.py`, plus three tests and two documents.
+
+```
+POST /review/{id}/resolve            server/main.py:1293  resolve_review_item
+  reason == DEFAULTED_FINISH_REASON
+        |
+        +-- _resolve_defaulted_finish(db, item, le, req)      main.py:1487
+              action = "ignore" if req.action == "reject" else req.action
+              NEW: 'reject' normalised to 'ignore' BEFORE the guard, so the
+                   guard no longer 400s on the verb Reconcile.tsx sends.
+                   'confirm' still the only branch that writes actual_finish;
+                   'new_activity'/'reassign' still 400 (message updated).
+
+GET /review-queue                    server/main.py:1247  get_review_queue
+  NEW: priority_rank = case({high:3, medium:2, low:1},
+                            value=ReviewQueueItem.priority, else_=0)
+       order_by(priority_rank.desc(), created_at)
+       was: order_by(ReviewQueueItem.priority.desc(), ...) -- a string sort
+       that put 'medium' above 'high'.
+  `case` added to the sqlalchemy import at main.py:42.
+```
+
+Unchanged: `matching/`, `extraction/`, `frontend/`. `matching/learned.py`
+remains inert (`w_alias = 0.0`).
+
+### Verification performed
+
+```
+python -m pytest -q                    583 passed (580 + 3 new)
+  both new behavioural tests confirmed FAILING against the unfixed main.py
+python eval.py                         87.2 / 50.4 / 100.0 / 8.3  (unchanged)
+scripts/demo_reset.ps1                 activities=120 actuals=67 queue=135
+GET /review-queue?status=pending       first item 'high'; 89 high before
+                                       46 medium; 17 defaulted_finish items
+POST /review/{id}/resolve reject       200, resolution "ignore", no
+                                       actual_finish written
+POST .. new_activity (same item type)  400, as intended
+```
+
+---
+
+## Previous Modification Area
+
 **Task:** Reconcile every stale, contradictory and duplicated claim across the
 documentation so the code, the demo, the metrics and the decision log tell one
 truthful story.
