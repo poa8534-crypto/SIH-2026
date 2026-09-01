@@ -223,7 +223,7 @@ body {
   background-color: var(--bg);
   color: var(--text-muted);
   /* Inter is bundled locally via @fontsource and emitted with the app, so it
-     remains available offline without making a network request. See D-042,
+     remains available offline without making a network request. See D-043,
      which supersedes D-030's conclusion while preserving its constraint. */
   font-family: var(--font-sans);
   font-size: var(--text-body);

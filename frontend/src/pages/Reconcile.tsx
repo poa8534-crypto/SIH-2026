@@ -2,12 +2,17 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ApiError, api, errorDetail } from '../lib/api';
-import { ScheduleActivity } from '../types';
+import { ReviewCandidate, ScheduleActivity } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { ArrowUpRight, Check, MessageCircleQuestion, Plus, X } from 'lucide-react';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { MatchReasoning, SignalChips } from '../components/MatchReasoning';
+import {
+  MatchReasoning,
+  SignalChips,
+  hasScore,
+  toCandidates,
+} from '../components/MatchReasoning';
 import {
   Button,
   EmptyState,
@@ -169,13 +174,26 @@ export default function Reconcile() {
     return sortedQueue.find((item) => item.id === selectedId) || null;
   }, [sortedQueue, selectedId]);
 
-  const candidates = useMemo(() => {
+  /**
+   * The ranked candidates, each with its own score and rationale.
+   *
+   * `alternatives` already contains the top candidate, so the suggested id is
+   * normally rank 1 and needs no special-casing. It is only prepended when the
+   * matcher proposed an activity that is somehow absent from the ranked list —
+   * and then it is prepended WITHOUT a score, because it does not have one of
+   * its own to show.
+   */
+  const candidates = useMemo<ReviewCandidate[]>(() => {
     if (!selectedItem) return [];
-    const alts = selectedItem.alternatives || [];
+    const ranked = toCandidates(selectedItem.alternatives || []);
     const sugg = selectedItem.suggested_activity_id;
-    // Deduplicate and ensure suggested is first if it exists
-    const uniqueIds = Array.from(new Set(sugg ? [sugg, ...alts] : alts));
-    return uniqueIds;
+    if (sugg && !ranked.some((c) => c.activity_id === sugg)) {
+      return [
+        { activity_id: sugg, rank: 0, score: 0, rationale: [], description: null },
+        ...ranked,
+      ];
+    }
+    return ranked;
   }, [selectedItem]);
 
   /**
@@ -215,12 +233,16 @@ export default function Reconcile() {
       setQuestion('');
       setActionError(null);
       setRejectArmed(false);
+      // Read through the normalised candidates, never `alternatives` raw:
+      // an entry there is a ReviewCandidate object, so taking `[0]` directly
+      // would put an object into a string state and post "[object Object]" as
+      // the activity_id on confirm. tsconfig has `strict` off, so the compiler
+      // did not catch it.
       const sugg = selectedItem.suggested_activity_id;
-      const alts = selectedItem.alternatives || [];
       if (sugg) {
         setSelectedCandidate(sugg);
-      } else if (alts.length > 0) {
-        setSelectedCandidate(alts[0]);
+      } else if (candidates.length > 0) {
+        setSelectedCandidate(candidates[0].activity_id);
       } else {
         setSelectedCandidate(null);
       }
@@ -383,7 +405,7 @@ export default function Reconcile() {
       } else if (e.key >= '1' && e.key <= '9') {
         const index = parseInt(e.key) - 1;
         if (index >= 0 && index < candidates.length) {
-          setSelectedCandidate(candidates[index]);
+          setSelectedCandidate(candidates[index].activity_id);
         }
       } else if (e.key === 'Enter' && !newMode && !askMode) {
         // Confirm writes an actual date to the schedule. It is no longer a
@@ -617,13 +639,14 @@ export default function Reconcile() {
               <section className="pb-24">
                 <SectionTitle className="mb-3">Candidate Activities</SectionTitle>
                 <div className="flex flex-col gap-2">
-                  {candidates.map((actId, idx) => {
+                  {candidates.map((cand, idx) => {
+                    const actId = cand.activity_id;
                     const act = activityMap.get(actId);
                     const isSuggested = actId === selectedItem.suggested_activity_id;
                     const isSelected = actId === selectedCandidate;
-                    
+
                     return (
-                      <div 
+                      <div
                         key={actId}
                         onClick={() => setSelectedCandidate(actId)}
                         className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -650,22 +673,19 @@ export default function Reconcile() {
                             )}
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
-                            {/* The score belongs on the candidate it scores.
-                                Only the top candidate has one: the queue
-                                endpoint returns a single confidence for the
-                                item, and no per-candidate score exists in any
-                                response. Ranks 2+ say so rather than reusing
-                                the top candidate's number, which would be a
-                                fabricated figure. */}
-                            {isSuggested ? (
+                            {/* Each candidate's OWN score, from the engine's
+                                per-candidate final_score. Never the top
+                                candidate's number: a candidate the endpoint
+                                sent no score for says so. */}
+                            {hasScore(cand) ? (
                               <span className="font-mono text-body">
-                                <ConfidenceBadge value={selectedItem.confidence} />
+                                <ConfidenceBadge value={cand.score} />
                               </span>
                             ) : (
                               <span
                                 className="font-mono text-label text-muted"
-                                title="GET /review-queue returns one confidence for the item, not a score per candidate"
-                                >
+                                title="This candidate was ingested before per-candidate scores were serialised, so it has no score of its own"
+                              >
                                 no score sent
                               </span>
                             )}
@@ -676,16 +696,16 @@ export default function Reconcile() {
                         {act ? (
                           <>
                             <div className="text-body text-fg mb-3">{act.description}</div>
-                            {isSuggested &&
-                              Array.isArray(selectedItem.rationale) &&
-                              selectedItem.rationale.length > 0 && (
-                                <div className="mb-3 flex flex-col gap-1">
-                                  <span className="font-mono text-label uppercase tracking-wider text-muted">
-                                    Signals that fired
-                                  </span>
-                                  <SignalChips rationale={selectedItem.rationale} />
-                                </div>
-                              )}
+                            {/* This candidate's own signals, so two cards side
+                                by side answer "why did 1 beat 2" directly. */}
+                            {cand.rationale.length > 0 && (
+                              <div className="mb-3 flex flex-col gap-1">
+                                <span className="font-mono text-label uppercase tracking-wider text-muted">
+                                  Signals that fired
+                                </span>
+                                <SignalChips rationale={cand.rationale} />
+                              </div>
+                            )}
                             <div className="flex gap-5 font-mono text-label text-muted">
                               <div className="flex flex-col">
                                 <span className="text-muted mb-0.5">PLANNED START</span>
@@ -699,6 +719,25 @@ export default function Reconcile() {
                                 <span className="text-muted mb-0.5">QUANTITY</span>
                                 <span className="text-fg">{act.planned_qty} {act.uom}</span>
                               </div>
+                            </div>
+                          </>
+                        ) : cand.description ? (
+                          /* The schedule slice on this screen can be filtered
+                             or unavailable; the review queue sends each
+                             candidate's description with it, so the card can
+                             still say what the activity is. */
+                          <>
+                            <div className="text-body text-fg mb-3">{cand.description}</div>
+                            {cand.rationale.length > 0 && (
+                              <div className="mb-3 flex flex-col gap-1">
+                                <span className="font-mono text-label uppercase tracking-wider text-muted">
+                                  Signals that fired
+                                </span>
+                                <SignalChips rationale={cand.rationale} />
+                              </div>
+                            )}
+                            <div className="font-mono text-label text-muted italic">
+                              Planned dates unavailable — not in the loaded schedule slice.
                             </div>
                           </>
                         ) : (

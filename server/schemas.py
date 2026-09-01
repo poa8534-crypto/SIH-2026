@@ -77,6 +77,30 @@ class JobResponse(JobSummaryResponse):
 
 # ── Review Queue ─────────────────────────────────────────────────────────────
 
+class ReviewCandidate(BaseModel):
+    """One activity the matcher ranked for this event, with its own score.
+
+    `alternatives` used to be a bare `list[str]`, which made "why did candidate
+    1 beat candidate 2" unanswerable: ranks 2+ had an id and nothing else. The
+    engine scores every candidate it retrieves (`matching/engine.py:177-190`
+    builds a `LinkCandidate` per id with `final_score`, `features`, `rrf_score`
+    and `rank`); only the ids survived serialisation.
+
+    `score` is the candidate's own `final_score` — never the top candidate's.
+    `rationale` is `matching/engine.py:_rationale` applied to that candidate's
+    own feature vector, which is the same function the decision already uses;
+    nothing is recomputed by a different route and nothing is invented.
+    """
+
+    activity_id: str
+    rank: int
+    score: float
+    rationale: list[str] = []
+    # Resolved from the Activity table at read time rather than stored, so a
+    # baseline re-import cannot leave a stale description behind.
+    description: Optional[str] = None
+
+
 class ReviewQueueItemResponse(BaseModel):
     id: str
     linked_event_id: str
@@ -89,8 +113,17 @@ class ReviewQueueItemResponse(BaseModel):
     confidence: float
     tags: list[str] = []
     suggested_activity_id: Optional[str] = None
-    alternatives: list[str] = []
+    alternatives: list[ReviewCandidate] = []
     created_at: datetime
+
+    # The matcher's own record of how it reached this proposal. All three are
+    # persisted on the LinkedEvent row (`db.py` 266/269/270) and were already
+    # projected onto LinkedEventResponse for GET /jobs/{id}; they were simply
+    # never projected here, so the Reconcile screen had no reasoning to show.
+    # Projection only — the values are not computed or altered.
+    match_method: str = "prepass"
+    margin: float = 0.0
+    rationale: list[str] = []
 
 
 class ResolveRequest(BaseModel):
