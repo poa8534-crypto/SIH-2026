@@ -122,12 +122,55 @@ class ResolveResponse(BaseModel):
 
 # ── Schedule ─────────────────────────────────────────────────────────────────
 
+class PredecessorLinkResponse(BaseModel):
+    """One logic tie, typed. `rel` is FS/SS/FF/SF and `lag_days` the lag.
+
+    The v1 baseline stores bare predecessor ids; those read back as FS with
+    zero lag, which is what a bare id has always meant.
+    """
+
+    activity_id: str
+    rel: str = "FS"
+    lag_days: int = 0
+
+
+class BaselineVersionResponse(BaseModel):
+    """Which baseline schedule produced the numbers in this response.
+
+    Two baselines ship and they share no activity ids, so any figure quoted
+    without this block is unattributable. `sha256` is over the source file's
+    raw bytes.
+    """
+
+    name: str
+    filename: str
+    sha256: str
+    activity_count: int
+    source_format: str = "json"
+    source: str = "seed"          # seed | import
+    imported_at: Optional[datetime] = None
+
+
+class BaselineImportResponse(BaseModel):
+    baseline: Optional[BaselineVersionResponse] = None
+    activities_created: int = 0
+    activities_updated: int = 0
+    activities_in_file: int = 0
+    replaced: bool = False
+    message: str = ""
+
+
 class ScheduleActivityResponse(BaseModel):
     activity_id: str
     wbs_path: str
+    # Planning level (5 or 6). None for the v1 baseline, which does not state
+    # one — it is recorded as absent rather than inferred from the path.
+    wbs_level: Optional[int] = None
     description: str
     discipline: str
     tag: Optional[str] = None
+    # Work calendar ("6-day", "7-day"). None for the v1 baseline.
+    calendar: Optional[str] = None
     planned_start: date
     planned_finish: date
     planned_qty: float = 0
@@ -144,7 +187,11 @@ class ScheduleActivityResponse(BaseModel):
     start_variance_days: Optional[int] = None
     finish_variance_days: Optional[int] = None
     percent_complete: Optional[float] = None
+    # Predecessor ids only — the long-standing shape, unchanged so existing
+    # consumers keep working. `predecessor_links` carries the same ties with
+    # their relationship type and lag.
     predecessors: list[str] = []
+    predecessor_links: list[PredecessorLinkResponse] = []
     # Confidence of the audit write that last set an actual date on this
     # activity. Derived, not stored: it is read back off the audit trail so a
     # planner can see how well-evidenced a date is without opening the drawer.
@@ -155,6 +202,9 @@ class ScheduleActivityResponse(BaseModel):
 class ScheduleResponse(BaseModel):
     project: str = "OIL Well-Site Duliajan"
     data_date: date
+    # The baseline these activities came from. None only when the activities
+    # table predates baseline tracking and the file could not be identified.
+    baseline: Optional[BaselineVersionResponse] = None
     total_activities: int = 0
     activities_with_actuals: int = 0
     activities_completed: int = 0

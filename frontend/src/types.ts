@@ -20,12 +20,38 @@ export interface ReviewItem {
  *  source; DEFAULTED_TO_REPORT_DATE is an inference the source never made. */
 export type DateBasis = 'EXPLICIT' | 'RELATIVE_RESOLVED' | 'DEFAULTED_TO_REPORT_DATE';
 
+/** A typed logic tie. The v1 baseline stores bare predecessor ids, which read
+ *  back as FS with zero lag — what a bare id has always meant. */
+export interface PredecessorLink {
+  activity_id: string;
+  rel: 'FS' | 'SS' | 'FF' | 'SF';
+  lag_days: number;
+}
+
+/** Which baseline schedule produced the numbers in a response. Two baselines
+ *  ship and they share no activity ids, so a figure quoted without this is
+ *  unattributable. `sha256` is over the source file's raw bytes. */
+export interface BaselineVersion {
+  name: string;
+  filename: string;
+  sha256: string;
+  activity_count: number;
+  source_format: string;
+  source: string;
+  imported_at: string | null;
+}
+
 export interface ScheduleActivity {
   activity_id: string;
   wbs_path: string;
+  /** Planning level, 5 or 6. Null for the v1 baseline, which does not state
+   *  one — recorded as absent rather than inferred from the path. */
+  wbs_level: number | null;
   description: string;
   discipline: Discipline;
   tag: string | null;
+  /** Work calendar ("6-day", "7-day"). Null for the v1 baseline. */
+  calendar: string | null;
   planned_start: string | null;
   planned_finish: string | null;
   planned_qty: number;
@@ -42,6 +68,7 @@ export interface ScheduleActivity {
   finish_variance_days: number | null;
   percent_complete: number | null;
   predecessors: string[];
+  predecessor_links: PredecessorLink[];
   /** Confidence of the audit write that last set an actual date. Null when
    *  the activity has no actuals. */
   link_confidence: number | null;
@@ -92,6 +119,9 @@ export interface ExportResponse {
 export interface ScheduleResponse {
   project: string;
   data_date: string;
+  /** The baseline these activities came from. Null only when the activities
+   *  table predates baseline tracking and the file could not be identified. */
+  baseline: BaselineVersion | null;
   total_activities: number;
   activities_with_actuals: number;
   activities_completed: number;

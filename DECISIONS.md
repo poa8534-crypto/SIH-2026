@@ -66,6 +66,9 @@ transcript of earlier design conversations. Nothing here is presented as recolle
 | D-014 | Backfill history as a parallel H-series; document defects rather than fix them | Active |
 | D-015 | `date_basis` is carried end to end, and a defaulted finish date is never written | Active (supersedes H-016) |
 | D-016 | A missing planned quantity is not a milestone | Active (qualifies D-008) |
+| D-017 | A second baseline is adopted as a version, not as a replacement | Active |
+| D-018 | Baselines are read through a provider, never by `json.load` at the call site | Active |
+| D-019 | Refuse to evaluate a baseline the ground truth does not describe | Active |
 
 **Historical entries H-001 … H-027 are indexed separately at the top of Part 0,
 immediately below.** Four of them qualify a D-entry directly and should be read with
@@ -2254,4 +2257,222 @@ The real remedy is upstream: a baseline whose punch-list node carries a planned 
 Until `dataset/baseline_schedule.json` is replaced by a parsed Primavera export
 (`FINDINGS.md` F3), the guard is what stands between a missing number and a fabricated
 percentage.
+
+---
+
+## 2026-09-01 / D-017 — A second baseline is adopted as a version, not as a replacement
+
+### Context
+A 218-activity Duliajan P6 schedule arrived at the repository root. It is a
+better artefact than `dataset/baseline_schedule.json` in every structural
+respect - real WBS element names, `wbs_level`, calendars, typed logic ties with
+lags - and it is **not interchangeable with it**:
+
+| | `baseline_schedule.json` | `baseline_schedule_v2.json` |
+|---|---|---|
+| activities | 120 | 218 |
+| shared activity ids | — | **0** |
+| `wbs_path` | dotted string `"1.1.1.1"` | **list** of WBS element names |
+| `wbs_level` | absent | 5 (202) / 6 (16) |
+| `calendar` | absent | "6-day" (176) / "7-day" (42) |
+| `detail` | present | **absent** |
+| predecessors | bare id strings | `{activity_id, rel, lag_days}`, 263 ties |
+
+`dataset/ground_truth.csv` references 141 distinct activity ids (plus
+`NO_MATCH`). All 141 resolve against v1. Against v2, 63 resolve - and every one
+of those 63 is a numeric-suffix coincidence between two unrelated id sets, not
+agreement.
+
+So the new schedule cannot become "the" baseline by being copied over the old
+one. Every calibrated threshold, the entire labelled dataset, and every metric
+in `research/` are attached to the 120-activity schedule.
+
+### Decision
+Adopt it as a **second, versioned baseline**, and make "which baseline?" a
+first-class question the system answers rather than an assumption.
+
+1. `dataset/baseline_schedule_v2.json` sits beside `baseline_schedule.json`.
+   **The v1 file is untouched and remains the default** everywhere: the seeder,
+   `SCHEDULE_PATH`, `eval.py` and every test.
+2. A `baseline_versions` table records name, filename, **sha256 of the source
+   bytes**, activity count, format, and which row is active. Seeding registers
+   a row; so does an import. Previous rows are retired (`is_active = False`),
+   never deleted.
+3. `GET /schedule` returns that block, so no figure the API serves is
+   unattributable. The Schedule footer prints `baseline <name> @<sha7>`, and
+   `eval.py` prints the full identity above the headline table.
+4. `POST /schedule/import` loads a further baseline and **refuses by default**
+   when one is already active; `replace=true` is the explicit consent.
+
+### Reason
+The failure this prevents is not a crash. It is a plausible-looking report.
+Swapping the file in place would have produced an eval run that loaded 218
+activities, silently dropped 78 of 141 labelled ids, kept the 63 that collide
+by suffix, and printed a confident precision figure describing nothing. Numbers
+that look right and mean nothing are the expensive kind.
+
+### Alternatives Considered
+- **Replace `baseline_schedule.json` outright.** Rejected: it invalidates the
+  ground truth, the calibration and every published metric at once, with no
+  way to tell old numbers from new ones after the fact.
+- **Keep the file at the repo root and load it ad hoc.** Rejected: a baseline
+  that is not in `dataset/` is not in the demo reset, the healthcheck, or the
+  seeder's field of view.
+- **Migrate the ground truth to v2 as part of this change.** Rejected as out of
+  scope and not mechanically possible - the id sets are disjoint, so the 254
+  labelled mentions would have to be re-labelled by hand against the new WBS.
+  That is the real work that makes v2 the reference baseline, and D-019's guard
+  is what stops anyone skipping it by accident.
+
+### What replace does and does not do
+- Activities absent from the DB are **created**.
+- Activities already present have their **planned** fields updated.
+- **Actual dates, actual quantities and the audit trail are never touched.** A
+  baseline says what was planned; what happened is captured evidence.
+- Activities absent from the new file are **left in place, not deleted**.
+  Deleting them would orphan their `LinkedEvent` and `AuditRecord` rows and
+  destroy the append-only trail (D-004). Both baselines' activities coexist in
+  the table; `baseline_versions` says which is authoritative.
+- Every created or updated activity gets an `AuditRecord`
+  (`field="baseline_imported"`, `source="baseline_import"`) naming the file and
+  its sha256. Rows are per-activity because `AuditRecord.activity_id` is a
+  non-null FK by design (D-004); the project-level summary is the
+  `baseline_versions` row.
+
+### Known limitation, reported rather than hidden
+`get_matching_engine()` stays pinned to `SCHEDULE_PATH` (v1), because the
+retrieval index, the thresholds and the ground truth were all built against it.
+Importing v2 therefore changes what the **schedule** holds without changing what
+**ingest** can link to. Rather than leave that to be discovered through empty
+match results, `_matcher_baseline_drift()` emits an integrity warning on
+`GET /schedule` naming both baselines whenever their hashes differ.
+
+### Verification
+`python -m pytest -q` → 513 passed (was 435). `server/test_baseline.py` (26) and
+`matching/test_providers.py` (52) are new. `python eval.py` is unchanged in
+every metric.
+
+### Affected Areas
+`dataset/baseline_schedule_v2.json` (moved from the repo root), `server/db.py`,
+`server/main.py`, `server/schemas.py`, `matching/providers.py`,
+`matching/schedule_index.py`, `frontend/src/types.ts`,
+`frontend/src/pages/Schedule.tsx`, `eval.py`.
+
+---
+
+## 2026-09-01 / D-018 — Baselines are read through a provider, never by `json.load` at the call site
+
+### Context
+Adopting a second baseline exposed how many places knew the shape of the first
+one. `ScheduleIndex.from_json`, `_seed_schedule_if_empty`, `server/conftest.py`
+and `server/test_server.py` each opened the file and read the fields they
+happened to need. A `wbs_path` that is a list instead of a string, or a
+predecessor that is an object instead of a string, is not one bug in that
+arrangement - it is one bug per call site, each failing differently.
+
+### Decision
+`matching/providers.py` owns baseline reading.
+
+- `ScheduleProvider` (ABC) with exactly two methods: `read_activities()` for the
+  data and `read_baseline()` for its identity. They are separate so a caller
+  that only needs to know *which* baseline is configured does not parse 218
+  activities to find out.
+- `JsonScheduleProvider` implements both, accepts either top-level shape
+  (`[...]` or `{"activities": [...]}`), decodes explicitly (D-010's reasoning),
+  and caches the bytes so identity and data cost one read.
+- `PmxmlScheduleProvider` and `PrimaveraXerScheduleProvider` are **declared and
+  deliberately unimplemented**. They raise `NotImplementedError` naming
+  themselves and pointing at `FINDINGS.md` F3. A stub that refuses loudly is
+  the honest placeholder; a stub returning `[]` would look like an empty
+  schedule.
+- `normalize_activity()` is the single normalisation: `wbs_path` list → one
+  joined string, `detail` optional → `""`, discipline lower-cased, predecessors
+  → typed dicts.
+- `validate_activities()` refuses a baseline with a missing or duplicate id, a
+  missing planned date, or a `wbs_level` outside 5/6 — **before** anything is
+  written, because a half-loaded activities table is much harder to notice than
+  a refusal.
+
+**`wbs_level` is deliberately not inferred** for a source that omits it. v1's
+`"1.1.1.1"` has four segments, which would read as level 4 and contradict the
+fact that those rows are the L5/L6 leaves the problem statement describes. An
+absent level is recorded as absent.
+
+### Predecessor storage — the migration
+The `activities.predecessors` column keeps holding JSON, and now holds
+`[{"activity_id", "rel", "lag_days"}]`. Both shapes are readable:
+
+- `predecessor_list()` → ids only. **Unchanged signature**, because every
+  existing consumer (integrity warnings, `GET /schedule`, the memory queries,
+  `features._predecessor_plausibility`) asks only which activities come first.
+- `predecessor_links()` → the full ties.
+- A bare id, from v1 or from any row seeded before this change, reads back as
+  **FS with zero lag**, which is what a bare id has always meant. Re-importing a
+  baseline rewrites legacy rows into the typed shape and counts them as updates.
+
+This is a format-level migration inside an existing column rather than a new
+column, so there is no window in which two representations can disagree.
+
+### Alternatives Considered
+- **A separate `predecessor_links` column.** Rejected: two columns holding the
+  same relation invite drift, and every writer would have to remember both.
+- **Change `predecessor_list()` to return typed links.** Rejected: it would
+  break five call sites to give four of them data they do not use.
+
+### Affected Areas
+`matching/providers.py` (new), `matching/schedule_index.py`, `server/db.py`,
+`server/main.py`, `server/schemas.py`, `frontend/src/types.ts`.
+
+---
+
+## 2026-09-01 / D-019 — Refuse to evaluate a baseline the ground truth does not describe
+
+### Context
+`load_ground_truth()` skips any labelled mention whose activity id is not in the
+loaded schedule and prints one quiet `NOTE: N rows skipped` line. Pointed at
+`baseline_schedule_v2.json`, that behaviour drops 78 of 141 ids, keeps the 63
+that collide by numeric suffix, and reports a full set of confident metrics
+computed from coincidences. Nothing crashes. Nothing is obviously wrong on the
+screen. This is the exact failure mode that would have silently zeroed the
+project's numbers.
+
+### Decision
+`check_ground_truth_agreement()` in `matching/providers.py` measures what
+fraction of distinct ground-truth activity ids resolve against the active
+baseline. `eval.py` calls it **before scoring anything** and, below
+`MIN_GROUND_TRUTH_COVERAGE = 0.80`, prints the baseline, the counts, up to eight
+missing ids and an explanation, then exits **2**.
+
+### Reason — why resolvable coverage, not exact matching
+Exact id matching against the *working* baseline is **111/141 = 78.7%**, which is
+below 80%: a guard built on exact matching would refuse the one baseline that is
+known to be correct. `eval.py` resolves ids through
+`ScheduleIndex.resolve_id()`, which maps a shortened label like `PIP-1024` onto
+`PIP-RCK-1024` by unique numeric suffix, and that resolution is precisely what
+decides whether a labelled row is evaluable. Measuring it gives:
+
+| baseline | resolvable | verdict |
+|---|---|---|
+| `baseline_schedule.json` | 141/141 = **100%** | runs |
+| `baseline_schedule_v2.json` | 63/141 = **44.7%** | **refused, exit 2** |
+
+An empty ground truth fails the check rather than reading as 100%: a ground
+truth with nothing in it cannot vouch for a baseline.
+
+### Alternatives Considered
+- **Warn and continue.** Rejected: the current behaviour already warns, in one
+  line, and that line is what would have been missed. A metric nobody should
+  trust must not be printed at all.
+- **Fail on the first unresolvable id.** Rejected: a handful of stale labels is
+  a normal state for a live dataset. 80% distinguishes drift from a different
+  project.
+
+### Affected Areas
+`matching/providers.py` (`check_ground_truth_agreement`, `BaselineAgreement`),
+`eval.py` (`assert_baseline_matches_ground_truth`, `--schedule`).
+
+### Future Notes
+The guard is the thing that makes re-labelling `ground_truth.csv` against v2 a
+deliberate project rather than an accident. When that work happens, this check
+is what proves it finished.
 

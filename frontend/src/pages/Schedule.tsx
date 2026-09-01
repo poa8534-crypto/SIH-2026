@@ -302,6 +302,12 @@ function AuditDrawer({
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             <Field label="WBS Path">{activity.wbs_path}</Field>
+            {activity.wbs_level !== null && (
+              <Field label="WBS Level">L{activity.wbs_level}</Field>
+            )}
+            {activity.calendar && (
+              <Field label="Calendar">{activity.calendar}</Field>
+            )}
             <Field label="Discipline">
               <DisciplineTag discipline={activity.discipline} />
             </Field>
@@ -796,6 +802,13 @@ export default function Schedule() {
         )}
         {data?.average_finish_variance !== null && data?.average_finish_variance !== undefined && (
           <span>avg finish var {data.average_finish_variance}d</span>
+        )}
+        {data?.baseline && (
+          <span
+            title={`${data.baseline.filename} · ${data.baseline.activity_count} activities · sha256 ${data.baseline.sha256}`}
+          >
+            baseline {data.baseline.name} @{data.baseline.sha256.slice(0, 7)}
+          </span>
         )}
         <span className="ml-auto flex items-center gap-1">
           <Lock size={9} />

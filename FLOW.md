@@ -527,6 +527,7 @@ Note:        NO offline persistence — no service worker, no IndexedDB. Field.t
 | `LinkCandidate` / `FeatureVector` | `matching/models.py` | `matching/features.py` | `decide_outcome`, UI |
 | `LinkDecision` | `matching/models.py` | `MatchingEngine.match_event` | `server/main.py`, `eval.py` |
 | `DateAssertion` / `RollupResult` | `matching/models.py` | `RollupAccumulator` | `_apply_rollup_to_schedule` |
+| `BaselineVersion` / `PredecessorLink` | `matching/providers.py` | `JsonScheduleProvider` | `ScheduleIndex` · `_seed_schedule_if_empty` · `POST /schedule/import` · `GET /schedule` |
 | `DateBasis` | `extraction/models.py` | `prepass` · `Extractor` · `SpreadsheetParser` | `RollupAccumulator.results` (gate) · `Activity.*_basis` · `GET /schedule` · `DateCell` |
 | `SlotState` | `server/agent_slots.py` | `_fill_slots` | `_match_slots` |
 | SQLAlchemy models | `server/db.py` | `server/main.py` | persistence |
@@ -1254,6 +1255,138 @@ python eval.py | head -20             expect the line:
 ---
 
 ## Current Modification Area
+
+**Task:** Adopt the 218-activity Duliajan P6 schedule as a second, versioned
+baseline without breaking the existing 120-activity one.
+**Date:** 2026-09-01 · **Decisions:** D-017, D-018, D-019
+
+### Current path
+
+```
+BASELINE SOURCES
+dataset/baseline_schedule.json      120 activities — UNCHANGED, still the default
+                                    everywhere (seeder, SCHEDULE_PATH, eval.py)
+dataset/baseline_schedule_v2.json   218 activities — moved here from the repo
+                                    root. 0 shared activity ids with v1.
+        ↓
+matching/providers.py               NEW — the only place that reads a baseline
+  ScheduleProvider (ABC)              read_activities() | read_baseline()
+  JsonScheduleProvider                both shipped files; caches bytes
+  PmxmlScheduleProvider               STUB — raises NotImplementedError
+  PrimaveraXerScheduleProvider        STUB — raises NotImplementedError
+  normalize_activity()                wbs_path list → joined string;
+                                      detail optional → ""; predecessors → typed
+  normalize_wbs_path/_level()         level NOT inferred when absent
+  parse_predecessors()                bare id → FS/lag 0; {activity_id,rel,lag_days}
+  validate_activities()               refuses dup/missing id, missing planned
+                                      date, wbs_level outside 5/6
+  check_ground_truth_agreement()      the D-019 guard
+        ↓
+matching/schedule_index.py
+  ScheduleIndex.from_provider()       NEW
+  ScheduleIndex.from_json()           now delegates to JsonScheduleProvider
+  ScheduleIndex.baseline              which schedule these records came from
+  ActivityRecord.wbs_level/.calendar/.predecessor_links   NEW
+        ↓
+SERVER
+server/db.py
+  Activity.wbs_level (Integer, null)  NULL for v1 — absent, not inferred
+  Activity.calendar  (String, null)   "6-day" | "7-day"; recorded, not yet used
+                                      in date arithmetic
+  Activity.detail                     nullable=True (was NOT NULL); still
+                                      written as "" so existing DBs are unaffected
+  Activity.predecessor_list()         ids only — SIGNATURE UNCHANGED
+  Activity.predecessor_links()        NEW — {activity_id, rel, lag_days}
+  BaselineVersion (table)             NEW — name, filename, sha256, count,
+                                      is_active, source, imported_at
+  _ADDED_COLUMNS                      + activities.wbs_level, activities.calendar
+server/main.py
+  DEFAULT_BASELINE_PATH / BASELINE_V2_PATH
+  get_schedule_provider()             NEW
+  _activity_from_dict()               NEW — normalised dict → Activity row
+  _apply_planned_fields()             NEW — planned fields only, never actuals
+  get_active_baseline()               NEW
+  _activate_baseline()                NEW — retires the previous row, never deletes
+  _seed_schedule_if_empty()           REWRITTEN onto the provider; registers the
+                                      version; registers retrospectively for a
+                                      pre-existing activities table
+  POST /schedule/import               NEW — .json only; 409 without replace=true;
+                                      validates before writing; audit row per
+                                      activity naming file + sha256
+  _matcher_baseline_drift()           NEW — warns when the active baseline is not
+                                      the one the matcher links against
+  GET /schedule                       + baseline block, wbs_level, calendar,
+                                      predecessor_links
+server/schemas.py                     + BaselineVersionResponse,
+                                      BaselineImportResponse,
+                                      PredecessorLinkResponse
+        ↓
+FRONTEND
+frontend/src/types.ts                 + BaselineVersion, PredecessorLink,
+                                      wbs_level, calendar, predecessor_links,
+                                      ScheduleResponse.baseline
+frontend/src/pages/Schedule.tsx       footer prints "baseline <name> @<sha7>";
+                                      drawer shows WBS Level and Calendar when
+                                      the baseline states them
+        ↓
+HARNESS
+eval.py
+  --schedule                          NEW — evaluate against another baseline
+  assert_baseline_matches_ground_truth()  NEW — D-019 guard, exits 2
+  ground_truth_activity_ids()         NEW
+  baseline printed above the headline table
+```
+
+### Upstream
+
+```
+server startup      → _seed_schedule_if_empty → provider → BaselineVersion row
+POST /schedule/import → JsonScheduleProvider → validate → upsert → audit + version
+GET  /schedule      → get_active_baseline → ScheduleResponse.baseline
+eval.py main()      → MatchingEngine(args.schedule) → guard → scoring
+```
+
+### Downstream
+
+```
+activities.wbs_level / .calendar   NULL for every v1 row; populated by v2
+activities.predecessors            typed JSON; legacy bare ids still readable
+baseline_versions                  new table; one active row, history retained
+AuditRecord                        new field value "baseline_imported"
+GET /schedule                      + baseline{}, + integrity warning on drift
+```
+
+### Verification performed
+
+```
+python -m pytest -q                  513 passed  (435 before; 78 new tests)
+cd frontend && npx vitest run         55 passed
+cd frontend && npx tsc --noEmit       clean
+python eval.py                        UNCHANGED: auto-link precision 100.0%,
+                                      coverage 50.4%, 254 mentions
+python eval.py --schedule dataset/baseline_schedule_v2.json
+                                      refused, exit 2, 63/141 resolvable (44.7%)
+```
+
+### Known limitations
+
+- **The matcher stays on v1.** `get_matching_engine()` is pinned to
+  `SCHEDULE_PATH`; the retrieval index, the thresholds and `ground_truth.csv`
+  were all built against the 120-activity schedule. Importing v2 changes the
+  schedule without changing what ingest can link to. Reported as an integrity
+  warning by `_matcher_baseline_drift()` rather than left silent.
+- **`ground_truth.csv` still describes v1 only.** 141 distinct ids, 0 of which
+  exist in v2. Making v2 the reference baseline means re-labelling 254 mentions
+  by hand; D-019's guard is what stops that being skipped by accident.
+- **`calendar` is recorded, not applied.** No date arithmetic reads it yet, so a
+  6-day activity's variance is still counted in calendar days.
+- **`detail` is nullable in the model**, which a database created before this
+  change will not pick up (SQLite cannot relax NOT NULL in place). Harmless:
+  the value is always written as `""`, never NULL.
+
+---
+
+## Previous Modification Area (2026-09-01, D-015/D-016) — retained for history
 
 **Task:** Fix the two correctness defects in the roll-up write path — `FINDINGS.md`
 F1 (defaulted report dates written as asserted finish dates) and F7 (an activity with

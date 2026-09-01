@@ -7,7 +7,6 @@ exactly once in the codebase.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -16,6 +15,14 @@ from rank_bm25 import BM25Okapi
 
 from extraction.prepass import extract_tags as prepass_extract_tags
 
+from .providers import (
+    BaselineVersion,
+    JsonScheduleProvider,
+    ScheduleProvider,
+    normalize_activity,
+    normalize_wbs_path,
+    parse_predecessors,
+)
 from .textutils import parse_tag, tag_variants, tokenize
 
 
@@ -31,7 +38,17 @@ class ActivityRecord:
     planned_finish: date | None = None
     planned_qty: float = 0.0
     uom: str = ""
+    # Predecessor ACTIVITY IDS. Kept as bare ids because every ranking
+    # consumer (features._predecessor_plausibility) asks only "did this
+    # finish?"; the relationship type and lag live in `predecessor_links`
+    # alongside, so neither consumer has to know about the other's shape.
     predecessors: list[str] = field(default_factory=list)
+    predecessor_links: list[dict] = field(default_factory=list)
+    # Present in the v2 baseline, absent in v1. None means "the source did not
+    # say", never a guess.
+    wbs_path: str = ""
+    wbs_level: int | None = None
+    calendar: str | None = None
     tokens: list[str] = field(default_factory=list)
     doc: str = ""                                       # description + detail (+ tag) for embeddings
 
@@ -41,10 +58,20 @@ class ActivityRecord:
 
 
 class ScheduleIndex:
-    """In-memory index over ~120 L5/L6 activities."""
+    """In-memory index over the L5/L6 activities of one baseline.
 
-    def __init__(self, activities: list[dict]):
+    `baseline` names which schedule these records came from, so any metric
+    computed downstream can state it. It is None only when the index was built
+    from a list of dicts with no source behind it (tests, synthetic schedules).
+    """
+
+    def __init__(
+        self,
+        activities: list[dict],
+        baseline: BaselineVersion | None = None,
+    ):
         self.records: list[ActivityRecord] = []
+        self.baseline = baseline
         self._build(activities)
 
         # ── Tag indexes ──
@@ -75,12 +102,27 @@ class ScheduleIndex:
 
     @classmethod
     def from_json(cls, path: str | Path) -> "ScheduleIndex":
-        with open(path, encoding="utf-8") as f:
-            activities = json.load(f)
-        return cls(activities)
+        """Load a JSON baseline. Both shipped baselines load through the same
+        provider, so a v1 dotted `wbs_path` and a v2 list of WBS names arrive
+        here identically normalised."""
+        return cls.from_provider(JsonScheduleProvider(path))
+
+    @classmethod
+    def from_provider(cls, provider: ScheduleProvider) -> "ScheduleIndex":
+        return cls(provider.read_activities(), baseline=provider.read_baseline())
 
     def _build(self, activities: list[dict]) -> None:
         for act in activities:
+            # Tolerate a raw dict from a caller that bypassed the provider
+            # (tests, and any consumer holding a hand-built schedule).
+            if "predecessors" in act and not isinstance(
+                act.get("predecessors") or [], list
+            ):
+                act = normalize_activity(act)
+            elif act.get("wbs_path") is not None and not isinstance(
+                act.get("wbs_path"), str
+            ):
+                act = normalize_activity(act)
             desc = act.get("description", "") or ""
             detail = act.get("detail", "") or ""
             raw_tags: list[str] = []
@@ -113,7 +155,15 @@ class ScheduleIndex:
                 planned_finish=pf,
                 planned_qty=float(act.get("planned_qty") or 0.0),
                 uom=(act.get("uom") or "").lower(),
-                predecessors=list(act.get("predecessors") or []),
+                predecessors=[
+                    p.activity_id for p in parse_predecessors(act.get("predecessors"))
+                ],
+                predecessor_links=[
+                    p.as_dict() for p in parse_predecessors(act.get("predecessors"))
+                ],
+                wbs_path=normalize_wbs_path(act.get("wbs_path")),
+                wbs_level=act.get("wbs_level"),
+                calendar=act.get("calendar"),
                 doc=f"{desc}. {detail}",
             )
             rec.tokens = tokenize(f"{desc} {detail} {' '.join(raw_tags)}")

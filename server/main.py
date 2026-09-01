@@ -35,7 +35,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -78,12 +78,18 @@ from matching import (
     RollupAccumulator,
     Thresholds,
 )
+from matching.providers import (
+    JsonScheduleProvider,
+    ScheduleProvider,
+    validate_activities,
+)
 
 from .db import (
     Activity,
     AliasLexicon,
     AuditRecord,
     Base,
+    BaselineVersion,
     ConversationTurn,
     IntegrityError,
     IntegrityWarning,
@@ -101,6 +107,8 @@ from .db import (
 from .schemas import (
     AgentTurnRequest,
     AgentTurnResponse,
+    BaselineImportResponse,
+    BaselineVersionResponse,
     DelayReason,
     DurationDistribution,
     AuditFeedItem,
@@ -193,38 +201,170 @@ def startup():
 
 # ── Seed baseline schedule ───────────────────────────────────────────────────
 
+DATASET_DIR = Path(__file__).resolve().parent.parent / "dataset"
+
+#: The reference baseline. 120 activities, and the one `dataset/ground_truth.csv`
+#: was labelled against. `baseline_schedule_v2.json` (218 activities, no shared
+#: activity ids) ships alongside it and is imported explicitly, never by default
+#: — see D-017.
+DEFAULT_BASELINE_PATH = DATASET_DIR / "baseline_schedule.json"
+BASELINE_V2_PATH = DATASET_DIR / "baseline_schedule_v2.json"
+
+
+def get_schedule_provider(path: Optional[Path] = None) -> ScheduleProvider:
+    """The provider for a baseline file.
+
+    Every read of a baseline goes through a provider, so the shape differences
+    between the two shipped files (list vs dotted `wbs_path`, typed vs bare
+    predecessors, `detail` present or absent) are resolved in exactly one place.
+    """
+    return JsonScheduleProvider(path or DEFAULT_BASELINE_PATH)
+
+
+def _activity_from_dict(act: dict) -> Activity:
+    """A normalised activity dict → an Activity row.
+
+    The dict is already normalised by the provider, so no `.get` defaulting or
+    shape-guessing happens here.
+    """
+    return Activity(
+        activity_id=act["activity_id"],
+        wbs_path=act["wbs_path"],
+        wbs_level=act.get("wbs_level"),
+        description=act["description"],
+        detail=act.get("detail") or "",
+        discipline=act["discipline"],
+        tag=act.get("tag"),
+        calendar=act.get("calendar"),
+        planned_start=date.fromisoformat(str(act["planned_start"])[:10]),
+        planned_finish=date.fromisoformat(str(act["planned_finish"])[:10]),
+        planned_qty=act.get("planned_qty", 0),
+        uom=act.get("uom", ""),
+        predecessors=json.dumps(act.get("predecessors", [])),
+    )
+
+
+def _apply_planned_fields(row: Activity, act: dict) -> bool:
+    """Overwrite an existing activity's PLANNED fields from a baseline.
+
+    Actuals are never touched. A baseline says what was planned; what happened
+    is captured evidence, and re-importing a schedule must not erase it.
+    Returns True when anything actually changed.
+    """
+    new_values = {
+        "wbs_path": act["wbs_path"],
+        "wbs_level": act.get("wbs_level"),
+        "description": act["description"],
+        "detail": act.get("detail") or "",
+        "discipline": act["discipline"],
+        "tag": act.get("tag"),
+        "calendar": act.get("calendar"),
+        "planned_start": date.fromisoformat(str(act["planned_start"])[:10]),
+        "planned_finish": date.fromisoformat(str(act["planned_finish"])[:10]),
+        "planned_qty": act.get("planned_qty", 0),
+        "uom": act.get("uom", ""),
+        "predecessors": json.dumps(act.get("predecessors", [])),
+    }
+    changed = False
+    for field_name, value in new_values.items():
+        if getattr(row, field_name) != value:
+            setattr(row, field_name, value)
+            changed = True
+    return changed
+
+
+def get_active_baseline(db: Session) -> Optional[BaselineVersion]:
+    """The baseline the activities table was last built from, or None."""
+    return (
+        db.query(BaselineVersion)
+        .filter(BaselineVersion.is_active.is_(True))
+        .order_by(BaselineVersion.imported_at.desc())
+        .first()
+    )
+
+
+def _activate_baseline(
+    db: Session,
+    version,
+    source: str,
+    created: int,
+    updated: int,
+    note: Optional[str] = None,
+) -> BaselineVersion:
+    """Record a baseline as the active one, retiring the previous row.
+
+    Previous rows are retired, never deleted: which schedule was loaded when is
+    part of the project's history, and a number quoted last week has to remain
+    attributable to the baseline that produced it.
+    """
+    for row in db.query(BaselineVersion).filter(BaselineVersion.is_active.is_(True)):
+        row.is_active = False
+    record = BaselineVersion(
+        id=_uuid(),
+        name=version.name,
+        filename=version.filename,
+        sha256=version.sha256,
+        activity_count=version.activity_count,
+        source_format=version.source_format,
+        is_active=True,
+        activities_created=created,
+        activities_updated=updated,
+        source=source,
+        note=note,
+        imported_at=_now(),
+    )
+    db.add(record)
+    return record
+
+
 def _seed_schedule_if_empty(db: Session) -> None:
-    """Load baseline_schedule.json into the activities table if empty."""
-    count = db.query(Activity).count()
-    if count > 0:
+    """Load the default baseline into the activities table if it is empty.
+
+    Registers the BaselineVersion row either way an import would, so that
+    GET /schedule can always name the schedule its numbers came from.
+    """
+    if db.query(Activity).count() > 0:
+        # Activities exist but predate the baseline_versions table — record
+        # what is on disk so the API is not silent about which schedule is
+        # loaded. Nothing is re-seeded.
+        if get_active_baseline(db) is None and DEFAULT_BASELINE_PATH.exists():
+            try:
+                version = get_schedule_provider().read_baseline()
+            except (OSError, ValueError) as e:
+                logger.warning("Could not identify the loaded baseline: %s", e)
+                return
+            _activate_baseline(
+                db, version, source="seed", created=0, updated=0,
+                note="registered retrospectively for a pre-existing activities table",
+            )
+            db.commit()
         return
 
-    schedule_path = Path(__file__).resolve().parent.parent / "dataset" / "baseline_schedule.json"
-    if not schedule_path.exists():
-        logger.warning(f"Baseline schedule not found: {schedule_path}")
+    if not DEFAULT_BASELINE_PATH.exists():
+        logger.warning(f"Baseline schedule not found: {DEFAULT_BASELINE_PATH}")
         return
 
-    # Explicit decode rather than the platform default, so the baseline
-    # loads identically on Windows and Linux.
-    activities = json.loads(read_text(schedule_path))
+    provider = get_schedule_provider()
+    activities = provider.read_activities()
+    problems = validate_activities(activities)
+    if problems:
+        # Refuse to seed a broken baseline rather than half-load it: an
+        # activities table missing rows is far harder to notice than a
+        # server that will not start.
+        raise RuntimeError(
+            f"Baseline {DEFAULT_BASELINE_PATH.name} is not loadable: "
+            + "; ".join(problems[:5])
+        )
 
     for act in activities:
-        db.add(Activity(
-            activity_id=act["activity_id"],
-            wbs_path=act.get("wbs_path", ""),
-            description=act.get("description", ""),
-            detail=act.get("detail", ""),
-            discipline=act.get("discipline", "unknown"),
-            tag=act.get("tag"),
-            planned_start=date.fromisoformat(act["planned_start"]),
-            planned_finish=date.fromisoformat(act["planned_finish"]),
-            planned_qty=act.get("planned_qty", 0),
-            uom=act.get("uom", ""),
-            predecessors=json.dumps(act.get("predecessors", [])),
-        ))
+        db.add(_activity_from_dict(act))
 
+    version = provider.read_baseline()
+    _activate_baseline(
+        db, version, source="seed", created=len(activities), updated=0,
+    )
     db.commit()
-    logger.info(f"Seeded {len(activities)} activities from baseline schedule")
+    logger.info("Seeded %d activities from %s", len(activities), version.describe())
 
 
 # ── Linking engine (matching/ MatchingEngine as a service) ──────────────────
@@ -238,9 +378,7 @@ def _seed_schedule_if_empty(db: Session) -> None:
 MATCHING_THRESHOLDS = Thresholds(tau_high=0.70, tau_low=0.40, margin_min=0.03)
 MATCHING_MODEL_VERSION = "matching-v1"
 
-SCHEDULE_PATH = str(
-    Path(__file__).resolve().parent.parent / "dataset" / "baseline_schedule.json"
-)
+SCHEDULE_PATH = str(DEFAULT_BASELINE_PATH)
 
 _MATCHING_ENGINE: Optional[MatchingEngine] = None
 
@@ -1571,9 +1709,11 @@ def get_schedule(
             ScheduleActivityResponse(
                 activity_id=act.activity_id,
                 wbs_path=act.wbs_path,
+                wbs_level=act.wbs_level,
                 description=act.description,
                 discipline=act.discipline,
                 tag=act.tag,
+                calendar=act.calendar,
                 planned_start=act.planned_start,
                 planned_finish=act.planned_finish,
                 planned_qty=act.planned_qty,
@@ -1587,6 +1727,7 @@ def get_schedule(
                 finish_variance_days=act.finish_variance_days,
                 percent_complete=pct,
                 predecessors=act.predecessor_list(),
+                predecessor_links=act.predecessor_links(),
                 link_confidence=(
                     actual_date_confidence.get(act.activity_id)
                     if (act.actual_start or act.actual_finish) else None
@@ -1624,8 +1765,15 @@ def get_schedule(
                         "severity": "warning",
                     })
 
+    active = get_active_baseline(db)
+    if include_warnings:
+        drift = _matcher_baseline_drift(active)
+        if drift:
+            warnings.insert(0, drift)
+
     return ScheduleResponse(
         data_date=DATA_DATE,
+        baseline=_baseline_response(active),
         total_activities=len(activities),
         activities_with_actuals=sum(1 for a in activities if a.actual_start),
         activities_completed=sum(1 for a in activities if a.actual_finish),
@@ -1812,6 +1960,208 @@ def recent_audit(
         )
         for rec in records
     ]
+
+
+def _matcher_baseline_drift(active: Optional[BaselineVersion]) -> Optional[dict]:
+    """Warn when the active baseline is not the one the matcher links against.
+
+    `get_matching_engine()` is pinned to SCHEDULE_PATH, because the retrieval
+    index, the calibrated thresholds and `dataset/ground_truth.csv` were all
+    built against that schedule. Importing a different baseline therefore
+    changes what the SCHEDULE holds without changing what INGEST can link to —
+    a real and confusing divergence, so it is reported rather than left for
+    someone to discover through empty match results.
+
+    Returns None when they agree, or when the matcher has not been built yet:
+    constructing it here to answer a read would load MiniLM on the first
+    /schedule call, which is not this endpoint's job.
+    """
+    if active is None or _MATCHING_ENGINE is None:
+        return None
+    matcher_baseline = _MATCHING_ENGINE.index.baseline
+    if matcher_baseline is None or matcher_baseline.sha256 == active.sha256:
+        return None
+    return {
+        "activity_id": "",
+        "field": "baseline",
+        "message": (
+            f"The active baseline is {active.filename} "
+            f"({active.activity_count} activities), but linking still runs "
+            f"against {matcher_baseline.filename} "
+            f"({matcher_baseline.activity_count} activities). Ingested events "
+            f"can only link to the latter."
+        ),
+        "severity": "warning",
+    }
+
+
+def _baseline_response(row: Optional[BaselineVersion]) -> Optional[BaselineVersionResponse]:
+    """The active baseline as the API states it, or None if none is recorded."""
+    if row is None:
+        return None
+    return BaselineVersionResponse(
+        name=row.name,
+        filename=row.filename,
+        sha256=row.sha256,
+        activity_count=row.activity_count,
+        source_format=row.source_format,
+        source=row.source,
+        imported_at=row.imported_at,
+    )
+
+
+# ── POST /schedule/import ───────────────────────────────────────────────────
+
+BASELINE_IMPORT_SUFFIXES = (".json",)
+
+
+@app.post("/schedule/import", response_model=BaselineImportResponse)
+async def import_schedule(
+    file: UploadFile = File(...),
+    replace: bool = Form(False),
+    note: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    """Import a baseline schedule (JSON).
+
+    Refuses by default when a baseline is already active: replacing the
+    schedule that every captured actual is attached to is not something to do
+    by accident. `replace=true` is the explicit consent.
+
+    What replace does and does not do:
+
+      * activities that do not exist are CREATED
+      * activities that already exist have their PLANNED fields updated;
+        actual dates, actual quantities and the audit trail are never touched
+      * activities absent from the new file are LEFT IN PLACE, not deleted.
+        Deleting them would orphan their LinkedEvent and AuditRecord rows and
+        silently destroy the append-only trail (D-004). Two baselines coexist
+        in the table; `baseline_versions` records which one is authoritative.
+
+    Every created or updated activity gets an audit row naming the file and its
+    sha256, and the import is summarised as a `baseline_versions` row.
+    """
+    filename = file.filename or "unknown.json"
+    suffix = Path(filename).suffix.lower()
+    if suffix not in BASELINE_IMPORT_SUFFIXES:
+        raise HTTPException(
+            400,
+            f"Unsupported baseline format '{suffix or filename}'. "
+            f"Supported: {', '.join(BASELINE_IMPORT_SUFFIXES)}. "
+            "PMXML and XER providers are declared but not implemented "
+            "(matching/providers.py).",
+        )
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(400, "Uploaded baseline is empty")
+    sha256 = hashlib.sha256(content).hexdigest()
+
+    active = get_active_baseline(db)
+    if active is not None and not replace:
+        raise HTTPException(
+            409,
+            f"A baseline is already active: {active.describe()}. "
+            "Pass replace=true to import over it.",
+        )
+    if active is not None and active.sha256 == sha256 and not replace:
+        raise HTTPException(409, "That baseline is already the active one")
+
+    # Keep the file: an audit row naming a sha256 is only checkable if the
+    # bytes it names are still on disk.
+    upload_dir = DATASET_DIR / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    stored_path = upload_dir / f"baseline_{sha256[:12]}_{Path(filename).name}"
+    stored_path.write_bytes(content)
+
+    provider = JsonScheduleProvider(
+        stored_path, name=Path(filename).stem, filename=Path(filename).name,
+    )
+    try:
+        activities = provider.read_activities()
+    except (json.JSONDecodeError, ValueError) as e:
+        stored_path.unlink(missing_ok=True)
+        raise HTTPException(400, f"Baseline is not readable JSON: {e}")
+
+    if not activities:
+        stored_path.unlink(missing_ok=True)
+        raise HTTPException(400, "Baseline contains no activities")
+
+    problems = validate_activities(activities)
+    if problems:
+        stored_path.unlink(missing_ok=True)
+        raise HTTPException(
+            400,
+            "Baseline failed validation: " + "; ".join(problems[:10]),
+        )
+
+    existing = {
+        row.activity_id: row
+        for row in db.query(Activity).filter(
+            Activity.activity_id.in_([a["activity_id"] for a in activities])
+        )
+    }
+    if existing and not replace:
+        raise HTTPException(
+            409,
+            f"{len(existing)} activity ids already exist "
+            f"(e.g. {', '.join(sorted(existing)[:5])}). "
+            "Pass replace=true to update their planned fields.",
+        )
+
+    created = 0
+    updated = 0
+    version = provider.read_baseline()
+    provenance = f"{version.filename}@sha256:{version.sha256}"
+
+    for act in activities:
+        row = existing.get(act["activity_id"])
+        if row is None:
+            db.add(_activity_from_dict(act))
+            created += 1
+            change = "created"
+        else:
+            if not _apply_planned_fields(row, act):
+                continue
+            updated += 1
+            change = "planned fields updated"
+        # One audit row per activity that actually changed. AuditRecord is
+        # keyed to an activity by design (D-004), so a project-level event is
+        # recorded against each activity it touched rather than against a
+        # sentinel id that does not exist. The baseline_versions row carries
+        # the one-line summary.
+        _write_audit(
+            db, act["activity_id"],
+            field="baseline_imported",
+            old_value=None,
+            new_value=f"{change} from {provenance}",
+            source="baseline_import",
+            source_file=version.filename,
+            confidence=None,
+            auto_applied=False,
+            model_version=MATCHING_MODEL_VERSION,
+        )
+
+    record = _activate_baseline(
+        db, version, source="import", created=created, updated=updated, note=note,
+    )
+    db.commit()
+    logger.info(
+        "Imported baseline %s: %d created, %d updated",
+        version.describe(), created, updated,
+    )
+
+    return BaselineImportResponse(
+        baseline=_baseline_response(record),
+        activities_created=created,
+        activities_updated=updated,
+        activities_in_file=len(activities),
+        replaced=bool(active is not None),
+        message=(
+            f"Imported {version.filename}: {created} activities created, "
+            f"{updated} updated"
+        ),
+    )
 
 
 # ── POST /schedule/export ───────────────────────────────────────────────────

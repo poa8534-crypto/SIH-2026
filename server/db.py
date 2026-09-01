@@ -52,17 +52,34 @@ class Activity(Base):
     __tablename__ = "activities"
 
     activity_id = Column(String, primary_key=True)  # e.g. CIV-FDN-1007
+    # One displayable path. v1 stores a dotted code ("1.1.1.1"), v2 the WBS
+    # element names joined by " > " (matching/providers.py normalize_wbs_path).
     wbs_path = Column(String, nullable=False, default="")
+    # Planning level, 5 or 6. NULL for the v1 baseline, which does not state
+    # one — see normalize_wbs_level for why it is not inferred from the path.
+    wbs_level = Column(Integer, nullable=True)
     description = Column(Text, nullable=False, default="")
-    detail = Column(Text, nullable=False, default="")
+    # Optional: the v2 baseline omits `detail` entirely. Nullable so a new
+    # database does not require it; still written as "" rather than NULL, so
+    # databases created before this column relaxed keep working unchanged.
+    detail = Column(Text, nullable=True, default="")
     discipline = Column(String, nullable=False, default="unknown")
     tag = Column(String, nullable=True)  # e.g. 24"-P-1001-A1A
+    # Work calendar the activity is scheduled on ("6-day", "7-day"). NULL for
+    # the v1 baseline. Not yet used in date arithmetic — recorded, not acted on.
+    calendar = Column(String, nullable=True)
 
     planned_start = Column(Date, nullable=False)
     planned_finish = Column(Date, nullable=False)
     planned_qty = Column(Float, nullable=False, default=0)
     uom = Column(String, nullable=False, default="")
-    predecessors = Column(Text, nullable=False, default="")  # JSON list, comma-separated
+    # JSON list. Two shapes are readable and both are in the wild:
+    #   ["CIV-PLY-1004"]                                   v1, bare ids
+    #   [{"activity_id": ..., "rel": "SS", "lag_days": 3}] v2, typed links
+    # Written in the typed shape from now on; a bare id reads back as FS with
+    # zero lag, which is what a bare id has always meant. See
+    # predecessor_list() for ids and predecessor_links() for the full ties.
+    predecessors = Column(Text, nullable=False, default="")
 
     # Actuals (written by the system or planner, immutable without audit)
     actual_start = Column(Date, nullable=True)
@@ -92,18 +109,38 @@ class Activity(Base):
     review_items = relationship("ReviewQueueItem", back_populates="activity")
 
     def predecessor_list(self) -> list[str]:
+        """Predecessor activity ids only.
+
+        The compatibility surface: every existing consumer (integrity warnings,
+        GET /schedule, the memory queries) asks only *which* activities come
+        first. Typed links would break all of them, so the relationship type
+        and lag are available separately through predecessor_links().
+        """
+        return [link["activity_id"] for link in self.predecessor_links()]
+
+    def predecessor_links(self) -> list[dict]:
+        """Predecessor ties as {activity_id, rel, lag_days}.
+
+        Reads either stored shape. A bare id (the v1 baseline, and any row
+        seeded before typed links existed) reads back as FS with zero lag.
+        """
         if not self.predecessors:
             return []
-        # Handle both JSON array format and comma-separated format
         s = self.predecessors.strip()
+        raw = None
         if s.startswith("["):
             try:
                 parsed = json.loads(s)
                 if isinstance(parsed, list):
-                    return [str(p).strip() for p in parsed if str(p).strip()]
+                    raw = parsed
             except (json.JSONDecodeError, TypeError):
-                pass
-        return [p.strip() for p in s.split(",") if p.strip()]
+                raw = None
+        if raw is None:
+            # Legacy comma-separated form, still accepted on read.
+            raw = [p.strip() for p in s.split(",") if p.strip()]
+        from matching.providers import parse_predecessors
+
+        return [link.as_dict() for link in parse_predecessors(raw)]
 
     def compute_variance(self, data_date: date) -> None:
         """Recompute variance days (positive = late)."""
@@ -114,6 +151,47 @@ class Activity(Base):
 
 
 # ── Job (ingestion tracking) ────────────────────────────────────────────────
+
+class BaselineVersion(Base):
+    """Which baseline schedule the activities table was built from.
+
+    A metric is only reproducible if you can say which schedule produced it.
+    Two baselines now ship — a 120-activity one and a 218-activity one that
+    shares no activity ids with it — so "38 activities finished" means nothing
+    without this row.
+
+    Rows are append-only in practice: importing a new baseline clears the
+    `is_active` flag on the previous one rather than deleting it, so the
+    history of what was loaded stays readable.
+    """
+
+    __tablename__ = "baseline_versions"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    filename = Column(String, nullable=False)
+    # sha256 of the raw source bytes, not of the parsed activities: the point
+    # is to identify the FILE, so two runs quoting different numbers can be
+    # told apart by more than a filename.
+    sha256 = Column(String, nullable=False, index=True)
+    activity_count = Column(Integer, nullable=False, default=0)
+    source_format = Column(String, nullable=False, default="json")
+    # Exactly one row should carry is_active=True. Enforced by
+    # _activate_baseline() in server/main.py rather than by a constraint,
+    # because SQLite cannot express a partial unique index portably here.
+    is_active = Column(Boolean, nullable=False, default=False)
+    activities_created = Column(Integer, nullable=False, default=0)
+    activities_updated = Column(Integer, nullable=False, default=0)
+    source = Column(String, nullable=False, default="seed")  # seed | import
+    note = Column(Text, nullable=True)
+    imported_at = Column(DateTime, default=_now)
+
+    def describe(self) -> str:
+        return (
+            f"{self.name} ({self.filename}, {self.activity_count} activities, "
+            f"sha256 {(self.sha256 or '')[:12]})"
+        )
+
 
 class Job(Base):
     """Tracks a file ingestion and extraction pipeline run."""
@@ -420,6 +498,8 @@ engine = create_engine(
 _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("activities", "actual_start_basis", "VARCHAR"),
     ("activities", "actual_finish_basis", "VARCHAR"),
+    ("activities", "wbs_level", "INTEGER"),
+    ("activities", "calendar", "VARCHAR"),
     ("linked_events", "reported_date_basis", "VARCHAR"),
     ("linked_events", "asserted_start_basis", "VARCHAR"),
     ("linked_events", "asserted_finish_basis", "VARCHAR"),

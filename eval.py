@@ -54,8 +54,15 @@ from matching import (
     Thresholds,
     decide_outcome,
 )
+from matching.providers import check_ground_truth_agreement
 
 DATASET = PROJECT_ROOT / "dataset"
+
+#: The baseline this harness measures against. `ground_truth.csv` was labelled
+#: against it; `baseline_schedule_v2.json` shares no activity ids with it, so
+#: pointing this at v2 without re-labelling produces numbers that describe
+#: nothing. `--schedule` overrides it, and the agreement guard below is what
+#: stops a wrong choice from being reported as a result.
 SCHEDULE = DATASET / "baseline_schedule.json"
 GROUND_TRUTH = DATASET / "ground_truth.csv"
 
@@ -66,6 +73,47 @@ GOLD_NO_MATCH = "GOLD_NO_MATCH"   # mention must NOT be linked (NO_MATCH)
 # ══════════════════════════════════════════════════════════════════════════════
 # Data loading
 # ══════════════════════════════════════════════════════════════════════════════
+
+def ground_truth_activity_ids(path=None) -> list[str]:
+    """Every activity id the ground truth references, NO_MATCH excluded."""
+    ids: list[str] = []
+    with open(path or GROUND_TRUTH, encoding="cp1252", newline="") as f:
+        for row in csv.DictReader(f):
+            aid = (row.get("activity_id") or "").strip()
+            if aid and aid != "NO_MATCH":
+                ids.append(aid)
+    return ids
+
+
+def assert_baseline_matches_ground_truth(engine: MatchingEngine) -> None:
+    """Refuse to evaluate a baseline the ground truth does not describe.
+
+    `load_ground_truth` skips any labelled mention whose activity id is not in
+    the schedule, and prints one quiet NOTE line. That is the exact shape of a
+    silent zeroing: point the harness at `baseline_schedule_v2.json`, whose 218
+    activity ids do not intersect the 120 the labels were written against, and
+    it drops 78 of 141 ids, keeps the 63 that collide by numeric suffix alone,
+    and reports confident metrics computed from coincidences.
+
+    So the check runs before any of that, and exits non-zero rather than
+    printing a number. Resolvable coverage - not exact matching - is the
+    measure, because resolution is what decides whether a row is evaluable:
+    against `baseline_schedule.json` that is 141/141, and exact matching would
+    be 111/141, which would fail a threshold the working baseline should pass.
+    """
+    agreement = check_ground_truth_agreement(
+        engine.index,
+        ground_truth_activity_ids(),
+        baseline=engine.index.baseline,
+    )
+    if agreement.ok:
+        return
+    print()
+    print(rule("="))
+    print(agreement.report())
+    print(rule("="))
+    sys.exit(2)
+
 
 def load_ground_truth(engine: MatchingEngine) -> list[dict]:
     """Load ground truth and build one ExtractedEvent per labelled mention."""
@@ -375,9 +423,15 @@ def pct(x):
     return f"{x * 100:.1f}%"
 
 
+def _baseline_line(engine) -> str:
+    b = getattr(getattr(engine, "index", None), "baseline", None)
+    return b.describe() if b is not None else "unknown baseline"
+
+
 def print_headline(m: dict, t: Thresholds, mode: str):
     title("MATCHING ENGINE - HEADLINE METRICS")
     print(f"  evaluation mode : {mode}")
+    print(f"  baseline        : {_baseline_line(_ENGINE)}")
     print(f"  mentions        : {m['n']}  (gold-positive {m['n_pos']}, NO_MATCH {m['n_neg']})")
     print(f"  thresholds      : tau_high={t.tau_high}  tau_low={t.tau_low}  margin_min={t.margin_min}")
     print()
@@ -547,16 +601,25 @@ def main():
                     help="5-fold cross-validated calibration (held-out metrics)")
     ap.add_argument("--coverage-floor", type=float, default=0.45,
                     help="minimum auto-link coverage during calibration")
+    ap.add_argument("--schedule", default=str(SCHEDULE),
+                    help="baseline schedule to evaluate against "
+                         "(default: dataset/baseline_schedule.json)")
     args = ap.parse_args()
 
     print("Loading schedule + ground truth ...")
-    _ENGINE = MatchingEngine(SCHEDULE)
+    _ENGINE = MatchingEngine(args.schedule)
     embed_info = (
         "sentence-transformers all-MiniLM-L6-v2 (local, offline)"
         if _ENGINE.retriever.embedder.is_neural
         else "hashed-ngram FALLBACK (MiniLM unavailable)"
     )
+    baseline = _ENGINE.index.baseline
+    if baseline is not None:
+        # Every number below is only meaningful next to the baseline that
+        # produced it. Print it before the metrics, not in a footnote.
+        print(f"  baseline: {baseline.describe()}")
     print(f"  schedule: {len(_ENGINE.index.records)} activities | dense: {embed_info}")
+    assert_baseline_matches_ground_truth(_ENGINE)
 
     rows = load_ground_truth(_ENGINE)
     print(f"  ground truth: {len(rows)} labelled mentions")
