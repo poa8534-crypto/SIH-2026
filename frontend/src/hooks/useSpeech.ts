@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LANGUAGES } from '../config';
 
 /**
  * Web Speech API only — no external service and no API key.
@@ -44,11 +45,17 @@ function getCtor(): SpeechRecognitionCtor | null {
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
-export const SPEECH_LANGUAGES = [
-  { code: 'en-IN', label: 'EN' },
-  { code: 'hi-IN', label: 'हि' },
-  { code: 'as-IN', label: 'অস' },
-] as const;
+/**
+ * The speech languages, re-exported from the one list in config.
+ *
+ * There were two lists for three languages: this one (EN / हि / অস) and
+ * `config.LANGUAGES` (English / Hindi / Assamese), which is exactly how the
+ * Field header and the Profile screen could have offered different sets.
+ * `config.LANGUAGES` carries all three forms — `code`, `short` and `label` —
+ * so the compact header chips use `short` and Profile uses `label`, from one
+ * definition. See D-031.
+ */
+export const SPEECH_LANGUAGES = LANGUAGES;
 
 export type SpeechFailure = 'unsupported' | 'denied' | 'no-speech' | 'error';
 
@@ -116,6 +123,25 @@ function buildRecognition(Ctor: SpeechRecognitionCtor, lang: string): SpeechReco
 }
 
 
+/**
+ * The chosen recognition language, shared by every `useSpeech()` in the app.
+ *
+ * `lang` used to be per-instance `useState`, which meant every caller had its
+ * own: choosing Hindi on the Profile screen changed nothing about the
+ * microphone on /field, and each Clarifications card ran its own recogniser
+ * defaulting back to en-IN. A module-level value with subscribers is enough —
+ * this is one preference, it belongs to the browser session, and it does not
+ * need to reach the server.
+ */
+let sharedLang: string = LANGUAGES[0].code;
+const langSubscribers = new Set<(lang: string) => void>();
+
+function setSharedLang(next: string) {
+  if (next === sharedLang) return;
+  sharedLang = next;
+  for (const notify of langSubscribers) notify(next);
+}
+
 export function useSpeech(): UseSpeechResult {
   // Feature-detected once on mount, so the caller can go straight to the
   // microphone-unavailable state instead of showing a mic that cannot work.
@@ -127,7 +153,17 @@ export function useSpeech(): UseSpeechResult {
   const [failure, setFailure] = useState<SpeechFailure | null>(
     getCtor() === null ? 'unsupported' : null
   );
-  const [lang, setLang] = useState('en-IN');
+  // Subscribed to the shared value, so a change anywhere is a change here.
+  const [lang, setLangState] = useState<string>(sharedLang);
+  useEffect(() => {
+    const notify = (next: string) => setLangState(next);
+    langSubscribers.add(notify);
+    setLangState(sharedLang);
+    return () => {
+      langSubscribers.delete(notify);
+    };
+  }, []);
+  const setLang = useCallback((next: string) => setSharedLang(next), []);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   // Everything finalised so far, across every restart. Chrome ends a
@@ -140,7 +176,7 @@ export function useSpeech(): UseSpeechResult {
   const stopRequested = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const langRef = useRef('en-IN');
+  const langRef = useRef(sharedLang);
 
   const stopTimer = () => {
     if (timer.current !== null) {

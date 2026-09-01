@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, errorDetail } from '../lib/api';
+import { api } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { EmptyState, ErrorState, Panel, Skeleton } from '../components/ui';
 import { DISCIPLINE_AXIS, DISCIPLINE_ORDER } from '../config';
@@ -385,7 +385,7 @@ function SuggestedDurationPanel({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Memory() {
-  usePageHeader('Memory', 'What past durations say about the ones still planned.');
+  usePageHeader('Memory', 'What past durations say about the ones still planned.', '/memory');
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['memory', 'all'],
     queryFn: () => api.queryMemory({ query_type: 'all' }),
@@ -418,8 +418,8 @@ export default function Memory() {
   const delays = data?.delay_reasons ?? [];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
+    /* The shell's <main> already scrolls; this used to add a second one. */
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
         <div className="mb-1">
           <p className="text-body text-muted max-w-3xl leading-relaxed">
             These patterns are computed from actual execution data the system
@@ -452,7 +452,6 @@ export default function Memory() {
             Computed {new Date(data.computed_at).toLocaleString()}
           </p>
         )}
-      </div>
     </div>
   );
 }

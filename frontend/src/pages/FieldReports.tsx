@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { FieldReport } from '../types';
 import { Button, EmptyState, ErrorState, PanelHeader, SkeletonRows } from '../components/ui';
 
 /**

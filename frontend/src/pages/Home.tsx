@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { AlertCircle, AlertTriangle, ArrowRight } from 'lucide-react';
-import { api, errorDetail } from '../lib/api';
+import { ArrowRight } from 'lucide-react';
+import { api } from '../lib/api';
 import {
   AuditFeedItem,
-  Discipline,
   JobSummary,
   ReviewItem,
   ScheduleActivity,
@@ -14,11 +13,17 @@ import {
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { DISCIPLINE_ORDER, DISCIPLINE_SHORT } from '../config';
 import { Button, EmptyState, ErrorState, Panel, Skeleton, SkeletonRows } from '../components/ui';
 
 /**
- * Project control landing screen.
+ * QUESTION:  What needs me right now?
+ * ACTION:    Open the thing that needs me.
+ *
+ * Everything on this screen is either a count of outstanding work or a row
+ * that opens the work. The per-discipline variance chart that used to sit
+ * between them was the same computation as Memory's "Slip by discipline" and
+ * answered a different question — how is the project trending — so it now
+ * lives only on Memory. See D-031.
  *
  * Each panel owns its own query, so one endpoint failing degrades that panel
  * to an error line and leaves the rest of the page working. Nothing here is a
@@ -156,11 +161,14 @@ function NeedsAttention({
           ? activities.get(item.suggested_activity_id)
           : undefined;
         return (
-          <div
+          /* These rows highlighted on hover and did nothing. They open the
+             item they are about — Reconcile reads `?item=` and selects it. */
+          <Link
             key={item.id}
-            className="px-4 py-3 border-b border-hair last:border-0 flex items-center gap-3 min-w-0 hover:bg-selected transition-colors"
+            to={`/reconcile?item=${encodeURIComponent(item.id)}`}
+            className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 min-w-0 hover:bg-selected transition-colors"
           >
-            <span className="w-10 shrink-0">
+            <span className="w-10 shrink-0 pt-1">
               {act ? (
                 <DisciplineTag discipline={act.discipline} />
               ) : (
@@ -169,13 +177,16 @@ function NeedsAttention({
                 </span>
               )}
             </span>
-            <span className="flex-1 text-body text-fg truncate" title={item.raw_text}>
+            {/* Two lines, not one truncated line with the rest on hover. This
+                is the report the matcher was least sure about; it is the whole
+                reason the row is here, and a projector has no hover. */}
+            <span className="flex-1 text-body text-fg leading-relaxed line-clamp-2">
               {item.raw_text}
             </span>
-            <span className="shrink-0">
+            <span className="shrink-0 pt-1">
               <ConfidenceBadge value={item.confidence} />
             </span>
-          </div>
+          </Link>
         );
       })}
     </div>
@@ -184,7 +195,8 @@ function NeedsAttention({
 
 // ── Row 2 right: recent activity ────────────────────────────────────────────
 
-type FeedRow = { at: string; text: React.ReactNode };
+/** `to` is where the row opens. Every row has one. */
+type FeedRow = { at: string; text: React.ReactNode; to: string };
 
 /**
  * Audit writes and ingests interleaved, newest first. Both halves are real:
@@ -208,6 +220,7 @@ function RecentActivity({
       if (a.field_changed === 'source_conflict') {
         out.push({
           at: a.timestamp,
+          to: `/schedule?activity=${encodeURIComponent(a.activity_id)}`,
           text: (
             <>
               <span className="font-mono text-fg">{a.activity_id}</span> source conflict
@@ -218,6 +231,7 @@ function RecentActivity({
       } else if (a.source === 'planner_review') {
         out.push({
           at: a.timestamp,
+          to: `/schedule?activity=${encodeURIComponent(a.activity_id)}`,
           text: (
             <>
               <span className="font-mono text-fg">{a.activity_id}</span> confirmed by you
@@ -228,6 +242,7 @@ function RecentActivity({
         const isDate = a.field_changed === 'actual_start' || a.field_changed === 'actual_finish';
         out.push({
           at: a.timestamp,
+          to: `/schedule?activity=${encodeURIComponent(a.activity_id)}`,
           text: (
             <>
               <span className="font-mono text-fg">{a.activity_id}</span> {field} set to{' '}
@@ -250,6 +265,7 @@ function RecentActivity({
     for (const j of jobs.slice(0, 4)) {
       out.push({
         at: j.created_at,
+        to: '/ingest',
         text: (
           <>
             <span className="font-mono text-fg">{j.filename}</span> ingested —{' '}
@@ -274,9 +290,12 @@ function RecentActivity({
 
   return (
     <div className="flex flex-col max-h-[260px] overflow-y-auto">
+      {/* These rows highlighted on hover and did nothing. An audit line opens
+          that activity's row and audit drawer; an ingest line opens Ingest. */}
       {rows.map((r, i) => (
-        <div
+        <Link
           key={i}
+          to={r.to}
           className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 hover:bg-selected transition-colors"
         >
           <span className="flex-1 text-body text-muted leading-relaxed min-w-0">
@@ -285,80 +304,13 @@ function RecentActivity({
           <span className="shrink-0 font-mono text-label text-muted text-right whitespace-nowrap pt-1">
             {clock(r.at)}
           </span>
-        </div>
+        </Link>
       ))}
     </div>
   );
 }
 
-// ── Row 3: schedule health ──────────────────────────────────────────────────
-
-function ScheduleHealth({ activities }: { activities: ScheduleActivity[] }) {
-  const bars = useMemo(() => {
-    const acc = new Map<Discipline, number[]>();
-    for (const a of activities) {
-      if (a.finish_variance_days === null) continue;
-      const list = acc.get(a.discipline) ?? [];
-      list.push(a.finish_variance_days);
-      acc.set(a.discipline, list);
-    }
-    return DISCIPLINE_ORDER.map((d) => {
-      const v = acc.get(d) ?? [];
-      const mean = v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
-      return { discipline: d, mean, n: v.length };
-    });
-  }, [activities]);
-
-  const maxAbs = Math.max(1, ...bars.map((b) => (b.mean === null ? 0 : Math.abs(b.mean))));
-
-  return (
-    <div className="p-4 flex flex-col gap-3">
-      {bars.map((b) => (
-        <div key={b.discipline} className="flex items-center gap-3">
-          <span className="w-10 shrink-0 font-mono text-label text-muted text-right">
-            {DISCIPLINE_SHORT[b.discipline]}
-          </span>
-          {b.mean === null ? (
-            <span className="flex-1 text-label text-muted italic">
-              no activity with an actual finish yet
-            </span>
-          ) : (
-            <span className="flex-1 bg-hair h-2 rounded-full relative block overflow-hidden">
-              <span
-                className={`h-full absolute top-0 left-0 rounded-full ${
-                  b.mean > 0 ? 'bg-danger' : 'bg-accent'
-                }`}
-                style={{ width: `${Math.max(2, (Math.abs(b.mean) / maxAbs) * 100)}%` }}
-              />
-            </span>
-          )}
-          <span
-            className={`w-14 shrink-0 font-mono text-label text-right ${
-              b.mean === null
-                ? 'text-muted'
-                : b.mean > 0
-                  ? 'text-danger'
-                  : b.mean < 0
-                    ? 'text-accent'
-                    : 'text-muted'
-            }`}
-          >
-            {b.mean === null ? '—' : `${b.mean > 0 ? '+' : ''}${b.mean.toFixed(1)}d`}
-          </span>
-          <span className="w-8 shrink-0 font-mono text-label text-muted text-right">
-            {b.n || ''}
-          </span>
-        </div>
-      ))}
-      <p className="text-label text-muted border-t border-hair pt-2 leading-relaxed">
-        Average finish variance across each discipline&rsquo;s activities that have an
-        actual finish. The right-hand figure is how many that is.
-      </p>
-    </div>
-  );
-}
-
-// ── Row 4: source conflicts ─────────────────────────────────────────────────
+// ── Source conflicts ─────────────────────────────────────────────────
 
 function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
   if (conflicts.length === 0) {
@@ -435,12 +387,17 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
                   {/* Opens that activity's audit drawer on the Schedule screen. */}
+                  {/* Was "Resolve". It opens the Schedule audit drawer, which
+                      is deliberately read-only (D-004 — the trail is never
+                      edited), so the label promised an action the destination
+                      cannot perform. There is no endpoint that resolves a
+                      source conflict, so the honest fix is the label. */}
                   <Button
                     variant="secondary"
                     size="sm"
                     to={`/schedule?activity=${encodeURIComponent(c.activity_id)}`}
                   >
-                    Resolve
+                    View
                   </Button>
                 </td>
               </tr>
@@ -460,7 +417,11 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  usePageHeader('Project Control', 'Approved actuals compared with the locked baseline.');
+  usePageHeader(
+    'Project Control',
+    'Approved actuals compared with the locked baseline.',
+    '/home'
+  );
   const schedule = useQuery({
     queryKey: ['schedule', 'home'],
     queryFn: () => api.getSchedule(undefined, false),
@@ -489,8 +450,9 @@ export default function Home() {
   }, [schedule.data]);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
+    /* No `h-full overflow-y-auto` here: the shell's <main> already scrolls, and
+       nesting a second scroll container gave the page two scrollbars. */
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
         {/* ROW 1 */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Tile
@@ -554,18 +516,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        {/* ROW 3 */}
-        <Panel title="Schedule health">
-          {schedule.error ? (
-            <ErrorState error={schedule.error} mode="bare" className="px-4 py-4" />
-          ) : schedule.isLoading ? (
-            <SkeletonRows rows={6} height="h-3" />
-          ) : (
-            <ScheduleHealth activities={schedule.data?.activities ?? []} />
-          )}
-        </Panel>
-
-        {/* ROW 4 — surfaced with a count, not buried in a footer. */}
+        {/* Surfaced with a count, not buried in a footer. */}
         <Panel
           title="Source conflicts"
           badge={conflicts.data?.length}
@@ -580,13 +531,6 @@ export default function Home() {
           )}
         </Panel>
 
-        {conflicts.data && conflicts.data.length > 0 && (
-          <p className="font-mono text-label uppercase tracking-wider text-muted flex items-center gap-2">
-            <AlertTriangle size={10} className="text-warn" />
-            {conflicts.data.length} activities have contradictory field evidence
-          </p>
-        )}
-      </div>
     </div>
   );
 }

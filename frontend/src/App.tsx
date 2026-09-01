@@ -54,11 +54,16 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
       ? 'Loading…'
       : 'Project unavailable';
 
-  // Falls back to the nav label so the bar is never blank on the first frame
-  // of a navigation, before the incoming page has published its own header.
+  // A header is used only while it belongs to the route being rendered. The
+  // page publishes in a layout effect, so on a navigation the incoming title is
+  // in place before the first paint and the bar never shows the nav label as an
+  // intermediate value — which is what made Home flash "Home" -> "Project
+  // Control" on every visit. A route that never publishes still falls back to
+  // its nav label rather than inheriting the previous page's title.
   const currentNav = navItems.find((item) => location.pathname.startsWith(item.path));
-  const title = pageHeader?.title ?? currentNav?.label ?? '';
-  const subtitle = pageHeader?.subtitle ?? '';
+  const forThisRoute = pageHeader?.path === location.pathname ? pageHeader : null;
+  const title = forThisRoute?.title ?? currentNav?.label ?? '';
+  const subtitle = forThisRoute?.subtitle ?? '';
 
   return (
     <div className="flex h-screen w-full bg-surface text-muted overflow-hidden font-sans">
@@ -189,7 +194,13 @@ function MobileShell({ children }: { children: React.ReactNode }) {
       : scheduleData.project;
   
   return (
-    <div className="flex flex-col h-screen w-full bg-surface text-muted overflow-hidden font-sans">
+    /* The field surface is a phone UI. Forcing it on a desktop — which the
+       Planner|Field toggle and ?view=field both do — used to stretch a 96px
+       microphone and 16px body copy across 1920px. It is capped at a phone
+       width and centred instead, with the page ground behind it, so the same
+       markup reads correctly on a handset and on a projector. */
+    <div className="flex justify-center h-screen w-full bg-surface overflow-hidden">
+      <div className="flex flex-col h-full w-full max-w-[520px] bg-surface text-muted overflow-hidden font-sans border-x border-hair">
       <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between px-4 bg-raised">
         <span className="flex items-center gap-2 min-w-0">
           <span className="w-8 h-8 shrink-0 rounded-sm bg-accent text-accent-fg flex items-center justify-center font-semibold text-lead">
@@ -228,6 +239,7 @@ function MobileShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <FieldNav />
+      </div>
     </div>
   );
 }

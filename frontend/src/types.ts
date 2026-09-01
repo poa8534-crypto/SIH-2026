@@ -14,6 +14,31 @@ export interface ReviewItem {
   suggested_activity_id: string | null;
   alternatives: string[];
   created_at: string;
+
+  /* ── The matcher's reasoning ──────────────────────────────────────────────
+   *
+   * OPTIONAL BECAUSE THE ENDPOINT DOES NOT SEND THEM YET.
+   *
+   * All three are persisted on the LinkedEvent row this item points at
+   * (`server/db.py` — `match_method` 266, `margin` 269, `rationale` 270) and
+   * all three are already projected onto `LinkedEventResponse`, which is what
+   * GET /jobs/{id} returns (`server/schemas.py` 47/53/54, populated at
+   * `server/main.py` 1230/1236/1237).
+   *
+   * GET /review-queue does not project them. `server/main.py:1264` already
+   * loads the same LinkedEvent as `le` and reads six other fields off it, so
+   * the change is three lines in the `ReviewQueueItemResponse(...)` call at
+   * 1266 plus three fields on the schema at `server/schemas.py:80`.
+   *
+   * That is an endpoint-shape change, which this pass is not permitted to
+   * make. The fields are declared here — and `MatchReasoning` renders them —
+   * so that when the endpoint sends them the UI lights up with no further
+   * frontend work. They are NEVER faked and NEVER computed client-side: when
+   * absent the panel says the endpoint does not supply them. See D-031.
+   */
+  rationale?: string[];
+  margin?: number;
+  match_method?: string;
 }
 
 /** ARCHITECTURE.md 2.3. EXPLICIT and RELATIVE_RESOLVED both come from the

@@ -1256,6 +1256,106 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Restructure the Tier 1 demo-path screens so each answers one question
+and offers one primary action. Layout, hierarchy and composition may change;
+API contracts, endpoint shapes and backend calls may not.
+**Date:** 2026-09-01 - **Decisions:** D-039
+
+### The blocker, first
+
+```
+LinkedEvent (server/db.py)
+  match_method  266   ──┐
+  margin        269   ──┼─> LinkedEventResponse (schemas.py 47/53/54)
+  rationale     270   ──┘     populated main.py 1230/1236/1237
+                              |
+                              v
+                        GET /jobs/{job_id}  ────> Ingest "Why" column  ✅ WIRED
+                              |
+                              x
+                        GET /review-queue   ────> Reconcile            ❌ BLOCKED
+                        ReviewQueueItemResponse (schemas.py 80-93)
+                        projects 6 fields off the SAME `le` at main.py:1264
+                        but not these three
+```
+
+`components/MatchReasoning.tsx` is built and mounted on both screens. On Ingest
+it renders real values. On Reconcile it renders the "endpoint does not supply
+this" statement — never a fabricated score. See D-039 for the exact three-line
+backend change.
+
+### Current path - Tier 1 screens after the change
+
+```
+main.tsx  QueryClient
+  refetchInterval 3000 for:
+    reviewQueue · schedule · jobs · conflicts · auditRecent   <- last two NEW
+        |
+        v
+App.tsx  useDevice() -> DesktopShell | MobileShell
+  DesktopShell
+    usePageHeader publishes {title, subtitle, path} in useLayoutEffect
+    shell renders it only while path === location.pathname       <- no flash
+    <main> is the ONLY scroll container                          <- no double bar
+  MobileShell
+    max-w-[520px] mx-auto, border-x                              <- NEW, projector
+        |
+        v
+/home      Home.tsx        tiles · NeedsAttention(Link -> /reconcile?item=)
+                           RecentActivity(Link -> /schedule?activity= | /ingest)
+                           SourceConflicts(Button "View")
+                           ScheduleHealth DELETED -> lives only on Memory
+/ingest    Ingest.tsx      drop zone
+                           PipelineTrace TRACE_BEAT 130ms (was 550)
+                           review-count call-to-action -> /reconcile
+                           event table + Reasoning column (rationale/margin/method)
+                           Outcome: AUTO_LINK -> /schedule?activity=
+                                    REVIEW    -> /reconcile?event=   <- NEW
+/reconcile Reconcile.tsx   ?item= | ?event= resolved against the queue
+                           orderRef freezes list order while selected
+                           detail: [ what the supervisor said | why the matcher
+                                     chose this (MatchReasoning) ]
+                           candidates: per-candidate score or "no score sent"
+                           Enter -> focuses #confirm-match (does not fire)
+                           r -> arms, second press commits
+                           Queue Clear -> success + link to the row it wrote
+/schedule  Schedule.tsx    scrollIntoView on [selectedId] only
+                           planned rows text-muted (no opacity-55)
+                           export: "Saved on server", auto-clears at 6s
+                           AuditTrail: no model_version, names linked_event_id
+/field     Field.tsx       container: ALL state + handlers, 391 lines
+             field/shared.tsx           Stage, Message, CardRow, formatters, Waveform
+             field/IdleStage.tsx
+             field/ListeningStage.tsx
+             field/TranscriptStage.tsx
+             field/ConversationStage.tsx   conversation | ready | card
+             field/SubmittedStage.tsx
+             field/StructuredCard.tsx
+             field/FallbackStates.tsx      MicUnavailable | NotUnderstood |
+                                           ServerUnreachable
+             field/ContextBlock.tsx
+             field/TextInput.tsx
+        |
+        v
+hooks/useSpeech.ts
+  sharedLang + langSubscribers   module-level, one preference for every
+                                 useSpeech() instance                <- NEW
+  SPEECH_LANGUAGES = LANGUAGES   one list; chips use .short, Profile .label
+```
+
+### Still rendering their own markup, on purpose
+
+```
+App.tsx:153            Planner|Field segmented control
+App.tsx:116,124        sidebar utility text buttons
+Schedule.tsx:667       integrity banner - full-bleed clickable filter row
+FieldReports.tsx:126   report row rendered as a button - a list row
+field/ContextBlock.tsx:28  disclosure header
+field/IdleStage.tsx:40     mic tap-card
+```
+
+## Previous Modification Area (2026-09-01, D-038) - retained for history
+
 **Task:** Two demo-path defects in `server/main.py`: the withheld-finish
 resolver 400'd on the Reconcile screen's own `reject` verb, and the review
 queue was ordered by the priority *string* rather than by priority.
@@ -1304,7 +1404,7 @@ POST .. new_activity (same item type)  400, as intended
 
 ---
 
-## Previous Modification Area
+## Previous Modification Area (2026-09-01, D-031 .. D-037) - retained for history
 
 **Task:** Reconcile every stale, contradictory and duplicated claim across the
 documentation so the code, the demo, the metrics and the decision log tell one
@@ -1396,7 +1496,6 @@ patched here: this pass corrects documentation to match code, and each of those
 is a behaviour change that needs its own before/after.
 
 ---
-
 ## Previous Modification Area (2026-09-01, D-030) - retained for history
 
 **Task:** Collapse the frontend onto one design system - visual tokens and

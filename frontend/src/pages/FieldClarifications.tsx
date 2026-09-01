@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { Clarification } from '../types';
 import { PLANNER } from '../config';
 import { useSpeech } from '../hooks/useSpeech';
-import { Button, EmptyState, ErrorState, PanelHeader, SkeletonRows } from '../components/ui';
+import { Button, EmptyState, ErrorState, SkeletonRows } from '../components/ui';
 
 /**
  * Questions the Planning Engineer put back about this supervisor's own

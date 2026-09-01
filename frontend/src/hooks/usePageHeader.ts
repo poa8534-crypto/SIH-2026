@@ -1,10 +1,12 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useLayoutEffect } from 'react';
 
 export type PageHeader = {
   /** Rendered as the headline in the top bar. */
   title: string;
   /** One line under the title. Keep it to a sentence. */
   subtitle: string;
+  /** The route this header belongs to. See below. */
+  path: string;
 };
 
 /**
@@ -23,16 +25,26 @@ export const PageHeaderContext = createContext<
 /**
  * Publish this page's title and subtitle to the surrounding shell.
  *
- * Call it once, unconditionally, at the top of a page component. On unmount
- * the header is cleared, so a route that has not adopted this hook falls back
- * to the shell's default rather than inheriting the previous page's title.
+ * Call it once, unconditionally, at the top of a page component.
+ *
+ * Two details stop the title flashing on navigation, which it used to do on
+ * every route change and most visibly on Home ("Home" -> "Project Control"):
+ *
+ *  - `useLayoutEffect`, not `useEffect`, so the incoming page's title is set
+ *    before the browser paints rather than one frame after it.
+ *  - The header carries the path it belongs to, and there is no unmount
+ *    cleanup. Clearing on unmount was the actual bug: React runs the outgoing
+ *    page's cleanup before the incoming page's effect, so there was always a
+ *    frame with no header, which fell back to the nav label. The shell now
+ *    ignores a header whose `path` is not the current route, which gets the
+ *    same protection — a route that never calls this hook does not inherit the
+ *    previous page's title — without the blank frame.
  */
-export function usePageHeader(title: string, subtitle: string) {
+export function usePageHeader(title: string, subtitle: string, path: string) {
   const publish = useContext(PageHeaderContext);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!publish) return; // rendered outside DesktopShell, e.g. in a test
-    publish({ title, subtitle });
-    return () => publish(null);
-  }, [publish, title, subtitle]);
+    publish({ title, subtitle, path });
+  }, [publish, title, subtitle, path]);
 }

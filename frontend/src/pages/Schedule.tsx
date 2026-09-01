@@ -22,6 +22,16 @@ import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { Button, EmptyState, ErrorState, SectionTitle, Skeleton } from '../components/ui';
 
+/**
+ * QUESTION:  What does the schedule actually say now, and where did each
+ *            actual date come from?
+ * ACTION:    Open an activity's audit trail.
+ *
+ * The table is the answer to the first half; the drawer is the answer to the
+ * second. Nothing on this screen writes — the trail is append-only (D-004) and
+ * planned dates are the read-only baseline. See D-031.
+ */
+
 /** Which audit fields represent an actual-date write, for the trail's header. */
 const FIELD_LABEL: Record<string, string> = {
   actual_start: 'ACTUAL START',
@@ -217,8 +227,17 @@ function AuditTrail({ activityId }: { activityId: string }) {
                     </span>
                   )}
                   <span className="text-muted">{rec.source}</span>
-                  <span className="text-muted">{rec.model_version}</span>
+                  {/* model_version was here. No planner decision turns on it,
+                      and it competed with the source and confidence that do. */}
                 </div>
+
+                {/* Which extracted event caused this write. */}
+                {rec.linked_event_id && (
+                  <div className="mt-1 text-muted">
+                    from event{' '}
+                    <span className="text-fg">{rec.linked_event_id.split('-')[0]}</span>
+                  </div>
+                )}
 
                 {!loc && rec.contributing_sources.length <= 1 && (
                   <div className="mt-1 text-muted italic">
@@ -408,7 +427,7 @@ function AuditDrawer({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
-  usePageHeader('Schedule', 'The 120-activity baseline with every confirmed actual date.');
+  usePageHeader('Schedule', 'The 120-activity baseline with every confirmed actual date.', '/schedule');
   const [discipline, setDiscipline] = useState<string>('');
   const [search, setSearch] = useState('');
   const [onlyActuals, setOnlyActuals] = useState(false);
@@ -467,12 +486,21 @@ export default function Schedule() {
     if (deepLinked) setSelectedId(deepLinked);
   }, [deepLinked]);
 
-  // Bring a deep-linked row into view once its data has arrived. A row hidden
-  // behind a filter simply has no ref, and the drawer still opens.
+  // Bring a deep-linked row into view. A row hidden behind a filter simply has
+  // no ref, and the drawer still opens.
+  //
+  // This used to depend on `data` as well, and `data` is refetched every three
+  // seconds — so any change anywhere in the 120-activity payload re-centred the
+  // table under the open drawer. It scrolls when the selection changes and at
+  // no other time; the rAF gives the row one frame to mount on a first load
+  // where the selection arrives before the rows do.
   useEffect(() => {
-    if (!selectedId || !data) return;
-    rowRefs.current[selectedId]?.scrollIntoView({ block: 'center' });
-  }, [selectedId, data]);
+    if (!selectedId) return;
+    const raf = requestAnimationFrame(() => {
+      rowRefs.current[selectedId]?.scrollIntoView({ block: 'center' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [selectedId]);
 
   const closeDrawer = () => {
     setSelectedId(null);
@@ -584,6 +612,17 @@ export default function Schedule() {
     getCoreRowModel: getCoreRowModel(),
   });
 
+  /**
+   * Export writes the file on the server and returns its name.
+   *
+   * It does NOT put a file in the planner's Downloads folder, and the button
+   * used to say "Wrote <name>" in success green, which reads as a completed
+   * download. `ExportResponse.download_url` is `/uploads/{filename}`
+   * (`server/main.py:2229`) but nothing serves that path — there is no static
+   * mount and no download route — so there is no URL to send the browser to.
+   * Until that route exists the honest thing is to say where the file actually
+   * is. See D-031.
+   */
   const handleExport = async () => {
     setExportState({ kind: 'busy' });
     try {
@@ -600,6 +639,14 @@ export default function Schedule() {
       });
     }
   };
+
+  // The result used to sit in the toolbar for the rest of the session, so a
+  // file exported once looked like it had just been exported again.
+  useEffect(() => {
+    if (exportState.kind !== 'done' && exportState.kind !== 'error') return;
+    const t = setTimeout(() => setExportState({ kind: 'idle' }), 6000);
+    return () => clearTimeout(t);
+  }, [exportState]);
 
   // ── Error ─────────────────────────────────────────────────────────────────
   if (error) {
@@ -676,7 +723,12 @@ export default function Schedule() {
 
         <div className="ml-auto flex items-center gap-2">
           {exportState.kind === 'done' && (
-            <span className="font-mono text-label text-ok">Wrote {exportState.name}</span>
+            <span
+              className="font-mono text-label text-ok max-w-[420px] truncate"
+              title={`Written on the server as ${exportState.name}. No browser download is triggered: the API returns a download_url of /uploads/${exportState.name}, and no route serves that path.`}
+            >
+              Saved on server: {exportState.name}
+            </span>
           )}
           {exportState.kind === 'error' && (
             <span className="font-mono text-label text-danger">{exportState.detail}</span>
@@ -748,9 +800,14 @@ export default function Schedule() {
                       rowRefs.current[a.activity_id] = el;
                     }}
                     onClick={() => setSelectedId(a.activity_id)}
+                    /* Planned-only rows were `text-muted opacity-55`, which
+                       composites to about 2.9:1 on white — under the 4.5:1 the
+                       palette claims, and worse on a projector. `text-muted` at
+                       full opacity is 9.4:1 and still reads as secondary next
+                       to the `text-fg` rows that carry an actual. */
                     className={`border-b border-hair cursor-pointer transition-colors ${
                       isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
-                    } ${hasActual ? 'text-fg' : 'text-muted opacity-55'}`}
+                    } ${hasActual ? 'text-fg' : 'text-muted'}`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td

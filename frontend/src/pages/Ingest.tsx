@@ -14,14 +14,39 @@ import { isDiscipline } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { EmptyState, ErrorState, Panel, PanelHeader, SkeletonRows } from '../components/ui';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Panel,
+  PanelHeader,
+  SkeletonRows,
+} from '../components/ui';
+
+/**
+ * QUESTION:  What did the system just do with my file?
+ * ACTION:    Go deal with the events that need a human.
+ *
+ * Every number on this screen comes from the POST /ingest response and the
+ * follow-up GET /jobs/{id}. The event table's Why column renders
+ * `LinkedEventResponse.rationale` — the matcher's own deterministic feature
+ * names, per D-003 — so a confidence figure is never shown without the reason
+ * behind it. See D-031.
+ */
 
 /** The only two the drop zone accepts. Narrower than the server, on purpose. */
 const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx'] as const;
 const ACCEPTED_LABEL = '.txt and .xlsx';
 
-/** Milliseconds between trace lines. Long enough to read one before the next. */
-const TRACE_BEAT = 550;
+/**
+ * Milliseconds between trace lines.
+ *
+ * Was 550, which put 1.65s of manufactured delay on the one moment the whole
+ * screen exists for — and by its own comment the data was already complete
+ * before the first line appeared. At 130 the four stages still resolve in
+ * order, which is the only thing the stagger was for, in under 400ms total.
+ */
+const TRACE_BEAT = 130;
 
 function extensionOf(name: string): string {
   const i = name.lastIndexOf('.');
@@ -117,7 +142,57 @@ function Outcome({ ev }: { ev: ExtractedEvent }) {
   if (ev.decision === 'REJECTED') {
     return <span className="font-mono text-label uppercase text-muted">Rejected</span>;
   }
-  return <span className="font-mono text-label uppercase text-accent">Sent to review</span>;
+  // These are the rows that need a human, and they were the only outcome with
+  // no way through to the screen that deals with them. Reconcile resolves
+  // `?event=` against the queue's `linked_event_id`.
+  return (
+    <Link
+      to={`/reconcile?event=${encodeURIComponent(ev.id)}`}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center gap-1 font-mono text-label text-accent hover:underline"
+    >
+      <span className="uppercase">Sent to review</span>
+      <ArrowUpRight size={10} className="shrink-0" />
+    </Link>
+  );
+}
+
+/**
+ * The matcher's reasoning, as it recorded it.
+ *
+ * `rationale` is a list of deterministic feature names (D-003 — never LLM
+ * prose), `margin` is top-1 minus top-2, and `match_method` is which path
+ * produced the answer. All three are already on `LinkedEventResponse` and none
+ * of them was rendered anywhere in the product before this.
+ */
+function Reasoning({ ev }: { ev: ExtractedEvent }) {
+  if (ev.rationale.length === 0 && !ev.match_method) {
+    return <span className="font-mono text-label text-muted italic">no signals recorded</span>;
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-1">
+        {ev.rationale.map((r) => (
+          <span
+            key={r}
+            className="font-mono text-label bg-selected text-accent px-2 rounded-full"
+            title="Feature the matcher recorded as firing for this event"
+          >
+            {r}
+          </span>
+        ))}
+      </div>
+      <div className="font-mono text-label text-muted">
+        {ev.match_method}
+        {ev.margin > 0 && (
+          <>
+            {' · margin '}
+            <span className="text-fg">{ev.margin.toFixed(3)}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -131,7 +206,7 @@ type Status =
   | { kind: 'done'; job: JobResponse; bytes: number };
 
 export default function Ingest() {
-  usePageHeader('Ingest', 'Load a daily progress report or a discipline spreadsheet.');
+  usePageHeader('Ingest', 'Load a daily progress report or a discipline spreadsheet.', '/ingest');
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [dragging, setDragging] = useState(false);
@@ -248,8 +323,8 @@ export default function Ingest() {
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-surface overflow-y-auto">
-      <div className="max-w-[1280px] w-full mx-auto space-y-5">
+    /* The shell's <main> already scrolls; this used to add a second one. */
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5">
         {/* DROP ZONE */}
         <div
           onDragOver={(e) => {
@@ -320,6 +395,27 @@ export default function Ingest() {
         {/* PIPELINE TRACE */}
         {job && <PipelineTrace lines={traceLines} />}
 
+        {/* The one number on this screen that is a task rather than a fact.
+            It was previously readable only as body text inside the MATCHED
+            trace line, with no way to act on it. */}
+        {job && job.review_count > 0 && (
+          <div className="border border-hair bg-raised rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+            <span className="flex items-baseline gap-3 min-w-0">
+              <span className="font-mono text-h2 text-warn leading-none">
+                {job.review_count}
+              </span>
+              <span className="text-body text-muted">
+                event{job.review_count === 1 ? '' : 's'} the matcher could not link
+                on its own
+              </span>
+            </span>
+            <Button variant="primary" size="sm" to="/reconcile">
+              Reconcile
+              <ArrowUpRight size={12} />
+            </Button>
+          </div>
+        )}
+
         {/* Parsed but nothing extractable — a real outcome, worth naming. */}
         {job && job.event_count === 0 && (
           <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label flex items-start gap-2">
@@ -347,7 +443,7 @@ export default function Ingest() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-hair">
-                    {['Pos', 'Raw text', 'Extracted', 'Conf', 'Outcome'].map((h) => (
+                    {['Pos', 'Raw text', 'Extracted', 'Conf', 'Why', 'Outcome'].map((h) => (
                       <th
                         key={h}
                         className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
@@ -411,6 +507,11 @@ export default function Ingest() {
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <ConfidenceBadge value={ev.confidence} />
+                      </td>
+                      {/* A confidence number with no reason beside it is not
+                          auditable. This is the matcher's own record. */}
+                      <td className="px-3 py-3 min-w-[200px]">
+                        <Reasoning ev={ev} />
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <Outcome ev={ev} />
@@ -485,7 +586,6 @@ export default function Ingest() {
             </div>
           )}
         </section>
-      </div>
     </div>
   );
 }

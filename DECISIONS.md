@@ -3962,3 +3962,216 @@ unchanged, and confirm remains the only path that writes one.
 `server/main.py` (`_resolve_defaulted_finish`, `get_review_queue`, one import),
 `server/test_date_basis.py`, `server/test_server.py`, `DEMO.md`, `DECISIONS.md`.
 No change to `matching/`, `extraction/` or `frontend/`.
+
+---
+
+## 2026-09-01 / D-039 - Tier 1 screens restructured around one question each; the matcher's reasoning is still invisible on Reconcile, and that is a backend gap
+
+### Status
+Implemented, with one part BLOCKED and not worked around. Read the blocker
+first — it is the most important thing in this entry.
+
+### BLOCKED: GET /review-queue does not return the matcher's reasoning
+
+The product's stated differentiator is that a link is explainable: `rationale`
+holds deterministic feature names, never LLM prose (D-003). The data exists and
+is persisted:
+
+| field | column | on the response? |
+|---|---|---|
+| `rationale` | `db.py:270` `LinkedEvent.rationale` | `LinkedEventResponse` yes (`schemas.py:54`, populated `main.py:1237`) |
+| `margin` | `db.py:269` | `LinkedEventResponse` yes (`schemas.py:53`, `main.py:1236`) |
+| `match_method` | `db.py:266` | `LinkedEventResponse` yes (`schemas.py:47`, `main.py:1230`) |
+
+`LinkedEventResponse` is what **GET /jobs/{job_id}** returns, so the **Ingest**
+screen can and now does render all three.
+
+**`ReviewQueueItemResponse` (`schemas.py:80-93`) carries none of them**, so
+**Reconcile cannot.** `main.py:1264` already loads the very same `LinkedEvent`
+as `le` and projects six other fields off it (`source_span`, `raw_text`,
+`confidence`, `tags`, `alternatives`, ...). The change is:
+
+- `server/schemas.py:80` — three fields on `ReviewQueueItemResponse`:
+  `match_method: str = "prepass"`, `margin: float = 0.0`,
+  `rationale: list[str] = []`
+- `server/main.py:1266` — three lines in the `ReviewQueueItemResponse(...)`
+  call, mirroring 1230/1236/1237 exactly:
+  `match_method=le.match_method if le else "prepass"`,
+  `margin=le.margin if le else 0.0`,
+  `rationale=json.loads(le.rationale) if le and le.rationale else []`
+
+That is an endpoint-shape change and this pass was explicitly not permitted to
+make one, so it was **not made**. Nothing was fabricated and nothing was
+computed client-side.
+
+There is also **no per-candidate score anywhere in any response.**
+`/review-queue` returns one `confidence` for the item plus `alternatives` as a
+bare `list[str]`. So "why did candidate 1 beat candidate 2" is not answerable
+from the API even with the three fields above — ranks 2+ have no score to show.
+Closing that needs `alternatives` to become objects carrying a score, which is
+a larger contract change and a separate decision.
+
+**What was built instead:** `components/MatchReasoning.tsx` renders score,
+margin, method and the signal chips, and is already wired into Reconcile's
+detail pane and each candidate card. The fields are declared optional on
+`ReviewItem` (`types.ts`) with the full backend reference. When the endpoint
+sends them the UI lights up with no frontend work. Until then the panel states
+plainly which endpoint does not supply them and points at Ingest's Why column,
+where the same data is real. Candidate ranks 2+ say "no score sent" rather than
+reusing the top candidate's number.
+
+### Decisions
+
+**1. One question, one action, written down.** Every Tier 1 file opens with the
+question it answers and the action it offers, and the layout is ordered to
+serve them. Where a screen was answering two questions, one was moved out.
+
+**2. Home stops being three products.** Rows 1-2 are a work queue, row 4 is an
+integrity console, and row 3 — per-discipline mean finish variance — was the
+same computation as `Memory.SlipByDiscipline` answering a different question
+(how is the project trending, not what needs me). `ScheduleHealth` is deleted;
+Memory keeps it. The footer line restating the panel's own badge count is gone.
+Attention rows and activity rows are links now — they had hover styling and no
+`onClick`. `raw_text` shows two lines instead of one truncated line plus a
+`title`, because a projector has no hover. "Resolve" is **"View"**: it opens the
+Schedule audit drawer, which is deliberately read-only per D-004, and no
+endpoint resolves a source conflict — the label was the thing that was wrong.
+
+**3. Reconcile is evidence beside reasoning, above the fold.** The "Extracted
+Metadata" grid is deleted: a truncated UUID that identifies nothing to a
+planner, a third rendering of the same confidence figure, and a timestamp
+already in the queue row. Its space is now a two-column band — what the
+supervisor said, and why the matcher chose what it chose — neither of which
+requires scrolling or a click.
+
+**4. Reconcile's destructive keys need intent.** `r` rejected irreversibly on
+one unguarded press and was not in the legend; `Enter` confirmed instantly.
+Reject now arms on the first press and commits on the second, relabelling in
+between; `Enter` focuses the confirm button rather than firing it. The focus
+guard checked `INPUT`/`TEXTAREA` only, so a focused button — which is what you
+have immediately after clicking any action — let every shortcut through; it now
+also covers `SELECT`, `BUTTON`, `A`, anything `contenteditable`, and any
+modifier chord. Every bound key is in the legend.
+
+*Deviation, noted:* the legend's reject entry reads `R ×2` rather than
+`R Reject ×2`. `reconcile.test.tsx:150` asserts that "Reject" resolves to
+exactly one element, and the Reject button sits directly below the legend and
+names the action. The key and its double-press are both disclosed.
+
+**5. Reconcile's queue stops moving under the cursor.** The list re-sorted on
+every 3-second refetch, so an ingest mid-review reordered rows while the
+planner was reading one. Order is frozen for the duration of a selection, with
+new arrivals appended rather than inserted; the true sort resumes when nothing
+is selected.
+
+**6. Queue Clear reads as success and leads somewhere.** It was a `Check` icon
+in `text-hair` — the lowest-contrast token in the palette — over mono uppercase
+`tracking-widest`, which read as a crash. It is the accent treatment now, keeps
+the panel chrome, and offers the schedule row the last confirm actually wrote.
+That link is also in the action bar after every resolve: the write used to be
+two navigations and a search away from the click that caused it.
+
+**7. Ingest's dead ends are links.** `AUTO_LINK` rows deep-linked to Schedule
+while "Sent to review" rows — the ones that need a human — returned a plain
+span. They link to `/reconcile?event=<linked_event_id>`, which Reconcile
+resolves against the queue. `TRACE_BEAT` drops 550 -> 130ms: the stagger put
+1.65s of manufactured delay on the one moment the screen exists for, and by its
+own comment the data was already complete before the first line rendered. The
+review count is now a figure with a Reconcile button rather than prose inside
+the MATCHED line.
+
+**8. Schedule tells the truth about export.** It writes server-side and
+triggers no browser download; the button said "Wrote <name>" in success green
+and never cleared. `ExportResponse.download_url` is `/uploads/{filename}`
+(`main.py:2229`) but **nothing serves that path** — no static mount, no
+download route — so there is no URL to send the browser to. Relabelled "Saved
+on server: <name>", with the full explanation on hover, and it clears after 6s.
+A real download needs that route; that is a second backend gap.
+
+**9. Schedule's table stops jumping, and planned rows become readable.**
+`scrollIntoView` depended on `[selectedId, data]` and `data` refetches every
+three seconds, so any change anywhere in the payload re-centred the table under
+the open drawer; it depends on `selectedId` alone now. Planned-only rows were
+`text-muted opacity-55`, compositing to about 2.9:1 on white — under the 4.5:1
+the palette claims. `text-muted` at full opacity is 9.4:1 and still reads as
+secondary. `model_version` is off the audit entries: no planner decision turns
+on it. Each entry now names the event that caused the write, from
+`AuditRecordResponse.linked_event_id`.
+
+**10. The field surface is a phone, and is drawn as one.** `MobileShell` had no
+max-width, so the Planner|Field toggle stretched a 96px microphone and 16px
+body copy across 1920px on a projector. Capped at 520px and centred with the
+page ground behind it. `NeedsYourResponse` reserves its height so the lower
+half of the screen no longer jumps as its query settles.
+
+**11. Field.tsx is one route, seven stage components.** It was 1000 lines with
+all seven stages inline. The route component keeps **all** state and every
+handler and passes them down; the stages are presentational. Behaviour is
+unchanged and the 41 field/speech/state tests pass untouched. Now 391 lines
+plus `pages/field/{shared,StructuredCard,FallbackStates,ContextBlock,TextInput,IdleStage,ListeningStage,TranscriptStage,ConversationStage,SubmittedStage}.tsx`.
+The dead `myUpdates` and `clarificationCount` derivations went with it — they
+were computed and never rendered. The `['reviewQueue']` query itself is kept so
+the split changes no network behaviour.
+
+**12. One speech language, one list.** `lang` lived in per-instance `useState`,
+so Profile's picker changed nothing about /field's microphone and every
+Clarifications card ran its own recogniser defaulting back to `en-IN`. It is a
+module-level value with subscribers — one preference, browser-session scoped,
+never sent to the server. `SPEECH_LANGUAGES` (EN/हि/অস) and `LANGUAGES`
+(English/Hindi/Assamese) were two lists for three languages; there is now one,
+`config.LANGUAGES`, and the compact header chips use its `short` form while
+Profile uses `label`.
+
+**13. Shell: no title flash, no double scrollbars.** `usePageHeader` cleared on
+unmount, and React runs the outgoing cleanup before the incoming effect, so
+every navigation had a frame with no header that fell back to the nav label —
+visible on Home as "Home" -> "Project Control". The header now carries the path
+it belongs to, publishes in `useLayoutEffect` (before paint), and does not
+clear; the shell ignores a header whose path is not the current route, which
+keeps the protection against a route inheriting the previous title. Home,
+Ingest and Memory each wrapped themselves in `h-full overflow-y-auto` inside an
+already-scrolling `<main>`; the inner container is gone from all three.
+
+**14. Home's proof-of-write panels poll.** `['conflicts']` and `['auditRecent']`
+were absent from the refetch list, so after an ingest the tiles ticked over
+while Recent Activity and Source Conflicts — the two panels that prove a write
+happened — stayed frozen until the route remounted. Both are in the list now.
+
+### Visual language
+
+No one-off styles were reintroduced: the type scale is still six steps, radii
+three, padding and gap the six-step scale plus the two documented functional
+offsets (`pb-24`, `pr-12`), and every new control is the `Button` primitive.
+Verified by grep after the change.
+
+Deviations from the Stitch language, each a named failure in the brief:
+Home loses its variance chart; Reconcile loses the metadata grid and gains a
+two-column reasoning band; Queue Clear changes from mono-uppercase-on-hairline
+to the accent success treatment; Schedule's planned rows lose `opacity-55`; the
+field surface is centred at 520px instead of full-bleed; Reconcile's "Suggested"
+badge is `text-accent` rather than `text-warn`, because `warn` means "medium
+confidence" on the `ConfidenceBadge` inches away and the top match is not a
+warning (this closes the status-colour inconsistency reported in D-030).
+
+### Verification
+
+`tsc --noEmit` clean, including under `--noUnusedLocals --noUnusedParameters`.
+`vite build` succeeds. Frontend tests **52 passed / 3 failed — the pre-existing
+baseline**, unchanged: the three are `field.test.tsx > profile` failing on
+`localStorage` being undefined in `useDevice.ts:20` under jsdom. No test was
+modified.
+
+### Affected Areas
+`frontend/src/App.tsx` · `hooks/usePageHeader.ts` · `hooks/useSpeech.ts` ·
+`main.tsx` · `types.ts` · `components/MatchReasoning.tsx` (new) ·
+`components/FieldContextBlocks.tsx` ·
+`pages/{Home,Ingest,Reconcile,Schedule,Memory,Field,FieldReports,FieldClarifications}.tsx` ·
+`pages/field/*` (new, 10 files)
+
+### Backend work this pass identified and did NOT do
+1. `GET /review-queue` must project `rationale`, `margin`, `match_method` —
+   three lines in `main.py:1266` plus three fields in `schemas.py:80`.
+2. `alternatives` must carry a per-candidate score for "why 1 beat 2" to be
+   answerable at all.
+3. `/uploads/{filename}` needs a route or static mount, or
+   `ExportResponse.download_url` should be dropped as unusable.

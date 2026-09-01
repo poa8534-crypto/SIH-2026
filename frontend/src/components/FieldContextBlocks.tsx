@@ -68,6 +68,10 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
         }
       />
 
+      {/* min-h holds the block's height steady across loading -> loaded ->
+          empty. Without it the card grew or shrank as the query settled and
+          the whole lower half of the field screen jumped on load. */}
+      <div className="min-h-[132px] flex flex-col justify-center">
       {error ? (
         <ErrorState error={error} mode="bare" className="px-4 py-4" />
       ) : isLoading ? (
@@ -88,6 +92,7 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
           reports appear here.
         </EmptyState>
       )}
+      </div>
     </section>
   );
 }
