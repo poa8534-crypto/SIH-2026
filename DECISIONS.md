@@ -71,6 +71,8 @@ transcript of earlier design conversations. Nothing here is presented as recolle
 | D-019 | Refuse to evaluate a baseline the ground truth does not describe | Active |
 | D-020 | The v2 evaluation corpus is generated as one family, from one seed | Active |
 | D-021 | Thresholds are tuned on dev and reported on test | Active (qualifies D-002) |
+| D-022 | A tag's digit count is a numbering convention, not part of what a tag is | Active |
+| D-023 | A unit suffix is not a numerator | Active |
 
 **Historical entries H-001 … H-027 are indexed separately at the top of Part 0,
 immediately below.** Four of them qualify a D-entry directly and should be read with
@@ -2600,4 +2602,164 @@ one, and both are reported rather than whichever looks better.
 ### Affected Areas
 `eval.py` (`--ground-truth`, split-aware calibration, `print_date_basis`),
 `dataset/v2/ground_truth_v2.csv`, `dataset/v2/splits.json`.
+
+---
+
+## 2026-09-01 / D-022 — A tag's digit count is a numbering convention, not part of what a tag is
+
+### Status
+Implemented. Closes the first of the two defects recorded in D-020.
+
+### Context
+`EQUIPMENT_TAG_RE` bounded a tag's numeric suffix at three digits and its
+prefix at three letters. Every tag in `dataset/baseline_schedule.json` fits
+that — `V-101`, `TK-1`, `CS-01` — so the bound was invisible for as long as v1
+was the only baseline. `baseline_schedule_v2.json` numbers equipment with four
+digits and uses one four-letter prefix, so **18 of its 40 distinct tags**
+(`V-1101`, `PT-1101`, `TK-2101`, `PK-2401`, `FST-1301`, `WHCP-2101` …) were
+invisible to the extractor. `INSTRUMENT_TAG_RE` carried the same three-digit
+bound and missed `PT-1101`, `LT-1201`, `TE-1301`, `FE-1401`.
+
+`tag_overlap` is the near-decisive ranking feature, so on v2 roughly half the
+tag retrieval channel was dark and those mentions were being matched on
+description similarity alone.
+
+### Decision
+Two named bounds, deliberately generous, replace the inline literals:
+
+```python
+TAG_NUM  = r'\d{1,5}'    # equipment / instrument suffix
+LINE_NUM = r'\d{3,5}'    # pipe line number
+```
+
+`EQUIPMENT_TAG_RE`'s prefix widens to `[A-Z]{1,4}` for `WHCP-2101`, and stays
+**uppercase-only** — lower-casing it would start matching ordinary hyphenated
+prose ("unit-1", "zone-2"). `PIPE_TAG_RE` and `PIPE_BARE_RE` move to
+`LINE_NUM` for the same reason, though no shipped baseline needs it yet.
+
+A digit count describes one project's numbering convention. It is not part of
+what a tag *is*, and hard-coding it means the next baseline needs a regex change
+to be readable at all.
+
+### The regression this exposed, and the guard that fixes it
+Widening the suffix made `EQUIPMENT_TAG_RE` also match the **line portion of a
+full pipe tag**: `P-1015` inside `6"-P-1015-A1A`. `extract_tags` then returned
+both, giving the schedule record a second, **size-less** key for the same line —
+and a size-less key matches 12" field text against a 6" line, silently defeating
+the size-mismatch guard that protects auto-link precision.
+
+`matching/test_matching.py::TestFeatures::test_size_mismatch_penalised` caught
+it: the score moved 0.35 → 0.85 against a threshold of 0.5.
+
+The bare-pipe branch of `extract_tags` had always carried a containment check;
+the equipment and instrument branches needed the same one once they could reach
+four digits. Longest match now wins:
+
+```python
+if any(tag in t for t in tags):
+    continue
+```
+
+### Measured impact
+Tag readability, before → after:
+
+| | v1 | v2 |
+|---|---|---|
+| distinct schedule tag strings readable | 44/44 (unchanged) | **41 → 101** activities; **22/40 → 40/40** distinct strings |
+| mentions with a readable tag | 90/254 (unchanged) | **96 → 205** of 700 |
+| schedule descriptions with a readable tag | 59/120 (unchanged) | **46 → 118** of 218 |
+
+End-to-end, pooled 5-fold CV over all 700 v2 mentions: coverage **54.1% →
+56.6%**, auto-link recall **60.0% → 62.7%**, Top-1 **96.8% → 97.0%**, auto-link
+precision unchanged at **100.0%**.
+
+**v1 is byte-for-byte unchanged, and that is the correct outcome, not an
+oversight.** Every v1 tag is three digits or fewer, so the bound never fired on
+it. This was verified mechanically rather than assumed: extracting tags and
+fractions across the whole v1 corpus under both the old and new patterns gives
+identical counts (90 mentions with tags, 4 with fractions, 59 descriptions,
+44 tag strings).
+
+### Honest reading of the gain
+The tag channel went from roughly 40% to 100% coverage on v2 and bought **+2.5
+percentage points of coverage**. That is a real gain at unchanged precision, but
+it is much smaller than the visibility numbers suggest, and the reason is worth
+stating: the ranker was already getting most of these right from description
+similarity, so restoring the tag channel largely added *redundant* evidence
+rather than new correct answers. The defect was real; its cost was lower than
+the headline "half the tags are invisible" implied.
+
+### Digit-count assumptions elsewhere — reported, not changed
+`matching/` was out of scope for this task, and two assumptions live there:
+
+| Location | Pattern | Status |
+|---|---|---|
+| `matching/textutils.py` `_PIP_FULL_RE`, `_PIP_BARE_RE` | `\d{3,4}` | Fits both baselines. A five-digit line number would not parse. |
+| `matching/textutils.py` `_SLASH_VARIANT_RE` | `[A-Za-z]{1,3}[-\s]?\d{1,3}` | **Live gap.** `P-1401A/B` is a real v2 tag and does **not** expand into `P-1401A` / `P-1401B`, so a field report naming one pump loses the shared tag evidence. |
+
+`parse_tag`'s generic fallback normalises any equipment tag regardless of digit
+count, so newly-readable tags flow through it correctly.
+
+### Affected Areas
+`extraction/prepass.py`, `extraction/test_extractor.py` (new
+`TestTagDigitWidth`, 20 cases).
+
+---
+
+## 2026-09-01 / D-023 — A unit suffix is not a numerator
+
+### Status
+Implemented. Closes the second defect recorded in D-020.
+
+### Context
+`FRACTION_RE` was `(\d+)\s+(?:of|out of|of total)\s+(\d+)`, with no boundary
+before the numerator, so it read the digit **inside a unit suffix**:
+
+| text | parsed as | should be |
+|---|---|---|
+| `40 m3 of 120 m3 poured` | 3/120 = **2.5%** | 33.3% |
+| `320 m2 of 480 m2` | 2/480 = **0.4%** | 66.7% |
+| `1 m3 of 1 m3 complete` | 3/1 = **300%** | 100% |
+
+Every unit ending in a digit was affected — m2 and m3, which is 42 of v2's 218
+activities and most of the civil scope. `percentage` gates `actual_finish`
+(D-008, D-015), so a DPR written the natural way silently under-reported
+completion, and the 300% case was rejected outright by `ExtractedEvent`'s 0-100
+bound — a hard crash during dataset generation, which is how it was found.
+
+### Decision
+```python
+FRACTION_RE = re.compile(
+    r'(?<![\d.])\b(\d+)'            # numerator: not mid-token, not a decimal tail
+    r'(?:\s*[A-Za-z]{1,4}\d?)?'      # optional unit: m3, m2, lm, nos, MT
+    r'\s+(?:of|out of|of total)\s+'
+    r'(\d+)\b',
+    re.IGNORECASE,
+)
+```
+
+Two changes, and the second matters as much as the first. A boundary alone would
+have made `40 m3 of 120 m3` match **nothing**, which is safer than 2.5% but
+still loses a real quantity signal. Allowing an optional unit token between the
+numerator and "of" captures the quantity as written.
+
+### Measured impact
+Mentions from which a fraction is extracted: v2 **42 → 104** of 700 (v1
+unchanged at 4 — its corpus never puts a unit before "of"). The end-to-end
+metric movement in D-022 is the combined effect of both fixes; they were
+measured together because they ship together.
+
+### Consequence for the v2 corpus — a task, not a change
+`generate_v2_dataset.py` currently phrases quantities as `40 of 120 m3`
+specifically to route around this bug, and says so in a comment. That workaround
+is now unnecessary: `40 m3 of 120 m3` parses correctly. **The corpus was
+deliberately NOT regenerated as part of this change** — regenerating it would
+have moved the dataset and the extractor in the same commit, and the
+before/after numbers above would then measure nothing in particular. Switching
+the generator to the natural phrasing is a follow-up, and it should be measured
+on its own.
+
+### Affected Areas
+`extraction/prepass.py`, `extraction/test_extractor.py` (new
+`TestFractionUnitSuffix`, 13 cases).
 

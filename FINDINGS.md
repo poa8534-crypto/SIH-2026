@@ -38,6 +38,57 @@ Full detail with line numbers follows.
 
 ---
 
+## Status as of 2026-09-01
+
+This review was written on 2026-08-31 against the v1 corpus. Four of its
+findings have since been acted on, and two further defects — not in this
+document, found while building the v2 corpus — have been fixed alongside them.
+
+| Finding | Status |
+|---|---|
+| **F1** — eleven activities share one finish date | **FIXED** — D-015. `date_basis` carried end to end; a finish date defaulted to the report date is withheld and routed to the planner. 0 zero-duration activities. |
+| **F7** — zero planned quantity reports 100% | **FIXED** — D-016. A missing planned quantity is separated from a genuine milestone by the unit of measure. |
+| **F2** — coverage counts mentions, not schedule rows | **ADDRESSED** — the v2 harness reports the funnel and names its baseline (D-017, D-020). |
+| **F3** — no Primavera import | **PARTIAL** — `POST /schedule/import` and a `ScheduleProvider` interface exist (D-017/D-018); PMXML and XER providers are declared and deliberately unimplemented. |
+| **F4** — the learning loop is write-only | **OPEN.** Still the largest gap in the data flow. |
+| **F5** — new scope indistinguishable from an uncertain match | **IMPROVED, not closed.** NO_MATCH rejection is 70.6% (48/68) on the v2 corpus against 8.3% (1/12) on v1 — but the v1 figure rested on 12 negatives, which is too few to have meant anything. |
+| **F6** — 31 review rows carry a wrong top suggestion | **OPEN** (rehearsal item, no code). |
+| *(not in this review)* **EQUIPMENT_TAG_RE digit bound** | **FIXED** — D-022. |
+| *(not in this review)* **FRACTION_RE unit suffix** | **FIXED** — D-023. |
+
+### The two defects this review did not find
+
+Both were invisible on v1 and only appeared once a second baseline existed.
+They are recorded here because they are the same *class* of problem this review
+is about — an assumption that held for one dataset and silently failed on the
+next.
+
+**`extract_tags` could not see four-digit equipment tags.** The suffix bound was
+three digits, which fits every v1 tag and none of v2's four-digit vessel,
+instrument and package tags — 18 of its 40 distinct tags were invisible.
+`tag_overlap` is the near-decisive ranking feature, so half the tag channel was
+dark. Fixed in D-022: readable tags on v2 went from 22/40 to 40/40 distinct
+strings, and from 96 to 205 of 700 mentions.
+
+**`FRACTION_RE` read the digit inside a unit suffix.** `40 m3 of 120 m3` parsed
+as 3/120 = 2.5% instead of 33%. It hit every unit ending in a digit — most of
+the civil scope — and `percentage` gates `actual_finish`, so a naturally written
+DPR silently under-reported completion. Fixed in D-023: fractions extracted on
+v2 went from 42 to 104 of 700 mentions.
+
+**What they were worth end to end, pooled 5-fold CV over all 700 v2 mentions:**
+coverage 54.1% → 56.6%, auto-link recall 60.0% → 62.7%, Top-1 96.8% → 97.0%,
+auto-link precision unchanged at 100.0%. **v1's numbers did not move at all** —
+verified mechanically, not assumed: neither defect ever fired on the v1 corpus.
+
+That gain is smaller than "half the tags were invisible" suggests, and the
+reason is worth carrying forward: the ranker was already getting most of those
+mentions right from description similarity alone, so restoring the tag channel
+mostly added redundant evidence. **The defect was real; its cost was lower than
+its description.**
+
+---
+
 ## 0. Verdict
 
 You have built the hard part. Hybrid retrieval with retrieval and ranking kept as
@@ -83,6 +134,13 @@ in the room.
 ## 2. Findings
 
 ### F1 — CRITICAL — Eleven activities share one finish date; two have zero duration
+
+> **FIXED 2026-09-01 (D-015).** `date_basis` is carried from extraction through
+> the roll-up. A finish date that exists only because the report header's date
+> stood in is withheld and routed to the planner with reason
+> `defaulted_finish_date`. Ingesting the whole v1 dataset now finishes 38
+> activities, **all** with basis `EXPLICIT`, and **0 zero-duration activities**
+> (was 2). The analysis below is preserved as the record of the defect.
 
 **Evidence.** `research/data/eval_output.txt`, the granularity roll-up table.
 PIP-ERC-1034, PIP-ERC-1032, PIP-FLG-1035, PIP-FLG-1037, PIP-FLG-1039,
@@ -216,6 +274,14 @@ human-in-the-loop is real rather than decorative.
 ---
 
 ### F7 — MEDIUM — An activity with zero planned quantity reports 100% complete
+
+> **FIXED 2026-09-01 (D-016).** The unit of measure separates a *missing*
+> planned quantity from a genuine milestone: with a uom, progress is recorded
+> and no percentage is derived; without one, a completion claim still completes
+> the milestone. PIP-PCD-1053 now reports 0%, not 100%. Note that this
+> review's proposed fix — gate the quantity path on `planned_qty == 0` — would
+> have made every milestone in the schedule permanently un-completable; the
+> observation was right and the prescription was not.
 
 **Evidence.** `eval_output.txt` roll-up table — PIP-PCD-1053, `0/0 nos`,
 `100.0%`.

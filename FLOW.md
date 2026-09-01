@@ -1256,6 +1256,85 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Fix the two confirmed extractor defects recorded in D-020
+(`EQUIPMENT_TAG_RE` digit bound, `FRACTION_RE` unit suffix) and republish every
+evaluation before and after.
+**Date:** 2026-09-01 · **Decisions:** D-022, D-023
+
+### Current path
+
+```
+extraction/prepass.py
+  TAG_NUM  = r'\d{1,5}'     NEW named bound, equipment/instrument suffix
+  LINE_NUM = r'\d{3,5}'     NEW named bound, pipe line number
+  EQUIPMENT_TAG_RE          prefix [A-Z]{1,3} -> {1,4} (WHCP-2101),
+                            suffix \d{1,3} -> TAG_NUM
+  INSTRUMENT_TAG_RE         suffix \d{1,3} -> TAG_NUM  (PT-1101, LT-1201)
+  PIPE_TAG_RE / PIPE_BARE_RE   \d{3,4} -> LINE_NUM
+  extract_tags()            + containment guard on the equipment and
+                            instrument branches: longest match wins, so
+                            "P-1015" is not re-added beside '6"-P-1015-A1A'
+                            with no size (that defeated the size-mismatch
+                            guard — caught by test_size_mismatch_penalised)
+  FRACTION_RE               numerator must start at a word boundary and not
+                            follow a digit or '.'; an optional unit token may
+                            sit between numerator and "of"
+        ↓
+matching/  UNTOUCHED. Two digit assumptions remain there and are reported
+           in D-022: _PIP_FULL_RE/_PIP_BARE_RE (\d{3,4}) and, live on v2,
+           _SLASH_VARIANT_RE (\d{1,3}) which fails to expand P-1401A/B.
+```
+
+### Upstream
+
+```
+extract_tags()      -> ScheduleIndex._build (record tag_keys)
+                    -> Extractor._prepass_span (event tags)
+                    -> features._tag_overlap  (near-decisive)
+extract_fractions() -> Extractor._merge_event -> ExtractedEvent.percentage
+                    -> RollupAccumulator -> percent_complete -> actual_finish
+```
+
+### Downstream
+
+```
+v2 tag readability   41 -> 101 activities; 22/40 -> 40/40 distinct strings
+v2 mentions w/ tags  96 -> 205 of 700
+v2 fractions         42 -> 104 of 700
+v1                   IDENTICAL on every count — neither defect fired on it
+```
+
+### Verification performed
+
+```
+python -m pytest -q extraction matching server   400 passed (35 new tests)
+python -m pytest -q --ignore=tmp                 547 passed (400 NAVIS +
+                                                 147 unrelated claude-usage/)
+python eval.py                                   v1 unchanged on every metric
+python eval.py --schedule v2 --ground-truth v2   test: coverage 80.3 -> 81.0
+python eval.py --schedule v2 --ground-truth v2 --cv
+                                                 pooled: coverage 54.1 -> 56.6,
+                                                 auto-link recall 60.0 -> 62.7,
+                                                 Top-1 96.8 -> 97.0,
+                                                 auto-link precision 100.0 (flat)
+```
+
+### Known limitations
+
+- **NO_MATCH rejection did not move** (70.6%, 48/68 pooled). Neither defect
+  touched abstention; that needs the explicit reject-option model.
+- **`_SLASH_VARIANT_RE` in `matching/textutils.py` still caps at 3 digits**, so
+  `P-1401A/B` does not expand. Reported, not changed — `matching/` was out of
+  scope.
+- **The v2 corpus still phrases quantities as `40 of 120 m3`** to route around
+  D-023, which is no longer necessary. Deliberately not regenerated: moving the
+  dataset and the extractor in one commit would make the before/after numbers
+  above unattributable.
+
+---
+
+## Previous Modification Area (2026-09-01, D-020/D-021) — retained for history
+
 **Task:** Regenerate the evaluation dataset — schedule, daily reports,
 spreadsheets and ground truth — as one mutually consistent family against
 `dataset/baseline_schedule_v2.json`.

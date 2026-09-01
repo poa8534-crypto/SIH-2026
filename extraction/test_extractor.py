@@ -17,6 +17,8 @@ from typing import Optional
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+import pytest
+
 from extraction.models import (
     DateBasis,
     Discipline,
@@ -122,6 +124,111 @@ class TestDateExtraction:
     def test_no_dates(self):
         dates = extract_dates("Foundation work ongoing")
         assert dates == []
+
+
+class TestTagDigitWidth:
+    """A tag number's digit count is a numbering convention, not part of what a
+    tag IS. The extractor bounded it at three digits, which fitted every v1 tag
+    and made 18 of v2's 40 tags invisible — including every four-digit vessel,
+    instrument and package tag. `tag_overlap` is the near-decisive ranking
+    feature, so those mentions were being matched on description text alone.
+    """
+
+    @pytest.mark.parametrize("tag", [
+        "V-101", "TK-1", "CS-01", "E-101", "HS-01", "JB-02",     # v1, 1-3 digits
+    ])
+    def test_short_tags_still_extract(self, tag):
+        assert extract_tags(tag) == [tag]
+
+    @pytest.mark.parametrize("tag", [
+        "V-1101", "PT-1101", "TK-2101", "PK-2401", "FST-1301",   # v2, 4 digits
+        "LT-1201", "TE-1301", "FE-1401", "OWS-2201", "CS-2501",
+    ])
+    def test_four_digit_equipment_tags_extract(self, tag):
+        assert extract_tags(tag) == [tag], f"{tag} is invisible to the extractor"
+
+    def test_five_digit_equipment_tag_extracts(self):
+        """The bound is generous on purpose — the next baseline should not need
+        another regex change to be readable."""
+        assert extract_tags("V-12345") == ["V-12345"]
+
+    def test_four_letter_prefix_extracts(self):
+        """WHCP-2101 is a real v2 tag; a three-letter prefix bound dropped it."""
+        assert extract_tags("WHCP-2101") == ["WHCP-2101"]
+
+    def test_four_digit_tag_found_inside_prose(self):
+        tags = extract_tags("Rig and set vertical separator V-1101 on foundation")
+        assert "V-1101" in tags
+
+    def test_line_tags_are_unaffected(self):
+        tags = extract_tags('24"-P-1001-A1A spool erection')
+        assert '24"-P-1001-A1A' in tags
+
+    def test_line_number_is_not_re_added_without_its_size(self):
+        """Longest match wins.
+
+        Widening the equipment suffix to five digits also made this pattern
+        match the line portion of a full pipe tag. Adding "P-1015" alongside
+        '6"-P-1015-A1A' gives the record a second, SIZE-LESS key for the same
+        line, and a size-less key matches 12" field text against a 6" line —
+        silently defeating the size-mismatch guard that protects precision.
+        """
+        assert extract_tags('Hydrotest 6"-P-1015-A1A drain header') == [
+            '6"-P-1015-A1A'
+        ]
+
+    def test_a_bare_line_number_alone_still_extracts(self):
+        assert extract_tags("insulation on 12 inch P-1015") == ["P-1015"]
+
+    def test_lowercase_prose_is_not_mistaken_for_a_tag(self):
+        """The prefix stays uppercase-only. Widening it to four letters would
+        otherwise start matching ordinary hyphenated prose."""
+        assert extract_tags("the unit-1 pad and zone-2 fence") == []
+
+
+class TestFractionUnitSuffix:
+    """A unit suffix is not a numerator.
+
+    `FRACTION_RE` had no boundary before the numerator, so it read the digit
+    inside the unit: "40 m3 of 120 m3" parsed as 3/120 = 2.5%. `percentage`
+    gates `actual_finish` (D-008/D-015), so a naturally written DPR silently
+    under-reported completion on every m2/m3 quantity — most of the civil scope.
+    """
+
+    def test_cubic_metres(self):
+        assert extract_fractions("40 m3 of 120 m3 poured") == [(40, 120)]
+
+    def test_square_metres(self):
+        assert extract_fractions("320 m2 of 480 m2") == [(320, 480)]
+
+    def test_unit_free_phrasing_the_v2_corpus_uses(self):
+        """dataset/v2 currently writes "40 of 120 m3" to route around this bug.
+        That phrasing must keep working after the fix."""
+        assert extract_fractions("40 of 120 m3") == [(40, 120)]
+
+    def test_equal_quantities_are_one_hundred_percent(self):
+        """The v2 generator produced "1 m3 of 1 m3", which parsed as 3/1 = 300%
+        and was rejected outright by ExtractedEvent's 0-100 bound."""
+        assert extract_fractions("1 m3 of 1 m3 complete") == [(1, 1)]
+
+    @pytest.mark.parametrize("text,expected", [
+        ("8 out of 12 spools", (8, 12)),
+        ("16 of 28 done", (16, 28)),
+        ("6 nos out of 13", (6, 13)),
+        ("98 out of 145 supports", (98, 145)),
+        ("2400 m2 of total 4800", (2400, 4800)),
+    ])
+    def test_existing_phrasings_are_unchanged(self, text, expected):
+        assert extract_fractions(text) == [expected]
+
+    def test_no_fraction_where_there_is_none(self):
+        assert extract_fractions("Foundation work ongoing") == []
+
+    def test_percentage_derived_from_a_unit_fraction_is_sane(self):
+        """The whole point: the derived percentage has to be usable, because it
+        is what decides whether a node reaches 100% and gets an Actual Finish."""
+        num, den = extract_fractions("40 m3 of 120 m3 poured")[0]
+        assert 33.0 <= round(num / den * 100, 1) <= 33.4
 
 
 class TestDateBasis:

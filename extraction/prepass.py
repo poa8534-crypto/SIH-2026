@@ -14,27 +14,43 @@ from .models import DateBasis, Discipline
 
 # ── Pipe / equipment tag patterns ────────────────────────────────────────────
 
+# How many digits a tag number may carry.
+#
+# This was 1-3 for equipment and 3-4 for lines, which fitted every tag in
+# `dataset/baseline_schedule.json` — V-101, TK-1, CS-01 — and silently failed
+# on `baseline_schedule_v2.json`, which numbers equipment with four digits.
+# 18 of v2's 40 distinct tags (V-1101, PT-1101, TK-2101, PK-2401, FST-1301 ...)
+# were invisible to the extractor, so `tag_overlap` — the near-decisive ranking
+# feature — never fired on them. A digit count is a property of one project's
+# numbering convention, not of what a tag IS, so the bound is now generous:
+# five digits covers every convention either baseline uses and leaves room.
+TAG_NUM = r'\d{1,5}'
+LINE_NUM = r'\d{3,5}'
+
 # Matches: 24"-P-1001-A1A, 24 inch P-1001, 12"-P-1002-B1A, etc.
 PIPE_TAG_RE = re.compile(
-    r'(\d{1,2})\s*(?:"|inch|in)?\s*[-–]?\s*(P|p)[\s-]*(\d{3,4})\s*[-–]?\s*([A-Z]\d[A-Z])',
+    r'(\d{1,2})\s*(?:"|inch|in)?\s*[-–]?\s*(P|p)[\s-]*(' + LINE_NUM + r')'
+    r'\s*[-–]?\s*([A-Z]\d[A-Z])',
     re.IGNORECASE,
 )
 
 # Also match pipe tags without spec: P-1001, P-1002, P-1003
 PIPE_BARE_RE = re.compile(
-    r'\bP[-\s]?(\d{3,4})\b',
+    r'\bP[-\s]?(' + LINE_NUM + r')\b',
     re.IGNORECASE,
 )
 
-# Matches: V-101, V-102, E-101, CS-01, HS-01, TK-1, TR-01
-# Allow 1-3 digit suffix (TK-1 has only 1 digit)
+# Matches: V-101, TK-1, CS-01 (v1) and V-1101, TK-2101, PK-2401, WHCP-2101 (v2).
+# The PREFIX is 1-4 letters, not 1-3: WHCP-2101 is a real v2 tag and a
+# three-letter bound dropped it. Uppercase only, deliberately — lower-casing
+# the prefix would start matching ordinary hyphenated prose ("unit-1").
 EQUIPMENT_TAG_RE = re.compile(
-    r'\b([A-Z]{1,3})[-–](\d{1,3}[A-Z]?(?:/[A-Z])?)\b'
+    r'\b([A-Z]{1,4})[-–](' + TAG_NUM + r'[A-Z]?(?:/[A-Z])?)\b'
 )
 
-# Matches: JB-01, JB-02, PSV-01, etc.
+# Matches: JB-01, PSV-01 (v1) and PT-1101, LT-1201, TE-1301, FE-1401 (v2).
 INSTRUMENT_TAG_RE = re.compile(
-    r'\b(JB|PSV|LT|PT|TT|FT|CV|SDV|ESD)[-\s]?(\d{1,3})\b',
+    r'\b(JB|PSV|LT|PT|TT|FT|CV|SDV|ESD)[-\s]?(' + TAG_NUM + r')\b',
     re.IGNORECASE,
 )
 
@@ -83,8 +99,27 @@ BARE_METER_RE = re.compile(r'(\d+(?:\.\d+)?)\s+m\b')
 # Percentage
 PERCENT_RE = re.compile(r'(\d+(?:\.\d+)?)\s*%')
 
-# Fraction progress: "6 of 8", "28 of 36"
-FRACTION_RE = re.compile(r'(\d+)\s+(?:of|out of|of total)\s+(\d+)')
+# Fraction progress: "6 of 8", "28 of 36", "40 m3 of 120 m3".
+#
+# The previous pattern was `(\d+)\s+(?:of|out of|of total)\s+(\d+)`, with no
+# boundary before the numerator, so it read the digit INSIDE a unit suffix:
+# "40 m3 of 120 m3" parsed as 3/120 = 2.5% instead of 33%, and
+# "320 m2 of 480 m2" as 0.4%. Every unit ending in a digit was affected — m2
+# and m3, which is most of the civil scope — and `percentage` gates
+# `actual_finish`, so a naturally written DPR silently under-reported
+# completion.
+#
+# Two changes: the numerator must START at a word boundary and not follow a
+# digit or decimal point, and an optional unit token is allowed to sit between
+# the numerator and "of" so the real quantity is still captured rather than
+# merely refused.
+FRACTION_RE = re.compile(
+    r'(?<![\d.])\b(\d+)'            # numerator, not mid-token, not a decimal tail
+    r'(?:\s*[A-Za-z]{1,4}\d?)?'      # optional unit: m3, m2, lm, nos, MT
+    r'\s+(?:of|out of|of total)\s+'
+    r'(\d+)\b',                      # denominator
+    re.IGNORECASE,
+)
 
 # ── Discipline keyword patterns ──────────────────────────────────────────────
 
@@ -201,12 +236,24 @@ def extract_tags(text: str) -> list[str]:
         # Filter out false positives (date fragments, section numbers)
         if prefix in ("JB", "PSV", "LT", "PT", "TT", "FT", "CV", "SDV", "ESD"):
             continue
+        # Longest match wins. Now that the suffix bound reaches five digits,
+        # this pattern also matches the LINE portion of a full pipe tag
+        # ("P-1015" inside '6"-P-1015-A1A'), and adding it separately would
+        # give the record a second, SIZE-LESS key for the same line. That
+        # silently defeats the size-mismatch guard: 12" field text against a
+        # 6" line would match the size-less key and score as agreement. The
+        # bare-pipe branch above has always had this containment check; the
+        # equipment branch needed it once it could reach four digits.
+        if any(tag in t for t in tags):
+            continue
         if tag not in tags:
             tags.append(tag)
 
     for m in INSTRUMENT_TAG_RE.finditer(text):
         prefix, num = m.groups()
         tag = f"{prefix.upper()}-{num}"
+        if any(tag in t for t in tags):
+            continue
         if tag not in tags:
             tags.append(tag)
 
