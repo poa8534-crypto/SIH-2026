@@ -599,6 +599,91 @@ def print_near_miss(rows: list[dict], t: Thresholds):
     )
 
 
+RECALL_KS = (1, 3, 5, 10, 20)
+
+# The planner never sees 20 candidates. Review items store their alternatives
+# as `decision.candidates[:3]` (server/main.py:443, :1052, :3188), and the
+# Reconcile screen builds its list as the de-duplicated
+# `[suggested_activity_id, ...alternatives]` (the `candidates` useMemo in
+# frontend/src/pages/Reconcile.tsx - that file is being restructured, so the
+# symbol is cited rather than a line number).
+# Since `Decision.top1` IS `candidates[0]` (matching/models.py:96), the suggested
+# id collapses into the first alternative and the planner is shown exactly THREE
+# distinct activities. k=3 is therefore the depth at which "the planner can fix
+# it from the queue" is a true statement; Recall@20 does not establish that.
+PLANNER_K = 3
+
+
+def recall_at_k(subset: list[dict], k: int) -> tuple[float | None, int, int]:
+    """Share of positives whose gold activity is anywhere in the top k.
+
+    A candidate list shorter than k counts as a MISS, not a skip: if retrieval
+    returned two candidates and neither is gold, the planner cannot resolve the
+    item, and that is the thing being measured.
+    """
+    if not subset:
+        return None, 0, 0
+    hits = 0
+    for r in subset:
+        ids = [c.activity_id for c in r["decision"].candidates[:k]]
+        if r["gold"] in ids:
+            hits += 1
+    return hits / len(subset), hits, len(subset)
+
+
+def print_recall_at_k(rows: list[dict], label: str = ""):
+    """Recall@k at the depths that matter, split the same three ways as top-1.
+
+    Reported next to the near-miss table because the two answer one question
+    together: near-miss top-1 is 26.5% and every near-miss routes to REVIEW
+    (D-024). That is only defensible behaviour rather than a defect if the gold
+    activity is inside the short list the planner is actually shown.
+    """
+    positives = [r for r in rows if r["gold_class"] == GOLD_POSITIVE]
+    if not positives:
+        return
+    near = [r for r in positives if r.get("match_type") == "near_miss"]
+    rest = [r for r in positives if r.get("match_type") != "near_miss"]
+
+    suffix = f" - {label}" if label else ""
+    title(f"RECALL@K - IS THE GOLD ACTIVITY IN THE LIST THE PLANNER SEES?{suffix}")
+    subsets = [("Overall", positives)]
+    if near:
+        subsets += [("Near-miss only", near), ("All the rest", rest)]
+
+    rows_out = []
+    for name, subset in subsets:
+        row = [name, len(subset)]
+        for k in RECALL_KS:
+            acc, hits, n = recall_at_k(subset, k)
+            row.append(pct(acc) if acc is not None else "-")
+        rows_out.append(row)
+    table(
+        ["Subset", "n"] + [f"R@{k}" for k in RECALL_KS],
+        rows_out,
+        aligns=["<", ">"] + [">"] * len(RECALL_KS),
+    )
+    print()
+
+    acc3, hits3, n3 = recall_at_k(positives, PLANNER_K)
+    acc20, _, _ = recall_at_k(positives, 20)
+    print(f"  The planner is shown {PLANNER_K} candidates, not 20 - alternatives are")
+    print(f"  stored as candidates[:3] (server/main.py:443) and the suggested id")
+    print(f"  de-duplicates against the first (Reconcile.tsx, candidates useMemo).")
+    print(f"  R@{PLANNER_K} = {pct(acc3)} ({hits3}/{n3}) is therefore the honest")
+    print(f"  'a planner can resolve this from the queue' figure; R@20 = {pct(acc20)}")
+    print("  is a retrieval-ceiling number and does not establish it.")
+    if near:
+        accn, hitsn, nn = recall_at_k(near, PLANNER_K)
+        print()
+        print(f"  On near-misses specifically: R@{PLANNER_K} = {pct(accn)} "
+              f"({hitsn}/{nn}).")
+        print("  Read with the near-miss table above: a low top-1 on text whose")
+        print("  discriminator was deleted is defensible ONLY to the extent the")
+        print("  gold activity is still in front of the planner.")
+    print()
+
+
 def print_date_basis(rows: list[dict]):
     """How the dates on these mentions were obtained.
 
@@ -820,6 +905,15 @@ def main():
     print_confusion(m)
     print_pr_curve(precision_at_coverage(report_rows, t), t)
     print_near_miss(report_rows, t)
+    # Retrieval depth is a property of the ranked candidate list, not of the
+    # thresholds, so this reports on whichever rows the mode held out.
+    if args.cv:
+        recall_label = "pooled out-of-fold"
+    elif split_mode:
+        recall_label = "held-out test"
+    else:
+        recall_label = "full dataset"
+    print_recall_at_k(report_rows, recall_label)
     print_date_basis(report_rows)
     print_rollup(report_rows, t)
     print()

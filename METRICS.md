@@ -39,6 +39,7 @@ easy to overstate by accident.
 |---|---|
 | **Top-1** | When forced to rank one candidate first, how often is the correct activity ranked #1? |
 | **Recall@20** | How often is the correct activity anywhere inside the top 20 retrieved candidates? |
+| **Recall@k** | How often is the correct activity anywhere inside the top *k* ranked candidates. **k=3 is the one that describes the product**: review items store `decision.candidates[:3]` (`server/main.py:443`) and the Reconcile screen de-duplicates the suggested id against the first alternative (the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`), so a planner is shown exactly **three** activities. k=20 is the retrieval ceiling (`top_k`, `matching/config.py:34`) and nobody ever sees it. |
 | **Auto-link precision** | When NAVIS is confident enough to auto-link without human review, how often is that auto-link correct? |
 | **Coverage** | What percentage of cases NAVIS handles automatically at the selected precision requirement. |
 | **Near-miss** | Deliberately ambiguous mentions where several sibling activities are plausible because the discriminating token was **removed**. |
@@ -88,7 +89,13 @@ mentions: 185 positive, 13 NO_MATCH). Same hand-set blend the server runs.
 | Top-1, overall | **71.4%** | 132 / 185 |
 | Top-1, near-miss only | **26.5%** | 18 / 68 |
 | Top-1, all the rest | **97.4%** | 114 / 117 |
-| Recall@20 | **100.0%** | 185 / 185 |
+| Recall@1, overall | **71.4%** | 132 / 185 — identical to top-1, by definition |
+| **Recall@3, overall** | **88.1%** | **163 / 185 — the depth a planner is shown** |
+| Recall@3, near-miss only | **67.6%** | 46 / 68 |
+| Recall@3, all the rest | **100.0%** | 117 / 117 |
+| Recall@5, overall | **95.1%** | 176 / 185 |
+| Recall@10, overall | **99.5%** | 184 / 185 |
+| Recall@20 | **100.0%** | 185 / 185 — retrieval ceiling, not a planner-visible number |
 | Auto-link precision | **100.0%** | zero wrong auto-links |
 | Coverage | **40.9%** | 81 of 198 mentions |
 | NO_MATCH rejection | **84.6%** | 11 / 13 — *small denominator, prefer §3.3* |
@@ -106,6 +113,15 @@ out-of-sample.
 | Auto-link precision | **99.5%** | 437 / 439 — **two** wrong auto-links. See the correction below |
 | Coverage | **53.9%** | |
 | NO_MATCH rejection | **80.0%** | 56 / 70 — the denominator to quote |
+| **Recall@3, overall** | **91.9%** | **684 / 744 — the depth a planner is shown** |
+| Recall@3, near-miss only | **62.5%** | 100 / 160 |
+| Recall@3, all the rest | **100.0%** | 584 / 584 |
+| Recall@20 | **100.0%** | 744 / 744 — retrieval ceiling |
+
+Recall@k is a property of the ranked candidate list, so it is unaffected by the
+median-threshold issue corrected below. The pooled figures agree with the
+held-out ones in §3.2: retrieval reaches everything by k=20, and the gap between
+that and k=3 is entirely near-misses.
 
 > **Correction, 2026-09-01.** `eval.py --cv` prints **99.8%** auto-link
 > precision and 53.1% coverage. That figure is slightly optimistic and should
@@ -347,10 +363,18 @@ moved and why.
   ingest path modifies the planned dates of an existing baseline activity.
   Baseline import sets them, and a planner creating a new activity for
   unplanned scope sets them on that new row.
-- ❌ "Nothing is ever silently dropped." — a CSV upload is accepted, extracts
-  0 events, and its error is never surfaced (`result.errors` is not read in
-  `server/main.py`); XLSX header detection only scans rows 1–9 and reads only
-  the active sheet.
+- ❌ Quoting **Recall@20 = 100%** to mean "the planner can always fix it from
+  the queue". The queue shows **three** candidates, not twenty
+  (`server/main.py:443`; the `candidates` useMemo in `Reconcile.tsx`). The honest figure is
+  **Recall@3 = 88.1%** overall and **67.6% on near-misses** (§3.2): on roughly
+  a third of near-miss items the correct activity is **not in front of the
+  planner at all**, and resolving it needs the search/reassign path rather
+  than the offered list. Quote Recall@3, or say "in the top 20 retrieved
+  internally" and expect the follow-up question.
+- ❌ "Nothing is ever silently dropped." — XLSX header detection only scans
+  rows 1–9 and reads only the active sheet. *(The CSV half of this claim was
+  fixed on 2026-09-01, D-040: a `.csv` upload now returns HTTP 400 naming the
+  file and the extractor's reason instead of a 200 with 0 events.)*
 - ❌ "The cross-encoder didn't help." — its accuracy was never measured. Say
   it costs ~45 ms/event, roughly 20× the whole pipeline, and was not evaluated.
 - ❌ Presenting 26.5% near-miss top-1 as an error rate without saying that

@@ -4178,14 +4178,104 @@ modified.
 
 ---
 
+## 2026-09-01 / D-040 — Recall is reported at the depth the planner is shown, and a CSV upload now fails loudly
+
+### Status
+Implemented. Part 1 is pure measurement and changes no matching behaviour.
+Part 2 closes one of the four defects recorded as open in D-037.
+
+### Context
+**Part 1.** `METRICS.md` published Recall@20 = 100.0% (185/185) on the v2
+held-out split. That is a true retrieval number and a misleading product number,
+because no planner ever sees twenty candidates. Review-item alternatives are
+stored as `decision.candidates[:3]` at three call sites — `server/main.py:443`,
+`:1052` and `:3188` — and the Reconcile screen builds its list as the
+de-duplicated `[suggested_activity_id, ...alternatives]`
+(the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`; cited by
+symbol because that file is being restructured under a parallel task). Since `Decision.top1` *is*
+`candidates[0]` (`matching/models.py:96`), the suggested id collapses into the
+first alternative: **the planner is shown exactly three distinct activities.**
+The retrieval ceiling of 20 is `top_k` (`matching/config.py:34`), consumed at
+`matching/retrieval.py:401`.
+
+This matters because of D-024. Near-miss top-1 is 26.5% and all 68 near-miss
+mentions route to REVIEW. The project's position is that this is correct
+behaviour on text whose discriminator was deleted, not a defect — but that
+position only holds if the gold activity is inside the list the planner is
+actually offered. Recall@20 cannot establish that. Recall@3 can.
+
+**Part 2.** `extraction/extractor.py:588` records "CSV extraction not yet
+implemented" in `result.errors`, and `server/main.py` never read that list, so a
+`.csv` upload — an accepted suffix at `main.py:949` — returned HTTP 200 with
+"Extracted 0 events". On stage that looks like a broken app.
+
+### Decision
+Report recall@k for k = 1, 3, 5, 10, 20, split Overall / Near-miss only / All
+the rest, in its own table beside the near-miss output, on both the held-out and
+the pooled `--cv` path. A candidate list shorter than k counts as a miss, not a
+skip. Publish Recall@3 as the planner-facing figure and demote Recall@20 to a
+labelled retrieval ceiling.
+
+On ingest, an extraction that produced **no events and reported an error** is a
+failure: HTTP 400 naming the file and the extractor's own reason, with the job
+row marked `failed` and `error_message` set. Errors alongside a *non-empty*
+extraction are appended to the success message instead, so a partial read keeps
+its good events without discarding the reader's complaint.
+
+### Reason
+Recall@3 is materially below Recall@20 and the gap is entirely near-misses:
+
+| split | n | R@1 | R@3 | R@5 | R@10 | R@20 |
+|---|---:|---:|---:|---:|---:|---:|
+| v2 held-out, overall | 185 | 71.4% | **88.1%** | 95.1% | 99.5% | 100.0% |
+| v2 held-out, near-miss | 68 | 26.5% | **67.6%** | 86.8% | 98.5% | 100.0% |
+| v2 held-out, the rest | 117 | 97.4% | 100.0% | 100.0% | 100.0% | 100.0% |
+| v2 pooled out-of-fold | 744 | 82.1% | **91.9%** | 96.0% | 99.7% | 100.0% |
+| v1 production/demo | 242 | 87.2% | **96.7%** | 98.3% | 100.0% | 100.0% |
+
+So D-024's defence of the 26.5% survives only in weakened form. On non-near-miss
+text the planner's three-item list contains the gold activity **100%** of the
+time. On near-misses it contains it **67.6%** of the time — meaning on roughly a
+third of exactly the cases the system routes to a human, the human is not shown
+the right answer and must fall back to search/reassign. That is a real limit and
+is now written down as one rather than being hidden behind Recall@20.
+
+Recall@k is a property of the ranked list, not of the thresholds, so it is
+unaffected by the median-threshold problem corrected in D-037, and R@1
+reproduces the published top-1 exactly in all three configurations (87.2 / 71.4
+/ 82.1) — the cross-check that the implementation is right.
+
+The zero-event-with-no-error case was deliberately **left alone**: the Ingest
+screen already names that outcome explicitly (the zero-event panel in `Ingest.tsx`, "The file
+parsed without error, but nothing in it matched a reportable progress
+statement"). Turning it into an HTTP error would delete a working, deliberate
+affordance and would require a frontend change, which is out of scope while
+Codex holds `frontend/`.
+
+### Verification
+- `python eval.py` — 87.2 / 50.4 / 100.0 / 8.3, unchanged. Auto-link precision
+  still 100.0%.
+- `python eval.py --cv` — clean, reports the new table (pooled out-of-fold).
+- v2 held-out and v2 `--cv` runs produce the table above.
+- `python -m pytest -q` — 585 passed (583 + 2 new ingest tests).
+- Nothing under `frontend/` modified.
+
+### Affected Areas
+`eval.py` (`recall_at_k`, `print_recall_at_k`, `RECALL_KS`, `PLANNER_K`, wired
+into `main()`), `server/main.py` (ingest surfaces `result.errors`),
+`server/test_server.py`, `METRICS.md` (§1 definitions, §3.2, §3.3, §8),
+`DECISIONS.md`. No change to `matching/`, `extraction/` or `frontend/`.
+
+---
+
 ## 2026-09-01 / D-041 — Projector legibility: conflicts above the fold, and a banner that reads as detection
 
 ### Status
 Implemented. Presentation-only. No data path, query, computation, or token was
 touched; every figure on screen is byte-identical to before.
 
-> D-040 is reserved by the recall@k work on the unpushed branch
-> `measure/recall-at-planner-depth`, so this entry takes D-041 to avoid a
+> D-040 is the recall@k work landed immediately before this entry on branch
+> `feat/recall-at-k`, so this entry takes D-041 to avoid a
 > collision when both land.
 
 ### Context
