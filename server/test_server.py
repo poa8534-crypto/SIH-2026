@@ -207,6 +207,40 @@ class TestIngestEndpoint:
         )
         assert response.status_code == 400
 
+    def test_ingest_csv_fails_loudly_instead_of_returning_zero_events(self):
+        # .csv is an accepted suffix (main.py:949) but the extractor cannot
+        # read one — it records "CSV extraction not yet implemented" in
+        # result.errors. That list used to be discarded, so the upload came
+        # back 200 with "Extracted 0 events" and looked like a broken app.
+        response = client.post(
+            "/ingest",
+            files={"file": ("progress.csv", io.BytesIO(b"a,b\n1,2\n"), "text/csv")},
+        )
+        assert response.status_code == 400, response.text
+        detail = response.json()["detail"]
+        assert "progress.csv" in detail, detail
+        # The extractor's own reason has to reach the planner, not be swallowed.
+        assert "CSV extraction not yet implemented" in detail, detail
+
+    def test_ingest_csv_marks_the_job_failed_with_the_reason(self):
+        client.post(
+            "/ingest",
+            files={"file": ("broken.csv", io.BytesIO(b"x,y\n3,4\n"), "text/csv")},
+        )
+        db = TestSession()
+        try:
+            job = (
+                db.query(Job)
+                .filter(Job.filename == "broken.csv")
+                .order_by(Job.created_at.desc())
+                .first()
+            )
+            assert job is not None, "no job row written for the failed upload"
+            assert job.status == "failed"
+            assert "CSV extraction not yet implemented" in (job.error_message or "")
+        finally:
+            db.close()
+
     def test_ingest_creates_job_record(self):
         dpr_path = Path(__file__).resolve().parent.parent / "dataset" / "dpr_day_03.txt"
         with open(dpr_path, "rb") as f:

@@ -1006,6 +1006,21 @@ async def ingest_file(
         extractor = Extractor(schedule_path=SCHEDULE_PATH)
         result = extractor.extract(str(upload_path))
 
+        # `result.errors` was being dropped on the floor, so a file the
+        # extractor could not read at all (a .csv reaches
+        # extraction/extractor.py:588 and records "CSV extraction not yet
+        # implemented") came back as a 200 with "Extracted 0 events" and
+        # looked on stage like the app was broken. An extraction that
+        # produced no events AND reported an error is a failure, and says so.
+        if result.errors and not result.events:
+            reason = "; ".join(result.errors)
+            job.error_message = reason
+            raise HTTPException(
+                400,
+                f"Could not read {filename}: {reason}. Nothing was written to "
+                f"the schedule.",
+            )
+
         decisions = get_matching_engine().match_events(result.events)
 
         # Skip events already ingested (same source position + text)
@@ -1152,11 +1167,21 @@ async def ingest_file(
         job.completed_at = _now()
         db.commit()
 
+        message = (
+            f"Extracted {event_count} events, {linked_count} linked, "
+            f"{review_count} need review"
+        )
+        # Errors alongside a non-empty extraction are partial failures: the
+        # good events are kept, but the reader's complaint still has to reach
+        # the planner rather than being discarded.
+        if result.errors:
+            message += f" ({'; '.join(result.errors)})"
+
         return IngestResponse(
             job_id=job.id,
             filename=filename,
             status="completed",
-            message=f"Extracted {event_count} events, {linked_count} linked, {review_count} need review",
+            message=message,
         )
 
     except HTTPException:
