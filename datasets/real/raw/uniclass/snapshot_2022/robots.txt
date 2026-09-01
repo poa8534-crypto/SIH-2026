@@ -1,0 +1,5 @@
+User-agent: *
+Sitemap: https://uniclass.thenbs.com/sitemap
+
+Disallow: /download/
+Disallow: /search

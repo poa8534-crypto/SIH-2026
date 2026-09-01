@@ -1,0 +1,906 @@
+{
+  "nodes": [
+    {
+      "id": "design_planning_engineer_ingest_states_screen",
+      "label": "Ingest Project Updates - Ingest Failure States",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_ingest_states_screen_unsupportedfiletypecard",
+      "label": "Unsupported File Type Card",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_ingest_states_screen_duplicatefilecard",
+      "label": "Duplicate Ingest Card (Identical Content Detected)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_ingest_states_screen_noprogresseventscard",
+      "label": "No Progress Events Found Card",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_ingest_states_screen_chooseanotherfilerecovery",
+      "label": "Uniform 'Choose Another File' Recovery Action",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_ingest_states_screen_nonblockingfailuredesign",
+      "label": "Rationale: Ingest Failures Are Explained, Never Dead Ends",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen",
+      "label": "Project Memory Dashboard",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen_plannedvsactualtable",
+      "label": "Planned vs Actual Duration Table",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen_suggesteddurationpanel",
+      "label": "Suggested Planning Duration Panel",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen_slipbydisciplinechart",
+      "label": "Slip By Discipline Bar Chart",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen_recurringdelaycausestable",
+      "label": "Recurring Delay Causes Table",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_memory_screen_confirmedactualsfeedbackloop",
+      "label": "Rationale: Suggestions Derive Only From Confirmed Actual Durations",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen",
+      "label": "Reconcile - Review Queue With Confirmed Match",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_reviewqueuelist",
+      "label": "Review Queue List (113 Pending, Confidence + Priority)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_sourceevidencepanel",
+      "label": "Source Evidence Panel With Review Reason",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_extractedentitiesgrid",
+      "label": "Extracted Entities Grid (Discipline, Material, Quantity, Date, Confidence)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+      "label": "Ranked Candidate Activities With SUGGESTED Badge",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "label": "Success Toast: Alias Entries Created, Audit Records Appended",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_humanintheloopreview",
+      "label": "Human-In-The-Loop Reconciliation Concept",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_screen_keyboardshortcutbar",
+      "label": "Keyboard Shortcut Bar (Navigate, Select, Confirm, Unscheduled, Reject)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_failed_screen",
+      "label": "Reconcile - Decision Save Failure State",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_failed_screen_saveerrorbanner",
+      "label": "Inline Error: 'Could not save the decision - try again.'",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_failed_screen_cancelretryactions",
+      "label": "Cancel / Retry Action Pair Replacing Decision Buttons",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_failed_screen_statepreservationonfailure",
+      "label": "Rationale: Failed Write Preserves Full Review Context",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_no_candidates_screen",
+      "label": "Reconcile - No Matching Baseline Activity",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "label": "Empty Candidate Panel: 'No matching baseline activity was found.'",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_no_candidates_screen_flagunscheduledprimary",
+      "label": "'Flag As Unscheduled Work' Promoted To Primary Action",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_no_candidates_screen_disabledconfirmmatch",
+      "label": "Disabled Confirm Match Button",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_no_candidates_screen_unscheduledworkescapehatch",
+      "label": "Concept: Unscheduled Work As The Escape Hatch For Unmatchable Evidence",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_queue_clear_screen",
+      "label": "Reconcile - Queue Clear State",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_queue_clear_screen_queueclearemptystate",
+      "label": "Queue Clear Empty State With Session Resolution Count",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_queue_clear_screen_detailplaceholder",
+      "label": "Detail Pane Placeholder: 'Select a report from the queue'",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_reconcile_queue_clear_screen_completionfeedbackconcept",
+      "label": "Concept: Completion Feedback Rewards A Cleared Review Session",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "design_planning_engineer_ingest_states_screen",
+      "target": "design_planning_engineer_ingest_states_screen_unsupportedfiletypecard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen",
+      "target": "design_planning_engineer_ingest_states_screen_duplicatefilecard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen",
+      "target": "design_planning_engineer_ingest_states_screen_noprogresseventscard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen_unsupportedfiletypecard",
+      "target": "design_planning_engineer_ingest_states_screen_chooseanotherfilerecovery",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen_duplicatefilecard",
+      "target": "design_planning_engineer_ingest_states_screen_chooseanotherfilerecovery",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen_noprogresseventscard",
+      "target": "design_planning_engineer_ingest_states_screen_chooseanotherfilerecovery",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen_nonblockingfailuredesign",
+      "target": "design_planning_engineer_ingest_states_screen",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen_duplicatefilecard",
+      "target": "design_planning_engineer_ingest_states_screen_noprogresseventscard",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen",
+      "target": "design_planning_engineer_memory_screen_plannedvsactualtable",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen",
+      "target": "design_planning_engineer_memory_screen_suggesteddurationpanel",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen",
+      "target": "design_planning_engineer_memory_screen_slipbydisciplinechart",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen",
+      "target": "design_planning_engineer_memory_screen_recurringdelaycausestable",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen_plannedvsactualtable",
+      "target": "design_planning_engineer_memory_screen_suggesteddurationpanel",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen_confirmedactualsfeedbackloop",
+      "target": "design_planning_engineer_memory_screen_suggesteddurationpanel",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen_confirmedactualsfeedbackloop",
+      "target": "design_planning_engineer_reconcile_screen_humanintheloopreview",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_memory_screen_slipbydisciplinechart",
+      "target": "design_planning_engineer_memory_screen_recurringdelaycausestable",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen",
+      "target": "design_planning_engineer_reconcile_screen_reviewqueuelist",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen",
+      "target": "design_planning_engineer_reconcile_screen_sourceevidencepanel",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen",
+      "target": "design_planning_engineer_reconcile_screen_extractedentitiesgrid",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen",
+      "target": "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen",
+      "target": "design_planning_engineer_reconcile_screen_keyboardshortcutbar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_sourceevidencepanel",
+      "target": "design_planning_engineer_reconcile_screen_extractedentitiesgrid",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_extractedentitiesgrid",
+      "target": "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+      "target": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_humanintheloopreview",
+      "target": "design_planning_engineer_reconcile_screen",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "target": "design_planning_engineer_reconcile_screen_humanintheloopreview",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen",
+      "target": "design_planning_engineer_reconcile_screen",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen",
+      "target": "design_planning_engineer_reconcile_failed_screen_saveerrorbanner",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen",
+      "target": "design_planning_engineer_reconcile_failed_screen_cancelretryactions",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen_saveerrorbanner",
+      "target": "design_planning_engineer_reconcile_failed_screen_cancelretryactions",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen_statepreservationonfailure",
+      "target": "design_planning_engineer_reconcile_failed_screen",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen_saveerrorbanner",
+      "target": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_failed_screen_cancelretryactions",
+      "target": "design_planning_engineer_ingest_states_screen_chooseanotherfilerecovery",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen",
+      "target": "design_planning_engineer_reconcile_screen",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_flagunscheduledprimary",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_disabledconfirmmatch",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_disabledconfirmmatch",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen_flagunscheduledprimary",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_unscheduledworkescapehatch",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "target": "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "target": "design_planning_engineer_ingest_states_screen_noprogresseventscard",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_no_candidates\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen",
+      "target": "design_planning_engineer_reconcile_queue_clear_screen_queueclearemptystate",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen",
+      "target": "design_planning_engineer_reconcile_queue_clear_screen_detailplaceholder",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen_queueclearemptystate",
+      "target": "design_planning_engineer_reconcile_queue_clear_screen_completionfeedbackconcept",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen",
+      "target": "design_planning_engineer_reconcile_screen_reviewqueuelist",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen_detailplaceholder",
+      "target": "design_planning_engineer_reconcile_no_candidates_screen_emptycandidatespanel",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_queue_clear_screen_queueclearemptystate",
+      "target": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_queue_clear\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_ingest_states_screen",
+      "target": "design_planning_engineer_reconcile_screen_reviewqueuelist",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_ingest_states\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_reconcile_screen_confirmationtoast",
+      "target": "design_planning_engineer_memory_screen_plannedvsactualtable",
+      "relation": "shares_data_with",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "reconciliation_review_loop",
+      "label": "Reconciliation Review Loop: Evidence to Entities to Candidates to Decision",
+      "nodes": [
+        "design_planning_engineer_reconcile_screen_reviewqueuelist",
+        "design_planning_engineer_reconcile_screen_sourceevidencepanel",
+        "design_planning_engineer_reconcile_screen_extractedentitiesgrid",
+        "design_planning_engineer_reconcile_screen_candidateactivitieslist",
+        "design_planning_engineer_reconcile_screen_confirmationtoast"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile\\screen.png"
+    },
+    {
+      "id": "reconcile_terminal_states",
+      "label": "Reconcile Terminal States: Success, Save Failure, No Candidates, Queue Clear",
+      "nodes": [
+        "design_planning_engineer_reconcile_screen",
+        "design_planning_engineer_reconcile_failed_screen",
+        "design_planning_engineer_reconcile_no_candidates_screen",
+        "design_planning_engineer_reconcile_queue_clear_screen"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_reconcile_failed\\screen.png"
+    },
+    {
+      "id": "ingest_to_memory_learning_pipeline",
+      "label": "Ingest to Reconcile to Project Memory Learning Pipeline",
+      "nodes": [
+        "design_planning_engineer_ingest_states_screen",
+        "design_planning_engineer_reconcile_screen",
+        "design_planning_engineer_memory_screen",
+        "design_planning_engineer_memory_screen_confirmedactualsfeedbackloop"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_memory\\screen.png"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

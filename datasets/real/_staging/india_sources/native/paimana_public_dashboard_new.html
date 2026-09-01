@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PAIMANA – Infrastructure & Project Monitoring | MoSPI, Government of India </title>
+    <meta name="description" content="PAIMANA (Project Assessment Infrastructure Monitoring and Analytics for Nation Building) is MoSPI's unified platform for Project Appraisal, Monitoring of Central Sector infrastructure projects worth ₹150 crore & above and Performance Monitoring.">
+    <meta name="keyword" content="PAIMANA, Project Assessment Infrastructure Monitoring, IPMD, MoSPI, OCMS, infrastructure analytics, project monitoring India, central sector projects, ₹150 crore above projects, new OCMS, Infrastructure Projects, Project Monitoring, Infrastructure Project Monitoring, IIG-PMG-OCMS, IIG PMG OCMS">
+
+    <link href="/Content/css/WebCss/font-awesome.min.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/bootstrap.min.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/family=Montserrat.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/esri.css" rel="stylesheet">
+    <link href="/Content/css/Style.css" rel="stylesheet" />
+    <link href="/Content/css/about.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/Content/css/WebCss/swiper-bundle.min.css">
+    <link href="/Content/css/responsive.css" rel="stylesheet" />
+
+    <script src="/Scripts/jquery-3.7.0.min.js"></script>
+    
+    <script src="/Content/js/propper.js"></script>
+
+    <script src="/Content/js/WebJS/bootstrap.min.js"></script>
+    <script src="/Content/js/slick.js"></script>
+
+    <script src="/Content/js/WebJS/swiper-bundle.min.js"></script>
+
+
+    <!--------temp map start-->
+    <!---->
+    <script src="/Content/js/WebJS/crypto-js.js"></script>
+
+
+
+    <!--nihi-->
+    <!--nihi-->
+
+
+
+</head>
+
+<body id="pagelayout">
+
+    <header class="position-relative">
+        <div class="topbar">
+            <div class="container">
+                <div class="topbarbox">
+                    <div class="topbar-actions">
+                        <a href="#mainPage" class="topbar-skip" title="Skip to Main Content" aria-label="Skip to Main Content">
+                            <img src="../Content/svg/skip_to_main.svg" alt="Skip to Main Content" class="topbar-icon">
+                            <span class="topbar-skip-text">Skip to Main Content</span>
+                        </a>
+
+                          <button class="topbar-icon-btn topbar-lang" type="button" title="Language" aria-label="Language">
+                            <img src="../Content/svg/hind-english.svg" alt="Language" class="topbar-icon">
+                        </button>     
+                      
+                        <div class="dropdown topbar-access">
+                            <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Accessibility / Font Size" aria-label="Accessibility / Font Size">
+                                <img src="../Content/svg/accessiblity.svg" alt="Accessibility" class="topbar-icon">
+                            </button>                            
+                        </div>
+                      
+                                      
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="header-flex-row">
+                <div class="header-left-group">
+                    <a href="https://www.mospi.gov.in/" target="_blank" class="ministry-block">
+                        <img src="../Content/img/logo-mospi.png" data-dark="../Content/img/logo-mospi.png" data-light="../Content/img/logo-mospi.png" alt="Ministry of Statistics and Programme Implementation" class="ministry-text-img">
+                    </a>
+                    <div class="partner-logos">
+                        <a href="https://www.dic.gov.in/" target="_blank" title="Data for Development">
+                            <img src="../Content/img/data-for-dev.png" alt="" onerror="this.style.display='none'">
+                        </a>
+                        
+                    </div>
+                </div>
+                <div class="header-right-group">
+                    <ul class="headerlist">
+
+                        
+                        
+                        
+                        <li><a href=" https://paimana-crip.mospi.gov.in" target="_blank" class="haddProject">Add Project / Update</a></li>
+                        <li><a href="/User/Login" class="hlogin">Reports</a></li>
+
+                        
+                        
+                    </ul>
+                </div>
+                <a href="https://paimana.mospi.gov.in/" target="_blank" class="paimana-brand">
+                    <img src="../Content/img/logo-paimana.png" data-dark="../Content/img/logo-paimana.png" data-light="../Content/img/logo-paimana.png" alt="PAIMANA">
+                </a>
+                
+            </div>
+        </div>
+    </header>
+
+
+    <div class="mobileheader">
+        <div class="container-fluid">
+            <div class="mospiheader">
+                <div class="boxone">
+                    <div class="menulink"><a href="javascript:vodi(0)" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop"><img src="/Content/img/side_menu-dark.png" data-dark="../Content/img/side_menu-white.png" data-light="../Content/img/side_menu-dark.png" alt="Mobile Side Icon"></a></div>
+                    <div class="mospiname">IPMD | MoSPI</div>
+                </div>
+                <div class="boxone two">
+                    <div class="moblogin"><a href="/User/Login">Login <img src="../Content/img/login.png" alt=""></a></div>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!----Side bar link start-->
+    <!--<section>
+        <div id="mySidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Archives</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Feedback</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">RTI</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Parliament Questions</a>
+
+    </section>-->
+    <!--side bar link end-->
+    <!---Setting start-->
+    <!--<section>
+        <div id="mySidebar2" class="sidebar2">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav2()">×</a>
+            <a href="#">Home</a>
+            <a href="#">Services</a>
+            <a href="#">Clients</a>
+            <a href="#">Contact</a>
+        </div>
+    </section>-->
+    <!---Setting end-->
+    <!----nav bar start-->
+
+    <section class="desktopshow navigationmenu">
+        <div class="row bg-secondry">
+
+            <nav class="navbar navbar-expand-lg bg-body-tertiary bg-secondry">
+                <div class="container-fluid">
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse navMenu float-left" id="navbarNavDropdown">
+                        
+
+
+
+
+<ul class="navbar-nav">
+
+            <li class="nav-item">
+                    <a class="nav-link" href="https://paimana-proj.mospi.gov.in/" target="_self">
+                        Home
+                        
+                    </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown@item.Menu_ID" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Publications
+
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown@item.Menu_ID">
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/ReportPage" target="_self">
+                                    Project Monitoring
+                                    
+                                </a>
+                        </li>
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/ProjectMonitoring" target="_self">
+                                    Performance Monitoring
+                                    
+                                </a>
+                        </li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown@item.Menu_ID" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Dashboard
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown@item.Menu_ID">
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/Home/PublicDashboardNew" target="_self">
+                                    Public
+                                    
+                                </a>
+                        </li>
+                </ul>
+            </li>
+
+</ul>
+ <!-- Dynamic Menu Loaded Here -->
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </section>
+
+    <!--<section class="desktopshow navigationmenu">
+        <div class="row bg-secondry">
+
+            <nav class="navbar navbar-expand-lg bg-body-tertiary bg-secondry">
+                <div class="container-fluid">
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse navMenu float-left" id="navbarNavDropdown">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <!--     <a class="openbtn" onclick="openNav()"><img src="img/side_menu.png" alt="" class="pt-2"></a> -->
+    <!--</li>
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="/">Home</a>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            About Us
+        </a>
+        <ul class="dropdown-menu">-->
+    
+    <!--<li><a class="dropdown-item" href="https://www.mospi.gov.in/about-ministry-0" target="_blank">About Ministry</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/AboutUs/AboutIPMD">About IPMD</a></li>
+    <li><a class="dropdown-item" href="/AboutUs/AboutOCMS">About New OCMS</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/AboutUs/AboutWhos">Who's Who</a></li>
+            <li><a class="dropdown-item" href="/AboutUs/AllocationBussiness">Allocation of Business Rules</a></li>
+        </ul>
+    </li>
+
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Notification
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Notification/Order">Order</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/Notification/Manual">Manual</a></li>
+        </ul>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Media
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Gallary/GallaryDetails">Photos</a></li>
+            <li><a class="dropdown-item" href="/Video/VideoDetails">Videos</a></li>
+
+        </ul>
+    </li>-->
+    
+    <!--<li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Publications
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/ReportPage">Project Monitoring</a></li>
+            <li><a class="dropdown-item" href="/ProjectMonitoring">Performance Monitoring</a></li>
+
+        </ul>
+    </li>-->
+    
+    
+    <!--<li class="nav-item">
+        <a class="nav-link" href="/ContactUs/Contact">Contact us</a>
+    </li>-->
+    
+    <!--<li class="nav-item dropdown">-->
+    
+    <!--<img src="../Content/img/dashboard.png" data-dark="../Content/img/dashboard-icon-dark.png" data-light="../Content/img/dashboard.png" alt="Dashboard ICon">
+    <a class="nav-link dropdown-toggle d-inline-block" href="#" role="button" data-bs-toggle="dropdown"
+       aria-expanded="false">
+        Dashboard
+    </a>
+    <ul class="dropdown-menu">-->
+    
+    
+    <!----nav bar end-->
+    
+    
+
+
+<link href="/assets/css/apexcharts-css.css" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+
+<link href="/assets/css/dashboard.css" rel="stylesheet" type="text/css" />
+
+<link rel="stylesheet" href="/assets/css/custom.css" />
+
+<link href="/Content/flatpickr/flatpickr.min.css" rel="stylesheet" />
+<script src="/Content/flatpickr/flatpickr.js"></script>
+<script src="/Content/flatpickr/index.js"></script>
+<link href="/Content/flatpickr/flatpickr_style.css" rel="stylesheet" />
+
+
+
+<script src="/Content/js/chart.js"></script>
+<script src="/assets/js/apexcharts.js"></script>
+<script src="/Scripts/DashboardChart.js"></script>
+
+
+<!--<!-- Flatpickr CSS -->
+<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">-->
+
+<!--<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>-->
+
+<!--<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>-->
+
+
+
+<script src="/Scripts/xlsx.full.min.js"></script>
+<style>
+    #Timeoverrun {
+        height: 400px !important;
+        width: 100% !important;
+    }
+
+    .tabs {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .widget-icon.bg-success-lighten {
+        background-color: transparent !important;
+    }
+
+    .widget-icon {
+        background-color: transparent !important; /* Ensure no background color */
+        border: none; /* Remove any border, if applied */
+    }
+
+    .apexcharts-menu-icon,
+    .apexcharts-reset-icon,
+    .apexcharts-zoom-icon {
+        display: none !important; /* Hides the elements */
+    }
+
+    .apexcharts-menu {
+        display: none;
+    }
+
+    .apexcharts-toolbar {
+        display: none !important;
+    }
+
+    .highlight-row {
+        background-color: lightgray; /* Change background color */
+        color: #333; /* Change text color */
+    }
+
+    .apexcharts-xaxis text, .apexcharts-yaxis text {
+        font-family: Nunito, sans-serif !important;
+        fill: black;
+    }
+
+    .apexcharts-text tspan {
+        font-family: inherit;
+        font-size: 14px;
+        fill: black;
+        font: bold;
+    }
+
+    .DivSize {
+        height: 465px;
+        width: 100%;
+    }
+
+    .DataTable {
+        height: 465px !important; /* Set a height for the table container to allow vertical scrolling */
+        width: 100%;
+        overflow-y: auto; /* Vertical scrolling */
+    }
+
+    canvas {
+        width: 100%; /* 100% of the parent container's width */
+        height: auto; /* Height adjusts to maintain aspect ratio */
+        aspect-ratio: 748 / 650; /* Keep original aspect ratio */
+    }
+
+    .modal-header-width {
+        width: 100%;
+    }
+
+    .popup-header {
+        width: 100%;
+        background-color: #012677 !important;
+    }
+
+        .popup-header button {
+            background-color: white;
+        }
+
+    .download-icons img.download-icon {
+        width: 37px;
+        height: 37px;
+        cursor: pointer;
+        /*filter: brightness(0) invert(1);*/ /* Makes dark icons white on blue background */
+        transition: transform 0.2s;
+    }
+
+        .download-icons img.download-icon:hover {
+            transform: scale(1.1);
+        }
+</style>
+
+
+<style>
+
+    .ShowDataButton {
+        width: 100%;
+        background: #626f7c !important;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 14px;
+        padding: 6px 6px;
+        font-weight: 600;
+    }
+
+    /* Style the dropdown button itself */
+    .small-dropdown {
+        width: 200px; /* Adjust width to make the dropdown button smaller */
+        height: 30px; /* Adjust height to make the dropdown button smaller */
+    }
+
+        /* Style for the dropdown list (the options) */
+        .small-dropdown option {
+            height: 10px; /* Set the height of each option item */
+        }
+
+    /* For controlling the height of the dropdown list (scrollable list) */
+    #SectorId {
+        height: auto; /* Make sure the select box height is auto */
+        max-height: 50px; /* Limit the height of the dropdown */
+        overflow-y: auto; /* Enable vertical scroll if the options exceed the max height */
+        display: block; /* Make the select box block level for proper styling */
+    }
+
+    .app-main.public_dashboard {
+        /*display: none;*/
+    }
+</style>
+
+<section id="dashboard">
+    <div class="app-main public_dashboard">
+        <div class="app-content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-sm-12">
+
+                        <h3 class="dhead">
+                            Public Dashboard
+                            <span id="refreshDateText" style="font-style:italic; font-size:12px">(as of N/A)</span>
+                        </h3>
+
+                    </div>
+                </div>
+                <form id="myForm" method="post">
+                    <input type="hidden" id="Month" name="Month" />
+                    <input type="hidden" id="Year" name="Year" />
+                    <input name="__RequestVerificationToken" type="hidden" value="RkJUIYGynVhmleiNNjYJS4W1unOV_rLmWK065-MfRPyixfR0U8TjrMNqpcVxmAlVO3QiGIuKDeXycNIJ73lFIQZymRTExsyOEer4tfrAs181" />
+                    <div class="row">
+                        <!-- Start col -->
+                        <div class="col-lg-12 connectedSortable">
+                            <div class="row py-2">
+
+
+
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <div class="form-group">
+                                        <label for="SectorId" class="col control-label">Sector</label>
+                                        <select id="SectorId" name="SectorId" class="col form-control small-dropdown ajax-dropdown" data-action="/Home/GetSectorList">
+                                            <option value="">All</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <div class="form-group">
+                                        <label for="MinistryDropdown" class="col control-label">Ministry/ Department</label>
+                                        <select id="MinistryDropdown" name="PROJ_MINISTRY_ID" class="col form-control ajax-dropdown" data-action="/Home/GetMinistryList">
+                                            <option value="">All</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <div class="form-group">
+                                        <label for="StateId" class="col control-label">States/ UTs</label>
+                                        <select id="StateId" name="StateId" class="col form-control ajax-dropdown" data-action="/Home/GetStateList">
+                                            <option value="">All</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <div class="form-group">
+                                        <label for="CostRange" class="col control-label">Project Cost (in cr)</label>
+                                        <select id="CostRange" name="CostRange" class="col form-control">
+                                            <option value="">All</option>
+                                            <option value="1">&gt;500</option>
+                                            <option value="2">&lt;=500</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <div class="form-group">
+                                        <label for="dateFreeze" class="col control-label">Month & Year</label>
+                                        <input type="text" id="dateFreeze" name="MonthYear" class="col form-control ajax-date" placeholder="yyyy-MM" readonly />
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-sm-6">
+                                    <label style="visibility:hidden;">&nbsp;</label>
+                                    <input type="button" id="showDataButton" value="Show Data" class="ShowDataButton" />
+                                    <button id="btnLoader" class="btn btn-primary ShowDataButton" type="button" disabled style="display: none;">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Loading...
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div id="dashboardContainer">
+                        <div>
+                            <div class="row">
+                                <div class="col-lg-12 connectedSortable">
+                                    <div class="row my-2">
+                                        <div class="col-xl-3 col-lg-6">
+                                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#projectcount1" style="text-decoration: none !important;">
+                                                <div class="card statsblock" style="background-color: #CAF4F4;">
+                                                    
+                                                    <div class="card-body d-flex">
+                                                        <div class="icon me-3">
+                                                            <img src="../assets/img/project-management.png" alt="" style="width: 70px;">
+                                                        </div>
+                                                        <div>
+
+                                                            <p class="mb-0 invoice-num1">
+
+                                                                Project Count <span style="font-style:italic; font-size:12px">(in no.)</span>
+
+                                                            </p>
+                                                            <h2 class="invoice-num"><b id="TotalProjects">0</b></h2>
+
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </a>
+                                        </div>
+
+                                        <div class="col-xl-3 col-lg-6">
+                                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#projectcount1" style="text-decoration: none !important;">
+                                                <div class="card statsblock" style="background-color: #FFF2CC;">
+                                                    
+                                                    <div class="card-body d-flex">
+                                                        <div class="icon me-3">
+                                                            <img src="../assets/img/crisis.png" alt="" style="width: 70px;">
+                                                        </div>
+                                                        <div>
+
+                                                            <p class="mb-0 invoice-num1">
+                                                                Original Approved Cost <span style="font-style:italic; font-size:12px">(in cr.)</span>
+                                                            </p>
+                                                            <h2 class="invoice-num"><b id="TotalCost">₹ 0</b></h2>
+
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-xl-3 col-lg-6">
+                                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#projectcount1" style="text-decoration: none !important;">
+                                                <div class="card statsblock" style="background-color: #FDE0D9;">
+                                                    
+                                                    <div class="card-body d-flex">
+                                                        <div class="icon me-3">
+                                                            <img src="../assets/img/save-money.png" alt="" style="width: 70px;">
+                                                        </div>
+                                                        <div>
+
+                                                            <p class="mb-0 invoice-num1">
+                                                                Latest Revised Cost <span style="font-style:italic; font-size:12px">(in cr.)</span>
+                                                            </p>
+                                                            <h2 class="invoice-num"><b id="TotalRevCost">₹ 0</b></h2>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-xl-3 col-lg-6">
+                                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#projectcount1" style="text-decoration: none !important;">
+                                                <div class="card statsblock" style="background-color: #FCFFE9;">
+                                                    
+                                                    <div class="card-body d-flex">
+                                                        <div class="icon me-3">
+                                                            <img src="../assets/img/financial-profit.png" alt="" style="width: 70px;">
+                                                        </div>
+                                                        <div>
+
+                                                            <p class="mb-0 invoice-num1">
+                                                                Cumulative Expenditure <span style="font-style:italic; font-size:12px">(in cr.)</span>
+                                                            </p>
+                                                            <h2 class="invoice-num"><b id="TotalExpenditure">₹ 0</b></h2>
+
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                  
+                                </div>
+                            </div>
+                            <div id="chartContainer">
+                                <div class="row">
+                                    <div class="col-lg-12 connectedSortable">
+                                        <div class="row my-2">
+                                            <div class="col-xl-6 col-lg-6">
+                                                <div class="chart_table">
+                                                    <div class="card">
+                                                        <div class="cardheader d-flex justify-content-between align-items-center">
+                                                            <h3 class="card-title">
+                                                                Sector-wise Distribution
+                                                            </h3>
+                                                            <ul class="nav nav-pills m-0" id="pills-tab" role="tablist">
+                                                                <li role="presentation"><button class="active" id="pills-charts1-tab" data-bs-toggle="pill" data-bs-target="#pills-charts1" type="button" role="tab" aria-controls="pills-charts1" aria-selected="true">Charts</button></li>
+                                                                <li role="presentation"><button class="" id="pills-data1-tab" data-bs-toggle="pill" data-bs-target="#pills-data1" type="button" role="tab" aria-controls="pills-data1" aria-selected="true">Data</button></li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="chartdata card-body" style="margin:revert;">
+                                                            <div class="tab-content" id="pills-tabContent">
+                                                                <div class="download-icons" style="margin-right:20px;">
+                                                                    <img src="/Content/img/csv-icon.png" id="downloadCSV1" alt="Download CSV" title="Download CSV" class="download-icon me-2" />
+                                                                    <img src="/Content/img/excel-icon.png" id="downloadXLS1" alt="Download XLSX" title="Download XLSX" class="download-icon" />
+                                                                </div>
+                                                                <div class="tab-pane fade show active DivSize" id="pills-charts1" role="tabpanel" aria-labelledby="pills-charts1-tab" tabindex="0">
+                                                                    <canvas id="SectorWiseChart"></canvas>
+                                                                </div>
+                                                                <div class="tab-pane fade DataTable" id="pills-data1" role="tabpanel" aria-labelledby="pills-data1-tab" tabindex="0">
+
+                                                                    <table class="charttable1 display nowrap table-striped table" style="width:100%">
+                                                                        <thead>
+                                                                            <tr style="text-align:center; vertical-align:top;">
+                                                                                <th>Sr.No.</th>
+                                                                                <th>Sector Name</th>
+                                                                                <th>Project Count<br /><span style="font-style:italic; font-size:12px">(in no.)</span></th>
+                                                                                <th>Original (Revised)<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                                <th>Expenditure<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody id="SectorWiseDataBody" style="max-height: 400px;">
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-6 col-lg-6">
+                                                <div class="chart_table">
+                                                    <div class="card">
+                                                        <div class="cardheader d-flex justify-content-between align-items-center">
+                                                            <h3 class="card-title">Cost Overview</h3>
+                                                            <ul class="nav nav-pills m-0" id="pills-tab" role="tablist">
+                                                                <li role="presentation"><button class="active" id="pills-charts4-tab" data-bs-toggle="pill" data-bs-target="#pills-charts4" type="button" role="tab" aria-controls="pills-charts4" aria-selected="true">Charts</button></li>
+                                                                <li role="presentation"><button class="" id="pills-data4-tab" data-bs-toggle="pill" data-bs-target="#pills-data4" type="button" role="tab" aria-controls="pills-data4" aria-selected="true">Data</button></li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="chartdata card-body" style="margin:revert;">
+                                                            <div class="tab-content" id="pills-tabContent">
+                                                                <div class="download-icons" style="margin-right:20px;">
+                                                                    <img src="/Content/img/csv-icon.png" id="downloadCSV2" alt="Download CSV" title="Download CSV" class="download-icon me-2" />
+                                                                    <img src="/Content/img/excel-icon.png" id="downloadXLS2" alt="Download XLSX" title="Download XLSX" class="download-icon" />
+                                                                </div>
+                                                                <div class="tab-pane fade show active DivSize" id="pills-charts4" role="tabpanel" aria-labelledby="pills-charts4-tab" tabindex="0">
+                                                                    <div id="CostEvaluationChart"></div>
+                                                                </div>
+                                                                <div class="tab-pane fade DataTable" id="pills-data4" role="tabpanel" aria-labelledby="pills-data4-tab" tabindex="0">
+                                                                    <table class="charttable1 display nowrap table-striped table" style="width:100%">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th></th>
+                                                                                <th>Original Approved Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                                <th>Revised Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                                <th>Cumulative Expenditure<span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody id="CostEvaluationTBody" style="max-height: 400px;">
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-12 connectedSortable">
+                                        <div class="row my-2">
+                                            <div class="col-xl-6 col-lg-6">
+                                                <div class="chart_table">
+                                                    <div class="card">
+                                                        <div class="cardheader d-flex justify-content-between align-items-center">
+                                                            <h3 class="card-title">
+                                                                Physical Progress
+                                                                <span style="font-style:italic; font-size:12px">[Project Count]</span>
+                                                            </h3>
+                                                            <ul class="nav nav-pills  m-0" id="pills-tab" role="tablist">
+                                                                <li role="presentation"><button class="active" id="pills-charts2-tab" data-bs-toggle="pill" data-bs-target="#pills-charts2" type="button" role="tab" aria-controls="pills-charts2" aria-selected="true">Charts</button></li>
+                                                                <li role="presentation"><button class="" id="pills-data2-tab" data-bs-toggle="pill" data-bs-target="#pills-data2" type="button" role="tab" aria-controls="pills-data2" aria-selected="true">Data</button></li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="chartdata card-body" style="margin:revert;">
+                                                            <div class="tab-content" id="pills-tabContent">
+                                                                <div class="download-icons" style="margin-right:20px;">
+                                                                    <img src="/Content/img/csv-icon.png" id="downloadCSV3" alt="Download CSV" title="Download CSV" class="download-icon me-2" />
+                                                                    <img src="/Content/img/excel-icon.png" id="downloadXLS3" alt="Download XLSX" title="Download XLSX" class="download-icon" />
+                                                                </div>
+                                                                <div class="tab-pane fade show active DivSize" id="pills-charts2" role="tabpanel" aria-labelledby="pills-charts2-tab" tabindex="0">
+                                                                    <div id="ProgressChartDiv">
+
+                                                                    </div>
+                                                                </div>
+                                                                <div class="tab-pane fade DataTable" id="pills-data2" role="tabpanel" aria-labelledby="pills-data2-tab" tabindex="0">
+                                                                    <table class="charttable1 display nowrap table-striped table" style="width:100%">
+                                                                        <thead>
+                                                                            <tr style="text-align:center; vertical-align:top;">
+                                                                                <th>Sr.No.</th>
+                                                                                <th>Physical Progress slab <br /><span style="font-style:italic; font-size:12px">(%)</span></th>
+                                                                                <th>Project Count<br /><span style="font-style:italic; font-size:12px">(in no.)</span></th>
+                                                                                <th>Original (Revised)<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                                <th>Expenditure<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody id="ProgressTableBody" style="max-height: 400px;"></tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-6 col-lg-6">
+                                                <div class="chart_table">
+                                                    <div class="card">
+                                                        <div class="cardheader d-flex justify-content-between align-items-center">
+                                                            <h3 class="card-title">
+                                                                State-wise Distribution
+                                                                <span style="font-style:italic; font-size:12px">[Project Count]</span>
+                                                            </h3>
+                                                            <ul class="nav nav-pills m-0" id="pills-tab" role="tablist">
+                                                                <li role="presentation"><button class="active" id="pills-charts5-tab" data-bs-toggle="pill" data-bs-target="#pills-charts5" type="button" role="tab" aria-controls="pills-charts5" aria-selected="true">Charts</button></li>
+                                                                <li role="presentation"><button class="" id="pills-data5-tab" data-bs-toggle="pill" data-bs-target="#pills-data5" type="button" role="tab" aria-controls="pills-data5" aria-selected="true">Data</button></li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="chartdata card-body" style="margin:revert;">
+                                                            <div class="tab-content" id="pills-tabContent">
+                                                                <div class="download-icons" style="margin-right:20px;">
+                                                                    <img src="/Content/img/csv-icon.png" id="downloadCSV4" alt="Download CSV" title="Download CSV" class="download-icon me-2" />
+                                                                    <img src="/Content/img/excel-icon.png" id="downloadXLS4" alt="Download XLSX" title="Download XLSX" class="download-icon" />
+                                                                </div>
+                                                                <div class="tab-pane fade show active DivSize" id="pills-charts5" role="tabpanel" aria-labelledby="pills-charts5-tab" tabindex="0">
+                                                                    <div id="DelayTor"></div>
+                                                                </div>
+                                                                <div class="tab-pane fade DataTable" id="pills-data5" role="tabpanel" aria-labelledby="pills-data5-tab" tabindex="0">
+                                                                    <table class="charttable1 display nowrap table-striped table" style="width:100%">
+                                                                        <thead>
+                                                                            <tr style="text-align:center; vertical-align:top;">
+                                                                                <th>Sr.No.</th>
+                                                                                <th>State Name</th>
+                                                                                <th>Project Count<br /><span style="font-style:italic; font-size:12px">(in no.)</span></th>
+                                                                                <th>Original (Revised)<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                                <th>Expenditure<br />Cost <span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody id="RevisedDataBody" style="max-height: 400px;">
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        
+
+                        <!--Model PopUp-->
+                    <div class="modal fade chartmodal" id="projectcount1" tabindex="-1" aria-labelledby="projectcount1Label" aria-hidden="true" style="width:100%">
+                        <div class="modal-dialog modal-dialog-centered modal-xl modaltable">
+                            <div class="modal-content">
+                                <div class="modal-header bg-primary border rounded text-center popup-header">
+                                    <h1 class="modal-title fs-5 text-white m-0" id="projectcount1Label">Project Overview</h1>
+                                    <div class="download-icons" style="margin-right:20px;">
+                                        <img src="/Content/img/csv-icon.png" id="downloadCSV" alt="Download CSV" title="Download CSV" class="download-icon me-2" />
+                                        <img src="/Content/img/excel-icon.png" id="downloadXLS" alt="Download XLSX" title="Download XLSX" class="download-icon" />
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="margin:initial;"></button>
+                                </div>
+                                <div class="modal-body m-0" style="overflow-y:auto">
+                                    <div class="tablebox">
+                                        
+
+                                        <table class="charttable1 table table-striped  display nowrap" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Sr. No.</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Sector Name</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Line Ministry</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Implementing Agency</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Project Code</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Project Name</th>
+                                                    <th>Original Cost <br /><span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                    <th>Revised Cost <br /><span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                    <th style="vertical-align: top;">Expenditure <br /><span style="font-style:italic; font-size:12px">(in cr.)</span></th>
+                                                    <th>Physical Progress<br /><span style="font-style:italic; font-size:12px">(in %)</span></th>
+                                                    <th style="white-space: nowrap; vertical-align: top; ">Original <br />Date of Commissioning</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Revised <br />Date of Commissioning</th>
+                                                    <th style="white-space: nowrap; vertical-align: top;">Sanction Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                
+
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    
+    <!--<script src="~/assets/js/main.js"></script>-->
+    
+
+
+
+</section>
+
+<script>
+
+   $(document).ready(function () {
+    initializeFreezeDatePicker();
+
+    // Load tiles on page load after freeze date is initialized
+       function loadInitialTiles() {
+           const freezeDate = window.dateFreezePicker?.input?.value;
+           if (freezeDate) {
+               const parts = freezeDate.split('-');
+               loadTilesData({ month: parts[1], year: parts[0] });
+               loadDashboardCharts({ month: parts[1], year: parts[0] });
+           } else {
+               loadTilesData();
+               loadDashboardCharts();
+           }
+       }
+
+    function populateDropdown($dropdown) {
+        var url = $dropdown.data('action');
+        if (!url) return;
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                $dropdown.empty().append('<option value="">All</option>');
+
+                if (typeof data[0] === 'string') {
+                    $.each(data, function (i, item) {
+                        $dropdown.append($('<option>', { value: item, text: item }));
+                    });
+                } else {
+                    $.each(data, function (i, item) {
+                        $dropdown.append($('<option>', {
+                            value: item.Value,
+                            text: item.Text
+                        }));
+                    });
+                }
+            },
+            error: function () {
+                alert('Failed to load ' + $dropdown.attr('id') + ' data.');
+            }
+        });
+    }
+
+    $('.ajax-dropdown').each(function () {
+        if ($(this).attr('id') !== 'CostRange') {
+            populateDropdown($(this));
+        }
+    });
+
+    $('#SectorId').change(function () {
+        var sectorId = $(this).val() || 0;
+        var ministryDropdown = $('#MinistryDropdown');
+
+        $.ajax({
+            url: '/Home/GetMinistryList',
+            type: 'GET',
+            data: { sectorId: sectorId },
+            success: function (data) {
+                ministryDropdown.empty().append('<option value="">All</option>');
+                $.each(data, function (i, item) {
+                    ministryDropdown.append($('<option>', {
+                        value: item.Value,
+                        text: item.Text
+                    }));
+                });
+            },
+            error: function () {
+                alert('Failed to load ministries for selected sector.');
+            }
+        });
+    });
+
+    function initializeFreezeDatePicker() {
+        $.ajax({
+            url: '/Home/GetFreezeDates',
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    var minMonth = response.firstFreeze;
+                    var maxMonth = response.lastFreeze;
+                    var defaultDate = response.lastFreeze;
+
+                    $('#refreshDateText').text('(as of ' + response.displayFreeze + ')');
+
+                    if (window.dateFreezePicker) {
+                        window.dateFreezePicker.destroy();
+                    }
+
+                    window.dateFreezePicker = flatpickr("#dateFreeze", {
+                        dateFormat: "Y-m",
+                        minDate: minMonth,
+                        maxDate: maxMonth,
+                        defaultDate: defaultDate,
+                        plugins: [new monthSelectPlugin({
+                            shorthand: true,
+                            dateFormat: "Y-m"
+                        })],
+                        allowInput: false,
+                        onChange: function (selectedDates, dateStr, instance) {
+                            if (dateStr > maxMonth) {
+                                alert("Reporting is yet awaited");
+                                instance.clear();
+                                return;
+                            }
+
+                            if (dateStr) {
+                                var parts = dateStr.split('-');
+                                var year = parts[0];
+                                var month = parseInt(parts[1]) - 1;
+                                var displayText = new Date(year, month).toLocaleString('default', {
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
+                                $('#refreshDateText').text('(as of ' + displayText + ')');
+                            }
+                        },
+                       onReady: loadInitialTiles // Load tiles once picker is ready
+                    });
+                } else {
+                    $('#refreshDateText').text('(as of N/A)');
+                    console.warn("Freeze date fetch failed:", response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("AJAX Error:", error);
+                $('#refreshDateText').text('(as of N/A)');
+            }
+        });
+    }
+
+       //function loadTilesData(extraData = {}) {
+       //    // Extract date parts
+       //    const dateValue = window.dateFreezePicker?.input?.value || ''; // e.g., "2025-10"
+       //    const [year, month] = dateValue ? dateValue.split('-') : ['', ''];
+
+       //    // Update hidden form fields so serialize() picks them up
+       //    $('#Month').val(extraData.month || month);
+       //    $('#Year').val(extraData.year || year);
+
+       //    // Show loader
+       //    $('#showDataButton').hide();
+       //    $('#btnLoader').show();
+
+       //    $.ajax({
+       //        type: "POST",
+       //        url: "/Home/GetTileData",
+       //        data: $("#myForm").serialize(),
+       //        success: function (res) {
+       //            console.log("Full Response:", res);
+
+       //            $('#showDataButton').show();
+       //            $('#btnLoader').hide();
+
+       //            if (res.success && res.data) {
+       //                console.log("Total Projects:", res.data.TotalProject);
+       //                console.log("Approved Cost:", res.data.TotalCost);
+       //                console.log("Revised Cost:", res.data.RevisedCost);
+       //                console.log("Expenditure:", res.data.CummulativeExpenditure);
+
+       //                $('#TotalProjects').text(res.data.TotalProject || 0);
+       //                $('#TotalCost').text('₹ ' + (res.data.TotalCost || 0).toLocaleString('en-IN'));
+       //                $('#TotalRevCost').text('₹ ' + (res.data.RevisedCost || 0).toLocaleString('en-IN'));
+       //                $('#TotalExpenditure').text('₹ ' + (res.data.CummulativeExpenditure || 0).toLocaleString('en-IN'));
+       //            } else {
+       //                alert(res.message || "No data returned from server.");
+       //            }
+       //        },
+       //        error: function () {
+       //            $('#showDataButton').show();
+       //            $('#btnLoader').hide();
+       //            alert('Error loading tiles data');
+       //        }
+
+       //    });
+       //}
+
+       function loadTilesData(extraData = {}) {
+           const dateValue = window.dateFreezePicker?.input?.value || '';
+           const [year, month] = dateValue ? dateValue.split('-') : ['', ''];
+
+           $('#Month').val(extraData.month || month);
+           $('#Year').val(extraData.year || year);
+
+           $('#showDataButton').hide();
+           $('#btnLoader').show();
+
+           $.ajax({
+               type: "POST",
+               url: "/Home/GetTileData",
+               data: $("#myForm").serialize(),
+               success: function (res) {
+                   console.log("Full Response:", res);
+
+                   $('#showDataButton').show();
+                   $('#btnLoader').hide();
+
+                   // ✅ Check for valid data
+                   if (res && res.data) {
+                       const data = res.data;
+
+                       // Update top tiles
+                       if (data.totalProjectsTabData && data.totalProjectsTabData.length > 0) {
+                           const summary = data.totalProjectsTabData[0];
+                           $('#TotalProjects').text(summary.TotalProject || 0);
+                           $('#TotalCost').text('₹ ' + (summary.TotalCost || 0).toLocaleString('en-IN'));
+                           $('#TotalRevCost').text('₹ ' + (summary.RevisedCost || 0).toLocaleString('en-IN'));
+                           $('#TotalExpenditure').text('₹ ' + (summary.CummulativeExpenditure || 0).toLocaleString('en-IN'));
+                       }
+
+                       // ✅ Populate popup table
+                       if (data.ProjectsCountTabDetails && data.ProjectsCountTabDetails.length > 0) {
+                           const tableBody = $('#projectcount1 .charttable1 tbody');
+                           tableBody.empty(); // clear previous rows
+
+                           data.ProjectsCountTabDetails.forEach((item, index) => {
+                               const row = `
+                     <tr>
+                         <td>${index + 1}</td>
+                         <td>${item.SectorName || ''}</td>
+                         <td>${item.LineMinistry || ''}</td>
+                         <td>${item.COMPANYNAME || ''}</td>
+                         <td>${item.ProjectId || ''}</td>
+                         <td>${item.ProjectName || ''}</td>
+                         <td>${item.OriginalCost || 0}</td>
+                         <td>${item.RevisedCost || 0}</td>
+                         <td>${item.Expenditure || 0}</td>
+                         <td>${item.PhysicalProgress || 0}</td>
+                         <td>${item.OriginalEndDate || ''}</td>
+                         <td>${item.RevisedDate || ''}</td>
+                         <td>${item.SanctionDate || ''}</td>
+                     </tr>`;
+                               tableBody.append(row);
+                           });
+
+                           $(document).off("click", "#downloadCSV").on("click", "#downloadCSV", function () {
+                               const table = document.querySelector("#projectcount1 .modal-body table");
+
+                               if (!table || table.rows.length === 0) {
+                                   alert('No data to download.');
+                                   return;
+                               }
+
+                               let csv = [];
+
+                               // Prepare filters text
+                               let filtersTextArr = [];
+                               $('#filters .filter-row').each(function () {
+                                   let field = $(this).find('.field').val();
+                                   let op = $(this).find('.operator').val();
+                                   let val = $(this).find('.value').val();
+
+                                   if (field && op && val) {
+                                       let displayName = fieldDisplayNames[field] || field;
+                                       filtersTextArr.push(`${displayName} ${op} ${val}`);
+                                   }
+                               });
+
+                               // Build the title line with filters (if any)
+                               let titleLine = "Projects Details";
+                               if (filtersTextArr.length > 0) {
+                                   titleLine += " - " + filtersTextArr.join(', ');
+                               }
+
+                               // Add the title + filters line as first row in CSV (quoted)
+                               csv.push(`"${titleLine}"`);
+
+                               // Empty row after title line
+                               csv.push("");
+
+                               // Now add the table header and rows
+                               for (let row of table.rows) {
+                                   let rowData = [];
+                                   for (let cell of row.cells) {
+                                       let text = cell.innerText.replace(/"/g, '""').trim();
+                                       rowData.push(`"${text}"`);
+                                   }
+                                   csv.push(rowData.join(","));
+                               }
+
+                               const csvContent = csv.join("\n");
+                               const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                               const url = URL.createObjectURL(blob);
+
+                               const link = document.createElement('a');
+                               link.setAttribute('href', url);
+                               link.setAttribute('download', 'Projects_Report.csv');
+                               document.body.appendChild(link);
+                               link.click();
+                               document.body.removeChild(link);
+                           });
+
+
+                           $(document).off("click", "#downloadXLS").on("click", "#downloadXLS", function () {
+                               const table = document.querySelector("#projectcount1 .modal-body table");
+                               if (!table || table.rows.length === 0) {
+                                   alert('No data to download.');
+                                   return;
+                               }
+
+                               const wb = XLSX.utils.book_new();
+                               const ws = XLSX.utils.aoa_to_sheet([]); // empty sheet
+
+                               const columnCount = table.rows[0].cells.length;
+
+                               // Prepare filters text for the header
+                               let filtersTextArr = [];
+                               $('#filters .filter-row').each(function () {
+                                   let field = $(this).find('.field').val();
+                                   let op = $(this).find('.operator').val();
+                                   let val = $(this).find('.value').val();
+
+                                   if (field && op && val) {
+                                       let displayName = fieldDisplayNames[field] || field;
+                                       filtersTextArr.push(`${displayName} ${op} ${val}`);
+                                   }
+                               });
+
+                               const filtersText = filtersTextArr.length > 0 ? ` - ${filtersTextArr.join(', ')}` : "";
+                               const fullTitle = `Projects Details ${filtersText}`;
+
+                               // Add the combined title + filters as first row (A1)
+                               XLSX.utils.sheet_add_aoa(ws, [[fullTitle]], { origin: "A1" });
+
+                               // Merge title cell across all columns
+                               ws['!merges'] = ws['!merges'] || [];
+                               ws['!merges'].push({
+                                   s: { r: 0, c: 0 },
+                                   e: { r: 0, c: columnCount - 1 }
+                               });
+
+                               // Style the title cell (bold, white text, blue background, centered)
+                               const titleCell = XLSX.utils.encode_cell({ r: 0, c: 0 });
+                               if (!ws[titleCell]) ws[titleCell] = { t: 's', v: fullTitle };
+                               ws[titleCell].s = {
+                                   font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+                                   alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                                   fill: { fgColor: { rgb: "4F81BD" } }
+                               };
+
+                               // Add an empty row after title (row 2 / index 1)
+                               XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A2" });
+
+                               // Prepare table data (headers + rows)
+                               let tableData = [];
+                               for (let r = 0; r < table.rows.length; r++) {
+                                   let rowData = [];
+                                   for (let c = 0; c < table.rows[r].cells.length; c++) {
+                                       rowData.push(table.rows[r].cells[c].innerText.trim());
+                                   }
+                                   tableData.push(rowData);
+                               }
+
+                               // Add table data starting at row 3 (index 2)
+                               XLSX.utils.sheet_add_aoa(ws, tableData, { origin: "A3" });
+
+                               XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                               XLSX.writeFile(wb, "Projects_Report.xlsx");
+                           });
+
+                           // Reinitialize DataTables (optional)
+                           if ($.fn.DataTable.isDataTable('.charttable1')) {
+                               $('.charttable1').DataTable().destroy();
+                           }
+                           $('.charttable1').DataTable({
+                               scrollX: true,
+                               pageLength: 10,
+                               order: [[0, 'asc']]
+                           });
+                       }
+
+                       // ✅ Show modal (optional trigger)
+                       $('#projectcount1').modal('show');
+
+                   } else {
+                       alert(res.message || "No data returned from server.");
+                   }
+               },
+               error: function () {
+                   $('#showDataButton').show();
+                   $('#btnLoader').hide();
+                   alert('Error loading tiles data');
+               }
+           });
+       }
+
+       function loadDashboardCharts(extraData = {}) {
+           const dateValue = window.dateFreezePicker?.input?.value || ''; // e.g., "2025-10"
+           const [year, month] = dateValue ? dateValue.split('-') : ['', ''];
+
+           // Update hidden form fields so serialize() picks them up
+           $('#Month').val(extraData.month || month);
+           $('#Year').val(extraData.year || year);
+
+           // Show loader
+           $('#showDataButton').hide();
+           $('#btnLoader').show();
+
+           $.ajax({
+               type: "POST",
+               url: "/Home/GetDashboardTileDataforChart",
+               data: $("#myForm").serialize(),
+               dataType: "json",
+               success: function (response) {
+                   console.log("Full Response:", response);
+
+                   $('#showDataButton').show();
+                   $('#btnLoader').hide();
+
+                   if (response && response.success && response.data) {
+                       const data = response.data; // the actual data object
+
+                       // ----------------------
+                       // Charts
+                       // ----------------------
+                       renderSectorWiseChart(data.SectorWiseDataList || []);
+                       renderStateWiseChart(data.StateWiseDataList || []);
+                       renderProgressChart(data.PhysicalProgressDataList || []);
+                       renderCostEvaluationChart(data.CostdetailsList || []);
+                       bindAllTables(data);
+
+                       // ----------------------
+                       // Tables (if needed)
+                       // ----------------------
+                       //renderSectorTable(data.SectorWiseDataList || []);
+                       //renderStateTable(data.StateWiseDataList || []);
+                       //renderProgressTable(data.PhysicalProgressDataList || []);
+                       //renderCostTable(data.CostdetailsList || []);
+                   } else {
+                       console.warn("No valid data returned from API");
+                   }
+               },
+
+               error: function (xhr, status, error) {
+                   console.error("Error loading dashboard data:", error);
+               }
+           });
+       }
+
+        //Load tiles on button click
+       $('#showDataButton').on('click', function () { loadTilesData(); loadDashboardCharts(); });
+
+
+    function formatNumber(num) {
+        return num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+});
+
+
+
+</script>
+
+<script>
+
+
+
+    //$(document).ready(function () {
+    //    loadDashboardCharts();
+    //});
+
+
+
+</script>
+
+
+
+
+    
+
+    <!---logos start-->
+    <!--<section class="clientlist">-->
+    
+
+    <!--<div class="container-fluid py-3">
+
+        <div class="customer-logos slider ">
+            <div class="slide img-fluid"><a href="https://rtionline.gov.in/" target="_blank"><img src="~/Content/inner-img/rti_logo_hindi1.png" alt="RTI Online"></a></div>
+            <div class="slide img-fluid"><a href="https://www.mygov.in/" target="_blank"><img src="~/Content/inner-img/gov1.png" alt="My Gov"></a></div>
+            <div class="slide img-fluid"><a href=" https://www.nic.in/" target="_blank"><img src="~/Content/inner-img/nic1.png" alt="NIC"></a></div>
+            <div class="slide img-fluid"><a href="https://www.skillindiadigital.gov.in/home" target="_blank"><img src="~/Content/inner-img/Skill-India1.png" alt="Skill India"></a></div>
+            <div class="slide img-fluid"><a href="https://csc.gov.in/digitalIndia" target="_blank"><img src="~/Content/inner-img/Digital India-Black1.png" alt="Digital India"></a></div>
+            <div class="slide img-fluid"><a href="https://swachhbharatmission.ddws.gov.in/" target="_blank"><img src="~/Content/inner-img/Swach-Bharat-Large1.png" alt="Swach Bharat"></a></div>
+            <div class="slide img-fluid"><a href="https://www.investindia.gov.in/" target="_blank"><img src="~/Content/inner-img/ii.png" alt="Invest India"></a></div>
+            <div class="slide img-fluid"><a href="https://dpe.gov.in/" target="_blank"><img src="~/Content/inner-img/dpe.png" alt="Department of Public Enterprises"></a></div>
+            <div class="slide img-fluid "><a href="https://pmg.dpiit.gov.in/" target="_blank"><img src="~/Content/inner-img/pmg.png" alt="Dpiit"></a></div>
+            <div class="slide img-fluid "><a href="https://www.niti.gov.in/" target="_blank"><img src="~/Content/inner-img/niti.png" alt="NITI Aayog"></a></div>
+
+
+        </div>
+
+
+    </div>-->
+    
+
+    <!--</section>-->
+    
+    <section class="clientlist" style="display:none">
+        
+
+        <div class="container-fluid py-3">
+            <div class="customer-logos slider">
+                
+
+
+
+
+
+
+
+        <div class="slide img-fluid">
+            <a href="https://swachhbharatmission.ddws.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/swatch Bharat Mission_638984721536825005.jpg" alt="swatch Bharat Mission" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.skillindiadigital.gov.in/home" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Skill India Digital.png" alt="Skill India Digital" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://csc.gov.in/digitalIndia" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Digital India.png" alt="Digital India" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://dpe.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/DPE.png" alt="DPE" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.niti.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Niti Aayog.png" alt="Niti Aayog" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://pmg.dpiit.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/PMG DPIIT.png" alt="PMG DPIIT" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.nic.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/NIC.png" alt="NIC" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.investindia.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Invest india.png" alt="Invest india" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.mygov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/MY GOV.png" alt="MY GOV" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://rtionline.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/RTI_639035551953175859.png" alt="RTI" />
+            </a>
+        </div>
+
+
+
+
+            </div>
+        </div>
+        
+
+    </section>
+
+    <!---logo end-->
+
+
+    <section class="appdownload">
+        <div class="container-fluid">
+            <div class="appdownbox">
+                <div class="apppaimana">
+                    <img src="../Content/img/apppaimana.png" alt="App Paimana">
+                </div>
+                <div class="appmiddlecontent">
+                    <h3>Coming Soon</h3>
+                    <p>Discover your new favorite spaces, Download from Google Play/iOS App.</p>
+                </div>
+                <div class="appicondownload">
+                    <a href="javascript:void(0);"><img src="../Content/img/playstore-icon.png" alt="Paimana Play Store"></a>
+                    <a href="javascript:void(0);"><img src="../Content/img/apple-store.png" alt="Paimana Play Store"></a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!---logo end-->
+
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <div class="footer-brand-left">
+                    <a href="https://www.mospi.gov.in/" target="_blank" class="ministry-block">
+                        <img src="../Content/img/logo-mospi.png" alt="Ministry of Statistics and Programme Implementation" class="footer-ministry-img">
+                    </a>
+                    <a href="https://www.dic.gov.in/" target="_blank" title="Data for Development">
+                        <img src="../Content/img/data-for-dev.png" alt="Data for Development" class="footer-partner-img">
+                    </a>
+                </div>
+                <div class="niclogo">
+                    <div class="negd-credit">
+                        <p class="negd-credit-title">Design and Developed by NeGD</p>
+                        <a href="https://negd.gov.in/" target="_blank" rel="noopener">
+                            <img src="../Content/img/negdlogo.png" alt="National e-Governance Division (NeGD)" class="negd-credit-logo">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footertop">
+                <div class="contactbox">
+                    <h4>Get in touch</h4>
+                    <h3>Ministry of Statistics and Programme Implementation, Government of India, Khurshid Lal Bhawan, Janpath, New Delhi-110001 (India).</h3>
+                    <ul class="contactlist">
+                        <li><a href="tel:01123455604"><img src="../Content/img/tel-icon.png" alt=""> 011-23455604</a></li>
+                        <li><a href="mailto:dir-ipmd@mospi.gov.in"><img src="../Content/img/email-icon.png" alt=""> dir-ipmd[at]mospi[dot]gov[dot]in</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footermiddle">
+                <div class="fmiddlecnt">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/ContactUs/Contact">Contact Us</a></li>
+                        <li><a href="/FAQ">FAQs</a></li>
+                        <li><a href="/QuickLink/SiteMap">Site Map</a></li>
+                        <li><a href="/QuickLink/HyperLinkPolicy">Hyperlinking Policy</a></li>
+                        <li><a href="/QuickLink/PrivacyPolicy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+
+        </div>
+        <div class="footerbottom">
+            <div class="container">
+                
+                <p><b>Content owned and maintained by:</b> Infrastructure & Project Monitoring Division(IPMD) | Ministry of Statistics and Programme Implementation.</p>
+                <p class="mb-0">Copyright © 2025 Ministry of Statistics and Programme Implementation</p>
+            </div>
+        </div>
+    </footer>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+    
+    <style>
+
+        .slide {
+            transition: transform 0.5s ease-in-out;
+        }
+
+            .slide.active {
+                /*border: 2px solid #ff0000;*/
+                border: 2px solid #fff;
+                transform: scale(1.1);
+            }
+    </style>
+    
+    
+
+    <script>
+        //$(document).ready(function () {
+        //    // Check if the visitor count is already stored in local storage
+        //    let visitorCount = localStorage.getItem('visitorCount');
+
+        //    // If not, initialize it to 0
+        //    if (!visitorCount) {
+        //        visitorCount = 0;
+        //    }
+
+        //    // Increment the visitor count
+        //    visitorCount++;
+
+        //    // Store the updated count back to local storage
+        //    localStorage.setItem('visitorCount', visitorCount);
+
+        //    // Display the visitor count
+        //    $('#visitorcounter').text('Visitor Count: ' + visitorCount);
+        //});
+
+        $(document).ready(function () {
+            // Function to switch images based on mode
+
+
+
+            function switchImages(mode) {
+                //alert(mode)
+
+
+                $('img').each(function () {
+
+                    const darkSrc = $(this).data('dark');
+                    const lightSrc = $(this).data('light');
+                    if (mode === 'dark') {
+                        $(this).attr('src', darkSrc);
+                        // alert('mk');
+                    } else {
+                        $(this).attr('src', lightSrc);
+                    }
+                });
+            }
+
+            // Check sessionStorage for theme preference on page load
+            const theme = sessionStorage.getItem('theme');
+            const themeSetTime = sessionStorage.getItem('themeSetTime');
+            const currentTime = new Date().getTime();
+
+            // Check if the theme is set and if it's within the last 24 hours
+            if (theme === 'dark' && themeSetTime && (currentTime - themeSetTime < 24 * 60 * 60 * 1000)) {
+
+                $('body').addClass('dark-mode');
+                $('#darktheme').removeClass('darkbtn').html('<i class="fa fa-sun-o"></i>');
+                switchImages('dark'); // Update images for dark mode
+                //alert('mmm')
+                //updateProjectImages();
+
+            } else {
+                switchImages('light'); // Update images for light mode
+                //updateProjectImages();
+            }
+
+            // Handle button click
+            $('#darktheme').on('click', function () {
+                if ($('body').hasClass('dark-mode')) {
+                    ;
+                    // Disable dark mode
+                    $('body').removeClass('dark-mode');
+                    $(this).addClass('darkbtn').html('<i class="fa fa-moon-o"></i>');
+                    sessionStorage.setItem('theme', 'light'); // Save preference
+                    sessionStorage.setItem('themeSetTime', new Date().getTime()); // Update timestamp
+                    switchImages('light'); // Switch to light mode images
+                } else {
+                    // Enable dark mode
+                    $('body').addClass('dark-mode');
+                    $(this).removeClass('darkbtn').html('<i class="fa fa-sun-o"></i>');
+                    sessionStorage.setItem('theme', 'dark'); // Save preference
+                    sessionStorage.setItem('themeSetTime', new Date().getTime()); // Update timestamp
+                    switchImages('dark'); // Switch to dark mode images
+                }
+
+                // Refresh the page only once
+                if (!sessionStorage.getItem('themeToggled')) {
+                    sessionStorage.setItem('themeToggled', 'true');
+                    //window.location.reload();  // Refresh the page
+                } else {
+                    // After page reload, reset the flag in sessionStorage
+                    sessionStorage.removeItem('themeToggled');
+                }
+            });
+        });
+
+
+        $(document).ready(function () {
+            $('.slider').slick({
+                slidesToShow: 9,
+                slidesToScroll: 1,
+                autoplay: true,
+                autoplaySpeed: 1500,
+                arrows: false,
+                dots: false,
+                pauseOnHover: false,
+                responsive: [{
+                    breakpoint: 768,
+                    settings: {
+                        slidesToShow: 4
+                    }
+                }, {
+                    breakpoint: 520,
+                    settings: {
+                        slidesToShow: 2.5
+                    }
+                }]
+            });
+        });
+
+
+
+    </script>
+
+    <!-- <script>
+        function openNav() {
+            document.getElementById("mySidebar").classList.add("open");
+            document.getElementById("main").style.marginLeft = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidebar").classList.remove("open");
+            document.getElementById("main").style.marginLeft = "0";
+        }
+
+        function openNav2() {
+            document.getElementById("mySidebar2").classList.add("open");
+            document.getElementById("main").style.marginRight = "250px";
+        }
+
+        function closeNav2() {
+            document.getElementById("mySidebar2").classList.remove("open");
+            document.getElementById("main").style.marginRight = "0";
+        }
+    </script> -->
+    <!-----map script start-->
+    
+
+
+
+    <script>
+        $('.sub-menu ul').hide();
+        $(".sub-menu a").click(function () {
+            $(this).parent(".sub-menu").children("ul").slideToggle("100");
+            $(this).find(".right").toggleClass("fa-caret-up fa-caret-down");
+        });
+
+        // Hide the search box initially
+        $("#searchhome,#searchmob").hide();
+
+        // Toggle the search box on click of the search icon
+        $("#homesearch,#mosearch").on("click", function () {
+            $("#searchhome,#searchmob").toggle();
+        });
+
+        // Hide the search box when clicked anywhere else on the page
+        $(document).on("click", function (event) {
+            if (!$(event.target).closest("#homesearch, #searchhome, #searchmob, #mosearch").length) {
+                $("#searchhome, #searchmob").hide();
+            }
+        });
+
+
+
+
+
+    </script>
+
+
+    
+
+
+
+
+    
+
+
+    <script>
+        var swiper = new Swiper(".clientslider", {
+            loop: true,
+            speed: 1000,
+            autoplay: true,
+            spaceBetween: 20,
+            slidesPerView: 4,
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            breakpoints: {
+                0: {
+                    slidesPerView: 1,
+                    spaceBetween: 15,
+                },
+                468: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                },
+                640: {
+                    slidesPerView: 3.5,
+                    spaceBetween: 20,
+                },
+                768: {
+                    slidesPerView: 6.1,
+                    spaceBetween: 20,
+                },
+                1140: {
+                    slidesPerView: 8.5,
+                },
+                1449: {
+                    slidesPerView: 9,
+                },
+            },
+        });
+    </script>
+
+
+
+    <script>
+
+        function smallsize() {
+            document.getElementById("pagelayout").style.fontSize = "small";
+            updateActiveClass("small");
+        }
+
+        function mediumsize() {
+            document.getElementById("pagelayout").style.fontSize = "medium";
+            updateActiveClass("medium");
+        }
+
+        function largesize() {
+            document.getElementById("pagelayout").style.fontSize = "large";
+            updateActiveClass("large");
+        }
+    </script>
+
+
+
+</body>
+</html>

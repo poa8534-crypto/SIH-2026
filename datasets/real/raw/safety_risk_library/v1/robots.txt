@@ -1,0 +1,16 @@
+User-Agent: *
+Disallow: /admin/
+Allow /api/docs
+Disallow: /api/
+Disallow: /institutions/
+Disallow: /internal-admin/
+Disallow: /my-data/
+Disallow: /preview/
+Disallow: /*?*page=
+Disallow: /*?*repositoryType=
+Disallow: /*?*search=
+Disallow: /*?*source=
+Disallow: /*?*type=
+
+Sitemap: https://data.mendeley.com/sitemap
+Sitemap: https://data.mendeley.com/sitemap/index

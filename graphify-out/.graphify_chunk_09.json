@@ -1,0 +1,911 @@
+{
+  "nodes": [
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen",
+      "label": "Field Supervisor — Microphone Unavailable Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen_sitecontextheader",
+      "label": "Site Context Header (OIL Well-Site Duliajan / OIL-WSD-2026 · Sector A · Digboi Well #4)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen_micunavailablecard",
+      "label": "Microphone Unavailable Card (muted-mic icon, 'Typing works just as well')",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+      "label": "Typed Update Composer ('Type your site update...' with send button)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen_clarificationsfeed",
+      "label": "Clarifications & My Recent Updates Feed",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_microphone_unavailable_screen_voiceoptionalcapturerationale",
+      "label": "Design Rationale: Voice Is Optional — Text Capture Never Blocks the Supervisor",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen",
+      "label": "Field Supervisor — Speech Not Understood Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen_recognitionfailurecard",
+      "label": "Recognition Failure Card ('We couldn't understand that recording')",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen_recordagainaction",
+      "label": "Record Again Primary Action",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen_typeresponsefallback",
+      "label": "Type Response Secondary Fallback Action",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen_needsyourresponserfi",
+      "label": "Needs Your Response — RFI #1042 High Priority Card",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_speech_not_understood_screen_blamefreedualrecoveryrationale",
+      "label": "Design Rationale: Blame-Free Failure Copy With Two Recovery Paths",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "design_field_supervisor_structured_update_screen",
+      "label": "Field Supervisor — Structured Update Review Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_chatturnpair",
+      "label": "Conversational Turn Pair (supervisor utterance bubble + system extraction acknowledgement)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_structuredupdatecard",
+      "label": "Structured Update Card (Activity / Status / Date / Quantity rows)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_perfieldeditaffordance",
+      "label": "Per-Field Pencil Edit Affordance",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_confidencedisclosure",
+      "label": "Confidence Disclosure Row (91%)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+      "label": "Confirm & Submit Gate (with Cancel escape hatch)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_structured_update_screen_humanintheloopextractionrationale",
+      "label": "Design Rationale: Extraction Is a Reviewable Proposal, Never a Silent Write",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "design_field_supervisor_transcript_review_screen",
+      "label": "Field Supervisor — Transcript Review Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_transcript_review_screen_checkyourtranscriptcard",
+      "label": "Check Your Transcript Card (warns speech recognition can mishear equipment numbers)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_transcript_review_screen_editabletranscriptfield",
+      "label": "Editable Raw Transcript Field",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_transcript_review_screen_usethistranscriptaction",
+      "label": "Use This Transcript / Record Again Action Pair",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_transcript_review_screen_asrverificationgate",
+      "label": "ASR Verification Gate Before Extraction",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_transcript_review_screen_mishearprotectionrationale",
+      "label": "Design Rationale: Correct Mishearings at the Transcript, Before They Enter the Audit Trail",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "design_field_supervisor_update_pending_sync_screen",
+      "label": "Field Supervisor — Update Pending Sync Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_pending_sync_screen_offlinesavedcard",
+      "label": "Offline Saved Card (crossed-cloud icon, 'Update saved on this device')",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_pending_sync_screen_localreferencechip",
+      "label": "Local Reference Chip (FR-2026-09-15-001)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_pending_sync_screen_retrynowaction",
+      "label": "Retry Now / Return Home Action Pair",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_pending_sync_screen_idempotentretryrationale",
+      "label": "Design Rationale: State Retry Is Idempotent — 'Retrying will not create a duplicate report'",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "design_field_supervisor_update_submitted_screen",
+      "label": "Field Supervisor — Update Submitted Confirmation Screen",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_submitted_screen_confirmationbanner",
+      "label": "Confirmation Banner (check mark, 'Update submitted')",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_submitted_screen_reportreference",
+      "label": "Report Reference (FR-2026-09-15-001)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_submitted_screen_schedulenotchangednotice",
+      "label": "Notice: 'Sent for Planning Engineer review. The project schedule has not been changed.'",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_field_supervisor_update_submitted_screen_proposalnotwriterationale",
+      "label": "Design Rationale: A Field Update Is a Proposal Awaiting Planner Review, Not a Schedule Write",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+
+  "edges": [
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen_sitecontextheader",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen_micunavailablecard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen_clarificationsfeed",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen_micunavailablecard",
+      "target": "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen_voiceoptionalcapturerationale",
+      "target": "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_microphone_unavailable_screen_voiceoptionalcapturerationale",
+      "target": "design_field_supervisor_microphone_unavailable_screen",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_microphone_unavailable\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen",
+      "target": "design_field_supervisor_speech_not_understood_screen_recognitionfailurecard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen_recognitionfailurecard",
+      "target": "design_field_supervisor_speech_not_understood_screen_recordagainaction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen_recognitionfailurecard",
+      "target": "design_field_supervisor_speech_not_understood_screen_typeresponsefallback",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen",
+      "target": "design_field_supervisor_speech_not_understood_screen_needsyourresponserfi",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen_blamefreedualrecoveryrationale",
+      "target": "design_field_supervisor_speech_not_understood_screen_recognitionfailurecard",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen_recordagainaction",
+      "target": "design_field_supervisor_transcript_review_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen_typeresponsefallback",
+      "target": "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_speech_not_understood_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "design_field_supervisor_structured_update_screen",
+      "target": "design_field_supervisor_structured_update_screen_chatturnpair",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen",
+      "target": "design_field_supervisor_structured_update_screen_structuredupdatecard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_chatturnpair",
+      "target": "design_field_supervisor_structured_update_screen_structuredupdatecard",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_structuredupdatecard",
+      "target": "design_field_supervisor_structured_update_screen_perfieldeditaffordance",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_structuredupdatecard",
+      "target": "design_field_supervisor_structured_update_screen_confidencedisclosure",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen",
+      "target": "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_humanintheloopextractionrationale",
+      "target": "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_humanintheloopextractionrationale",
+      "target": "design_field_supervisor_structured_update_screen_perfieldeditaffordance",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+      "target": "design_field_supervisor_update_submitted_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+      "target": "design_field_supervisor_update_pending_sync_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "design_field_supervisor_transcript_review_screen",
+      "target": "design_field_supervisor_transcript_review_screen_checkyourtranscriptcard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_checkyourtranscriptcard",
+      "target": "design_field_supervisor_transcript_review_screen_editabletranscriptfield",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_checkyourtranscriptcard",
+      "target": "design_field_supervisor_transcript_review_screen_usethistranscriptaction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_asrverificationgate",
+      "target": "design_field_supervisor_transcript_review_screen_editabletranscriptfield",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_mishearprotectionrationale",
+      "target": "design_field_supervisor_transcript_review_screen_asrverificationgate",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_usethistranscriptaction",
+      "target": "design_field_supervisor_structured_update_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen",
+      "target": "design_field_supervisor_speech_not_understood_screen",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_transcript_review_screen_asrverificationgate",
+      "target": "design_field_supervisor_structured_update_screen_confidencedisclosure",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_transcript_review\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen",
+      "target": "design_field_supervisor_update_pending_sync_screen_offlinesavedcard",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen_offlinesavedcard",
+      "target": "design_field_supervisor_update_pending_sync_screen_localreferencechip",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen_offlinesavedcard",
+      "target": "design_field_supervisor_update_pending_sync_screen_retrynowaction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen_idempotentretryrationale",
+      "target": "design_field_supervisor_update_pending_sync_screen_retrynowaction",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen_localreferencechip",
+      "target": "design_field_supervisor_update_submitted_screen_reportreference",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen",
+      "target": "design_field_supervisor_update_submitted_screen",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_pending_sync_screen_retrynowaction",
+      "target": "design_field_supervisor_update_submitted_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "design_field_supervisor_update_submitted_screen",
+      "target": "design_field_supervisor_update_submitted_screen_confirmationbanner",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_submitted_screen_confirmationbanner",
+      "target": "design_field_supervisor_update_submitted_screen_reportreference",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_submitted_screen_confirmationbanner",
+      "target": "design_field_supervisor_update_submitted_screen_schedulenotchangednotice",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_submitted_screen_proposalnotwriterationale",
+      "target": "design_field_supervisor_update_submitted_screen_schedulenotchangednotice",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_submitted_screen_proposalnotwriterationale",
+      "target": "design_field_supervisor_structured_update_screen_humanintheloopextractionrationale",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_field_supervisor_update_submitted_screen",
+      "target": "design_field_supervisor_microphone_unavailable_screen",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_submitted\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+
+  "hyperedges": [
+    {
+      "id": "field_supervisor_voice_capture_recovery_flow",
+      "label": "Voice Capture Failure Recovery Flow (mic unavailable, unintelligible speech, transcript correction)",
+      "nodes": [
+        "design_field_supervisor_microphone_unavailable_screen",
+        "design_field_supervisor_speech_not_understood_screen",
+        "design_field_supervisor_transcript_review_screen",
+        "design_field_supervisor_microphone_unavailable_screen_typedupdatecomposer",
+        "design_field_supervisor_speech_not_understood_screen_typeresponsefallback"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_speech_not_understood\\screen.png"
+    },
+    {
+      "id": "field_supervisor_capture_to_submission_pipeline",
+      "label": "Capture-to-Submission Pipeline (transcript review, structured extraction review, submission confirmation)",
+      "nodes": [
+        "design_field_supervisor_transcript_review_screen",
+        "design_field_supervisor_structured_update_screen",
+        "design_field_supervisor_structured_update_screen_confirmandsubmitgate",
+        "design_field_supervisor_update_submitted_screen"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_structured_update\\screen.png"
+    },
+    {
+      "id": "field_supervisor_offline_reference_continuity",
+      "label": "Offline Durability and Reference Continuity (local save, idempotent retry, identical report reference on submission)",
+      "nodes": [
+        "design_field_supervisor_update_pending_sync_screen",
+        "design_field_supervisor_update_pending_sync_screen_localreferencechip",
+        "design_field_supervisor_update_pending_sync_screen_idempotentretryrationale",
+        "design_field_supervisor_update_submitted_screen_reportreference"
+      ],
+      "relation": "implement",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\field_supervisor_update_pending_sync\\screen.png"
+    }
+  ],
+
+  "input_tokens": 0,
+  "output_tokens": 0
+}

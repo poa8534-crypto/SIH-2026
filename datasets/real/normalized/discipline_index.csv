@@ -1,0 +1,7 @@
+﻿discipline,source,evidence_path,data_origin,is_real,verification_status
+civil,WSDOT C8078 and CPWD Civil DSR,raw/wsdot/C8078/idrs,real,True,source_collection_level_mapping
+electrical,CPWD DSR E&M 2025,raw/cpwd/cpwd_dsr_em_2025.pdf,real,True,source_collection_level_mapping
+piping,CFIHOS v2.0 tag/equipment classes,normalized/cfihos/v2.0,real,True,source_collection_level_mapping
+static_equipment,CFIHOS v2.0 equipment classes,normalized/cfihos/v2.0,real,True,source_collection_level_mapping
+instrumentation,CFIHOS v2.0 tag classes and properties,normalized/cfihos/v2.0,real,True,source_collection_level_mapping
+HSE,ConstructCIE and Safety Risk Library,normalized/constructcie,real,True,source_collection_level_mapping

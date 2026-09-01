@@ -1,0 +1,1700 @@
+{
+  "nodes": [
+    {
+      "id": "claude_usage_vscode_extension_resources_icon_large_icon",
+      "label": "Claude Usage VS Code Extension Icon",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon_large.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_vscode_extension_resources_icon_large_gaugeburstmark",
+      "label": "Gauge-and-burst brand mark (white on terracotta)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon_large.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "research_graphs_architecture_pipeline_figure",
+      "label": "Figure: NAVIS pipeline as implemented",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_untrustedfieldinput",
+      "label": "UNTRUSTED FIELD INPUT (DPR .txt, discipline .xlsx, agent turn, browser speech)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_ingestion",
+      "label": "INGESTION (POST /ingest, sha256 dedup to Job, extension allow-list)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_extraction",
+      "label": "EXTRACTION (regex pre-pass owns tags + dates; optional LLM reads intent only; forecast guard)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_schemavalidation",
+      "label": "SCHEMA VALIDATION (ExtractedEvent, Pydantic extra='forbid', provenance mandatory)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_hybridretrieval",
+      "label": "HYBRID RETRIEVAL for recall (TAG exact w=1.0, BM25 w=0.7, DENSE MiniLM w=0.7)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_rrffusion",
+      "label": "RRF FUSION (w/(60+rank), top-20 pool, channel provenance kept)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_featurescoring",
+      "label": "FEATURE SCORING for precision (tag_overlap .32, fuzzy .20, embedding .22, date .10, discipline .06, predecessor .06)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_confidencepolicy",
+      "label": "CONFIDENCE POLICY (tau_high 0.775 / tau_low 0.5, margin >= 0.03, discipline-conflict veto)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_autolink",
+      "label": "AUTO_LINK (score >= tau_high AND margin ok; 100% precision at 50.4% coverage)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_review",
+      "label": "REVIEW (planner queue with evidence + clarification back to the supervisor)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_newactivity",
+      "label": "NEW_ACTIVITY (score < tau_low; unplanned scope surfaced, never silently dropped)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_nothingwrittenbyllm",
+      "label": "Finding: nothing is written by the LLM - every schedule mutation goes through _apply_rollup_to_schedule() or POST /review/{id}/resolve",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_granularityrollup",
+      "label": "GRANULARITY ROLL-UP (many mentions -> one L5/L6 node; qty-based % complete; Actual Finish only at 100%)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_persistencesqlite",
+      "label": "PERSISTENCE (SQLite: activities, linked_events, review_queue, alias_lexicon, append-only audit_records, cross-upload conflict detection)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_plannerfieldui",
+      "label": "PLANNER + FIELD UI (React: Ingest, Reconcile, Schedule, Memory; every row shows confidence + source line)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_institutionalmemory",
+      "label": "INSTITUTIONAL MEMORY (GET /memory/query: actual-vs-planned duration, discipline productivity, delay causes, suggested duration)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_export",
+      "label": "EXPORT (POST /schedule/export, PMXML + XER write-out, no import path yet)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_learningloop",
+      "label": "LEARNING LOOP (planner correction -> alias_lexicon WRITE; never read back: GAP)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_architecture_pipeline_deterministicdefaultrationale",
+      "label": "Rationale: solid path is deterministic and always on; the dashed LLM path is optional and off by default (EXTRACTION_PROVIDER=rules)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "research_graphs_competitor_feature_coverage_figure",
+      "label": "Figure: Competitor coverage of the NAVIS capability set",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "label": "Metric: % of the 21 NAVIS-relevant capabilities with supporting evidence (YES=1, PARTIAL=0.5, NO/UNKNOWN=0)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_navis",
+      "label": "NAVIS - 88% capability coverage",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_llmragbaseline",
+      "label": "LLM+RAG script (research baseline) - 26%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_buildots",
+      "label": "Buildots (complementary) - 21%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_doxel",
+      "label": "Doxel (complementary) - 21%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_primaverap6eppm",
+      "label": "Primavera P6 EPPM (adjacent) - 14%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_microsoftproject",
+      "label": "Microsoft Project (adjacent) - 14%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_ineight",
+      "label": "InEight (partial) - 7%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_procore",
+      "label": "Procore (partial) - 5%",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_lowerboundcaveat",
+      "label": "Finding: no incumbent covers the capability set; every non-NAVIS bar is a LOWER BOUND because UNKNOWN scores 0",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_competitor_feature_coverage_competitormatrixsource",
+      "label": "Data source: research/COMPETITIVE_LANDSCAPE.md rubric + research/competitor_matrix.csv",
+      "file_type": "document",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "research_graphs_implementation_status_figure",
+      "label": "Figure: NAVIS pipeline components, verified against code",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_auditmetric",
+      "label": "Metric: 33 components audited - 25 IMPLEMENTED (76%), 4 NOT FOUND (12%), 3 PARTIAL (9%), 1 DEFECT (3%)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_densefeaturedefect",
+      "label": "DEFECT: Ranking - dense feature not computed for all candidates (implemented but measurably wrong)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_aliaslexiconreadgap",
+      "label": "NOT FOUND: Learning - alias lexicon READ by matcher (write-only learning loop)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_ocrgap",
+      "label": "NOT FOUND: Input - scanned document / OCR",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_pmxmlxerimportgap",
+      "label": "NOT FOUND: Input - Primavera PMXML / XER import (export exists, import does not)",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_authgap",
+      "label": "NOT FOUND: Auth / users / project isolation",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_partialcomponents",
+      "label": "PARTIAL: browser speech-to-text input, LLM structured output extraction, analytics (duration / productivity / delay)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_implementation_status_technicalauditsource",
+      "label": "Data source: every row traced to a file and symbol in research/NAVIS_TECHNICAL_AUDIT.md",
+      "file_type": "document",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "research_graphs_matching_engine_ablation_figure",
+      "label": "Figure: Retrieval / ranking ablation and the precision-coverage frontier",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "label": "Metric: Top-1 accuracy and Recall@5 over 242 gold-positive mentions, identical events to eval.py",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_exactchannel",
+      "label": "EXACT (tag only) - 5.0 top-1 / 30.6 recall@5",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_bm25channel",
+      "label": "BM25 (lexical only) - 93.8 top-1 / 98.8 recall@5",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_densechannel",
+      "label": "DENSE (MiniLM only) - 88.8 top-1 / 99.6 recall@5",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_hybridrrf",
+      "label": "HYBRID RRF (no scoring) - 92.1 top-1 / 98.3 recall@5",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_hybridfeaturescoring",
+      "label": "HYBRID + feature scoring - 87.2 top-1 / 98.3 recall@5 (89.7 with the dense-feature fix)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_bm25scoregate",
+      "label": "BM25 score gate frontier (precision falls from 100% toward 92.9% as coverage rises to ~95%)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+      "label": "NAVIS shipped operating point - 100% auto-link precision at ~50% coverage",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_densefeaturefixpoint",
+      "label": "NAVIS with the dense-feature fix - same 100% precision, +15.4 pts coverage",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_hybridgatesbetterfinding",
+      "label": "Finding: BM25 ranks better but the hybrid GATES better - the hybrid holds 100% precision at a coverage a BM25 score gate cannot reach",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_matching_engine_ablation_ablationscriptsource",
+      "label": "Data source: research/data/ablation.py, densefix.py, bm25gate.py against the real engine and dataset/ground_truth.csv",
+      "file_type": "document",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+
+    {
+      "id": "research_graphs_navis_innovation_scores_figure",
+      "label": "Figure: NAVIS feature-by-feature innovation profile",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_scoringaxes",
+      "label": "Metric axes (0-10): Industry novelty, Technical difficulty, SIH demo value, Defensibility",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_rollupfinishguard",
+      "label": "Quantity-based many-to-one roll-up + partial-scope finish guard (defensibility 8)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_llmconfinedtointent",
+      "label": "Deterministic date/tag extraction with LLM confined to intent only (defensibility 8)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_calibratedthresholdpolicy",
+      "label": "Calibrated two-threshold + margin decision policy, measured not guessed (defensibility 8, demo value 9)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_linelocktagrule",
+      "label": "Line-lock tag rule - unique line+size match floors score at 0.93 (defensibility 8)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_institutionalmemoryqueries",
+      "label": "Institutional memory queries - durations, delays, suggested duration (demo value 9)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_characterspanprovenance",
+      "label": "Character-span provenance on every extracted event (defensibility 7)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_hybridrrfweights",
+      "label": "Hybrid retrieval + weighted RRF fusion (TAG 1.0 / BM25 0.7 / DENSE 0.7), defensibility 7",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_rationalelistexplanations",
+      "label": "Rationale-list explanations, deterministic not LLM prose (defensibility 6)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_crossuploadconflictdetection",
+      "label": "Cross-upload conflict detection - earliest-start/latest-finish, disagreement recorded (defensibility 6)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_appendonlyaudittrail",
+      "label": "Append-only audit trail - field, old->new, source line, confidence (defensibility 6)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_voicefieldagent",
+      "label": "Voice slot-filling field agent with typed fallback (defensibility 5)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_aliaslexiconwriteonly",
+      "label": "Alias lexicon learning loop, currently write-only (defensibility 2 - lowest)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_whatnottoclaimfinding",
+      "label": "Finding: sorted by defensibility, the bottom of the chart is what NOT to claim",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "research_graphs_navis_innovation_scores_judgementnotmeasurement",
+      "label": "Caveat: rubric from research/INNOVATION_ANALYSIS.md - reasoned judgements against EVIDENCE.md, not measurements",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+
+  "edges": [
+    {
+      "source": "claude_usage_vscode_extension_resources_icon_large_icon",
+      "target": "claude_usage_vscode_extension_resources_icon_large_gaugeburstmark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon_large.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "research_graphs_architecture_pipeline_figure",
+      "target": "research_graphs_architecture_pipeline_deterministicdefaultrationale",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_untrustedfieldinput",
+      "target": "research_graphs_architecture_pipeline_ingestion",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_ingestion",
+      "target": "research_graphs_architecture_pipeline_extraction",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_extraction",
+      "target": "research_graphs_architecture_pipeline_schemavalidation",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_schemavalidation",
+      "target": "research_graphs_architecture_pipeline_confidencepolicy",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_schemavalidation",
+      "target": "research_graphs_architecture_pipeline_hybridretrieval",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_hybridretrieval",
+      "target": "research_graphs_architecture_pipeline_rrffusion",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_rrffusion",
+      "target": "research_graphs_architecture_pipeline_featurescoring",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_featurescoring",
+      "target": "research_graphs_architecture_pipeline_confidencepolicy",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_confidencepolicy",
+      "target": "research_graphs_architecture_pipeline_autolink",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_confidencepolicy",
+      "target": "research_graphs_architecture_pipeline_review",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_confidencepolicy",
+      "target": "research_graphs_architecture_pipeline_newactivity",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_autolink",
+      "target": "research_graphs_architecture_pipeline_granularityrollup",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_review",
+      "target": "research_graphs_architecture_pipeline_persistencesqlite",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_granularityrollup",
+      "target": "research_graphs_architecture_pipeline_persistencesqlite",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_persistencesqlite",
+      "target": "research_graphs_architecture_pipeline_plannerfieldui",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_persistencesqlite",
+      "target": "research_graphs_architecture_pipeline_institutionalmemory",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_persistencesqlite",
+      "target": "research_graphs_architecture_pipeline_export",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_plannerfieldui",
+      "target": "research_graphs_architecture_pipeline_learningloop",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_nothingwrittenbyllm",
+      "target": "research_graphs_architecture_pipeline_persistencesqlite",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_architecture_pipeline_deterministicdefaultrationale",
+      "target": "research_graphs_architecture_pipeline_extraction",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "research_graphs_competitor_feature_coverage_figure",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_navis",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_llmragbaseline",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_buildots",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_doxel",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_primaverap6eppm",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_microsoftproject",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_ineight",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_procore",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_lowerboundcaveat",
+      "target": "research_graphs_competitor_feature_coverage_capabilitycoveragemetric",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_figure",
+      "target": "research_graphs_competitor_feature_coverage_competitormatrixsource",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_competitor_feature_coverage_navis",
+      "target": "research_graphs_architecture_pipeline_figure",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\competitor_feature_coverage.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "research_graphs_implementation_status_figure",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_figure",
+      "target": "research_graphs_implementation_status_technicalauditsource",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_densefeaturedefect",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_aliaslexiconreadgap",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_ocrgap",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_pmxmlxerimportgap",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_authgap",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_partialcomponents",
+      "target": "research_graphs_implementation_status_auditmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_pmxmlxerimportgap",
+      "target": "research_graphs_architecture_pipeline_export",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_aliaslexiconreadgap",
+      "target": "research_graphs_architecture_pipeline_learningloop",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_aliaslexiconreadgap",
+      "target": "research_graphs_navis_innovation_scores_aliaslexiconwriteonly",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_densefeaturedefect",
+      "target": "research_graphs_matching_engine_ablation_densefeaturefixpoint",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_implementation_status_figure",
+      "target": "research_graphs_architecture_pipeline_figure",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "research_graphs_matching_engine_ablation_figure",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_figure",
+      "target": "research_graphs_matching_engine_ablation_ablationscriptsource",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_exactchannel",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_bm25channel",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_densechannel",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridrrf",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridfeaturescoring",
+      "target": "research_graphs_matching_engine_ablation_top1recallmetric",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridrrf",
+      "target": "research_graphs_matching_engine_ablation_hybridfeaturescoring",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridgatesbetterfinding",
+      "target": "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+      "target": "research_graphs_matching_engine_ablation_bm25scoregate",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_densefeaturefixpoint",
+      "target": "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+      "target": "research_graphs_architecture_pipeline_autolink",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridrrf",
+      "target": "research_graphs_architecture_pipeline_rrffusion",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridfeaturescoring",
+      "target": "research_graphs_architecture_pipeline_featurescoring",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_matching_engine_ablation_hybridgatesbetterfinding",
+      "target": "research_graphs_navis_innovation_scores_hybridrrfweights",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+
+    {
+      "source": "research_graphs_navis_innovation_scores_figure",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_figure",
+      "target": "research_graphs_navis_innovation_scores_whatnottoclaimfinding",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_judgementnotmeasurement",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_rollupfinishguard",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_llmconfinedtointent",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_calibratedthresholdpolicy",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_linelocktagrule",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_institutionalmemoryqueries",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_characterspanprovenance",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_hybridrrfweights",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_rationalelistexplanations",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_crossuploadconflictdetection",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_appendonlyaudittrail",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_voicefieldagent",
+      "target": "research_graphs_navis_innovation_scores_scoringaxes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_aliaslexiconwriteonly",
+      "target": "research_graphs_navis_innovation_scores_whatnottoclaimfinding",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_calibratedthresholdpolicy",
+      "target": "research_graphs_architecture_pipeline_confidencepolicy",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_rollupfinishguard",
+      "target": "research_graphs_architecture_pipeline_granularityrollup",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_llmconfinedtointent",
+      "target": "research_graphs_architecture_pipeline_nothingwrittenbyllm",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_appendonlyaudittrail",
+      "target": "research_graphs_architecture_pipeline_persistencesqlite",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_institutionalmemoryqueries",
+      "target": "research_graphs_architecture_pipeline_institutionalmemory",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_characterspanprovenance",
+      "target": "research_graphs_architecture_pipeline_schemavalidation",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_voicefieldagent",
+      "target": "research_graphs_implementation_status_partialcomponents",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "research_graphs_navis_innovation_scores_figure",
+      "target": "research_graphs_competitor_feature_coverage_figure",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\navis_innovation_scores.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+
+  "hyperedges": [
+    {
+      "id": "navis_deterministic_capture_to_decision_pipeline",
+      "label": "NAVIS capture-to-decision pipeline: ingestion, extraction, validation, hybrid retrieval, RRF fusion, feature scoring, confidence policy",
+      "nodes": [
+        "research_graphs_architecture_pipeline_ingestion",
+        "research_graphs_architecture_pipeline_extraction",
+        "research_graphs_architecture_pipeline_schemavalidation",
+        "research_graphs_architecture_pipeline_hybridretrieval",
+        "research_graphs_architecture_pipeline_rrffusion",
+        "research_graphs_architecture_pipeline_featurescoring",
+        "research_graphs_architecture_pipeline_confidencepolicy"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\architecture_pipeline.png"
+    },
+    {
+      "id": "hybrid_gates_better_than_bm25_finding",
+      "label": "Ablation finding: BM25 ranks best top-1, but the hybrid + feature scoring gate holds 100% auto-link precision at coverage the BM25 gate cannot reach",
+      "nodes": [
+        "research_graphs_matching_engine_ablation_bm25channel",
+        "research_graphs_matching_engine_ablation_densechannel",
+        "research_graphs_matching_engine_ablation_hybridfeaturescoring",
+        "research_graphs_matching_engine_ablation_bm25scoregate",
+        "research_graphs_matching_engine_ablation_shippedoperatingpoint",
+        "research_graphs_matching_engine_ablation_hybridgatesbetterfinding"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\matching_engine_ablation.png"
+    },
+    {
+      "id": "alias_lexicon_write_only_gap_across_figures",
+      "label": "Cross-figure gap: the alias lexicon learning loop writes but is never read back - shown as a pipeline GAP, a NOT FOUND audit row, and the lowest-defensibility feature",
+      "nodes": [
+        "research_graphs_architecture_pipeline_learningloop",
+        "research_graphs_implementation_status_aliaslexiconreadgap",
+        "research_graphs_navis_innovation_scores_aliaslexiconwriteonly"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\research\\graphs\\implementation_status.png"
+    }
+  ],
+
+  "input_tokens": 0,
+  "output_tokens": 0
+}

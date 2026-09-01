@@ -1,0 +1,155 @@
+{
+  "schema_version": "real-corpus-build-summary-v1",
+  "build_version": "1.0.0",
+  "built_at_utc": "2026-09-01T10:20:51.769134+00:00",
+  "data_origin": "real",
+  "is_real": true,
+  "raw_artifacts": 124,
+  "raw_bytes": 263579199,
+  "raw_extension_counts": {
+    ".csv": 1,
+    ".docx": 6,
+    ".html": 13,
+    ".json": 24,
+    ".md": 1,
+    ".parquet": 1,
+    ".pdf": 63,
+    ".pptx": 1,
+    ".txt": 5,
+    ".xlsx": 4,
+    ".zip": 5
+  },
+  "raw_source_counts": {
+    "cfihos_v2": 15,
+    "constructcie": 7,
+    "cpwd_dsr": 3,
+    "fhwa": 5,
+    "indian_railways": 3,
+    "mospi_paimana": 35,
+    "safety_risk_library": 3,
+    "source_policy": 3,
+    "uniclass_snapshot_2022": 4,
+    "wsdot": 46
+  },
+  "datasets": [
+    {
+      "dataset": "paimana",
+      "project_month_rows": 18601,
+      "unique_projects_latest_available": 2243,
+      "monthly_snapshots": 13
+    },
+    {
+      "dataset": "constructcie",
+      "accident_narratives": 530,
+      "causal_span_labels": 3520,
+      "classification_labels": 1580
+    },
+    {
+      "dataset": "safety_risk_library",
+      "risk_treatment_rows": 466
+    },
+    {
+      "dataset": "cfihos_v2",
+      "tables": 21,
+      "rows": 43753,
+      "table_counts": {
+        "CFIHOS CORE CFIHOS object equivalent mapping v2.0.csv": 3091,
+        "CFIHOS CORE data dictionary v2.0.csv": 803,
+        "CFIHOS CORE discipline document type v2.0.csv": 1127,
+        "CFIHOS CORE discipline v2.0.csv": 34,
+        "CFIHOS CORE document required per class v2.0.csv": 1050,
+        "CFIHOS CORE document type v2.0.csv": 329,
+        "CFIHOS CORE equipment class property v2.0.csv": 4707,
+        "CFIHOS CORE equipment class v2.0.csv": 832,
+        "CFIHOS CORE handover event v2.0.csv": 5,
+        "CFIHOS CORE JIP33 information requirements specification v2.0.csv": 533,
+        "CFIHOS CORE property groupings v2.0.csv": 2396,
+        "CFIHOS CORE property picklist values v2.0.csv": 3027,
+        "CFIHOS CORE property v2.0.csv": 1388,
+        "CFIHOS CORE RDL master object v2.0.csv": 11890,
+        "CFIHOS CORE source standard v2.0.csv": 305,
+        "CFIHOS CORE tag class equipment class relationship v2.0.csv": 911,
+        "CFIHOS CORE tag class property v2.0.csv": 4018,
+        "CFIHOS CORE tag class v2.0.csv": 875,
+        "CFIHOS CORE tag or equipment class property source standard v2.0.csv": 4514,
+        "CFIHOS CORE tag or equipment class source standard v2.0.csv": 446,
+        "CFIHOS CORE unit of measure v2.0.csv": 1472
+      }
+    },
+    {
+      "dataset": "uniclass_snapshot_2022",
+      "tables_including_combined": 14,
+      "rows_across_tables_including_combined_duplicates": 30750,
+      "combined_table_rows": 15375,
+      "content_policy": "identity copies only because stricter CC BY-ND policy is applied"
+    },
+    {
+      "dataset": "cpwd_dsr_em_2025",
+      "machine_extracted_item_rate_rows": 1661,
+      "pdf_pages": 441,
+      "verification_status": "machine_extracted_unverified"
+    },
+    {
+      "dataset": "wsdot_c8078_schedules",
+      "schedule_snapshots": 2,
+      "schedule_rows_across_snapshots": 54,
+      "distinct_activity_ids": 27,
+      "verification_status": "manually_reviewed_against_rendered_source"
+    },
+    {
+      "dataset": "cross_source_hard_negatives",
+      "rows": 100,
+      "target_schedule": "wsdot_c8078_2011-02-14",
+      "verification_status": "rule_based_unverified"
+    },
+    {
+      "dataset": "official_dpr_field_inventory",
+      "fields": 26
+    },
+    {
+      "dataset": "discipline_index",
+      "disciplines": 6
+    },
+    {
+      "dataset": "wsdot_c8078_idr_ocr",
+      "source_pdf_files": 21,
+      "ocr_pages": 73,
+      "ocr_lines": 4315,
+      "work_activity_mentions": 13,
+      "verification_status": "machine_extracted_unverified"
+    }
+  ],
+  "benchmark_target_audit": {
+    "20_to_30_DPRs": {
+      "status": "met",
+      "actual": 21,
+      "note": "21 canonical C8078 IDR PDFs are present; the WSDOT source also includes schedules/context/reference files."
+    },
+    "500_to_800_labelled_field_mentions": {
+      "status": "met_for_source_published_causal_spans_not_schedule_ground_truth",
+      "actual": 3520,
+      "note": "ConstructCIE spans are source-published real annotations. WSDOT schedule-linked OCR candidates remain explicitly unverified."
+    },
+    "200_to_300_distinct_schedule_activities": {
+      "status": "partial",
+      "actual_distinct_same_contract": 27,
+      "reference_activity_rows": 1661,
+      "note": "Only 27 distinct activities are present in the two authentic same-contract schedule snapshots. Reference work items are not relabeled as schedule activities."
+    },
+    "6_disciplines": {
+      "status": "met_at_source_collection_level",
+      "actual": 6
+    },
+    "50_to_100_plus_hard_negatives": {
+      "status": "met_as_rule_based_cross_contract_candidates",
+      "actual": 100,
+      "note": "These are real ConstructCIE sentences and Safety Risk Library treatments evaluated against an unrelated WSDOT schedule; they are rule_based_unverified, not manual gold."
+    }
+  },
+  "ocr_skipped": false,
+  "real_vs_synthetic_separation": {
+    "real_root": "datasets/real",
+    "synthetic_root": "dataset",
+    "mixed": false
+  }
+}

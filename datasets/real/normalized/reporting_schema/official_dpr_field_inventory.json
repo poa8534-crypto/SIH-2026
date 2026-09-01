@@ -1,0 +1,118 @@
+{
+  "schema_version": "real-source-derived-dpr-schema-v1",
+  "data_origin": "real",
+  "is_real": true,
+  "derivation": "manual field inventory from official WSDOT form and FHWA inspection guide",
+  "annotation_origin": "manual_schema_transcription",
+  "verification_status": "manually_reviewed_against_official_sources",
+  "source_artifact_ids": [
+    "sha256:bd15334fc8484f667058fa7659a42c04d798fa34ac1aa4073c02eaa9efe6b886",
+    "sha256:0e84a84f62ad08ddfa971f00cd07829d41aaed5fbb2a04752c455e989585e21f"
+  ],
+  "fields": [
+    {
+      "group": "identity",
+      "name": "contract_id"
+    },
+    {
+      "group": "identity",
+      "name": "state_route_numbers"
+    },
+    {
+      "group": "identity",
+      "name": "report_day"
+    },
+    {
+      "group": "identity",
+      "name": "report_date"
+    },
+    {
+      "group": "conditions",
+      "name": "weather_am"
+    },
+    {
+      "group": "conditions",
+      "name": "weather_pm"
+    },
+    {
+      "group": "parties",
+      "name": "prime_contractor"
+    },
+    {
+      "group": "parties",
+      "name": "prime_contractor_representative_and_title"
+    },
+    {
+      "group": "parties",
+      "name": "subcontractors_and_representatives"
+    },
+    {
+      "group": "work",
+      "name": "work_activity_description_and_location"
+    },
+    {
+      "group": "payment",
+      "name": "pay_note_status"
+    },
+    {
+      "group": "payment",
+      "name": "contract_item_number_description_and_location"
+    },
+    {
+      "group": "materials",
+      "name": "backup_samples_taken"
+    },
+    {
+      "group": "materials",
+      "name": "materials_documentation_approved"
+    },
+    {
+      "group": "materials",
+      "name": "materials_source_approved"
+    },
+    {
+      "group": "resources",
+      "name": "equipment_id_description_and_operating_status"
+    },
+    {
+      "group": "resources",
+      "name": "workforce_trade_counts_and_hours"
+    },
+    {
+      "group": "traffic",
+      "name": "traffic_control_required_and_compliant"
+    },
+    {
+      "group": "traffic",
+      "name": "flagger_and_spotter_card_status"
+    },
+    {
+      "group": "evidence",
+      "name": "photos_or_videos_taken"
+    },
+    {
+      "group": "inspection",
+      "name": "inspector_on_site_hours"
+    },
+    {
+      "group": "inspection",
+      "name": "inspector_signature_and_review"
+    },
+    {
+      "group": "narrative",
+      "name": "orders_discussions_unusual_conditions_delays_and_visitors"
+    },
+    {
+      "group": "controls",
+      "name": "progress_quality_time_elapsed_and_work_completed"
+    },
+    {
+      "group": "controls",
+      "name": "findings_recommendations_resolution_and_follow_up"
+    },
+    {
+      "group": "audit",
+      "name": "work_measured_and_paid_audit_trail"
+    }
+  ]
+}

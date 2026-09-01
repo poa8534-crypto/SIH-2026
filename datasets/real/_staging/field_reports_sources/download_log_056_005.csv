@@ -1,0 +1,6 @@
+"group","local_path","source_url","retrieved_at_utc","status","http_status","content_type","size_bytes","sha256","error","data_origin"
+"policy","raw/policy/data-wsdot-robots.txt","https://data.wsdot.wa.gov/robots.txt","2026-09-01T09:36:27.2229838Z","failed",,,,,"Response status code does not indicate success: 404 (Not Found).","real"
+"policy","raw/policy/wsdot-robots.txt","https://wsdot.wa.gov/robots.txt","2026-09-01T09:36:27.2229838Z","downloaded","200","text/plain","2027","773fb8d35bb9a39d35335ee6db8dc5c912d2aacbfb823152d9c61cd647dd902d","","real"
+"policy","raw/policy/highways-dot-gov-robots.txt","https://highways.dot.gov/robots.txt","2026-09-01T09:36:27.2229838Z","failed",,,,,"Response status code does not indicate success: 403 (Forbidden).","real"
+"policy","raw/policy/fhwa-dot-gov-robots.txt","https://www.fhwa.dot.gov/robots.txt","2026-09-01T09:36:27.2229838Z","downloaded","200","text/plain","2593","ff067b9f7f861db930cefb1e46dd9a9ba945bb81aa7ffdcc90f953b679c0119d","","real"
+"policy","raw/policy/wsdot-web-privacy-notice.html","https://wsdot.wa.gov/about/policies/web-privacy-notice","2026-09-01T09:36:27.2229838Z","downloaded","200","text/html; charset=UTF-8","146394","2d9b04d6bfecaaf66279f6a17cbbfa2a38651fe05d407afae009be9e0da3943b","","real"

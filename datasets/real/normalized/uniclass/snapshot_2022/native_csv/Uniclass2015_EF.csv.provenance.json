@@ -1,0 +1,13 @@
+{
+  "schema_version": "derived-file-provenance-v1",
+  "data_origin": "real",
+  "is_real": true,
+  "source_artifact_id": "sha256:683bfdf756f0fe4dacb4a57002dd18c6548515f63aed19dc2aaa2181e5507005",
+  "source_archive_member": "uniclass-2015-main/uniclass2015/Uniclass2015_EF.csv",
+  "native_relative_path": "normalized/uniclass/snapshot_2022/native_csv/Uniclass2015_EF.csv",
+  "content_preservation": "byte-for-byte identity copy; no columns or values changed",
+  "license_id": "CC-BY-ND-4.0-strict-downstream-policy",
+  "access_terms": "Current official Uniclass terms are CC BY-ND 4.0. The 2022 Buildig mirror states CC BY-SA 3.0; this corpus applies the stricter no-derivatives policy.",
+  "row_count_excluding_header": 107,
+  "verification_status": "identity_copy_hash_verified"
+}

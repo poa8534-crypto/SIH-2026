@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PAIMANA – Infrastructure & Project Monitoring | MoSPI, Government of India </title>
+    <meta name="description" content="PAIMANA (Project Assessment Infrastructure Monitoring and Analytics for Nation Building) is MoSPI's unified platform for Project Appraisal, Monitoring of Central Sector infrastructure projects worth ₹150 crore & above and Performance Monitoring.">
+    <meta name="keyword" content="PAIMANA, Project Assessment Infrastructure Monitoring, IPMD, MoSPI, OCMS, infrastructure analytics, project monitoring India, central sector projects, ₹150 crore above projects, new OCMS, Infrastructure Projects, Project Monitoring, Infrastructure Project Monitoring, IIG-PMG-OCMS, IIG PMG OCMS">
+
+    <link href="/Content/css/WebCss/font-awesome.min.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/bootstrap.min.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/family=Montserrat.css" rel="stylesheet">
+    <link href="/Content/css/WebCss/esri.css" rel="stylesheet">
+    <link href="/Content/css/Style.css" rel="stylesheet" />
+    <link href="/Content/css/about.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/Content/css/WebCss/swiper-bundle.min.css">
+    <link href="/Content/css/responsive.css" rel="stylesheet" />
+
+    <script src="/Scripts/jquery-3.7.0.min.js"></script>
+    
+    <script src="/Content/js/propper.js"></script>
+
+    <script src="/Content/js/WebJS/bootstrap.min.js"></script>
+    <script src="/Content/js/slick.js"></script>
+
+    <script src="/Content/js/WebJS/swiper-bundle.min.js"></script>
+
+
+    <!--------temp map start-->
+    <!---->
+    <script src="/Content/js/WebJS/crypto-js.js"></script>
+
+
+
+    <!--nihi-->
+    <!--nihi-->
+
+
+
+</head>
+
+<body id="pagelayout">
+
+    <header class="position-relative">
+        <div class="topbar">
+            <div class="container">
+                <div class="topbarbox">
+                    <div class="topbar-actions">
+                        <a href="#mainPage" class="topbar-skip" title="Skip to Main Content" aria-label="Skip to Main Content">
+                            <img src="../Content/svg/skip_to_main.svg" alt="Skip to Main Content" class="topbar-icon">
+                            <span class="topbar-skip-text">Skip to Main Content</span>
+                        </a>
+
+                          <button class="topbar-icon-btn topbar-lang" type="button" title="Language" aria-label="Language">
+                            <img src="../Content/svg/hind-english.svg" alt="Language" class="topbar-icon">
+                        </button>     
+                      
+                        <div class="dropdown topbar-access">
+                            <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Accessibility / Font Size" aria-label="Accessibility / Font Size">
+                                <img src="../Content/svg/accessiblity.svg" alt="Accessibility" class="topbar-icon">
+                            </button>                            
+                        </div>
+                      
+                                      
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="header-flex-row">
+                <div class="header-left-group">
+                    <a href="https://www.mospi.gov.in/" target="_blank" class="ministry-block">
+                        <img src="../Content/img/logo-mospi.png" data-dark="../Content/img/logo-mospi.png" data-light="../Content/img/logo-mospi.png" alt="Ministry of Statistics and Programme Implementation" class="ministry-text-img">
+                    </a>
+                    <div class="partner-logos">
+                        <a href="https://www.dic.gov.in/" target="_blank" title="Data for Development">
+                            <img src="../Content/img/data-for-dev.png" alt="" onerror="this.style.display='none'">
+                        </a>
+                        
+                    </div>
+                </div>
+                <div class="header-right-group">
+                    <ul class="headerlist">
+
+                        
+                        
+                        
+                        <li><a href=" https://paimana-crip.mospi.gov.in" target="_blank" class="haddProject">Add Project / Update</a></li>
+                        <li><a href="/User/Login" class="hlogin">Reports</a></li>
+
+                        
+                        
+                    </ul>
+                </div>
+                <a href="https://paimana.mospi.gov.in/" target="_blank" class="paimana-brand">
+                    <img src="../Content/img/logo-paimana.png" data-dark="../Content/img/logo-paimana.png" data-light="../Content/img/logo-paimana.png" alt="PAIMANA">
+                </a>
+                
+            </div>
+        </div>
+    </header>
+
+
+    <div class="mobileheader">
+        <div class="container-fluid">
+            <div class="mospiheader">
+                <div class="boxone">
+                    <div class="menulink"><a href="javascript:vodi(0)" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop"><img src="/Content/img/side_menu-dark.png" data-dark="../Content/img/side_menu-white.png" data-light="../Content/img/side_menu-dark.png" alt="Mobile Side Icon"></a></div>
+                    <div class="mospiname">IPMD | MoSPI</div>
+                </div>
+                <div class="boxone two">
+                    <div class="moblogin"><a href="/User/Login">Login <img src="../Content/img/login.png" alt=""></a></div>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!----Side bar link start-->
+    <!--<section>
+        <div id="mySidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Archives</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Feedback</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">RTI</a>
+            <a href="#" class="p-3 mx-2 my-4 border rounded">Parliament Questions</a>
+
+    </section>-->
+    <!--side bar link end-->
+    <!---Setting start-->
+    <!--<section>
+        <div id="mySidebar2" class="sidebar2">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav2()">×</a>
+            <a href="#">Home</a>
+            <a href="#">Services</a>
+            <a href="#">Clients</a>
+            <a href="#">Contact</a>
+        </div>
+    </section>-->
+    <!---Setting end-->
+    <!----nav bar start-->
+
+    <section class="desktopshow navigationmenu">
+        <div class="row bg-secondry">
+
+            <nav class="navbar navbar-expand-lg bg-body-tertiary bg-secondry">
+                <div class="container-fluid">
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse navMenu float-left" id="navbarNavDropdown">
+                        
+
+
+
+
+<ul class="navbar-nav">
+
+            <li class="nav-item">
+                    <a class="nav-link" href="https://paimana-proj.mospi.gov.in/" target="_self">
+                        Home
+                        
+                    </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown@item.Menu_ID" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Publications
+
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown@item.Menu_ID">
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/ReportPage" target="_self">
+                                    Project Monitoring
+                                    
+                                </a>
+                        </li>
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/ProjectMonitoring" target="_self">
+                                    Performance Monitoring
+                                    
+                                </a>
+                        </li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown@item.Menu_ID" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Dashboard
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown@item.Menu_ID">
+                        <li>
+                                <a class="dropdown-item" href="https://paimana-proj.mospi.gov.in/Home/PublicDashboardNew" target="_self">
+                                    Public
+                                    
+                                </a>
+                        </li>
+                </ul>
+            </li>
+
+</ul>
+ <!-- Dynamic Menu Loaded Here -->
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </section>
+
+    <!--<section class="desktopshow navigationmenu">
+        <div class="row bg-secondry">
+
+            <nav class="navbar navbar-expand-lg bg-body-tertiary bg-secondry">
+                <div class="container-fluid">
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse navMenu float-left" id="navbarNavDropdown">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <!--     <a class="openbtn" onclick="openNav()"><img src="img/side_menu.png" alt="" class="pt-2"></a> -->
+    <!--</li>
+    <li class="nav-item">
+        <a class="nav-link active" aria-current="page" href="/">Home</a>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            About Us
+        </a>
+        <ul class="dropdown-menu">-->
+    
+    <!--<li><a class="dropdown-item" href="https://www.mospi.gov.in/about-ministry-0" target="_blank">About Ministry</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/AboutUs/AboutIPMD">About IPMD</a></li>
+    <li><a class="dropdown-item" href="/AboutUs/AboutOCMS">About New OCMS</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/AboutUs/AboutWhos">Who's Who</a></li>
+            <li><a class="dropdown-item" href="/AboutUs/AllocationBussiness">Allocation of Business Rules</a></li>
+        </ul>
+    </li>
+
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Notification
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Notification/Order">Order</a></li>-->
+    
+    <!--<li><a class="dropdown-item" href="/Notification/Manual">Manual</a></li>
+        </ul>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Media
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Gallary/GallaryDetails">Photos</a></li>
+            <li><a class="dropdown-item" href="/Video/VideoDetails">Videos</a></li>
+
+        </ul>
+    </li>-->
+    
+    <!--<li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+           aria-expanded="false">
+            Publications
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/ReportPage">Project Monitoring</a></li>
+            <li><a class="dropdown-item" href="/ProjectMonitoring">Performance Monitoring</a></li>
+
+        </ul>
+    </li>-->
+    
+    
+    <!--<li class="nav-item">
+        <a class="nav-link" href="/ContactUs/Contact">Contact us</a>
+    </li>-->
+    
+    <!--<li class="nav-item dropdown">-->
+    
+    <!--<img src="../Content/img/dashboard.png" data-dark="../Content/img/dashboard-icon-dark.png" data-light="../Content/img/dashboard.png" alt="Dashboard ICon">
+    <a class="nav-link dropdown-toggle d-inline-block" href="#" role="button" data-bs-toggle="dropdown"
+       aria-expanded="false">
+        Dashboard
+    </a>
+    <ul class="dropdown-menu">-->
+    
+    
+    <!----nav bar end-->
+    
+    
+
+
+
+
+<script src="/Content/js/gsap.min.js"></script>
+<script src="/Content/js/MotionPathPlugin.min.js"></script>
+<script src="/Content/js/swiper-element-bundle.min.js"></script>
+<script src="/Content/js/slick.js"></script>
+<script src="/Content/js/init.js"></script>
+
+<script>
+    $(document).ready(function () {
+        //loadContent("#WhellView", '/Home/GetWheel', "#loaderWheel", "Error loading content.");
+       // loadContent("#MediaView", '/Home/GetMedia', "#loaderMedia", "Error loading content.");
+        loadContent("#HighlyValueProjectView", '/Home/GetHighlyValue', "#loaderHighlyValue", "Error loading content.");
+       // loadContent("#RssFeedView", '/Home/GetRssFeed', "#loaderRssFeed", "Error loading news content.");
+       // loadContent("#SocialMediaView", '/Home/GetSocialMedia', "#loaderSocialMedia", "Error loading social media content.");
+        ////loadContent("#StateView", '/Home/GetStateView', "#loaderState", "Error loading content.");
+    });
+
+    function loadContent(target, url, loader, errorMsg) {
+        $(target).load(url, function (response, status) {
+            if (status === "success") {
+                $(target).show();
+                $(loader).hide();
+            } else {
+                $(target).html("<p>" + errorMsg + "</p>");
+                $(loader).hide();
+            }
+        });
+    }
+</script>
+<main id="mainPage">
+    <!--Slider start-->
+    <div class="homsection paimana-banner-wrap">
+        <div class="swiper paimanaBanner">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide" style="background-image:url('/Content/img/banner1-1razA4xw.jpeg');"></div>
+                <div class="swiper-slide" style="background-image:url('/Content/img/banner2-AZrNp54C.png');"></div>
+                <div class="swiper-slide" style="background-image:url('/Content/img/banner3-BkFJVKqW.png');"></div>
+                <div class="swiper-slide" style="background-image:url('/Content/img/banner4-BesNf3Ns.png');"></div>
+            </div>
+            <div class="paimana-overlay">
+                <div class="paimana-overlay-box">
+                    <h1 class="paimana-title">Project Monitoring</h1>
+                    <p class="paimana-tag">Central Sector Infrastructure Projects Costing Rs. 150 crore & above</p>
+                </div>
+            </div>
+            <div class="swiper-pagination paimana-pagination"></div>
+            <div class="swiper-button-prev paimana-prev"></div>
+            <div class="swiper-button-next paimana-next"></div>
+        </div>
+        <div class="container-fluid p-0 d-none">
+            <div class="row">
+                <div class="col-md-6 bgocms">
+                    <div class="bannerone">
+                        <img src="/Content/img/ocms-bg.png" alt="ocmd image" />
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+
+
+    <!--slider end -->
+    <!---weel menu start-->
+    
+    <section class="atomiconmob position-relative wheelalternative" id="WheelSection">
+        <div class="text-center" id="loaderWheel">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="WhellView" style="display:none">
+        </div>
+    </section>
+
+    <!---weel menu start-->
+    <!---weel menu End-->
+    <!---state wise project Start----->
+    <section class="position-relative  state-bg">
+        <div class="text-center" id="loaderState">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="StateView" style="display:none">
+        </div>
+
+    </section>
+    <!--------state wise project End----->
+    <!--news and update-->
+    <section style="display:none">
+        <div class="container-fluid py-4">
+            <div class="row ">
+                <div class=" col-sm-12 col-md-12 col-lg-4 text-center ">
+                    <h2 class="my-3 whatsnew">What’s New</h2>
+                    <div class=" whts-new  p-3 border  shadow-sm whtmedia">
+                                <div class="whatsnewlist">
+                                    <div class="whatsnewdate">March 2026</div>
+                                    <div class="whatsnewsctn">
+                                        
+                                        <a href="/Home/ViewPdf/31?path=FlashReport_March_2026.pdf" target="_blank">
+                                            
+                                            <span style="font-size: 10px;">[Project Monitoring]</span>
+                                            <br />
+                                            Monthly Flash Report
+                                                <span class="newtag">New</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="whatsnewlist">
+                                    <div class="whatsnewdate">Jan 2026</div>
+                                    <div class="whatsnewsctn">
+                                        
+                                        <a href="/Home/ViewPdf/29?path=Review%20Report%20Jan26.pdf" target="_blank">
+                                            
+                                            <span style="font-size: 10px;">[Performance Monitoring]</span>
+                                            <br />
+                                            Monthly Review Report
+                                                <span class="newtag">New</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="whatsnewlist">
+                                    <div class="whatsnewdate">Feb 2026</div>
+                                    <div class="whatsnewsctn">
+                                        
+                                        <a href="/Home/ViewPdf/30?path=FlashReport_February_2026.pdf" target="_blank">
+                                            
+                                            <span style="font-size: 10px;">[Project Monitoring]</span>
+                                            <br />
+                                            Monthly Flash Report
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="whatsnewlist">
+                                    <div class="whatsnewdate">Jan 2026</div>
+                                    <div class="whatsnewsctn">
+                                        
+                                        <a href="/Home/ViewPdf/28?path=FlashReport_January_2026.pdf" target="_blank">
+                                            
+                                            <span style="font-size: 10px;">[Project Monitoring]</span>
+                                            <br />
+                                            Monthly Flash Report
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="whatsnewlist">
+                                    <div class="whatsnewdate">Dec 2025</div>
+                                    <div class="whatsnewsctn">
+                                        
+                                        <a href="/Home/ViewPdf/27?path=Review%20Report%20Dec%2025.pdf" target="_blank">
+                                            
+                                            <span style="font-size: 10px;">[Performance Monitoring]</span>
+                                            <br />
+                                            Monthly Review Report
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="whatmorebtn">
+                                    
+                                    <a href="/WhatsNewViewMore/ViewMore" style="color: #fff; text-decoration: none;">View More</a>
+                                </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-12 col-lg-4 text-center">
+                    <h2 class="my-3 whatsnew">Social Media</h2>
+                    <div class="whts-new p-3 border shadow-sm whtmedia">
+                        <div class="text-center" id="loaderSocialMedia">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="SocialMediaView" style="display:none">
+                        </div>
+                    </div>
+
+
+                </div>
+                <div class="col-sm-12 col-md-12 col-lg-4 text-center">
+                    <h2 class="my-3 whatsnew">In News</h2>
+                    <div class=" whts-new p-3  border shadow-sm" id="rssFeedContainer" style="height: 420px; overflow-y: hidden; ">
+                        <div class="text-center" id="loaderRssFeed">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div id="RssFeedView" style="display:none">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!------Highly Value Projects start-->
+    <section class="position-relative high-bg">
+        <div class="container-fluid py-3 ">
+            <h2 class=" text-center text-bold py-3 high">High Value Projects</h2>
+            <div class="text-center" id="loaderHighlyValue">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div id="HighlyValueProjectView" style="display:none">
+            </div>
+        </div>
+        <div class="projectmointering">
+            <img src="../Content/img/project-mointering.svg" data-dark="../Content/img/project-mointering-dark.svg" data-light="../Content/img/project-mointering.svg" alt="Project Mointering">
+        </div>
+    </section>
+    <!----gallary statr-->
+    <section class="medialist" style="display:none">
+
+
+        <div class="container-fluid gallery-bg ">
+            <div class="innertitle">
+                <h2>Media</h2>
+            </div>
+            <div class="text-center" id="loaderMedia">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div id="MediaView" style="display:none">
+            </div>
+            <script type="text/javascript">
+             $(window).on('load', function () {
+                 $("#MediaView").load('/Home/GetMedia', function (response, status, xhr) {
+                     if (status === "success") {
+                         $("#MediaView").show();  // Show the loaded content
+                         $("#loaderMedia").hide(); // Hide the loader after successful load
+                     } else {
+                         $("#MediaView").html("<p>Error loading content.</p>");
+                         $("#loaderMedia").hide(); // Hide loader even if there’s an error
+                     }
+                 });
+                 
+             });
+            </script>
+            <div class="innertitle1">
+
+                <a href="/Gallary/GallaryDetails">View All</a>
+            </div>
+        </div>
+
+    </section>
+    
+    <!----gallary end-->
+</main>
+<!-- Modal Structure -->
+<!--<div class="modal fade" id="infoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">-->
+         
+<!--<div class="modal-content">
+    <div class="modal-header" style="width: 100%; background-color: #012677 !important; color:#fff;">
+        <h5 class="modal-title" id="infoModalLabel">Important Information</h5>
+    </div>
+    <div class="modal-body" style="text-align:justify;">
+        <p>
+            <b>Welcome to the beta version of our new OCMS portal!</b> <br /><br />
+            <span style="color:red;">
+                Please note that data migration and validation are ongoing,
+                and the statistics presented may not be accurate.
+            </span> <br /><br />For official project statistics,
+            kindly refer to the existing portal (<a href="http://www.cspm.gov.in" target="_blank">www.cspm.gov.in</a>) until the new portal is fully streamlined!
+        </p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background-color: #012677 !important; color:#fff;">OK</button>
+    </div>
+</div>
+    </div>
+</div>-->
+<script>
+    // Show the modal when the page loads
+    document.addEventListener("DOMContentLoaded", function () {
+        var infoModal = new bootstrap.Modal(document.getElementById("infoModal"));
+        infoModal.show();
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            const modalEl = document.getElementById('infoModal');
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+        }
+    });
+</script>
+
+<!---map script end-->
+<script>
+    $(document).ready(function () {
+        // Main Slider
+        $('.media-main').slick({
+            slidesToShow: 1,
+            //autoplay:true,
+            slidesToScroll: 1,
+            //centerMode: true,
+            //infinite: false,
+            arrows: false,
+            fade: true,
+            asNavFor: '.media-thumb' // Link to navigation slider
+        });
+
+        // Navigation Slider
+        $('.media-thumb').slick({
+            slidesToShow: 4,       // Number of thumbnails to show
+            //autoplay:true,
+            //infinite: false,
+            slidesToScroll: 1,
+            asNavFor: '.media-main', // Link to main slider
+            dots: false,
+            //centerMode: true,       // Enable center mode
+            focusOnSelect: true,     // Focus on selected thumbnail
+            prevArrow: "<div class='arrowboxleft'><img src='../Content/img/arrow-left.svg' alt='Arrow Left'></div>",
+            nextArrow: "<div class='arrowboxright'><img src='../Content/img/arrow-right.svg' alt='Arrow Left'></div>",
+            responsive: [
+                {
+                    breakpoint: 767, // Below 567px
+                    settings: {
+                        slidesToShow: 3.2, // Show 2 thumbnails
+                        slidesToScroll: 1
+                    }
+                },
+                {
+                    breakpoint: 567, // Below 567px
+                    settings: {
+                        slidesToShow: 2.5, // Show 2 thumbnails
+                        slidesToScroll: 1
+                    }
+                },
+                {
+                    breakpoint: 0, // Default for very small screens
+                    settings: {
+                        slidesToShow: 2.3, // Show 1 thumbnail
+                        slidesToScroll: 1
+                    }
+                }
+            ]
+        });
+    });
+
+    function smallsize() {
+        document.getElementById("pagelayout").style.fontSize = "small";
+        updateActiveClass("small");
+    }
+
+    function mediumsize() {
+        document.getElementById("pagelayout").style.fontSize = "medium";
+        updateActiveClass("medium");
+    }
+
+    function largesize() {
+        document.getElementById("pagelayout").style.fontSize = "large";
+        updateActiveClass("large");
+    }
+
+    function updateActiveClass(size) {
+        // Remove the active class from all buttons
+        document.querySelectorAll(".topsetting button").forEach((button) => {
+            button.classList.remove("active");
+        });
+
+        // Add the active class to the clicked button
+        document.querySelector(`button[onclick*="${size}size"]`).classList.add("active");
+
+        // Update the body class
+        const body = document.body;
+        body.classList.remove("small", "medium", "large"); // Remove any existing size classes
+        body.classList.add(size); // Add the selected size class
+    }
+</script>
+
+
+<script>
+    /*--Search function--start(27/11/24)*/
+    const searchFun = () => {
+        let filter = document.getElementById('myInput').value.toUpperCase();
+        let circularTable = document.getElementById('circularTable');
+
+        let tr = circularTable.getElementsByTagName('tr');
+
+        for (var i = 0; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName('td')[0];
+
+            if (td) {
+                let textvalue = td.textContent || td.innerHTML;
+
+                if (textvalue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+
+    }
+
+    /*--Search function--end*/
+</script>
+
+
+<script>
+    const counters = document.querySelectorAll('.counter');
+    const speed = 500; // The lower the slower
+
+    counters.forEach(counter => {
+        const updateCount = () => {
+            const target = +counter.getAttribute('data-target');
+            const count = +counter.innerText;
+
+            // Lower inc to slow and higher to slow
+            const inc = target / speed;
+
+            // console.log(inc);
+            // console.log(count);
+
+            // Check if target is reached
+            if (count < target) {
+                // Add inc to count and output in counter
+                counter.innerText = count + inc;
+                // Call function every ms
+                setTimeout(updateCount, 1);
+            } else {
+                counter.innerText = target;
+            }
+        };
+
+        updateCount();
+    });
+</script>
+
+<!--wheel end-->
+
+<script>
+    //function numberWithCommas(x) {
+    //    var num = x.toString();
+    //    var lastThree = num.substring(num.length - 3);
+    //    var otherNumbers = num.substring(0, num.length - 3);
+
+    //    if (otherNumbers != '') {
+    //        lastThree = ',' + lastThree;
+    //    }
+
+    //    var result = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+    //    return result;
+    //}
+    function numberWithCommas(x) {
+        // Round to 2 decimals
+        x = parseFloat(x).toFixed(2);
+
+        var parts = x.split(".");
+        var num = parts[0]; // integer part
+        var decimalPart = parts[1] === "00" ? "" : "." + parts[1]; // show decimals only if not .00
+
+        var lastThree = num.substring(num.length - 3);
+        var otherNumbers = num.substring(0, num.length - 3);
+
+        if (otherNumbers !== '') {
+            lastThree = ',' + lastThree;
+        }
+
+        var formattedInt = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+        return formattedInt + decimalPart;
+    }
+
+    $('h5.count.counter').each(function () {
+        var v_pound = $(this).html();
+        v_pound = numberWithCommas(v_pound);
+
+        $(this).html(v_pound)
+    });
+</script>
+<script type="text/javascript">
+        $(window).on('load', function () {
+            $("#WhellView").load('/Home/GetWheel', function (response, status, xhr) {
+                if (status === "success") {
+                    $("#WhellView").show();  // Show the loaded content
+                    $("#loaderWheel").hide(); // Hide the loader after successful load
+                } else {
+                    $("#WhellView").html("<p>Error loading content.</p>");
+                    $("#loaderWheel").hide(); // Hide loader even if there’s an error
+                }
+            });
+            $("#WhellView").show();  // Show the loaded content
+        });
+</script>
+
+<script type="text/javascript">
+        $(window).on('load', function () {
+            $("#StateView").load('/Home/GetStateView', function (response, status, xhr) {
+                if (status === "success") {
+                    $("#StateView").show();  // Show the loaded content
+                    $("#loaderState").hide(); // Hide the loader after successful load
+                } else {
+                    $("#StateView").html("<p>Error loading content.</p>");
+                    $("#loaderState").hide(); // Hide loader even if there’s an error
+                }
+            });
+            $("#StateView").show();  // Show the loaded content
+        });
+</script>
+
+<script type="text/javascript">
+    $(function () {
+        if (typeof Swiper !== 'undefined' && document.querySelector('.paimanaBanner')) {
+            new Swiper('.paimanaBanner', {
+                loop: true,
+                speed: 900,
+                autoplay: { delay: 4000, disableOnInteraction: false },
+                pagination: { el: '.paimana-pagination', clickable: true },
+                navigation: { nextEl: '.paimana-next', prevEl: '.paimana-prev' }
+            });
+        }
+    });
+</script>
+    
+
+    <!---logos start-->
+    <!--<section class="clientlist">-->
+    
+
+    <!--<div class="container-fluid py-3">
+
+        <div class="customer-logos slider ">
+            <div class="slide img-fluid"><a href="https://rtionline.gov.in/" target="_blank"><img src="~/Content/inner-img/rti_logo_hindi1.png" alt="RTI Online"></a></div>
+            <div class="slide img-fluid"><a href="https://www.mygov.in/" target="_blank"><img src="~/Content/inner-img/gov1.png" alt="My Gov"></a></div>
+            <div class="slide img-fluid"><a href=" https://www.nic.in/" target="_blank"><img src="~/Content/inner-img/nic1.png" alt="NIC"></a></div>
+            <div class="slide img-fluid"><a href="https://www.skillindiadigital.gov.in/home" target="_blank"><img src="~/Content/inner-img/Skill-India1.png" alt="Skill India"></a></div>
+            <div class="slide img-fluid"><a href="https://csc.gov.in/digitalIndia" target="_blank"><img src="~/Content/inner-img/Digital India-Black1.png" alt="Digital India"></a></div>
+            <div class="slide img-fluid"><a href="https://swachhbharatmission.ddws.gov.in/" target="_blank"><img src="~/Content/inner-img/Swach-Bharat-Large1.png" alt="Swach Bharat"></a></div>
+            <div class="slide img-fluid"><a href="https://www.investindia.gov.in/" target="_blank"><img src="~/Content/inner-img/ii.png" alt="Invest India"></a></div>
+            <div class="slide img-fluid"><a href="https://dpe.gov.in/" target="_blank"><img src="~/Content/inner-img/dpe.png" alt="Department of Public Enterprises"></a></div>
+            <div class="slide img-fluid "><a href="https://pmg.dpiit.gov.in/" target="_blank"><img src="~/Content/inner-img/pmg.png" alt="Dpiit"></a></div>
+            <div class="slide img-fluid "><a href="https://www.niti.gov.in/" target="_blank"><img src="~/Content/inner-img/niti.png" alt="NITI Aayog"></a></div>
+
+
+        </div>
+
+
+    </div>-->
+    
+
+    <!--</section>-->
+    
+    <section class="clientlist" style="display:none">
+        
+
+        <div class="container-fluid py-3">
+            <div class="customer-logos slider">
+                
+
+
+
+
+
+
+
+        <div class="slide img-fluid">
+            <a href="https://swachhbharatmission.ddws.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/swatch Bharat Mission_638984721536825005.jpg" alt="swatch Bharat Mission" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.skillindiadigital.gov.in/home" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Skill India Digital.png" alt="Skill India Digital" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://csc.gov.in/digitalIndia" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Digital India.png" alt="Digital India" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://dpe.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/DPE.png" alt="DPE" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.niti.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Niti Aayog.png" alt="Niti Aayog" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://pmg.dpiit.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/PMG DPIIT.png" alt="PMG DPIIT" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.nic.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/NIC.png" alt="NIC" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.investindia.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/Invest india.png" alt="Invest india" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://www.mygov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/MY GOV.png" alt="MY GOV" />
+            </a>
+        </div>
+        <div class="slide img-fluid">
+            <a href="https://rtionline.gov.in/" target="_blank">
+                <img src="/Content/UploadedGovtLinkImages/RTI_639035551953175859.png" alt="RTI" />
+            </a>
+        </div>
+
+
+
+
+            </div>
+        </div>
+        
+
+    </section>
+
+    <!---logo end-->
+
+
+    <section class="appdownload">
+        <div class="container-fluid">
+            <div class="appdownbox">
+                <div class="apppaimana">
+                    <img src="../Content/img/apppaimana.png" alt="App Paimana">
+                </div>
+                <div class="appmiddlecontent">
+                    <h3>Coming Soon</h3>
+                    <p>Discover your new favorite spaces, Download from Google Play/iOS App.</p>
+                </div>
+                <div class="appicondownload">
+                    <a href="javascript:void(0);"><img src="../Content/img/playstore-icon.png" alt="Paimana Play Store"></a>
+                    <a href="javascript:void(0);"><img src="../Content/img/apple-store.png" alt="Paimana Play Store"></a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!---logo end-->
+
+    <footer>
+        <div class="container">
+            <div class="footer-brand">
+                <div class="footer-brand-left">
+                    <a href="https://www.mospi.gov.in/" target="_blank" class="ministry-block">
+                        <img src="../Content/img/logo-mospi.png" alt="Ministry of Statistics and Programme Implementation" class="footer-ministry-img">
+                    </a>
+                    <a href="https://www.dic.gov.in/" target="_blank" title="Data for Development">
+                        <img src="../Content/img/data-for-dev.png" alt="Data for Development" class="footer-partner-img">
+                    </a>
+                </div>
+                <div class="niclogo">
+                    <div class="negd-credit">
+                        <p class="negd-credit-title">Design and Developed by NeGD</p>
+                        <a href="https://negd.gov.in/" target="_blank" rel="noopener">
+                            <img src="../Content/img/negdlogo.png" alt="National e-Governance Division (NeGD)" class="negd-credit-logo">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footertop">
+                <div class="contactbox">
+                    <h4>Get in touch</h4>
+                    <h3>Ministry of Statistics and Programme Implementation, Government of India, Khurshid Lal Bhawan, Janpath, New Delhi-110001 (India).</h3>
+                    <ul class="contactlist">
+                        <li><a href="tel:01123455604"><img src="../Content/img/tel-icon.png" alt=""> 011-23455604</a></li>
+                        <li><a href="mailto:dir-ipmd@mospi.gov.in"><img src="../Content/img/email-icon.png" alt=""> dir-ipmd[at]mospi[dot]gov[dot]in</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footermiddle">
+                <div class="fmiddlecnt">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/ContactUs/Contact">Contact Us</a></li>
+                        <li><a href="/FAQ">FAQs</a></li>
+                        <li><a href="/QuickLink/SiteMap">Site Map</a></li>
+                        <li><a href="/QuickLink/HyperLinkPolicy">Hyperlinking Policy</a></li>
+                        <li><a href="/QuickLink/PrivacyPolicy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+
+        </div>
+        <div class="footerbottom">
+            <div class="container">
+                
+                <p><b>Content owned and maintained by:</b> Infrastructure & Project Monitoring Division(IPMD) | Ministry of Statistics and Programme Implementation.</p>
+                <p class="mb-0">Copyright © 2025 Ministry of Statistics and Programme Implementation</p>
+            </div>
+        </div>
+    </footer>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+    
+    <style>
+
+        .slide {
+            transition: transform 0.5s ease-in-out;
+        }
+
+            .slide.active {
+                /*border: 2px solid #ff0000;*/
+                border: 2px solid #fff;
+                transform: scale(1.1);
+            }
+    </style>
+    
+    
+
+    <script>
+        //$(document).ready(function () {
+        //    // Check if the visitor count is already stored in local storage
+        //    let visitorCount = localStorage.getItem('visitorCount');
+
+        //    // If not, initialize it to 0
+        //    if (!visitorCount) {
+        //        visitorCount = 0;
+        //    }
+
+        //    // Increment the visitor count
+        //    visitorCount++;
+
+        //    // Store the updated count back to local storage
+        //    localStorage.setItem('visitorCount', visitorCount);
+
+        //    // Display the visitor count
+        //    $('#visitorcounter').text('Visitor Count: ' + visitorCount);
+        //});
+
+        $(document).ready(function () {
+            // Function to switch images based on mode
+
+
+
+            function switchImages(mode) {
+                //alert(mode)
+
+
+                $('img').each(function () {
+
+                    const darkSrc = $(this).data('dark');
+                    const lightSrc = $(this).data('light');
+                    if (mode === 'dark') {
+                        $(this).attr('src', darkSrc);
+                        // alert('mk');
+                    } else {
+                        $(this).attr('src', lightSrc);
+                    }
+                });
+            }
+
+            // Check sessionStorage for theme preference on page load
+            const theme = sessionStorage.getItem('theme');
+            const themeSetTime = sessionStorage.getItem('themeSetTime');
+            const currentTime = new Date().getTime();
+
+            // Check if the theme is set and if it's within the last 24 hours
+            if (theme === 'dark' && themeSetTime && (currentTime - themeSetTime < 24 * 60 * 60 * 1000)) {
+
+                $('body').addClass('dark-mode');
+                $('#darktheme').removeClass('darkbtn').html('<i class="fa fa-sun-o"></i>');
+                switchImages('dark'); // Update images for dark mode
+                //alert('mmm')
+                //updateProjectImages();
+
+            } else {
+                switchImages('light'); // Update images for light mode
+                //updateProjectImages();
+            }
+
+            // Handle button click
+            $('#darktheme').on('click', function () {
+                if ($('body').hasClass('dark-mode')) {
+                    ;
+                    // Disable dark mode
+                    $('body').removeClass('dark-mode');
+                    $(this).addClass('darkbtn').html('<i class="fa fa-moon-o"></i>');
+                    sessionStorage.setItem('theme', 'light'); // Save preference
+                    sessionStorage.setItem('themeSetTime', new Date().getTime()); // Update timestamp
+                    switchImages('light'); // Switch to light mode images
+                } else {
+                    // Enable dark mode
+                    $('body').addClass('dark-mode');
+                    $(this).removeClass('darkbtn').html('<i class="fa fa-sun-o"></i>');
+                    sessionStorage.setItem('theme', 'dark'); // Save preference
+                    sessionStorage.setItem('themeSetTime', new Date().getTime()); // Update timestamp
+                    switchImages('dark'); // Switch to dark mode images
+                }
+
+                // Refresh the page only once
+                if (!sessionStorage.getItem('themeToggled')) {
+                    sessionStorage.setItem('themeToggled', 'true');
+                    //window.location.reload();  // Refresh the page
+                } else {
+                    // After page reload, reset the flag in sessionStorage
+                    sessionStorage.removeItem('themeToggled');
+                }
+            });
+        });
+
+
+        $(document).ready(function () {
+            $('.slider').slick({
+                slidesToShow: 9,
+                slidesToScroll: 1,
+                autoplay: true,
+                autoplaySpeed: 1500,
+                arrows: false,
+                dots: false,
+                pauseOnHover: false,
+                responsive: [{
+                    breakpoint: 768,
+                    settings: {
+                        slidesToShow: 4
+                    }
+                }, {
+                    breakpoint: 520,
+                    settings: {
+                        slidesToShow: 2.5
+                    }
+                }]
+            });
+        });
+
+
+
+    </script>
+
+    <!-- <script>
+        function openNav() {
+            document.getElementById("mySidebar").classList.add("open");
+            document.getElementById("main").style.marginLeft = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidebar").classList.remove("open");
+            document.getElementById("main").style.marginLeft = "0";
+        }
+
+        function openNav2() {
+            document.getElementById("mySidebar2").classList.add("open");
+            document.getElementById("main").style.marginRight = "250px";
+        }
+
+        function closeNav2() {
+            document.getElementById("mySidebar2").classList.remove("open");
+            document.getElementById("main").style.marginRight = "0";
+        }
+    </script> -->
+    <!-----map script start-->
+    
+
+
+
+    <script>
+        $('.sub-menu ul').hide();
+        $(".sub-menu a").click(function () {
+            $(this).parent(".sub-menu").children("ul").slideToggle("100");
+            $(this).find(".right").toggleClass("fa-caret-up fa-caret-down");
+        });
+
+        // Hide the search box initially
+        $("#searchhome,#searchmob").hide();
+
+        // Toggle the search box on click of the search icon
+        $("#homesearch,#mosearch").on("click", function () {
+            $("#searchhome,#searchmob").toggle();
+        });
+
+        // Hide the search box when clicked anywhere else on the page
+        $(document).on("click", function (event) {
+            if (!$(event.target).closest("#homesearch, #searchhome, #searchmob, #mosearch").length) {
+                $("#searchhome, #searchmob").hide();
+            }
+        });
+
+
+
+
+
+    </script>
+
+
+    
+
+
+
+
+    
+
+
+    <script>
+        var swiper = new Swiper(".clientslider", {
+            loop: true,
+            speed: 1000,
+            autoplay: true,
+            spaceBetween: 20,
+            slidesPerView: 4,
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            breakpoints: {
+                0: {
+                    slidesPerView: 1,
+                    spaceBetween: 15,
+                },
+                468: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                },
+                640: {
+                    slidesPerView: 3.5,
+                    spaceBetween: 20,
+                },
+                768: {
+                    slidesPerView: 6.1,
+                    spaceBetween: 20,
+                },
+                1140: {
+                    slidesPerView: 8.5,
+                },
+                1449: {
+                    slidesPerView: 9,
+                },
+            },
+        });
+    </script>
+
+
+
+    <script>
+
+        function smallsize() {
+            document.getElementById("pagelayout").style.fontSize = "small";
+            updateActiveClass("small");
+        }
+
+        function mediumsize() {
+            document.getElementById("pagelayout").style.fontSize = "medium";
+            updateActiveClass("medium");
+        }
+
+        function largesize() {
+            document.getElementById("pagelayout").style.fontSize = "large";
+            updateActiveClass("large");
+        }
+    </script>
+
+
+
+</body>
+</html>

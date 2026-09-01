@@ -1,0 +1,501 @@
+{
+  "nodes": [
+    {
+      "id": "design_planning_engineer_schedule_screen_scheduleview",
+      "label": "Planning Engineer Schedule Screen (NAVIS)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_schedule_screen_integritywarningbanner",
+      "label": "Integrity Warning Banner (source conflicts + date warnings)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_schedule_screen_plannedvsactualtable",
+      "label": "Planned vs Actual Activity Table with Start/Finish Variance",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_schedule_screen_projectnavsidebar",
+      "label": "Project Sidebar Navigation (Home / Reconcile / Schedule / Ingest / Memory)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "design_planning_engineer_schedule_screen_disciplinefilterrationale",
+      "label": "Discipline Filter + Description Search for 120-Activity Baselines",
+      "file_type": "rationale",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_screenshot_dashboardoverview",
+      "label": "Claude Code Usage Dashboard - Overview Tab in VS Code",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_screenshot_kpitilegrid",
+      "label": "KPI Tile Grid (sessions, input/output tokens, subagent tokens, cache read/creation, est. cost)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_screenshot_dailytokenusagechart",
+      "label": "Daily Token Usage Stacked Bar Chart (dual axis: cache vs input/output)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_screenshot_modelrangefilters",
+      "label": "Model and Date-Range Filter Controls with Rescan / Auto-refresh",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_screenshot_graphsdropdownnav",
+      "label": "Overview / Graphs / Tables Tab Navigation with Section Dropdowns",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage1_graphstab",
+      "label": "Claude Usage Dashboard - Graphs Tab",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage1_hourlydistributionchart",
+      "label": "Average Hourly Distribution Chart with Peak-Hours Highlight and LOCAL/UTC Toggle",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage1_bymodeldonut",
+      "label": "By Model Donut Chart (opus / fable / sonnet / haiku share)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage1_topprojectsbytokens",
+      "label": "Top Projects by Tokens Horizontal Bar Chart (input vs output)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage2_tablestab",
+      "label": "Claude Usage Dashboard - Tables Tab",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage2_costbyprojecttable",
+      "label": "Cost by Project Table (sessions, turns, input, output, est. cost sorted desc)",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_docs_usage2_csvexportandcollapse",
+      "label": "CSV Export, Show More, and Collapsible Section Pattern",
+      "file_type": "concept",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_vscode_extension_resources_icon_extensionicon",
+      "label": "Claude Usage Extension Icon (white starburst inside a gauge arc, terracotta ground)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_usage_vscode_extension_resources_icon_vectormark",
+      "label": "Icon Vector Source (940x940 SVG with embedded raster mask)",
+      "file_type": "image",
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon.svg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "design_planning_engineer_schedule_screen_scheduleview",
+      "target": "design_planning_engineer_schedule_screen_integritywarningbanner",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_scheduleview",
+      "target": "design_planning_engineer_schedule_screen_plannedvsactualtable",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_scheduleview",
+      "target": "design_planning_engineer_schedule_screen_projectnavsidebar",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_disciplinefilterrationale",
+      "target": "design_planning_engineer_schedule_screen_plannedvsactualtable",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_integritywarningbanner",
+      "target": "design_planning_engineer_schedule_screen_plannedvsactualtable",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_projectnavsidebar",
+      "target": "design_planning_engineer_schedule_screen_scheduleview",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_dashboardoverview",
+      "target": "claude_usage_docs_screenshot_kpitilegrid",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_dashboardoverview",
+      "target": "claude_usage_docs_screenshot_dailytokenusagechart",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_dashboardoverview",
+      "target": "claude_usage_docs_screenshot_modelrangefilters",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_dashboardoverview",
+      "target": "claude_usage_docs_screenshot_graphsdropdownnav",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_modelrangefilters",
+      "target": "claude_usage_docs_screenshot_dailytokenusagechart",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_graphsdropdownnav",
+      "target": "claude_usage_docs_usage1_graphstab",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_screenshot_graphsdropdownnav",
+      "target": "claude_usage_docs_usage2_tablestab",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage1_graphstab",
+      "target": "claude_usage_docs_usage1_hourlydistributionchart",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage1_graphstab",
+      "target": "claude_usage_docs_usage1_bymodeldonut",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage1_graphstab",
+      "target": "claude_usage_docs_usage1_topprojectsbytokens",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage2_tablestab",
+      "target": "claude_usage_docs_usage2_costbyprojecttable",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage2_costbyprojecttable",
+      "target": "claude_usage_docs_usage2_csvexportandcollapse",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage2_costbyprojecttable",
+      "target": "claude_usage_docs_usage1_topprojectsbytokens",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage2_costbyprojecttable",
+      "target": "claude_usage_docs_screenshot_kpitilegrid",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_vscode_extension_resources_icon_vectormark",
+      "target": "claude_usage_vscode_extension_resources_icon_extensionicon",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon.svg",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_vscode_extension_resources_icon_extensionicon",
+      "target": "claude_usage_docs_screenshot_dashboardoverview",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\vscode-extension\\resources\\icon.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "claude_usage_docs_usage1_hourlydistributionchart",
+      "target": "claude_usage_docs_screenshot_dailytokenusagechart",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage1.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "design_planning_engineer_schedule_screen_plannedvsactualtable",
+      "target": "claude_usage_docs_usage2_costbyprojecttable",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "claude_usage_dashboard_tab_surfaces",
+      "label": "Three-Tab Dashboard Surface: Overview, Graphs, Tables",
+      "nodes": [
+        "claude_usage_docs_screenshot_dashboardoverview",
+        "claude_usage_docs_usage1_graphstab",
+        "claude_usage_docs_usage2_tablestab",
+        "claude_usage_docs_screenshot_graphsdropdownnav"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\screenshot.png"
+    },
+    {
+      "id": "claude_usage_cost_attribution_views",
+      "label": "Cost Attribution Across Model, Project, and Time",
+      "nodes": [
+        "claude_usage_docs_usage1_bymodeldonut",
+        "claude_usage_docs_usage1_topprojectsbytokens",
+        "claude_usage_docs_usage2_costbyprojecttable",
+        "claude_usage_docs_screenshot_kpitilegrid"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\claude-usage\\docs\\usage2.png"
+    },
+    {
+      "id": "navis_schedule_integrity_review",
+      "label": "NAVIS Schedule Integrity Review Surface",
+      "nodes": [
+        "design_planning_engineer_schedule_screen_scheduleview",
+        "design_planning_engineer_schedule_screen_integritywarningbanner",
+        "design_planning_engineer_schedule_screen_plannedvsactualtable",
+        "design_planning_engineer_schedule_screen_disciplinefilterrationale"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "C:\\Users\\tcgxu\\OneDrive\\Desktop\\SIH 2026\\Design\\planning_engineer_schedule\\screen.png"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

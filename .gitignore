@@ -16,3 +16,5 @@ dataset/uploads/
 # Large local backup archive (do not commit)
 *.7z
 
+# Added by code-review-graph
+.code-review-graph/
