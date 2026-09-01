@@ -177,7 +177,7 @@ function StructuredCard({
         {rows.map((r) => (
           <div
             key={r.key}
-            className="flex justify-between items-start gap-4 px-5 py-4 border-b border-hair"
+            className="flex justify-between items-start gap-4 px-4 py-4 border-b border-hair"
           >
             <div className="flex flex-col gap-2 min-w-0">
               <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
@@ -197,7 +197,7 @@ function StructuredCard({
         ))}
 
         {slots.quantity_over_planned && (
-          <div className="px-5 py-4 border-b border-hair flex items-start gap-2">
+          <div className="px-4 py-4 border-b border-hair flex items-start gap-2">
             <AlertCircle size={16} className="mt-0.5 shrink-0 text-warn" />
             <span className="text-body leading-5 text-warn">
               Completed exceeds the planned total — the Planning Engineer will
@@ -208,7 +208,7 @@ function StructuredCard({
 
         {/* No pencil: confidence is computed by the matching engine and is not
             the supervisor's to change. */}
-        <div className="flex justify-between items-start gap-4 px-5 py-4">
+        <div className="flex justify-between items-start gap-4 px-4 py-4">
           <div className="flex flex-col gap-2">
             <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
               Confidence
@@ -223,7 +223,7 @@ function StructuredCard({
         </div>
       </div>
 
-      <div className="px-5 py-5 border-t border-hair bg-surface flex flex-col gap-3">
+      <div className="px-4 py-5 border-t border-hair bg-surface flex flex-col gap-3">
         <Button variant="primary" block onClick={onSubmit} disabled={submitting}>
           {submitting ? 'Submitting…' : 'CONFIRM & SUBMIT'}
         </Button>

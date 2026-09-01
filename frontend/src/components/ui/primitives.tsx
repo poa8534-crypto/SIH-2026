@@ -131,14 +131,17 @@ export function Skeleton({
 export function SkeletonRows({
   rows,
   height = 'h-4',
+  /** False where the group is the page's own block rather than a panel body. */
+  padded = true,
   className = '',
 }: {
   rows: number;
   height?: string;
+  padded?: boolean;
   className?: string;
 }) {
   return (
-    <div className={`p-4 flex flex-col gap-2 ${className}`.trim()}>
+    <div className={`${padded ? 'p-4' : ''} flex flex-col gap-2 ${className}`.trim()}>
       {Array.from({ length: rows }).map((_, i) => (
         <Skeleton key={i} height={height} />
       ))}

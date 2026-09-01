@@ -3375,6 +3375,22 @@ alternative, `text-accent`, is already what marks the *selected* candidate in
 that same list, so recolouring it needs a design decision about what the badge
 means. That is a meaning change, not a token change, and out of scope here.
 
+### Follow-up within the same pass
+
+Three call sites were caught fighting the primitives rather than using them,
+and were corrected rather than left as exceptions:
+
+- `SkeletonRows` hardcoded `p-4`, so two callers passed `className="p-0"` to
+  undo it. It takes a `padded` flag now and no caller overrides padding.
+- The Clarifications card header was routed through `PanelHeader`, which forced
+  its reference string back to `normal-case tracking-normal font-normal` and
+  introduced a fourth font weight. Neither side of that row is a section title,
+  so it is a plain row using the same `px-4 py-3` the header primitive uses.
+  Weights are back to three.
+- Converting Field's `StructuredCard` header to `PanelHeader` (`px-4`) left its
+  rows and footer at `px-5`, so the header sat 4px inside its own card. The
+  rows and footer are `px-4` now and the card aligns.
+
 ### Not unified, and why
 
 - **The Planner|Field segmented control** (`App.tsx`). Two halves sharing one

@@ -53,18 +53,18 @@ function Card({ item }: { item: Clarification; key?: string }) {
 
   return (
     <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-      <PanelHeader
-        title={<span className="font-mono text-label text-muted normal-case tracking-normal font-normal">{item.reference}</span>}
-        right={
-          <span
-            className={`rounded-full bg-selected px-3 py-1 text-label font-medium uppercase tracking-[0.05em] shrink-0 ${
-              answered ? 'text-accent' : 'text-warn'
-            }`}
-          >
-            {answered ? 'Answered' : 'Needs Response'}
-          </span>
-        }
-      />
+      {/* Not a PanelHeader: neither side of this row is a section title. It
+          uses the same px-4 py-3 the header primitive does. */}
+      <div className="px-4 py-3 border-b border-hair flex items-center justify-between gap-3">
+        <span className="font-mono text-label text-muted">{item.reference}</span>
+        <span
+          className={`rounded-full bg-selected px-3 py-1 text-label font-medium uppercase tracking-[0.05em] shrink-0 ${
+            answered ? 'text-accent' : 'text-warn'
+          }`}
+        >
+          {answered ? 'Answered' : 'Needs Response'}
+        </span>
+      </div>
 
       <div className="px-4 py-4 border-b border-hair">
         <span className="text-lead text-fg leading-6">{item.original_text}</span>
@@ -244,7 +244,7 @@ export default function FieldClarifications() {
       {error ? (
         <ErrorState error={error} />
       ) : isLoading ? (
-        <SkeletonRows rows={2} height="h-28" className="p-0" />
+        <SkeletonRows rows={2} height="h-28" padded={false} />
       ) : items.length === 0 ? (
         <div className="border border-hair bg-raised rounded-lg">
           <EmptyState title="No questions right now">

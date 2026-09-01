@@ -105,7 +105,7 @@ export default function FieldReports() {
       {error ? (
         <ErrorState error={error} />
       ) : isLoading ? (
-        <SkeletonRows rows={3} height="h-16" className="p-0" />
+        <SkeletonRows rows={3} height="h-16" padded={false} />
       ) : reports.length === 0 ? (
         <div className="border border-hair bg-raised rounded-lg">
           <EmptyState
