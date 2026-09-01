@@ -3435,3 +3435,469 @@ keyframe) - `frontend/src/components/ui/Button.tsx` (new) -
 `frontend/src/components/ui/index.ts` (new) - `App.tsx` -
 `pages/{Home,Reconcile,Schedule,Ingest,Memory,Field,FieldReports,FieldClarifications,FieldProfile}.tsx`
 - `components/{FieldContextBlocks,FieldNav,ConfidenceBadge,DisciplineTag}.tsx`
+## 2026-09-01 / D-031 - One file defines every number, and it is not any of the ones that had them
+
+### Status
+Implemented.
+
+### Context
+Fifteen documents carried metrics. None of them said which corpus a number came
+from, and four different counts had drifted into looking interchangeable:
+
+- **120** — the demo project schedule
+- **218** — a second, research-only baseline the server never loads
+- **254 / 814** — two different evaluation corpora
+- **124 artefacts / 43,753 rows / 18,601 rows** — the real research corpus
+
+A reader could take "120 activities" from `README.md`, "87.2% top-1" from
+`Audit-1.md`, "recall@20 100%" from the ablation and "218 possible tasks" from
+`README.md` §2 and assemble a sentence in which every clause is individually
+sourced and the whole is false.
+
+The pass also found nine numbers that were simply stale, and one claim that was
+the opposite of what the code does.
+
+### Decision
+`METRICS.md` is created as the **single definition site for every number**.
+Every other document either cites it or is explicitly scoped and banded as
+historical. The rule is written into the file itself: *if another document
+disagrees with this one, this one is right; if this one disagrees with the code,
+the code is right and this file is the bug.*
+
+Four categories are separated by name, and the file forbids arithmetic across
+them:
+
+| | | |
+|---|---|---|
+| A | Research corpus | `datasets/real/` — 124 artefacts, never used for an accuracy figure |
+| B | Matcher evaluation corpora | v1 254 mentions, v2 814 mentions |
+| C | Demo project schedule | 120 activities — what the server loads |
+| D | Live review queue | 135 pending — what a reset produces |
+
+### Why this rather than fixing the numbers in place
+Fixing them in place is what produced the problem. Fifteen files each holding a
+copy of a metric is fifteen chances to miss one on the next change, and the
+2026-09-01 state proves it: `DEMO.md` said 274 audit records, `SETUP.md` said
+259, `ARCHITECTURE.md` said 259, and the database held 275. One definition site
+makes the next drift a single edit rather than a search.
+
+### Evidence
+Everything in `METRICS.md` was re-measured for this pass, not copied forward:
+`python -m pytest -q` (580), `npx vitest run` (55), `python eval.py` and its
+`--cv`, `--production` and v2 variants, `python scripts/reset_demo.py`, and
+direct queries against `dataset/epc_progress.db` and
+`datasets/real/manifests/dataset_summary.json`.
+
+### Consequence
+Any future change that moves a metric must update `METRICS.md`, and the
+verification block in §6 is the list of commands that regenerate every figure
+in it.
+
+### Affected Areas
+`METRICS.md` (new), `README.md`, `DEMO.md`, `SETUP.md`, `ARCHITECTURE.md`,
+`FINDINGS.md`, `ROADMAP.md`, `Basics.md`, `Audit-1.md`, `research/EVIDENCE.md`,
+`research/EXPERIMENTS.md`, `research/JUDGE_QUESTIONS.md`,
+`research/NAVIS_TECHNICAL_AUDIT.md`, `scripts/demo_reset.ps1`.
+
+---
+
+## 2026-09-01 / D-032 - The alias loop is NOT closed, and the documentation said three different things
+
+### Status
+Implemented (documentation); the gap itself remains **OPEN** as F4.
+
+### Context
+Three documents made three incompatible claims about the same feature:
+
+- `ROADMAP.md`: "written but never read"
+- `FINDINGS.md` F4: "OPEN - still the largest gap in the data flow"
+- the D-028 summary: "keep it: it is the only route by which a planner
+  correction re-enters"
+
+The last of those described a **code capability** in language that reads as a
+**live behaviour**, which is the more dangerous of the two errors because it
+supports a claim to judges that the system learns.
+
+### Evidence, from the code
+- **Write:** `server/main.py:_upsert_alias`, three call sites (confirm,
+  reassign, new-activity resolve). Real, exercised by tests.
+- **Read capability:** `HybridRetriever.alias_channel()` exists, injects the
+  mapped activity into the candidate pool with a prior, and is proven by four
+  tests in `matching/test_learned.py` — including one asserting it does **not**
+  bypass feature scoring.
+- **Wiring:** none. `w_alias = 0.0` in the shipped `RetrievalConfig`, and the
+  only `db.query(AliasLexicon)` outside tests is the write-side deduplication
+  lookup *inside `_upsert_alias` itself*. No production path populates
+  `EngineConfig.alias_lexicon`.
+
+### Decision
+One status, stated identically everywhere: **STORED SIGNAL ONLY - the loop is
+not closed.** A planner correction cannot influence a later re-ingest today.
+
+The separate fact that the *generic alias retrieval ablation* measured +0.000 is
+recorded alongside it with its cause, because the two are constantly conflated:
+the v2 generator gave every mention unique text, so **0 of 198 test mentions
+share their normalised text with any train mention**. The ablation could not
+have detected a gain if one existed. That is a statement about the corpus, not
+about the channel.
+
+### Why it matters
+"The system learns from planner corrections" is a claim a judge will test by
+asking what happens on the next upload. The answer today is *nothing*, and being
+caught claiming otherwise costs more than the feature is worth.
+
+### Consequence
+`METRICS.md` §5 carries the safe sentence. `README.md`, `ARCHITECTURE.md` §7,
+`FINDINGS.md` F4 and `ROADMAP.md` now agree. Closing the loop is scoped at
+roughly 20 minutes: load the rows in `get_matching_engine()` and set
+`w_alias > 0`.
+
+### Affected Areas
+Documentation only. No code changed - deliberately, per the reconciliation
+brief: documentation is corrected to match code, not the reverse.
+
+---
+
+## 2026-09-01 / D-033 - The live server runs the v1 hand-set blend, and no document said so
+
+### Status
+Implemented (documentation).
+
+### Context
+D-026/D-028 measured a fitted logistic ranker, five extra features and isotonic
+calibration against the **v2** baseline, and wrote `production()` to load them.
+`config.production(baseline_sha256)` also carries a guard refusing artefacts
+fitted against a different baseline.
+
+Nothing recorded what that guard actually resolves to in the running server.
+
+### Evidence
+Imported and evaluated directly:
+
+```
+SCHEDULE_PATH   dataset/baseline_schedule.json      (120 activities)
+baseline sha    1bfde358dc0e
+production(sha) -> DEFAULT          (guard refused the v2 artefacts)
+extra_features  False
+ranker_path     None
+calibrator_path None
+channel weights TAG 1.0 · BM25 0.7 · DENSE 0.7 · NGRAM 0.0 · ALIAS 0.0
+```
+
+The artefacts in `matching/artifacts/` are fitted against sha `831f0fac2fae`
+(v2, 218 activities). The guard logs and falls back. **This is the guard working
+as designed, not a defect** - a ranker fitted on a 218-activity feature
+distribution has no business scoring a 120-activity schedule.
+
+### Decision
+Document the distinction everywhere as **"we measured this" vs "the live demo
+runs this"**:
+
+- **Live:** v1 baseline, hand-set feature blend, three retrieval channels, 87.2%
+  top-1 / 50.4% coverage / 100% auto-link precision on the v1 corpus.
+- **Measured, not deployed:** v2 baseline, learned ranker + isotonic
+  calibration, 74.1% held-out top-1 with a CI spanning zero.
+
+Switching the demo to v2 is **not** a config flip: it needs the server pointed at
+`baseline_schedule_v2.json` *and* the demo corpus re-labelled against it. Neither
+was done, and neither should be done during a reconciliation pass.
+
+### Why it matters
+"NAVIS is 74.1% accurate" is false twice over: it is not deployed, and its
+improvement is not statistically conclusive. `METRICS.md` §8 lists it as an
+unsafe claim.
+
+### Consequence
+`METRICS.md` §4 is the status table. `ARCHITECTURE.md` §7 gained an
+active-vs-disabled table. `README.md` §5 says the artefacts exist and are not
+loaded.
+
+### Affected Areas
+Documentation only.
+
+---
+
+## 2026-09-01 / D-034 - Demo counts re-measured; the review queue grew because the system got more careful
+
+### Status
+Implemented. One config constant corrected.
+
+### Context
+`DEMO.md`, `SETUP.md` and `scripts/demo_reset.ps1` all hard-coded a known-good
+state of `activities=120 with actuals=67 review queue=118`, and
+`PLAN_SEP_01_04.md` had already flagged that the queue was probably ~135. The
+script's own self-check was therefore printing a WARNING on a correct run.
+
+### Evidence
+`python scripts/reset_demo.py`, then confirmed over HTTP with
+`scripts/demo_reset.ps1`, then read back from the database and the API:
+
+| | documented | actual |
+|---|---:|---:|
+| activities | 120 | 120 |
+| events extracted | 266 | 266 |
+| auto-linked | 148 | 148 |
+| review items pending | 118 | **135** |
+| with actual dates | 67 | 67 |
+| … of which completed | 47 | **38** |
+| audit records | 274 / 259 | **275** |
+| conflict-flagged audit rows | 75 | **68** |
+| conflicts on Home (`/schedule/conflicts`) | "25 cases, 21 spreadsheet-vs-DPR" | **18 rows / 17 activities, all 18 spreadsheet-vs-DPR** |
+
+### Why the queue grew and completions fell
+Both are **D-015 working**. An Actual Finish is no longer written when no source
+named the date; the node is routed to the planner instead of being stamped with
+the day the report was typed. So completions fell 47 → 38 and the queue grew
+118 → 135. The correct reading is *the system became more careful*, and the demo
+script should say that rather than warn about it.
+
+### The one code change
+`scripts/demo_reset.ps1`'s `$Expected.ReviewQueue` moved 118 → 135, with a
+comment recording why. This is a stale assertion constant, not matcher logic -
+it was making a correct run report itself as suspect.
+
+### Also found
+A stale local `dataset/epc_progress.db` (gitignored, untracked, regenerable)
+predated the `wbs_level` column and crashed server startup with
+`no such column: activities.wbs_level`. `reset_demo()` already handles the
+schema mismatch; the *startup* path does not. Documented as a recovery step in
+`DEMO.md` and `SETUP.md` rather than worked around in code.
+
+### Consequence
+Every number spoken during the demo is now reproducible from a single
+`python scripts/reset_demo.py`. The Ingest trace (2,151 bytes, 18 events, 12
+auto-linked, 6 review, 8 activities updated, 15 audit records) was re-verified
+end to end by holding `dpr_day_03.txt` out and re-ingesting it, and needed no
+change.
+
+### Affected Areas
+`DEMO.md`, `SETUP.md`, `ARCHITECTURE.md` §7, `scripts/demo_reset.ps1`.
+
+---
+
+## 2026-09-01 / D-035 - Real-corpus counts verified from manifests; the WSDOT schedule has 27 activities
+
+### Status
+Implemented.
+
+### Context
+The real corpus is the strongest honesty asset in the repository and the easiest
+thing to accidentally inflate. Every count was re-read from
+`datasets/real/manifests/dataset_summary.json` and
+`datasets/real/reports/validation.md` rather than from prose.
+
+### Evidence
+Validation **PASS**, 1,462 checks, 0 errors, 0 warnings. 124 raw artefacts,
+251.37 MiB, and **124 provenance sidecars - a 1:1 match**, each carrying
+`data_origin: real` and `is_real: true`. The `data_origin=real` claim is
+therefore verified at artefact level, not asserted.
+
+Verified counts: PAIMANA 18,601 project-month rows / 2,243 projects; CFIHOS v2
+21 tables / 43,753 rows; Uniclass 2022 15,375 combined rows (identity copies
+only, CC BY-ND); ConstructCIE 530 narratives / 3,520 causal spans / 1,580
+classifications; Safety Risk Library 466 rows; CPWD DSR E&M 1,661 item rows over
+441 pages; cross-source hard negatives 100 rows.
+
+**WSDOT C8078: 21 IDR PDFs, 73 OCR pages, 4,315 OCR lines, 13 work-activity
+mentions, 2 schedule snapshots, 54 snapshot rows, and 27 distinct activity
+IDs.**
+
+### Decision
+Say twenty-seven. The authentic WSDOT schedule has **27 activities** and must
+never be described as hundreds. `METRICS.md` §8 lists inflating it as an unsafe
+claim.
+
+Label quality is carried with every figure, because these are not equal:
+
+- **manually reviewed** - the WSDOT schedule transcription
+- **machine-extracted, UNVERIFIED** - the OCR lines, the work-activity
+  candidates, and the CPWD item rates
+- **source-published, not re-adjudicated** - CFIHOS, ConstructCIE, Uniclass
+- **assistant-reviewed, pending owner confirmation** - the 13-row link review in
+  `research/wsdot_c8078_verification_review.md`. Its 53.8% set accuracy and
+  96.3% link precision are **proposed** labels. They are not a verified result
+  and must not be quoted as one.
+
+### Why it matters
+`datasets/real/README.md` already stated all of this correctly. The risk was
+never that file - it was that a summary elsewhere would round "27 authentic
+activities plus 43,753 CFIHOS reference rows" into "a large real dataset". The
+extraction rates in `research/real_corpus_benchmark.txt` are computed over OCR
+lines with machine-derived labels and are explicitly **not** a matcher accuracy
+claim.
+
+### Consequence
+`METRICS.md` §3.5 carries the verified table with label quality per row.
+`datasets/real/README.md` was checked and needed no correction.
+
+### Affected Areas
+`METRICS.md`. `datasets/real/README.md` verified, unchanged.
+
+---
+
+## 2026-09-01 / D-036 - Negative results are kept, labelled, and not quietly dropped
+
+### Status
+Implemented.
+
+### Context
+The 2026-09-01 optimisation pass produced more negative results than positive
+ones. There is a standing temptation to let those fall out of the documentation
+once the shipped configuration is decided, leaving a record that looks like a
+series of successes.
+
+### Decision
+Every rejected experiment stays documented with its measurement, and every
+disabled component stays in the code behind a config default rather than being
+deleted - so the negative result remains reproducible.
+
+| Experiment | Result | Status |
+|---|---|---|
+| Tuned BM25 (k1, b), train-fitted | +0.00 top-1 | **REJECTED** - no headroom; recall@20 already 100% |
+| Tuned RRF (k, channel weights) | +0.00 top-1 | **REJECTED** - same cause |
+| Char 3-5 gram retrieval channel | +0.00 top-1, +0.50 ms/event | **REJECTED** - cost without benefit |
+| Alias retrieval channel | +0.000 | **UNMEASURABLE on this corpus** - zero lexical overlap between splits |
+| Discipline soft gate | **-4.32** top-1, CI [-7.0, -1.6] | **REJECTED** - actively harmful, interval excludes zero |
+| Gradient-boosted ranker | 74.1% top-1, 58.6% coverage, **97.4%** auto-link precision | **REJECTED** - breaches the 99% precision floor |
+| Explicit abstention model | no gain over the threshold rule | **NOT DEPLOYED** - the ranker already separates the classes |
+| Cross-encoder rerank | **accuracy UNMEASURED**; ~45 ms/event | **NOT DEPLOYED** - do not claim it failed on accuracy |
+| Extra features, hand-weighted | +0.00 top-1 | superseded by the learned weighting |
+
+Two of these are worth stating positively, because they are findings rather than
+failures. **recall@20 = 100%** is why four retrieval experiments were flat: the
+gold activity is always in the pool, so retrieval cannot be the lever.
+**Discipline gating hurting** is a real result about noisy inferred labels - a
+signal good enough to veto is not automatically good enough to select on.
+
+### The distinction that must survive
+"Measured and rejected" and "never measured" are different claims. The
+cross-encoder is the only item in the table whose accuracy was **never
+measured** - the model is not cached and the machine has no route to
+huggingface.co. Its cost is known (~45 ms/event, roughly 20x the whole
+pipeline) and that is the honest basis for leaving it off.
+
+### Consequence
+`METRICS.md` §4 lists every disabled component with its reason.
+`research/bench/ABLATION_RESULTS.txt` holds the full table with confidence
+intervals. `FINDINGS.md`'s status table gained rows for the new rejections.
+
+### Affected Areas
+`METRICS.md`, `FINDINGS.md`, `ARCHITECTURE.md` §7. No code changed.
+
+---
+
+## 2026-09-01 / D-037 - An independent audit refuted four of our claims, and it was right about three and a half
+
+### Status
+Implemented. Supersedes the pooled-CV figure in D-029 and adds a limits section
+to `METRICS.md` §3.4a.
+
+### Context
+`AUDIT_CODEX.md` (commit `b47ca48`) is an independent audit taken at snapshot
+`1a644eb`. It reproduced every headline number exactly - v1 87.2%, v2 held-out
+71.4%, pooled 82.1%, 580 tests, near-miss 26.5%, 100% REVIEW on near-misses - so
+the *measurements* are corroborated by a second party.
+
+It then made five criticisms. They were checked against the code rather than
+accepted, because an agent report is not evidence either.
+
+### What the audit got right, and what changed as a result
+
+**1 · The pooled CV is not genuine out-of-fold. CONFIRMED - a published number
+was wrong.** `eval.py:run_cv` computes a threshold per fold, takes the *median*
+of the five, then re-evaluates every pooled row with it. Each row is therefore
+decided partly by a threshold its own fold helped choose.
+
+Recomputed properly, with each fold's threshold deciding only its own held-out
+rows:
+
+| | printed by `--cv` | true out-of-fold |
+|---|---:|---:|
+| auto-link precision | 99.8% | **99.5%** (437/439, two wrong) |
+| coverage | 53.1% | **53.9%** |
+| NO_MATCH rejection | 80.0% | 80.0% (56/70) |
+
+Independently reproduced. **Quote 99.5%, not 99.8%.** The 99% floor still
+holds. `eval.py` was deliberately NOT changed - this pass corrects documentation
+against code, and rewriting the CV estimator is a behaviour change that deserves
+its own task and its own before/after.
+
+**2 · The selected experimental configuration was chosen on the test split.
+CONFIRMED - and this is our own methodological error.** `research/bench/
+ablation.py` fits on train and dev but *selects* the winner by comparing ten
+configurations' **test** top-1. So the 74.1% in D-028 is test-selected and
+optimistically biased by an unknown amount. It is not a clean held-out estimate
+and must never be described as one. A fourth untouched split, or nested
+selection, is required to make that claim.
+
+This does not change the deployment decision - the configuration is not
+deployed - but it changes what the number means.
+
+**3 · The splits isolate exact text, not templates or activities. CONFIRMED.**
+Verified independently: **0** mentions share normalised text across splits, but
+**156 of 185** test positives (84%) reference an activity that also appears in
+train. Closed-set ID reuse is legitimate product behaviour; the consequence is
+that the numbers describe seen-activity, in-distribution performance and say
+nothing about an unseen project.
+
+**4 · The corpus frequently near-copies the answer. CONFIRMED.** For 507 of 744
+positives the gold description appears as a normalised substring of the mention.
+Token Jaccard against the gold description is 0.58 on `exact` rows and **0.21**
+on `near_miss` rows. The easy majority of the corpus is close to a copy of its
+label. This is the strongest argument for reporting the near-miss subset
+separately, which D-024 already established.
+
+**5 · "An LLM never chooses an activity". PARTIALLY REFUTED - the audit
+overstated this one.** It cites `agent_llm.py:161 suggestion.tags = found` as
+LLM-supplied tags reaching the matcher. Reading the surrounding code, `found =
+parse_tags(joined)` re-derives tags with the deterministic regex pre-pass over
+the model's own text, so a hallucinated tag that is not a valid tag is dropped -
+D-006 holds as intended. What *is* true, and is now documented, is that an
+LLM-inferred **discipline** reaches the ranker as one low-weight feature on the
+voice/agent path.
+
+### Two further refutations, verified and accepted
+
+- **"Planned dates are read-only" is false as an absolute.** `server/main.py`
+  writes them at `:242-243` (baseline import) and `:1426-1427` (planner creating
+  a new activity for unplanned scope). Neither is an ingest path mutating an
+  existing baseline row, which is what the claim was reaching for - so the claim
+  is now stated precisely instead of absolutely.
+- **"Nothing is ever silently thrown away" is false at the boundary.**
+  `result.errors` is never read in `server/main.py`: a `.csv` upload is accepted,
+  extracts zero events, reports its error nowhere, and is marked completed.
+  XLSX reads only `wb.active` and scans only rows 1-9 for a header.
+
+### Decision
+Document all of it. `METRICS.md` gains **§3.4a - what the evaluation does not
+establish**, which caps every number in §3.2-§3.4, and §8 gains four new unsafe
+claims. `README.md`'s two absolute claims are restated precisely.
+
+Nothing in `matching/` was changed. The brief for this pass was explicit that
+documentation is corrected to match code, not the reverse, and that experiments
+are never altered to make documentation prettier. The CV estimator and the
+ablation's selection protocol are both real defects and both are now recorded as
+open work rather than quietly patched at the end of a documentation task.
+
+### What survives every criticism
+Two results are properties of the decision policy rather than of ranking
+difficulty, and no amount of corpus criticism weakens them:
+
+- **Auto-link precision 100% on v2 held-out (81/81) and 99.5% out-of-fold over
+  all 814.** The system does not write wrong dates.
+- **All 68 near-miss mentions routed to REVIEW, none auto-linked.** On
+  genuinely ambiguous text it declines rather than guessing.
+
+Those are the defensible claims. "NAVIS is X% accurate on real projects" is not
+one, and this corpus cannot support it.
+
+### Consequence / open work
+1. Replace `run_cv`'s median-threshold estimator with true out-of-fold pooling.
+2. Add a fourth held-out split, or nested selection, before any configuration
+   selected on test is quoted as held-out.
+3. Surface `result.errors` from ingest; reject `.csv` explicitly.
+4. Widen the XLSX header scan and handle multi-sheet workbooks.
+
+### Affected Areas
+`METRICS.md` (§3.3 correction, §3.4a new, §8), `README.md`, `DECISIONS.md`.
+`AUDIT_CODEX.md` retained as received. No application code changed.

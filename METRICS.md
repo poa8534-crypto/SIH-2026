@@ -103,12 +103,24 @@ out-of-sample.
 | Metric | Value | Detail |
 |---|---|---|
 | Top-1 | **82.1%** | 611 / 744 |
-| Auto-link precision | **99.8%** | *not* 100% — one wrong auto-link exists in the pooled run |
-| Coverage | **53.1%** | 431 of 814 |
+| Auto-link precision | **99.5%** | 437 / 439 — **two** wrong auto-links. See the correction below |
+| Coverage | **53.9%** | |
 | NO_MATCH rejection | **80.0%** | 56 / 70 — the denominator to quote |
 
-**Do not collapse 100.0% and 99.8% into one claim.** They are different
-evaluation settings. 100.0% is held-out test and v1; 99.8% is pooled CV.
+> **Correction, 2026-09-01.** `eval.py --cv` prints **99.8%** auto-link
+> precision and 53.1% coverage. That figure is slightly optimistic and should
+> not be quoted. `run_cv` computes a threshold per fold, then takes the
+> **median** of the five and re-evaluates *every* pooled row with it — so each
+> row is decided by a threshold that four of the five folds (including its own)
+> helped choose. Recomputed as genuine out-of-fold, where each fold's threshold
+> decides only its own held-out rows, the numbers above are what comes out:
+> **99.5% auto-link precision (437/439, two wrong), 53.9% coverage, 80.0%
+> rejection**. Independently reproduced twice — see `AUDIT_CODEX.md` §2.2. The
+> 99% floor still holds, but quote 99.5%, not 99.8%.
+
+**Do not collapse 100.0% and 99.5% into one claim.** They are different
+evaluation settings. 100.0% is held-out test and v1; 99.5% is out-of-fold CV
+over all 814 mentions, and it is the more demanding of the two.
 
 ### 3.4 EXPERIMENTAL — measured, selected, and NOT deployed
 
@@ -129,6 +141,53 @@ isotonic calibration fitted on **dev**. Artefacts exist in
 | Latency | 2.07 ms/ev | 2.50 ms/ev | +0.42 |
 
 Reproduce: `python eval.py --production --schedule dataset/baseline_schedule_v2.json --ground-truth dataset/v2/ground_truth_v2.csv`
+
+### 3.4a WHAT THE EVALUATION DOES **NOT** ESTABLISH
+
+Independently audited 2026-09-01 (`AUDIT_CODEX.md`) and re-verified here. These
+are limits of the *benchmark*, not defects in the matcher, and they cap what
+any number in §3.2–§3.4 can be claimed to mean.
+
+**1 · The experimental 74.1% is test-selected, not a clean held-out estimate.**
+`research/bench/ablation.py` compares ten configurations on the **test** split
+and picks the winner by test top-1. Fitting used only train and dev, but
+*selection* touched test, so 74.1% is optimistically biased by an unknown
+amount. A clean estimate needs a fourth untouched split or nested selection.
+**This is the single most important caveat on §3.4 and it is our own finding
+against our own method.**
+
+**2 · The splits isolate exact text, not templates or activities.** Verified:
+**0** mentions share normalised text across splits — but **156 of 185** test
+positives (84%) reference an activity that also appears in train, and ~48 test
+or dev mentions have a train mention above 0.9 similarity (the audit counts 116
+such *pairs*). Reusing schedule IDs across splits is legitimate product
+behaviour — it is a closed set — but it means these numbers describe
+**seen-activity, in-distribution** performance. They do **not** establish
+performance on an unseen project or an unseen activity.
+
+**3 · The corpus is synthetic and often near-copies the answer.** For 507 of
+744 positives the normalised gold activity description appears as a substring of
+the mention. Mean token Jaccard against the gold description is 0.50 overall —
+but 0.58 on `exact` rows against **0.21** on `near_miss` rows. So the easy 78%
+of the corpus is close to a copy of the label, and the near-miss subset is the
+only part that tests terminology drift. **This is why the near-miss number, not
+the overall number, is the one worth arguing about.**
+
+**4 · Small denominators.** NO_MATCH on the test split is 13 items: 84.6% has a
+Wilson 95% interval of [0.578, 0.957]. Even the experimental 13/13 is
+[0.772, 1.0]. Use the pooled n=70 figure (§3.3), and say n.
+
+**What survives all four.** Two results are not weakened by any of the above,
+because they are properties of the decision policy rather than of ranking
+difficulty:
+
+- **Auto-link precision held at 100% on the v2 held-out test (81/81) and 99.5%
+  out-of-fold across all 814.** The system does not write wrong dates.
+- **All 68 near-miss mentions were routed to REVIEW; none were auto-linked.**
+  On genuinely ambiguous text the system declines rather than guessing.
+
+Those are the defensible claims. "NAVIS is X% accurate on real projects" is
+not, and this corpus cannot support it.
 
 ### 3.5 RESEARCH CORPUS — real, public-source, no matcher accuracy claimed
 
@@ -276,8 +335,22 @@ moved and why.
   has **27**.
 - ❌ "We import Primavera files." — PMXML/XER **import** is declared and not
   implemented. Export is implemented.
-- ❌ Quoting 100.0% auto-link precision and 99.8% as if one supersedes the
-  other — they are different evaluation settings (§3.2 vs §3.3).
+- ❌ Quoting 100.0% auto-link precision and 99.5% as if one supersedes the
+  other — they are different evaluation settings (§3.2 vs §3.3). And do not
+  quote **99.8%** at all; it is the optimistic median-threshold figure that
+  `eval.py --cv` prints (§3.3 correction).
+- ❌ "74.1% is our held-out result." — the configuration that produces it was
+  **selected on the test split** (§3.4a). Say "test-selected" or do not use it.
+- ❌ Any claim about performance on a **new project** or an **unseen
+  activity** — 84% of test positives reuse a training activity (§3.4a).
+- ❌ "Planned dates are read-only." — the *precise* claim is that no automated
+  ingest path modifies the planned dates of an existing baseline activity.
+  Baseline import sets them, and a planner creating a new activity for
+  unplanned scope sets them on that new row.
+- ❌ "Nothing is ever silently dropped." — a CSV upload is accepted, extracts
+  0 events, and its error is never surfaced (`result.errors` is not read in
+  `server/main.py`); XLSX header detection only scans rows 1–9 and reads only
+  the active sheet.
 - ❌ "The cross-encoder didn't help." — its accuracy was never measured. Say
   it costs ~45 ms/event, roughly 20× the whole pipeline, and was not evaluated.
 - ❌ Presenting 26.5% near-miss top-1 as an error rate without saying that

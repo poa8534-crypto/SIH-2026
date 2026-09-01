@@ -24,3 +24,11 @@ dataset/uploads/
 .cache/
 .DS_Store
 .venv/
+
+# Scratch outputs from eval/benchmark runs. Every one is regenerable by the
+# commands in METRICS.md section 6; none is a source of truth.
+# tmp/pdfs/ is deliberately NOT ignored: it holds the rendered WSDOT IDR pages
+# that back research/wsdot_c8078_verification_review.md.
+tmp/*.txt
+tmp/*.log
+tmp/*.md

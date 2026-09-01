@@ -67,7 +67,11 @@ schedule**. See section 4.
 - Somewhat confident → put it in a **review queue** for a human to approve.
 - Not confident → flag it as possibly new work nobody planned.
 
-Nothing is ever silently thrown away.
+Nothing that reaches the matcher is ever silently thrown away. *(One honest
+exception at the boundary: a `.csv` upload is accepted, extracts zero events,
+and its error is not surfaced to the caller — `result.errors` is never read in
+`server/main.py`. `.txt` and `.xlsx` are the supported paths. See `METRICS.md`
+§8.)*
 
 **Step 5 — Remember what we learned.**
 If a task was planned for 5 days and actually took 10, store that. The next project
@@ -123,8 +127,11 @@ document disagrees with it, `METRICS.md` wins.
 
 Two other rules that follow from this:
 
-- **Planned dates are read-only.** We only ever write *actual* dates. We never touch
-  the original plan.
+- **No ingest path ever changes a planned date.** DPRs and spreadsheets can only
+  write *actual* dates. Planned dates are set in exactly two places, both
+  deliberate and both audited: loading the baseline, and a planner creating a new
+  activity for scope nobody planned. Stated as the flat "planned dates are
+  read-only", the claim would be false — so it is stated precisely.
 - **Every change is logged forever.** Every time the system writes anything, it
   saves a record of what changed, why, from which source line, and with what
   confidence. This is the **audit trail**.
@@ -135,6 +142,12 @@ Two other rules that follow from this:
 
 **We do not use an AI language model to pick the activity.** This surprises people,
 so here is why.
+
+*(Precisely: the LLM never emits an activity ID, and it never supplies a tag —
+tags are re-derived by the regex pre-pass over the model's own text, so a
+hallucinated tag that is not a valid tag is dropped. On the voice/agent path
+only, an LLM-inferred **discipline** can reach the deterministic ranker as one
+low-weight feature among six.)*
 
 A language model would give you an answer but could not tell you *why*, could not be
 audited, and would sometimes confidently invent an activity that does not exist. For

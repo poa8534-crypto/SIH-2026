@@ -843,7 +843,8 @@ which is not valid UTF-8 at all. `extraction/extractor.py` read them with
 replacement happened on the way in, it was written to `LinkedEvent.raw_text`,
 to `source_span`, into the audit trail, and onto the screen as
 "flange start <?> P-1002 flange boltup begins". 51 of 266 linked events and 48
-of 274 audit rows carried it. Re-ingesting could not fix it; the original
+of the 274 audit rows *present at the time* carried it (the seeded corpus now
+holds 275 — see the note earlier in this section). Re-ingesting could not fix it; the original
 character was gone.
 
 `extraction/textio.py` now decodes by trying `utf-8-sig`, then `cp1252`, then

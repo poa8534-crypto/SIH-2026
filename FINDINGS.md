@@ -96,7 +96,14 @@ v2 went from 42 to 104 of 700 mentions.
 
 **What they were worth end to end, pooled 5-fold CV over all 700 v2 mentions:**
 coverage 54.1% → 56.6%, auto-link recall 60.0% → 62.7%, Top-1 96.8% → 97.0%,
-auto-link precision unchanged at 100.0%. **v1's numbers did not move at all** —
+auto-link precision unchanged at 100.0%.
+
+> ⚠️ **SUPERSEDED — do not quote the 97.0%.** That corpus of 700 mentions no
+> longer exists: D-024 regenerated it as 814 mentions with 160 genuine
+> near-misses, and pooled Top-1 on the current corpus is **82.1%**. The 97.0%
+> measured a corpus that contained almost no ambiguous text. The *deltas* above
+> remain the honest record of what the two extractor fixes were worth at the
+> time. `METRICS.md` §3.3. **v1's numbers did not move at all** —
 verified mechanically, not assumed: neither defect ever fired on the v1 corpus.
 
 That gain is smaller than "half the tags were invisible" suggests, and the

@@ -1256,6 +1256,99 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Reconcile every stale, contradictory and duplicated claim across the
+documentation so the code, the demo, the metrics and the decision log tell one
+truthful story.
+**Date:** 2026-09-01 - **Decisions:** D-031 .. D-037
+
+### What changed
+
+No application code. One assertion constant and thirteen documents.
+
+```
+METRICS.md                    NEW - the single definition site for every number
+  §1 four datasets, never interchangeable  A research · B evaluation ·
+                                           C demo schedule · D live queue
+  §2 what each metric means, in words
+  §3 headline numbers BY CONFIGURATION     3.1 production/demo · 3.2 held-out ·
+                                           3.3 out-of-fold · 3.4 experimental ·
+                                           3.4a what the evaluation does NOT
+                                           establish · 3.5 research corpus
+  §4 production status - what is live, what is built and off
+  §5 the alias loop - STORED SIGNAL ONLY, not closed
+  §6 commands that regenerate every figure
+  §7 what was wrong before · §8 what not to say to judges
+        |
+        +-- README.md          v1/v2 numbers separated; 580+55 tests; channel
+        |                      table with active/off; absolute claims on planned
+        |                      dates and "nothing dropped" restated precisely
+        +-- DEMO.md            queue 118->135, completed 47->38, audit 274->275,
+        |                      conflicts "25/21"->18 rows over 17 activities;
+        |                      judge-safe number table; PIP-SPL memory panel
+        +-- SETUP.md           seed block re-measured; stale-DB recovery step
+        +-- ARCHITECTURE.md    header separating FROZEN SPEC (§0-6) from CURRENT
+        |                      (§7); real pipeline diagram; active-vs-disabled
+        |                      table; alias-not-wired subsection
+        +-- FINDINGS.md        banded HISTORICAL; status table extended with
+        |                      D-025/027/028 outcomes and the F4 correction
+        +-- ROADMAP.md         alias status corrected; calibration marked done
+        +-- Basics.md          was a byte-identical copy of README -> pointer
+        +-- Audit-1.md         banded v1-scope; test counts annotated
+        +-- research/*.md      four docs banded v1-scope; EVIDENCE gains a
+        |                      pointer to the v2/bench evidence
+        +-- scripts/demo_reset.ps1   $Expected.ReviewQueue 118 -> 135
+        +-- AUDIT_CODEX.md     received independent audit, retained as-is
+```
+
+### Verification performed
+
+```
+python -m pytest -q                          580 passed
+cd frontend && npx vitest run                 55 passed          (635 total)
+python eval.py                                v1 87.2 / 50.4 / 100.0 / 8.3
+python eval.py --cv                           identical to the above
+python eval.py  ... v2                        held-out 71.4 / 40.9 / 100.0 / 84.6
+python eval.py --cv ... v2                    pooled 82.1 / 53.1 / 99.8
+   recomputed as TRUE out-of-fold             99.5% autoP (437/439), 53.9% cov
+python eval.py --production ... v2            74.1 / 47.0 / 100.0 / 100.0
+python scripts/reset_demo.py                  120 / 266 / 148 / 135 / 67 / 38
+                                              / 275 / 68
+scripts/demo_reset.ps1 (over HTTP)            same, review queue = 135
+GET /schedule/conflicts                       18 rows across 17 activities
+datasets/real manifests                       124 artefacts = 124 provenance
+                                              sidecars, validation PASS
+```
+
+### Ground truth established this pass
+
+- **The live server runs v1** (`baseline_schedule.json`, 120 activities).
+  `production(sha)` returns `DEFAULT`: the learned ranker and isotonic
+  calibration are **not live**, refused by the baseline sha256 guard.
+- **The alias loop is not closed.** Written by `_upsert_alias`; the read path
+  `HybridRetriever.alias_channel()` exists and is tested, but `w_alias = 0.0`
+  and nothing populates `EngineConfig.alias_lexicon`.
+- **Retrieval channels live:** TAG, BM25, DENSE. n-gram, alias, discipline
+  gate, short circuit, cross-encoder and the learned ranker are all off.
+
+### Known limitations recorded rather than fixed
+
+- `eval.py:run_cv` pools with a **median** threshold, which is not genuine
+  out-of-fold; it prints 99.8% where the true figure is 99.5%.
+- `research/bench/ablation.py` **selects on the test split**, so the
+  experimental 74.1% is test-selected, not a clean held-out estimate.
+- The splits isolate exact text but **not** activities: 156 of 185 test
+  positives reuse a train activity.
+- `result.errors` is never surfaced by `server/main.py`; a `.csv` upload
+  silently yields zero events.
+
+All four are documented in `METRICS.md` §3.4a and D-037 as open work. None was
+patched here: this pass corrects documentation to match code, and each of those
+is a behaviour change that needs its own before/after.
+
+---
+
+## Previous Modification Area (2026-09-01, D-030) - retained for history
+
 **Task:** Collapse the frontend onto one design system - visual tokens and
 shared primitives only. No layout, IA, copy, routing, data-flow or component-
 boundary changes.
@@ -1345,7 +1438,10 @@ FieldReports.tsx:127 report row rendered as a button - a list row
 
 See D-030 for why each of these is left alone.
 
-## Previous Modification Area (2026-09-01, D-025-D-029) - retained for history
+---
+
+
+## Previous Modification Area (2026-09-01, D-025..D-029) - retained for history
 
 **Task:** Make the matching engine measurably stronger and measurably faster,
 with every change justified on the held-out test split and an ablation showing
