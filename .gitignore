@@ -22,3 +22,4 @@ dataset/uploads/
 # Derived embedding matrices: rebuilt from the baseline on demand,
 # keyed by content hash, never a source of truth.
 .cache/
+.DS_Store
