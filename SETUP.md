@@ -1,27 +1,49 @@
 # Setup — Windows, from nothing
 
-Roughly 15 minutes, most of it waiting on `pip`. No Docker. No frontend
-(there isn't one — this repo is the Python API).
+Roughly 20 minutes, most of it waiting on `pip`. No Docker.
+
+This repo is **two processes**: a Python API (`server/`) and a React frontend
+(`frontend/`). They are not served from one another — the frontend calls the API
+over HTTP and CORS. For the full product you need both running, in two terminals.
+The API is usable on its own via <http://127.0.0.1:8000/docs>.
 
 ---
 
 ## 0. What you need
 
-**Python 3.12** (3.11 also works). Nothing else.
+**Python 3.12** (3.11 also works) and **Node.js 22 LTS**.
 
 Check what you have, in PowerShell:
 
 ```powershell
 python --version
+node --version
+npm --version
 ```
 
-If that prints anything other than `Python 3.11.x` or `3.12.x`, install 3.12
-from <https://www.python.org/downloads/windows/> and **tick "Add python.exe to
-PATH"** on the first screen of the installer.
+### Python
+
+If `python --version` prints anything other than `Python 3.11.x` or `3.12.x`,
+install 3.12 from <https://www.python.org/downloads/windows/> and **tick "Add
+python.exe to PATH"** on the first screen of the installer.
 
 > If `python` opens the Microsoft Store instead of running, Windows' app
 > alias is shadowing it. Settings → Apps → Advanced app settings → App
 > execution aliases → turn off both `python.exe` and `python3.exe` entries.
+
+### Node.js
+
+| Version | Status |
+|---|---|
+| **22 LTS** | **Required — use this** |
+| 20 LTS | Works |
+| 18 or older | **Not supported.** Node 18 is end-of-life and Vite 6 does not support it. Symptoms are confusing rather than obvious: the install may appear to succeed and then fail at `npm run dev`. |
+
+Install from <https://nodejs.org/> (the LTS download). `npm` ships with it — you
+do not install it separately.
+
+`frontend/package.json` declares `"engines": { "node": ">=20" }`, so npm will warn
+you on an unsupported version rather than letting you discover it later.
 
 ---
 
@@ -49,22 +71,63 @@ Your prompt should now start with `(.venv)`.
 
 ---
 
-## 2. Install dependencies
+## 2. Install Python dependencies
 
 ```powershell
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-**This downloads about 2–3 GB and takes 5–10 minutes.** Almost all of it is
-`torch`, pulled in by `sentence-transformers` for dense retrieval. That is
-expected — do not interrupt it.
+> ## ⚠ THIS IS THE SLOW STEP. IT IS NOT HUNG.
+>
+> **`pip install -r requirements.txt` downloads roughly 2–3 GB and takes 5–10
+> minutes**, longer on a slow connection. Almost all of it is **PyTorch**, pulled
+> in transitively by `sentence-transformers` for dense retrieval — it is not
+> listed in `requirements.txt` by name, which is why the size is a surprise.
+>
+> pip can sit on a single `torch` wheel for **several minutes with no visible
+> progress**. This is the most common point at which people assume the install
+> has hung and press Ctrl-C. **Do not interrupt it.** An interrupted install
+> leaves a partial environment that fails later with confusing import errors; if
+> you do interrupt it, re-run the same command rather than trying to repair it.
+>
+> If you genuinely want to watch it move: `python -m pip install -v -r
+> requirements.txt`.
 
-The first run also downloads the `all-MiniLM-L6-v2` embedding model (~90 MB)
-into your Hugging Face cache. After that it loads offline. If the model
-cannot be downloaded, the matcher falls back to a hashed-ngram embedder and
-still runs, with weaker dense recall; `scripts/healthcheck.py` tells you
-which path is live.
+### The embedding model must be cached before any offline demo
+
+The **first run of the matcher** — not the install — downloads the
+`all-MiniLM-L6-v2` model (~90 MB) into your Hugging Face cache. Every run after
+that loads it from disk with no network.
+
+> ## ⚠ Cache the model before you go offline.
+>
+> If the model is not cached and cannot be downloaded, **the matcher does not
+> fail.** `matching/retrieval.py` falls back to a deterministic hashed-ngram
+> embedder and carries on with materially weaker dense recall. Nothing in the API
+> or the UI tells you this has happened — only a log line does.
+>
+> **Every measured number in this repository assumes the real model is loaded.**
+> On the fallback embedder the published Top-1, coverage and precision figures no
+> longer hold, and results from that run are not comparable to anything in
+> `research/` or `eval.py`.
+
+Step 3 below warms the cache as a side effect, so run it **while you still have a
+network**. Then confirm which path is actually live — do this before any offline
+demo:
+
+```powershell
+python eval.py
+```
+
+The second line of its output must name the real model:
+
+```
+  schedule: 120 activities | dense: sentence-transformers all-MiniLM-L6-v2 (local, offline)
+```
+
+If it says anything else, the fallback is active. `scripts\healthcheck.py` reports
+the same thing.
 
 ---
 
@@ -97,23 +160,86 @@ instead.
 
 ---
 
-## 4. Start the server
+## 4. Start the backend — from the PROJECT ROOT
 
-**From the project root, not from inside `server\`.** Running it from inside
-`server\` breaks the relative imports.
+> ## ⚠ Start the backend from the PROJECT ROOT, never from inside `server\`.
+>
+> The project root is the folder containing `ARCHITECTURE.md`, `eval.py`,
+> `requirements.txt` and the `server\` directory.
+>
+> `cd server` first and it **will not work**: `server/main.py` resolves the repo
+> root from its own location and inserts it on `sys.path`, and the package uses
+> relative imports (`from .db import ...`). Running from inside `server\` gives
+> you `ModuleNotFoundError: No module named 'server'`.
+>
+> It also matters for the database. `server/db.py` anchors `DB_PATH` to the repo
+> root rather than the working directory precisely so this cannot happen — but a
+> wrong CWD elsewhere in the stack silently creates a **second, empty** database
+> and the app looks like it lost your data.
+
+In terminal 1, with the venv activated:
 
 ```powershell
+cd "path\to\SIH 2026"
+.\.venv\Scripts\Activate.ps1
 python -m uvicorn server.main:app --reload
 ```
 
 Leave it running. Open <http://127.0.0.1:8000/docs> — you should see the
-interactive API docs with **8 endpoints**.
+interactive API docs with **17 routes**.
 
 ---
 
-## 5. Verify
+## 5. Install and start the frontend
 
-In a **second** terminal, with the venv activated:
+The frontend is a separate Vite dev server on **port 5173**. It needs the backend
+from step 4 already running on port 8000.
+
+Open a **second** terminal. The venv is **not** needed here — this is Node, not
+Python. Run one command per line:
+
+```powershell
+cd "path\to\SIH 2026\frontend"
+npm install
+npm run dev
+```
+
+`npm install` takes 1–2 minutes on a first run and writes `frontend\node_modules\`
+(gitignored). It is nowhere near as slow as the `pip` step.
+
+`npm run dev` starts Vite on port 5173 and stays in the foreground. Leave it
+running and open <http://127.0.0.1:5173>.
+
+> **PowerShell note.** Do not chain these with `&&` — Windows PowerShell 5.1 does
+> not support the `&&` operator and will fail with a parser error. Run each line
+> on its own, or separate them with `;`.
+
+**You do not need to configure an API URL.** The app derives it from the browser's
+own host and port 8000, which is what makes the two-device LAN demo work with no
+rebuild. Only if the backend runs somewhere else do you need:
+
+```powershell
+copy .env.example .env
+```
+
+then set `VITE_API_URL` in `frontend\.env` — for example
+`VITE_API_URL=http://192.168.1.42:8000`.
+
+### Frontend checks
+
+```powershell
+npm run test
+npm run lint
+```
+
+`npm run test` runs Vitest (expect **55 passed**); `npm run lint` is
+`tsc --noEmit` and should print nothing.
+
+---
+
+## 6. Verify
+
+In a **third** terminal, with the venv activated:
 
 ```powershell
 cd "path\to\SIH 2026"
@@ -122,11 +248,14 @@ python scripts\healthcheck.py
 ```
 
 It imports every module, checks the dataset files, reports which retrieval
-and extraction paths are live, and exercises all 8 endpoints. Expect:
+and extraction paths are live, and exercises the API.
 
-```
-  31 passed, 0 failed, 0 skipped
-```
+> **Known failure — one check is wrong, not your install.**
+> `scripts/healthcheck.py` asserts that `/openapi.json` exposes exactly **8**
+> endpoints. The app has grown to **17 routes**, so that single check reports
+> FAIL on a correct installation. Every other check should pass. This is a stale
+> assertion in the healthcheck, not a problem with your setup — see `FLOW.md`
+> §13 for the running defect list.
 
 It is non-destructive: the `/ingest` check re-uploads a file already in the
 database (the duplicate-content guard rejects it without writing), and the
@@ -137,7 +266,7 @@ Use `--offline` to run just the import and dataset checks with no server.
 Finally, the test suite and the evaluation:
 
 ```powershell
-python -m pytest -q          # 182 tests
+python -m pytest -q          # 264 tests
 python eval.py               # matcher metrics table
 ```
 
@@ -185,8 +314,9 @@ not the default for a reason.
 | `dataset/` | Baseline schedule, 11 DPRs, 2 spreadsheets, ground truth, the SQLite DB |
 | `extraction/` | Regex pre-pass, spreadsheet parser, optional LLM backend |
 | `matching/` | Hybrid retrieval (tag, BM25, fuzzy, dense) → feature scoring → decision |
-| `server/` | FastAPI app, SQLAlchemy models, the 8 endpoints |
-| `scripts/` | `seed.py`, `healthcheck.py` |
+| `server/` | FastAPI app, SQLAlchemy models, the 17 routes |
+| `frontend/` | React 19 + Vite + TanStack Query; planner and field-supervisor screens |
+| `scripts/` | `seed.py`, `healthcheck.py`, `reset_demo.py`, `demo_reset.ps1` |
 | `eval.py` | Matcher evaluation against `ground_truth.csv` |
 | `ARCHITECTURE.md` | The spec, including §7 Known Limitations |
 
