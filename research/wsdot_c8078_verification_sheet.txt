@@ -1,0 +1,157 @@
+# WSDOT C8078 — linking verification sheet
+
+13 real field-report summaries against the 27 real activities on the
+same contract. Mark each candidate CORRECT or WRONG, or write the
+activity id that should have been proposed. Once returned, this
+becomes a human-verified benchmark and accuracy can be computed —
+reported with n=13 and a bootstrap CI, because 13 is a very small n.
+
+──────────────────────────────────────────────────────────────────────────────
+ 1.  IDR 2011-02-10   page 1
+    MENTION: A.Test the confined and unconfined bubble curtain.
+    proposed 1 candidate(s):
+      [ ] 1055  TEST UNCONFINED BUBBLE CURTAIN
+          planned 2011-02-08 .. 2011-02-08  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 2.  IDR 2011-02-11   page 1
+    MENTION: A-MobilizingtositeAin Oregonforinstallationof testpiles.Installing the24inch test pile A-1 at location A-3.
+    proposed 2 candidate(s):
+      [ ] 1060  INSTALL PILE A-1
+          planned 2011-02-08 .. 2011-02-08  (1d)
+      [ ] 1050  MOBILIZE TO LOCATION A
+          planned 2011-02-07 .. 2011-02-07  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 3.  IDR 2011-02-11   page 1
+    MENTION: A.Mobe to site A in Oregon. Install 24" test pile A-1 at location A-3. Install unconfined bubble curtain on pile A-1.Perform structure survey on test pile A-1.Perform dynamic pile testing on pile A-1.
+    proposed 3 candidate(s):
+      [ ] 1060  INSTALL PILE A-1
+          planned 2011-02-08 .. 2011-02-08  (1d)
+      [ ] 1055  TEST UNCONFINED BUBBLE CURTAIN
+          planned 2011-02-08 .. 2011-02-08  (1d)
+      [ ] 1130  MOVE TO LOCATION A
+          planned 2011-02-14 .. 2011-02-14  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 4.  IDR 2011-02-12   page 1
+    MENTION: A. install 48" test pile A-3 at location A-4. Install unconfined bubble curtain on pile A-3. Perform structure survey on test pile A-3.Perform dynamic pile testing on pileA-3.
+    proposed 2 candidate(s):
+      [ ] 1080  INSTALL PILE A-3
+          planned 2011-02-10 .. 2011-02-10  (1d)
+      [ ] 1055  TEST UNCONFINED BUBBLE CURTAIN
+          planned 2011-02-08 .. 2011-02-08  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 5.  IDR 2011-02-12   page 1
+    MENTION: A-Barge on the Oregon side of theColumbia Riveris installing the 48" test pileA-3 at the locationA-4.
+    proposed 1 candidate(s):
+      [ ] 1080  INSTALL PILE A-3
+          planned 2011-02-10 .. 2011-02-10  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 6.  IDR 2011-02-14   page 1
+    MENTION: A.Perform 48HR restrike on pile A-1. Remove 24" pile A-1 from location A-3 and install pile A-2 at location A-2.Perform structure survey on pile A-2. Perform dynamic pile testing on pile A-2.
+    proposed 3 candidate(s):
+      [ ] 1140  RESTRIKE PILE A-1
+          planned 2011-02-15 .. 2011-02-15  (1d)
+      [ ] 1180  REMOVE A LOCATION PILES
+          planned 2011-02-16 .. 2011-02-21  (4d)
+      [ ] 1070  INSTALL PILE A-2
+          planned 2011-02-09 .. 2011-02-09  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 7.  IDR 2011-02-15   page 1
+    MENTION: A.Perform 48HR restrike on pile A-3.Attempt to remove 48"pile A-3 from location A-4 but the pile will not come out. Install 48" pile A-4 in location A-1. Perform structure survey on pile A-4. Perform dynamic pile testing on pile A-3 and A-4.
+    proposed 3 candidate(s):
+      [ ] 1160  RESTRIKE PILE A-3
+          planned 2011-02-15 .. 2011-02-15  (1d)
+      [ ] 1180  REMOVE A LOCATION PILES
+          planned 2011-02-16 .. 2011-02-21  (4d)
+      [ ] 1090  INSTALL PILE A-4
+          planned 2011-02-10 .. 2011-02-10  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 8.  IDR 2011-02-16   page 1
+    MENTION: A. Install pile B-2 in B-2 location. Install confined bubble curtain on pile B-2. Perform structure survey on pile B-2.Perform dynamic pile testing on pileB-2.
+    proposed 2 candidate(s):
+      [ ] 1120  INSTALL PILE B-2
+          planned 2011-02-14 .. 2011-02-14  (1d)
+      [ ] 1065  TEST CONFINED BUBBLE CURTAIN
+          planned 2011-02-09 .. 2011-02-09  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+ 9.  IDR 2011-02-16   page 1
+    MENTION: A-Barge moving to theWashington sideof theColumbiaRiver andinstalling the 48”test pile B-2.
+    proposed 1 candidate(s):
+      [ ] 1120  INSTALL PILE B-2
+          planned 2011-02-14 .. 2011-02-14  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+10.  IDR 2011-02-17   page 1
+    MENTION: A.Install pile B-1 in B-1 location. Install confined bubble curtain on pile B-1. Perform structure survey on pile B-1.Perform dynamic pile testing on pile B-1 and 48HR restrike on pile A-2 in A-2 location.Mobe from site B to site A.Remove pile A-2 in A-2 location.
+    proposed 4 candidate(s):
+      [ ] 1110  INSTALL PILE B-1
+          planned 2011-02-11 .. 2011-02-11  (1d)
+      [ ] 1150  RESTRIKE PILE A-2
+          planned 2011-02-15 .. 2011-02-15  (1d)
+      [ ] 1180  REMOVE A LOCATION PILES
+          planned 2011-02-16 .. 2011-02-21  (4d)
+      [ ] 1065  TEST CONFINED BUBBLE CURTAIN
+          planned 2011-02-09 .. 2011-02-09  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+11.  IDR 2011-02-17   page 1
+    MENTION: A-InstallingpileB-1on theWashington side andmovingthebarge to theOregonside of theColumbiaRiverforpilerestikesandremoval.
+    proposed 1 candidate(s):
+      [ ] 1110  INSTALL PILE B-1
+          planned 2011-02-11 .. 2011-02-11  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+12.  IDR 2011-02-18   page 1
+    MENTION: A.Remove pile A-4 in A-1 location and A-3 in A-4 location. Perform HR restrike on pile A -4 in A-1 .
+    proposed 2 candidate(s):
+      [ ] 1180  REMOVE A LOCATION PILES
+          planned 2011-02-16 .. 2011-02-21  (4d)
+      [ ] 1170  RESTRIKE PILE A-4
+          planned 2011-02-15 .. 2011-02-15  (1d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+13.  IDR 2011-02-21   page 1
+    MENTION: A.Perform 48 hour restrike on pile B-2 and B-1. Remove pile B-2 and B-1.
+    proposed 2 candidate(s):
+      [ ] 1210  RESTRIKE PILE B-2
+          planned 2011-02-22 .. 2011-02-22  (1d)
+      [ ] 1220  REMOVE LOCATION B PILES
+          planned 2011-02-23 .. 2011-02-24  (2d)
+      [ ] none of these are correct — correct id: ________
+──────────────────────────────────────────────────────────────────────────────
+
+For reference, the full 27-activity schedule:
+    1000  NOTICE OF AWARD                    2011-01-12 .. 2011-01-12
+    1005  PROJECT COMPLETION                 2011-02-28 .. 2011-02-28
+    1010  PREPARE SUBMITTALS                 2011-01-12 .. 2011-01-21
+    1020  ORDER/RECEIVE PIPE PILING          2011-01-24 .. 2011-02-07
+    1030  ORDER/RECEIVE UNCONFINED BUBBLE CURTAIN 2011-01-24 .. 2011-02-07
+    1040  ORDER/RECEIVE CONFINED BUBBLE CURTAIN 2011-01-24 .. 2011-02-07
+    1050  MOBILIZE TO LOCATION A             2011-02-07 .. 2011-02-07
+    1055  TEST UNCONFINED BUBBLE CURTAIN     2011-02-08 .. 2011-02-08
+    1060  INSTALL PILE A-1                   2011-02-08 .. 2011-02-08
+    1065  TEST CONFINED BUBBLE CURTAIN       2011-02-09 .. 2011-02-09
+    1070  INSTALL PILE A-2                   2011-02-09 .. 2011-02-09
+    1080  INSTALL PILE A-3                   2011-02-10 .. 2011-02-10
+    1090  INSTALL PILE A-4                   2011-02-10 .. 2011-02-10
+    1100  MOVE TO LOCATION B                 2011-02-11 .. 2011-02-11
+    1110  INSTALL PILE B-1                   2011-02-11 .. 2011-02-11
+    1120  INSTALL PILE B-2                   2011-02-14 .. 2011-02-14
+    1130  MOVE TO LOCATION A                 2011-02-14 .. 2011-02-14
+    1140  RESTRIKE PILE A-1                  2011-02-15 .. 2011-02-15
+    1150  RESTRIKE PILE A-2                  2011-02-15 .. 2011-02-15
+    1160  RESTRIKE PILE A-3                  2011-02-15 .. 2011-02-15
+    1170  RESTRIKE PILE A-4                  2011-02-15 .. 2011-02-15
+    1180  REMOVE A LOCATION PILES            2011-02-16 .. 2011-02-21
+    1190  MOVE TO LOCATION B                 2011-02-22 .. 2011-02-22
+    1200  RESTRIKE PILE B-1                  2011-02-22 .. 2011-02-22
+    1210  RESTRIKE PILE B-2                  2011-02-22 .. 2011-02-22
+    1220  REMOVE LOCATION B PILES            2011-02-23 .. 2011-02-24
+    1230  DEMOBILIZE                         2011-02-25 .. 2011-02-25

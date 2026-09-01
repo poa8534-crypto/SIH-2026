@@ -1,0 +1,428 @@
+
+══════════════════════════════════════════════════════════════════════════════
+ NAVIS REAL-CORPUS BENCHMARK
+══════════════════════════════════════════════════════════════════════════════
+  datasets/real — public-source material, not authored by us.
+  Reported separately from dataset/v2 in every section. No metric on
+  this page is combined with, or averaged against, a synthetic one.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — WSDOT C8078: EXTRACTION QUALITY ON OCR'd FIELD REPORTS
+══════════════════════════════════════════════════════════════════════════════
+  source        : wsdot_c8078_idr_ocr
+  records       : 4,315 OCR lines, 73 pages, 21 IDR PDFs
+  label quality : MACHINE-DERIVED, UNVERIFIED
+  These are real daily inspection reports typed by WSDOT inspectors
+  in 2011 and scanned. Nothing here was authored by us.
+
+── Signal extraction rate over real OCR text ─────────────────────────────────
+  Signal                Lines with it  Rate      95% CI
+  --------------------  -------------  ----  ----------
+  equipment / line tag            136  3.2%  [2.6, 3.7]
+  quantity + uom                   18  0.4%  [0.2, 0.6]
+  date                             51  1.2%  [0.9, 1.5]
+  percentage                       11  0.3%            
+  fraction                          0  0.0%            
+
+  Of the dates found                                             Lines
+  -------------------------------------------------------------  -----
+  stated explicitly in the text                                      5
+  resolved from a relative word ('today') against the page date     46
+
+  OCR lines below 60% confidence: 51 (1.2%)
+  Rates are LOW by construction: an IDR page is mostly form furniture,
+  headers, signature blocks and boilerplate. The denominator is every
+  OCR line on the page, not every line that describes work.
+
+── Discipline inference over the same lines ──────────────────────────────────
+  Discipline        Lines  Share
+  ----------------  -----  -----
+  unknown            4293  99.5%
+  static_equipment     21   0.5%
+  electrical            1   0.0%
+
+  'unknown' dominating is the honest result: our discipline keywords
+  were written for an Indian oil-and-gas well-site, and this is a
+  Washington State test-pile marine contract.
+
+── What the extractor actually pulled out — real examples ────────────────────
+  TAGS:
+    ['C-8078']                   <- C-8078
+    ['I-5']                      <- I-5
+    ['A-1', 'A-3']               <- pile A-1 at location A-3.
+    ['A-1', 'A-3']               <- 10:30AM-American Construction is positioning pile A-1 in t
+    ['A-1']                      <- been delayed.American Construction has pile A-1 (inA-3loca
+    ['A-1', 'A-3']               <- begin.American Constructionbegins vibbing pile A-1 (in A-3
+    ['C-8078']                   <- Photos of today's events found at - G:CRC\CRC Workpaper Fi
+    ['C-8078']                   <- C-8078
+  QUANTITIES:
+    (800.0, 'm')                 <- 10:45AM DEA is on site. DEA is setting equipment on rafts 
+    (10.0, 'm')                  <- upstream and a hydrophone at 10meters from the pile. Nick 
+    (800.0, 'm')                 <- 8:00AM David Evans and Associates begins setting up noise 
+    (10.0, 'm')                  <- 9:10AM DEA has the hydrophone set up at 10 meters from the
+    (800.0, 'm')                 <- equipment at 200, 400 and 800 meters downstream and 800 me
+    (10.0, 'm')                  <- 8:55AM DEA has the hydrophone set up at 10 meters from the
+    (800.0, 'm')                 <- 7:30AM David Evans and Associates, INC.(DEA) has monitorin
+    (800.0, 'm')                 <- and 800 meters upstream.
+  DATES:
+    2011-01-13                   <- leavehim amessagethat thiscontractwas awarded to theirfirm
+    2011-01-14                   <- Frank Green providedverbal approval today to issue Change 
+    2011-02-01                   <- Danny Johnson (SWR Documentation Engineer) called me at 12
+    2011-01-02                   <- Keith A. Daly 2/1/2011
+    2011-02-04                   <- As we discussed earlier today, it is understood that WSDOT
+    2011-02-07                   <- Provisions we are required to start charging working days 
+    2011-02-10                   <- Pay NoteMade Today?
+    2011-02-10                   <- Was Traffic Control Required Today?
+
+
+── FINDING — day/month order is wrong for this source ────────────────────────
+  WSDOT is a US agency and writes M/D/YYYY. `DATE_DMY_SLASH_RE`
+  resolves the day first, so these parse to the wrong month:
+    2/1/2011     <- Keith A. Daly 2/1/2011
+    2/11/2011    <- 2/11/2011
+    2/12/2011    <- 2/12/2011
+    2/1/2011     <- retainage bond sent to them on 2/1/2011 and no contr
+    3/2/2011     <- 3/2/2011
+
+  Only ambiguous when both parts are <= 12, so it is silent the
+  rest of the time — which is what makes it dangerous. Our corpora
+  are Indian (D/M/Y) and the convention was never parameterised.
+  NOT FIXED HERE: this report does not change the extractor.
+  These are the spot-check rows. They are printed rather than scored
+  because there is no human-verified extraction gold for this source:
+  scoring them against rules we wrote would measure the rules against
+  themselves.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — WSDOT C8078: SCHEDULE LINKING (WITHHELD)
+══════════════════════════════════════════════════════════════════════════════
+  source        : wsdot_c8078_activity_mentions
+  records       : 13 mentions, 27 real activities
+  label quality : MACHINE-DERIVED, UNVERIFIED
+
+  NO LINKING ACCURACY IS REPORTED FOR THIS SOURCE.
+
+  The candidate activity ids were generated by rule from OCR text.
+  Scoring against them would measure our rules against another set
+  of rules, and report the agreement as accuracy. The corpus itself
+  marks them `machine_candidate_unverified`.
+
+  Note also that these are not 13 clean pairs: 9 of the 13
+  mentions carry more than one candidate, so the sheet below holds
+  27 candidate links across 13 mentions.
+
+  Run `python eval_real.py --wsdot-sheet` for the verification sheet.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — ConstructCIE: CAUSAL SPAN DETECTION
+══════════════════════════════════════════════════════════════════════════════
+  source        : constructcie_causal_spans  (Apache-2.0)
+  records       : 530 narratives, 3,520 causal spans
+  label quality : source-published
+  The labels shipped with the dataset. We did not write them and we
+  did not re-adjudicate them.
+
+── What the labels contain ───────────────────────────────────────────────────
+  Top-level causal factor    Spans  Share
+  -------------------------  -----  -----
+  consequences                1152  32.7%
+  object_involved              536  15.2%
+  working_circumstances        533  15.1%
+  working_condition_factors    467  13.3%
+  behavioral_factors           455  12.9%
+  equipment_factors            302   8.6%
+  managerial_factors            75   2.1%
+
+  spans per narrative: mean 6.6, max 15
+  accident types: {'struck-by': 781, 'caught-in/between': 796, 'fall': 1444, 'electrocution': 499}
+
+── Detector status ───────────────────────────────────────────────────────────
+  NAVIS HAS NO RISK OR ISSUE DETECTOR. There is nothing to score.
+
+  What exists is `_compute_delay_reasons` (server/main.py:2645), a
+  12-keyword substring scan over audit spans. It is not a classifier,
+  it produces no probabilities, and it is aimed at schedule delay
+  causes rather than safety causality. Scoring it here would be a
+  category error.
+
+  The harness below is built and the baselines are computed, so the
+  moment a detector exists it can be scored without further work.
+
+── Baselines on the span-detection task (sentence level) ─────────────────────
+  units: 3,094 sentences from 530 narratives; positive rate 77.7%
+  Baseline                               Precision  Recall     F1
+  -------------------------------------  ---------  ------  -----
+  majority class (predict all positive)      77.7%  100.0%  87.4%
+  random at prevalence (77.7%)               77.3%   76.1%  76.7%
+
+  PR-AUC is not reported: it needs a ranked score, and neither
+  baseline produces one. Any real detector must beat the majority
+  F1 of 87.4% to be worth anything.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — MoSPI PAIMANA: DELAY AND COST-OVERRUN PREDICTION
+══════════════════════════════════════════════════════════════════════════════
+  source        : paimana_projects_latest
+  records       : 2,243 unique Indian infrastructure projects
+  label quality : source-published
+  Official government records. Values are as published; MoSPI's terms
+  require accurate reproduction and source acknowledgment.
+
+── What the records support ──────────────────────────────────────────────────
+  Field                          Projects with a usable value  Usable for                                
+  -----------------------------  ----------------------------  ------------------------------------------
+  DELAYED_TIME (published)                                  0  NOTHING — published as 0 for every project
+  COST_OVERRUN_PERC (published)                             0  NOTHING — published as 0 for every project
+  OriginalEndDate + RevisedDate                         1,794  delay, RECOMPUTED here                    
+  OriginalCost + RevisedCost                            1,200  cost overrun, RECOMPUTED here             
+  RevisedDateReason                                         0  NOTHING — empty in all rows               
+  RevisedCostReason                                         0  NOTHING — empty in all rows               
+  Remarks                                                   0  NOTHING — empty in all rows               
+
+  The three derived fields MoSPI publishes are zero-filled in these
+  snapshots. Quoting them would have reported 2,243 projects with
+  exactly zero delay and zero overrun, which is plainly false of
+  Indian infrastructure and would have been a fabricated finding.
+  Delay and overrun below are recomputed from the raw dates and costs.
+
+── Baseline: always predict the mean ─────────────────────────────────────────
+
+  Delay  (n=1,794, months)
+  Metric                                                    Value
+  ---------------------------------------  ----------------------
+  observed mean                                             24.58
+  observed median                                           16.00
+  mean 95% CI (bootstrap)                          [23.02, 26.04]
+  p10 .. p90                                          0.0 .. 63.0
+  RMSE a model must beat                                    32.02
+  MAE a model must beat                                     20.98
+  R^2 of the mean-predictor                 0.000 (by definition)
+  mean signed error of the mean-predictor  0.0000 (by definition)
+
+  Cost overrun  (n=1,200, percent)
+  Metric                                                    Value
+  ---------------------------------------  ----------------------
+  observed mean                                             20.37
+  observed median                                            0.62
+  mean 95% CI (bootstrap)                          [15.30, 26.30]
+  p10 .. p90                                        -24.2 .. 67.8
+  RMSE a model must beat                                    98.35
+  MAE a model must beat                                     37.44
+  R^2 of the mean-predictor                 0.000 (by definition)
+  mean signed error of the mean-predictor  0.0000 (by definition)
+
+  R^2 and signed error are 0 BY DEFINITION for a mean-predictor —
+  they are printed to make the bar explicit, not as a result. NAVIS
+  HAS NO DURATION OR DELAY PREDICTOR, so there is nothing to compare.
+  The RMSE rows above are the number any future model must beat.
+
+── Delay-reason taxonomy coverage — CANNOT BE COMPUTED ON THIS SOURCE ────────
+  The task asks what fraction of real stated delay reasons our
+  categories can express. PAIMANA carries NO free-text reasons:
+  `RevisedDateReason`, `RevisedCostReason` and `Remarks` are present
+  as columns and empty in all 18,601 project-month rows and all
+  2,243 latest-available records.
+
+  This is a property of the published snapshots, not of the corpus
+  build — the fields exist in the schema and the dashboard does not
+  populate them. Reporting a coverage number here would require
+  inventing the reasons to cover.
+
+  The taxonomy is measured against ConstructCIE instead — see the
+  next section — which does carry real causal text.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — DELAY / CAUSE TAXONOMY COVERAGE
+══════════════════════════════════════════════════════════════════════════════
+  source        : constructcie_causal_spans (substituted for PAIMANA,
+                  which publishes no free-text reasons)
+  records       : 3,520 real causal spans
+  label quality : source-published
+
+── Direction 1 — what fraction of real causal text our vocabulary expresses ──
+  Metric                                             Value      95% CI
+  ---------------------------------------  ---------------  ----------
+  real causal spans our 12 keywords match  12/3520 = 0.34%  [0.2, 0.6]
+
+  Keyword that fired  Spans
+  ------------------  -----
+  weather                11
+  flooding                1
+
+  This is a finding, not a bug in the measurement. Our vocabulary was
+  written from our own synthetic DPRs — 'monsoon', 'piling rig
+  breakdown', 'fencing conflict' — and it is a closed list of twelve
+  substrings, not a taxonomy with structure.
+
+── Direction 2 — what real causal structure we cannot express at all ─────────
+  ConstructCIE organises causes into 16 hierarchical
+  factor paths. Our list has no structure and no equivalent for 15 of them.
+
+  Real factor path we cannot express             Spans
+  ---------------------------------------------  -----
+  consequences/affected_body_part                  618
+  object_involved                                  536
+  consequences                                     534
+  working_circumstances                            533
+  working_condition_factors                        229
+  behavioral_factors                               224
+  working_condition_factors/workspace_condition    201
+  behavioral_factors/noncompliant_behavior         159
+  equipment_factors                                147
+  equipment_factors/work_equipment_condition       127
+  behavioral_factors/inattentive_behavior           72
+  managerial_factors                                35
+
+  Caveat that a sceptical reader should apply: ConstructCIE is OSHA
+  SAFETY causality (what injured someone), and our keywords are
+  SCHEDULE delay causality (what made work late). The two overlap
+  — weather, equipment failure — but they are not the same question.
+  The honest statement is that we have no real-text benchmark for
+  schedule-delay reasons at all, and this is the closest proxy.
+
+══════════════════════════════════════════════════════════════════════════════
+ REAL — SEMANTIC LAYER COVERAGE (CFIHOS / CPWD / Uniclass)
+══════════════════════════════════════════════════════════════════════════════
+  sources       : CFIHOS v2.0 CORE (1,472 UoM, 34 disciplines, 875 tag classes)
+                  CPWD DSR E&M 2025 (1,661 item rows)
+  label quality : source-published (CFIHOS), MACHINE-DERIVED, UNVERIFIED (CPWD)
+
+── Direction 1 — our units, found in real published reference data ───────────
+  Our unit  In CFIHOS v2.0?  In CPWD DSR?
+  --------  ---------------  ------------
+  lm                    yes            no
+  m                     yes            no
+  m2                    yes            no
+  m3                    yes            no
+  mt                    yes            no
+  nos                    NO           yes
+
+  5/6 = 83.3% of our units appear in CFIHOS  [50.0, 100.0]
+
+── Direction 2 — real reference vocabulary we cannot express ─────────────────
+  CFIHOS publishes 2,824 distinct unit symbols/names.
+  We use 6. We can express 0.21% of CFIHOS's unit vocabulary.
+
+  CPWD DSR E&M uses 9 distinct units across 1,661 priced items;
+  1 of them overlap with ours: ['nos']
+
+  Both directions are findings. A 6-unit vocabulary is enough for one
+  well-site schedule and nowhere near a handover-grade data standard.
+
+── Disciplines ───────────────────────────────────────────────────────────────
+  Our discipline    Present in CFIHOS discipline table?
+  ----------------  -----------------------------------
+  civil                                             yes
+  electrical                                        yes
+  hse                                                NO
+  instrumentation                                   yes
+  piping                                            yes
+  static_equipment                                   NO
+
+  CFIHOS publishes 34 disciplines; we model 6.
+  We can express 17.6% of theirs.
+
+── Tag patterns ──────────────────────────────────────────────────────────────
+  CFIHOS tag classes: 875, of which 0 publish an explicit tag-number format.
+
+══════════════════════════════════════════════════════════════════════════════
+ SYNTHETIC vs REAL — SIDE BY SIDE, NEVER COMBINED
+══════════════════════════════════════════════════════════════════════════════
+  These columns are never averaged, summed, or reduced to one number.
+  They measure different things on different data of different origin.
+
+  Task                                      SYNTHETIC (dataset/v2)                   REAL (datasets/real)
+  -----------------------------  ---------------------------------  -------------------------------------
+  schedule linking accuracy                top-1 71.4% (n=185 pos)           WITHHELD — labels unverified
+    on near-misses                                           26.5%         n/a — no real near-miss labels
+    on the rest                                              97.4%                                    n/a
+  auto-link precision                                       100.0%                     not computable yet
+  NO_MATCH rejection                                         84.6%  100 rule-based candidates, unverified
+  extraction over field text     not measured (mentions are given)  4,315 real OCR lines — rates reported
+  causal / risk detection                           none in corpus  3,520 published spans, baselines only
+  delay prediction                                  none in corpus     2,243 projects, mean-baseline only
+  units / discipline vocabulary             6 units, 6 disciplines     1,472 CFIHOS units, 34 disciplines
+  label provenance                                  authored by us         source-published or unverified
+
+── Tasks only the SYNTHETIC corpus can evaluate, and why ─────────────────────
+  * schedule-linking accuracy at scale — it needs a labelled mention
+    against a known activity, 814 times. The real corpus has 13
+    unverified candidates against 27 activities.
+  * near-miss discrimination — it needs sibling activities that differ
+    by one token, deliberately constructed. Real schedules are not
+    built to order.
+  * date-basis behaviour (EXPLICIT vs DEFAULTED_TO_REPORT_DATE) — it
+    needs a known answer for what date the text stated.
+
+  These are legitimate uses of synthetic data. They are also exactly
+  the numbers a sceptic should discount most.
+
+── Tasks only the REAL corpus can evaluate ───────────────────────────────────
+  * whether our extractor survives OCR noise from a real scanner
+  * whether our discipline keywords generalise past one project type
+  * whether our unit and discipline vocabulary matches a published
+    handover standard
+  * causal-span detection against labels someone else published
+  * delay magnitude on 2,243 real projects
+
+══════════════════════════════════════════════════════════════════════════════
+ PROVENANCE OF EVERY SOURCE USED ABOVE
+══════════════════════════════════════════════════════════════════════════════
+  origin  source_id                  records  label quality              
+  ------  -------------------------  -------  ---------------------------
+  REAL    wsdot_c8078_idr_ocr          4,315  MACHINE-DERIVED, UNVERIFIED
+  REAL    wsdot_c8078_linking             13  MACHINE-DERIVED, UNVERIFIED
+  REAL    constructcie_causal_spans    3,520  source-published           
+  REAL    paimana_projects_latest      2,243  source-published           
+
+  A row marked MACHINE-DERIVED, UNVERIFIED supports no accuracy claim.
+
+══════════════════════════════════════════════════════════════════════════════
+ WHAT OUR REAL DATA DOES AND DOES NOT PROVE
+══════════════════════════════════════════════════════════════════════════════
+
+  Written for a reader who assumes we are overselling.
+
+  WHAT IT DOES NOT PROVE
+
+  It does not prove our matcher works on real schedules. The only real
+  schedule-linking evidence we hold is 13 field-report summaries against 27
+  activities on one small WSDOT test-pile contract, and the links between them
+  were proposed by a rule, not confirmed by a person. We report no accuracy
+  from them. Twenty-seven activities is roughly one eighth of our synthetic
+  schedule and covers one discipline on one contract over six weeks. Even
+  fully verified, it could not support a claim about matcher quality — the
+  confidence interval on thirteen samples is about plus or minus twenty-five
+  points, which is wide enough to contain almost any hypothesis.
+
+  It does not prove our delay analysis works. We have no delay predictor. The
+  PAIMANA section establishes the bar a predictor must clear and nothing more.
+
+  It does not prove our taxonomy is adequate. It shows the opposite: twelve
+  hard-coded substrings match almost none of the real causal text we could
+  find, and PAIMANA — the source that should have settled the question —
+  publishes no free-text reasons at all.
+
+  WHAT IT DOES PROVE
+
+  That the extractor runs on real OCR'd inspection reports from a different
+  country, a different contract type and a different decade, and pulls out
+  dates and quantities without special-casing. The rates are low, and the
+  reason is legible: an inspection page is mostly form furniture.
+
+  That our vocabulary is narrow against a published standard. Six units where
+  CFIHOS publishes 1,472; six disciplines where CFIHOS publishes 34. That is a
+  measured gap against real reference data, in both directions.
+
+  That the corpus is honestly built. Every record carries its source hash, its
+  extraction method and its verification status, and this report refuses to
+  compute the numbers those statuses do not support.
+
+  THE HONEST SUMMARY
+
+  Our real data proves the system is not brittle to real text, and measures the
+  gap between our vocabulary and a real standard. Our claims about MATCHING
+  QUALITY rest on synthetic data we authored, and should be read that way. The
+  fix is not a better argument — it is the thirteen-pair verification sheet,
+  and then more real labelled data.
+
