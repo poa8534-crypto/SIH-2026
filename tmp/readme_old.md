@@ -55,12 +55,7 @@ discipline, is it finished. We call each of these an **event**. We always record
 
 **Step 3 — Match each event to a task in the plan.**
 This is the hard part and the core of the project. Given "spool erection on the 24
-inch header is done", find `PIP-ERC-1030` out of the **120 tasks in the demo
-schedule**. See section 4.
-
-*(There is a second, harder 218-activity baseline used only for research —
-`dataset/baseline_schedule_v2.json`. The running application does not load it.
-`METRICS.md` §1 keeps the two apart.)*
+inch header is done", find `PIP-ERC-1030` out of 218 possible tasks. See section 4.
 
 **Step 4 — Decide how confident we are.**
 - Very confident → update the schedule automatically.
@@ -85,41 +80,17 @@ If a planner cannot trust the automatic updates, they will go back to doing it b
 hand, and the whole product is pointless.
 
 So the system is deliberately **cautious**. When it is not sure, it refuses to act
-and asks a human. That is why our measured numbers look the way they do.
-
-**What the running application achieves** — v1 evaluation corpus (254 labelled
-mentions against the 120-activity demo schedule). These are calibrated and
-reported on the same data; there is no held-out split in the v1 key, and that
-has to be said whenever the numbers are:
+and asks a human. That is why our measured numbers look the way they do:
 
 | Number | What it means |
 |---|---|
-| **100%** auto-link precision | 128 of 128. Every automatic match was correct |
+| **100%** auto-link precision | Every single automatic match we made was correct |
 | **50.4%** coverage | We only auto-matched about half. The rest went to a human |
-| **87.2%** top-1 accuracy | 211 of 242. Our best guess was right 87% of the time |
-
-**The honest held-out number** — the harder v2 research corpus (814 mentions,
-218 activities, proper train/dev/test). Thresholds picked on dev, reported on a
-test split the matcher never saw:
-
-| Number | What it means |
-|---|---|
-| **100%** auto-link precision | still zero wrong auto-links |
-| **40.9%** coverage | |
-| **71.4%** top-1 overall | 132 of 185 |
-| **97.4%** top-1 on ordinary mentions | 114 of 117 |
-| **26.5%** top-1 on deliberately ambiguous ones | 18 of 68 — **and 100% of these go to review, none are auto-linked** |
-| **100%** recall@20 | the right activity is *always* in our top 20 |
-
-That last row is the important one for anyone working on the engine: retrieval
-is not the problem, ranking is.
+| **87.2%** top-1 accuracy | Our best guess was right 87% of the time |
 
 If someone asks "why only 50%?", the answer is: *because we would rather send half
 to a human than write one wrong date.* That is a deliberate design choice, not a
 weakness. We can show the exact trade-off curve.
-
-**Every number in this repository is defined once, in `METRICS.md`.** If any
-document disagrees with it, `METRICS.md` wins.
 
 Two other rules that follow from this:
 
@@ -143,27 +114,23 @@ a system that writes into a real project schedule, that is unacceptable.
 Instead we use **maths that can be explained**. Two stages:
 
 **Stage 1 — Retrieval ("find me 20 candidates").**
-Three search methods run at once, because each is good at something different:
+Three different search methods run at once, because each is good at something
+different:
 
-| Method | Status | What it is good at |
-|---|---|---|
-| **Exact tag match** | **active** | Finding `24"-P-1001-A1A` when the text contains that tag |
-| **BM25** | **active** | Classic keyword search. Good when the words genuinely overlap |
-| **Embeddings** | **active** | Understands *meaning*, so "erected" can match "installation" |
-| Character n-grams | built, **off** | Typo robustness. Measured +0.00 top-1, so it is not enabled |
-| Alias lexicon | built, **off** | Planner corrections. See §5 — the loop is not closed yet |
+| Method | What it is good at |
+|---|---|
+| **Exact tag match** | Finding `24"-P-1001-A1A` when the text contains that tag |
+| **BM25** | Classic keyword search. Good when the words genuinely overlap |
+| **Embeddings** | Understands *meaning*, so "erected" can match "installation" |
 
-Their results are merged with reciprocal rank fusion into one shortlist of 20.
-**The correct activity is in that shortlist 100% of the time** on the held-out
-test split, which is why the remaining work is in ranking, not retrieval.
+Their results are merged into one shortlist of about 20.
 
 **Stage 2 — Ranking ("which of these 20 is right?").**
 Each candidate gets scored on features we chose and can explain: tag overlap, fuzzy
 text similarity, meaning similarity, how close the dates are, whether the discipline
 matches, whether the previous task has started.
 
-Then a **confidence policy** decides. The thresholds are *calibrated*, not
-hand-picked, and they differ per corpus — on the v1 demo corpus they land at:
+Then a **confidence policy** decides:
 - Score above 0.775 **and** clearly better than second place → auto-link.
 - Between 0.5 and 0.775 → send to the human review queue.
 - Below 0.5 → flag as possibly new work.
@@ -182,32 +149,21 @@ made zero difference to the matches while being 20,000 times slower.
 
 **Working and tested:**
 
-- Backend API — 18 routes, Python + FastAPI
+- Backend API — 17 endpoints, Python + FastAPI
 - Extraction from `.txt` and `.xlsx`
-- The matching engine, measured and documented (`METRICS.md`)
-- SQLite database with a full append-only audit trail
+- The matching engine, measured and documented
+- SQLite database with a full audit trail
 - Frontend — Home, Reconcile, Schedule, Ingest, Memory, plus the field supervisor
   screens
 - Voice input on the phone screen (browser speech)
 - Institutional memory — four kinds of historical query
-- Schedule **export** to PMXML and XER; baseline **import** from JSON
-- **580 Python tests and 55 frontend tests passing** (635 total)
+- 435 Python tests and 55 frontend tests passing
 
 **Known gaps we are actively working on** — see `FINDINGS.md`:
 
-- **Recognising when *nothing* in the plan fits is our weakest metric.** On the
-  v1 demo corpus it is 1 in 12 (8.3%) — but that denominator is only 12
-  negatives and means little. On the v2 corpus, pooled over all 70 negatives,
-  it is **80.0%**. Quote the second one.
-- **Planner corrections are stored but not yet read back at match time.** The
-  read path is built and unit-tested; nothing wires the database into the
-  engine. So the system does *not* learn from corrections today. `METRICS.md` §5.
-- **Primavera/MS Project import is declared and not implemented.** The PMXML
-  and XER *providers* raise `NotImplementedError` by design; export in both
-  formats does work.
-- A fitted learned ranker and isotonic calibration exist and are measured, but
-  are **not loaded by the running server** — they are fitted against the v2
-  baseline and a sha256 guard refuses them against v1. `METRICS.md` §4.
+- The matcher is bad at recognising when *nothing* in the plan fits (1 in 12)
+- Planner corrections are saved but never used to improve future matching
+- No importing from Primavera or MS Project files yet — we can only export
 - No RAID log, no Earned Value Management, no risk engine — see `ROADMAP.md`
 
 ---
@@ -219,13 +175,13 @@ made zero difference to the matches while being 20,000 times slower.
 | **Python 3.12** | Backend language | One language for extraction, matching and the API |
 | **FastAPI** | Builds the web API | Auto-generates live API docs at `/docs` — a free thing to show judges |
 | **Pydantic** | Checks data shapes | Catches bad data at the boundary instead of deep in the code |
-| **SQLite** | The database | A single file. No install, no server, resets instantly. At 120 activities a bigger database buys nothing |
+| **SQLite** | The database | A single file. No install, no server, resets instantly. At 218 activities a bigger database buys nothing |
 | **SQLAlchemy** | Talks to the database | Lets us write Python instead of raw SQL |
 | **openpyxl** | Reads `.xlsx` | Handles the merged headers and mixed date formats real site spreadsheets have |
 | **rank-bm25** | Keyword search | Pure Python, no search server to install |
 | **rapidfuzz** | Fuzzy text matching | Fast, and handles word-order differences |
 | **sentence-transformers** | Meaning-based search | Runs offline on a CPU. ⚠️ Pulls in PyTorch, about 2–3 GB |
-| **NumPy** | Maths | 120 × 384 numbers is small enough for brute force. No vector database needed |
+| **NumPy** | Maths | 218 × 384 numbers is small enough for brute force. No vector database needed |
 | **React + TypeScript** | The user interface | TypeScript catches mistakes before they reach the browser |
 | **Vite** | Frontend build tool | Instant reload while developing |
 | **Tailwind CSS v4** | Styling | Every colour comes from one file, so the whole theme changes in one place |
@@ -243,35 +199,21 @@ we still work.
 ## 7. What is in the repo
 
 ```
-dataset/       DEMO + evaluation data — the 120-activity demo schedule, 11 daily
-               reports, 2 spreadsheets, and the v1 answer key (254 mentions)
-dataset/v2/    The harder RESEARCH corpus — 218-activity baseline, 814 labelled
-               mentions with train/dev/test splits. Not loaded by the server
-datasets/real/ REAL public-source material (WSDOT, CFIHOS, Uniclass, PAIMANA,
-               CPWD, ConstructCIE). Never used to compute a matcher accuracy
+dataset/       Test data — daily reports, spreadsheets, the plan, the correct answers
 extraction/    Reading messy text → structured events
 matching/      The matching engine. The heart of the project
-matching/artifacts/  Fitted ranker + calibrator. Measured, NOT loaded in production
-server/        The API, the database, all 18 routes
+server/        The API, the database, all 17 endpoints
 frontend/      The React app
 scripts/       Demo reset, health check, seeding
 research/      Evidence: measurements, graphs, the generated report
-research/bench/ The ablation, latency profile and tuning harnesses
 eval.py        Measures how good the matching is
 ```
-
-**Four different datasets, four different sizes.** `dataset/` (120 activities)
-is the demo. `dataset/v2/` (814 mentions) is the research evaluation.
-`datasets/real/` is real public material used for extraction robustness and
-taxonomy, never for an accuracy claim. Mixing these up is the single easiest
-way to say something untrue — `METRICS.md` §1 spells it out.
 
 **Documents, in the order worth reading:**
 
 | File | What it is |
 |---|---|
 | `README.md` | This file. Start here |
-| `METRICS.md` | **Every number, defined once.** Read before quoting any figure |
 | `SETUP.md` | How to install and run it |
 | `DEMO.md` | The demo script |
 | `FLOW.md` | How data travels through the code, step by step |
@@ -349,32 +291,26 @@ Six workstreams. Each is genuinely separable — pick one and you can be useful
 without understanding the rest.
 
 **1 · Matching engine** — `matching/`
-The most technically interesting work. Two things are open. Recall@20 is already
-100%, so **every remaining error is a ranking error** — retrieval tuning has no
-headroom left and has been measured to confirm it. And recognising when nothing
-in the plan fits is still the weakest metric (`FINDINGS.md` F5). Comfortable
-with maths and search? This is yours.
+The most technically interesting work. Right now the system is bad at recognising
+when nothing in the plan fits (see `FINDINGS.md` F4 and F5). Comfortable with maths
+and search? This is yours.
 
 **2 · Frontend** — `frontend/src/`
 Three user types are planned: Field Supervisor, Project Manager, Senior Management.
 Only two exist. `ROADMAP.md` §14 lists exactly what to build. React and TypeScript.
 
 **3 · Data and evaluation** — `dataset/`, `eval.py`, `research/`
-The v2 corpus now has proper train/dev/test splits and 814 mentions, and every
-headline carries a bootstrap confidence interval. The open work is that several
-of those intervals still span zero at n=185. Growing the corpus is high-value
-and needs no deep knowledge of the rest of the system. `ROADMAP.md` §12.
+Our test data is too small to make strong scientific claims. Growing it and building
+a proper benchmark is high-value and needs no deep knowledge of the rest of the
+system. `ROADMAP.md` §12 has the full design.
 
 **4 · Backend and API** — `server/`
 New features from `ROADMAP.md`: RAID logs, Earned Value Management, notifications.
 Python and FastAPI.
 
 **5 · Integrations** — new work
-Reading Primavera and MS Project files. `matching/providers.py` already declares
-`PmxmlScheduleProvider` and `PrimaveraXerScheduleProvider` as explicit
-`NotImplementedError` stubs with the shape they must fill — that is the seam to
-build into. One library (MPXJ) does both. `ROADMAP.md` §10 has the verified
-details, including what will *not* work and why.
+Reading Primavera and MS Project files. One library (MPXJ) does both. `ROADMAP.md`
+§10 has the verified details, including what will *not* work and why.
 
 **6 · Demo and documentation** — `DEMO.md`, `research/`
 Rehearsal, the metrics slide, judge questions, the report PDF. Sounds less glamorous

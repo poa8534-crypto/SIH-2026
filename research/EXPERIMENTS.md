@@ -1,5 +1,19 @@
 # Experiment log — every number traces to a harness in research/data/
 
+> **SCOPE: v1 CORPUS, 2026-08-30.** Every figure in this document was measured
+> against the **v1** evaluation corpus — `dataset/ground_truth.csv`, 254
+> labelled mentions, against the 120-activity demo baseline
+> `dataset/baseline_schedule.json` — with **no train/dev/test split**. Those
+> numbers still reproduce exactly (`python eval.py`) and are the numbers the
+> **running application** produces, so nothing here is retracted.
+>
+> What they are **not** is the held-out result. A harder v2 research corpus
+> (814 mentions, 218 activities, proper splits) exists and reports 71.4%
+> held-out top-1. Neither number supersedes the other; they measure different
+> things. **`METRICS.md` is the authority** — read §1 and §3 before quoting
+> anything from this file.
+
+
 Reproduce any figure with the harness named next to it. All harnesses are
 read-only against the real engine and the real dataset (dataset/ground_truth.csv).
 

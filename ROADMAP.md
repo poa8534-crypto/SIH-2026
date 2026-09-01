@@ -38,7 +38,7 @@ missing. That is a strong signal and you should say so when you present.
 | Knowledge handoff — "drilling took 10 days not 5" | `GET /memory/query` → `suggested_duration` from ≥2 completions, `duration_distribution` | Missing: cross-project scope, conditions/context tagging |
 | Database update ≠ project update | Already true architecturally: `LinkedEvent` + `ReviewQueueItem` are separate from `Activity` actuals; only resolve writes | Missing: the *language* to explain it, and a formal Baseline concept |
 | Confidence score + audit trail per entry | `AuditRecord`, append-only, one per mutation | Nothing material |
-| Scientific evaluation | `eval.py` — precision, recall, top-1 accuracy, coverage, confusion matrix, PR-at-coverage sweep | Missing: RMSE, R², calibration, per-class breakdown |
+| Scientific evaluation | `eval.py` — precision, recall, top-1 accuracy, coverage, confusion matrix, PR-at-coverage sweep; `research/bench/` — ablation with paired bootstrap CIs, risk-coverage frontier, ECE/Brier + reliability diagram, per-channel recall@20 | Calibration **done** (isotonic, ECE 0.129→0.042, fitted but not deployed). Still missing: RMSE, R², per-class breakdown |
 | Feedback to Field Supervisor | `/field/clarifications`, `/field/reports`, `POST /review/{id}/clarify` | Missing: outcome notifications ("your update moved the schedule") |
 | Three roles | Two: Field Supervisor, Planning Engineer | Missing: Senior Management |
 | RAID | Delay reasons + review queue + audit exist as raw material | Not assembled |
@@ -788,7 +788,11 @@ months and buy nothing you can demonstrate.
 ### You have three quarters of it already
 
 - `DISCIPLINE_META` in `config.ts` — a controlled vocabulary, type-enforced.
-- `alias_lexicon` — a mapping layer. **Written but never read** (FINDINGS.md F4).
+- `alias_lexicon` — a mapping layer. **Written; a read path now exists but is
+  not wired to the database, so still effectively write-only** (FINDINGS.md F4,
+  `METRICS.md` §5). `HybridRetriever.alias_channel()` reads a supplied lexicon
+  and is unit-tested; what is missing is the query that loads `AliasLexicon`
+  rows into `EngineConfig.alias_lexicon` at engine construction.
 - Tag normalisation in `extraction/prepass.py` — canonical form for line and
   equipment tags.
 - `wbs_path` on every activity — the hierarchy, L1 through L6.
@@ -861,8 +865,11 @@ you asked for — including where those six are *insufficient*.
 - **Macro vs micro averaging.** With six disciplines of unequal frequency, report
   macro-F1 (every class counts equally) alongside micro. Micro alone hides failure on
   rare disciplines.
-- **Confidence intervals.** At n = 254, report bootstrap 95% CIs. "87.2%" invites
-  "how sure are you?"; "87.2% (95% CI 82.6–91.1)" answers it.
+- **Confidence intervals.** **Done for the v2 corpus** — every ablation figure
+  in `research/bench/ABLATION_RESULTS.txt` carries a paired bootstrap 95% CI and
+  its n. The lesson learned: at n=185 a +2.7-point top-1 move has a CI of
+  [−1.6, +7.6], which spans zero. Report the interval, and say so when it spans
+  zero, rather than quoting the point estimate. Not yet done for v1 (n=254).
 
 ### Module design
 
@@ -939,7 +946,10 @@ Your deadline governs this. Ranked strictly by value-per-hour for a judged demo.
 
 ### SHOULD — if the above are done and verified
 
-5. **Close the alias-lexicon loop** (FINDINGS.md F4). One hour, converts a claim into
+5. **Close the alias-lexicon loop** (FINDINGS.md F4). **Now roughly 20 minutes,
+   not an hour** — the retrieval channel is built and tested; the remaining work
+   is to load `AliasLexicon` rows into `EngineConfig.alias_lexicon` in
+   `get_matching_engine()` and set `w_alias > 0`. Converts a claim into
    a live demo beat.
 6. **Field feedback notifications** — "your update moved PIP-ERC-1030 by +2 days".
    Computable from the audit trail you already have. Half a day, and it is the part

@@ -1,5 +1,19 @@
 # Audit-1 — NAVIS vs SIH 26122 Problem Statement
 
+> **SCOPE: v1 CORPUS, 2026-08-30.** Every figure in this document was measured
+> against the **v1** evaluation corpus — `dataset/ground_truth.csv`, 254
+> labelled mentions, against the 120-activity demo baseline
+> `dataset/baseline_schedule.json` — with **no train/dev/test split**. Those
+> numbers still reproduce exactly (`python eval.py`) and are the numbers the
+> **running application** produces, so nothing here is retracted.
+>
+> What they are **not** is the held-out result. A harder v2 research corpus
+> (814 mentions, 218 activities, proper splits) exists and reports 71.4%
+> held-out top-1. Neither number supersedes the other; they measure different
+> things. **`METRICS.md` is the authority** — read §1 and §3 before quoting
+> anything from this file.
+
+
 **Independent gap analysis of the NAVIS prototype against the problem statement:
 what is missing, what is measurably underperforming, and the order in which to fix it.**
 
@@ -19,7 +33,7 @@ Every number in this document was re-derived by executing the code, not read fro
 the repository's own documentation:
 
 ```bash
-python -m pytest -q                 # 264 passed
+python -m pytest -q                 # 264 passed AT THE TIME; 580 as of 2026-09-01
 cd frontend && npx vitest run       # 55 passed
 python eval.py                      # headline metrics, confusion table, tau sweep
 ```
@@ -67,7 +81,7 @@ differentiator is a real mechanism containing almost no data.
 | NO_MATCH rejection | 8.3% | 1 of 12 correctly refused |
 | Review-queue load | **121 items** | of which 31 carry a wrong top-1 |
 | Latency | ~7 ms/event | 266 events in 1.86 s; 4.4 s cold start |
-| Tests passing | **319** | 264 pytest + 55 vitest |
+| Tests passing | **319** *(at the time)* | 264 pytest + 55 vitest. **Now 635: 580 pytest + 55 vitest** |
 
 Dataset: 120 activities, 254 gold mentions, 11 DPRs, 2 discipline spreadsheets.
 

@@ -54,7 +54,11 @@ $ProgressPreference    = 'SilentlyContinue'
 $BaseUrl = $BaseUrl.TrimEnd('/')
 
 # The known-good state documented in DEMO.md.
-$Expected = @{ Activities = 120; WithActuals = 67; ReviewQueue = 118 }
+# ReviewQueue was 118 until 2026-09-01. It is 135 because D-015 stopped writing
+# an Actual Finish that no source dated: those nodes now route to the planner
+# instead of being stamped with the report date. The queue grew because the
+# system got more careful, not less accurate.
+$Expected = @{ Activities = 120; WithActuals = 67; ReviewQueue = 135 }
 
 $DemoFiles = @(
     'dpr_day_01.txt'

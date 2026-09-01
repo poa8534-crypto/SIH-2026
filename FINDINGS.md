@@ -1,5 +1,13 @@
 # FINDINGS.md — NAVIS MVP against the SIH 2026 problem statement
 
+> **STATUS: HISTORICAL REVIEW (2026-08-31), with a maintained status table.**
+> The body of this document — "Act on this first" and F1–F7 — is preserved as
+> written on 31 August 2026 against the **v1 corpus**. Several of its numbers
+> have since moved and several of its findings are fixed. **Do not quote a
+> figure from the body of this file.** The maintained parts are the *Status as
+> of 2026-09-01* table below and `METRICS.md`, which is the authority for every
+> current number.
+
 **Repo read:** `poa8534-crypto/SIH-2026`, branch `main`, 31 August 2026.
 **Method:** cloned the pushed branch, read `matching/`, `extraction/`, `server/`,
 `dataset/`, `frontend/src/` and `research/`, and compared against the PS text in
@@ -23,7 +31,9 @@ project's best claim — that a wrong date is never written. `ARCHITECTURE.md`
 already defines `date_basis` with `DEFAULTED_TO_REPORT_DATE` for exactly this
 case, and the write path ignores it. One hour to gate on it.
 
-**The second thing is not a bug.** "50.4% coverage" counts mentions, and only
+**The second thing is not a bug.** *(2026-08-31 figures; the funnel below is v1
+and still reproducible, but the live demo now writes dates to 67 activities —
+see `METRICS.md`.)* "50.4% coverage" counts mentions, and only
 eleven of the 120 activities actually received dates. 65 nodes were auto-linked
 but had no measurable quantity, so no date was written — which is precisely why
 precision is 100%. Present the funnel (254 → 128 → 76 → 11) and explain the
@@ -32,7 +42,9 @@ guard, rather than letting a judge find the gap.
 **Also missing against the PS:** no Primavera/PMXML *import* — both formats are
 exported, but the baseline is a hand-written JSON. And the alias lexicon is
 written on every planner correction and never read by the matcher, so the
-learning loop does not close.
+learning loop does not close. *(Both still true as of 2026-09-01: PMXML and XER
+import remain declared-and-unimplemented providers, and although the alias read
+path now exists it is not wired to the database — see the status table above.)*
 
 Full detail with line numbers follows.
 
@@ -50,11 +62,17 @@ document, found while building the v2 corpus — have been fixed alongside them.
 | **F7** — zero planned quantity reports 100% | **FIXED** — D-016. A missing planned quantity is separated from a genuine milestone by the unit of measure. |
 | **F2** — coverage counts mentions, not schedule rows | **ADDRESSED** — the v2 harness reports the funnel and names its baseline (D-017, D-020). |
 | **F3** — no Primavera import | **PARTIAL** — `POST /schedule/import` and a `ScheduleProvider` interface exist (D-017/D-018); PMXML and XER providers are declared and deliberately unimplemented. |
-| **F4** — the learning loop is write-only | **OPEN.** Still the largest gap in the data flow. |
-| **F5** — new scope indistinguishable from an uncertain match | **IMPROVED, not closed.** NO_MATCH rejection is 70.6% (48/68) on the v2 corpus against 8.3% (1/12) on v1 — but the v1 figure rested on 12 negatives, which is too few to have meant anything. |
-| **F6** — 31 review rows carry a wrong top suggestion | **OPEN** (rehearsal item, no code). |
+| **F4** — the learning loop is write-only | **PARTIALLY ADDRESSED, still OPEN.** The *read path* now exists and is unit-tested: `HybridRetriever.alias_channel()` (D-028). But `w_alias = 0.0` in the shipped config and **no production code path populates `EngineConfig.alias_lexicon`**, so a planner correction still cannot influence a later re-ingest. The loop is **not** closed. `METRICS.md` §5. |
+| **F5** — new scope indistinguishable from an uncertain match | **IMPROVED, not closed.** Superseded numbers: the 70.6% (48/68) below was measured on the 700-mention v2 corpus, which no longer exists. **Current: 80.0% (56/70) pooled 5-fold CV** on the 814-mention corpus, against 8.3% (1/12) on v1 — and the v1 figure rests on 12 negatives, too few to have meant anything. An experimental learned ranker reaches 100% (70/70) pooled but is not deployed (`METRICS.md` §3.4). |
+| **F6** — 31 review rows carry a wrong top suggestion | **OPEN** (rehearsal item, no code). The v1 count of 31 still holds; the live demo queue is now **135** items for an unrelated reason — D-015 routes undated finishes to the planner. |
 | *(not in this review)* **EQUIPMENT_TAG_RE digit bound** | **FIXED** — D-022. |
 | *(not in this review)* **FRACTION_RE unit suffix** | **FIXED** — D-023. |
+| *(not in this review)* **`EQUIPMENT_TAG_RE` ate the next tag** — `V-1101/V-1201` produced the junk tag `V-1101/V` | **FIXED** — D-025. |
+| *(not in this review)* **`_SLASH_VARIANT_RE` digit bound** — `P-1401A/B` never expanded | **FIXED** — D-025. |
+| *(new, 2026-09-01)* **recall@20 is 100%** — all remaining error is ranking, not retrieval | **MEASURED** — D-027. Four planned retrieval improvements each measured +0.00 and ship off. |
+| *(new, 2026-09-01)* **discipline gating hurts** — −4.32 top-1, CI [−7.0, −1.6] | **REJECTED and reverted** — D-027. |
+| *(new, 2026-09-01)* **gradient-boosted ranker breaches the precision floor** — 97.4% auto-link precision | **REJECTED**, not shipped — D-028. |
+| *(new, 2026-09-01)* **cross-encoder accuracy** | **UNMEASURED** — model not cached, no network. Cost measured at ~45 ms/event. Do not claim it was rejected on accuracy. |
 
 ### The two defects this review did not find
 

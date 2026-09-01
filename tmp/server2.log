@@ -1,0 +1,83 @@
+INFO:     Started server process [10332]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:51592 - "GET /memory/query?kind=duration_distribution HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51593 - "GET /memory/query?kind=slip_by_discipline HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51594 - "GET /memory/query?kind=delay_reasons HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55035 - "GET /memory/query HTTP/1.1" 200 OK
+fitted ranker was built against baseline 831f0fac2fae but this index is 1bfde358dc0e — using the hand-set blend instead
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 9165.06it/s]
+Source conflict on INS-ICS-1104: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (6 nos) - Actual Finish withheld, scope is partial: 2026-08-11 from dpr_day_03.txt line 31 "Junction boxes JB-01, JB-02, JB-03 installed in field. Tagging done." (no date in the line - defaulted to the report date)
+Source conflict on PIP-RCK-1024: finish asserted, but the evidence accounts for only 14.3% of the node's planned quantity (28 mt) - Actual Finish withheld, scope is partial: 2026-08-13 from dpr_day_03.txt line 15 "Tier 2 pipe rack steel is almost done, only 4 MT left. Erection should close by "
+Source conflict on PIP-SUP-1049: finish asserted, but the evidence accounts for only 67.6% of the node's planned quantity (145 nos) - Actual Finish withheld, scope is partial: 2026-08-11 from dpr_day_03.txt line 14 "Pipe support installation Tier 1: 98 out of 145 supports done. Grinding marks on" (no date in the line - defaulted to the report date)
+INFO:     127.0.0.1:50309 - "POST /ingest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63660 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63710 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63712 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63709 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63711 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63708 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63713 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63720 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63722 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63744 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63746 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63757 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63756 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63759 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63762 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63755 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63768 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63792 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63805 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63808 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63810 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63803 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63806 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63804 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63807 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63816 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63818 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63840 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63852 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63858 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63857 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63864 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63866 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63888 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63890 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58786 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58793 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58791 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58789 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58787 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58799 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58801 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58816 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58823 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58834 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58838 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58836 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58840 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58835 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58837 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58841 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58847 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58871 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58883 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58887 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58896 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58920 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58933 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58934 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58944 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58946 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58992 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58994 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59006 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59003 - "GET /field/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59016 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59018 - "GET /schedule?include_warnings=false HTTP/1.1" 200 OK

@@ -1,0 +1,63 @@
+fitted ranker was built against baseline 831f0fac2fae but this index is 1bfde358dc0e — using the hand-set blend instead
+database: C:\Users\tcgxu\OneDrive\Desktop\SIH 2026\dataset\epc_progress.db
+clearing ingest data and re-ingesting ...
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 11810.74it/s]
+Source conflict on PIP-SPL-1026: finish asserted, but the evidence accounts for only 66.7% of the node's planned quantity (12 nos) - Actual Finish withheld, scope is partial: 2026-08-03 from dpr_day_01.txt line 15 "12 inch transfer line spool fabrication — 8 nos completed in shop, 4 more to go." (no date in the line - defaulted to the report date)
+Source conflict on SEQ-EXC-1059: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (1 nos) - Actual Finish withheld, scope is partial: 2026-07-31 from dpr_day_01.txt line 19 "Exchanger E-101 setting on foundation completed 31 Jul. Alignment check pending."
+Source conflict on HSE-SPC-1118: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (4 nos) - Actual Finish withheld, scope is partial: 2026-08-05 from dpr_day_02.txt line 27 "Scaffolding inspection done on 5 Aug. 3 tags expired, re-tagged."
+Source conflict on INS-TRN-1096: finish asserted, but the evidence accounts for only 50.0% of the node's planned quantity (12 nos) - Actual Finish withheld, scope is partial: 2026-08-06 from dpr_day_02.txt line 23 "Level transmitter calibration — 6 out of 12 done in workshop. Calibration report" (no date in the line - defaulted to the report date)
+Source conflict on SEQ-VSL-1057: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (1 nos) - Actual Finish withheld, scope is partial: 2026-08-14 from dpr_day_04.txt line 14 "V-102 filter vessel setting completed 14 Aug. Alignment verified. Nozzle caps in"
+Source conflict on CIV-APN-1022: finish asserted, but the evidence accounts for only 64.3% of the node's planned quantity (280 lm) - Actual Finish withheld, scope is partial: 2026-08-19 from dpr_day_05.txt line 7 "Cable tray buried Zone A+B: 180 lm installed out of 280 lm. Trench backfilling d" (no date in the line - defaulted to the report date)
+Source conflict on CIV-PLG-1017: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (45 m3) - Actual Finish withheld, scope is partial: 2026-08-17 from dpr_day_05.txt line 8 "Grade beams P8-P12 pour completed 17 Aug. Full pipe rack grade beam line now com"
+Source conflict on ELE-CBL-1076: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (1200 m) - Actual Finish withheld, scope is partial: 2026-08-19 from dpr_day_05.txt line 26 "HT cable laying complete — full 1.2 km from substation to MCC trench. Backfilled" (no date in the line - defaulted to the report date)
+Source conflict on SEQ-TKN-1067: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (12 mt) - Actual Finish withheld, scope is partial: 2026-08-19 from dpr_day_05.txt line 23 "TK-1 shell: 8th course completed! Roof ring level reached. Roof installation to " (no date in the line - defaulted to the report date)
+Source conflict on HSE-SPC-1118: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (4 nos) - Actual Finish withheld, scope is partial: 2026-08-03 from dpr_day_06.txt line 40 "NCR closed: scaffolding tag issue from 3 Aug. Satisfactory close-out with photo "
+Source conflict on CIV-FNC-1016: finish asserted, but the evidence accounts for only 66.7% of the node's planned quantity (480 lm) - Actual Finish withheld, scope is partial: 2026-08-23 from dpr_day_06.txt line 8 "Fencing: chain-link installation 320 lm done, remaining 160 lm near north gate. " (no date in the line - defaulted to the report date)
+Source conflict on PIP-FLG-1037: finish asserted, but the evidence accounts for only 57.1% of the node's planned quantity (28 nos) - Actual Finish withheld, scope is partial: 2026-08-23 from dpr_day_06.txt line 14 "8 inch P-1003 flange bolt-up: 16 of 28 done." (no date in the line - defaulted to the report date)
+Source conflict on PIP-HYT-1043: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (3 nos) - Actual Finish withheld, scope is partial: 2026-08-23 from dpr_day_06.txt line 17 "4 inch P-1010 hydrotest: 3 sections tested, all passed." (no date in the line - defaulted to the report date)
+Source conflict on SEQ-ALN-1071: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (0.8 m3) - Actual Finish withheld, scope is partial: 2026-08-22 from dpr_day_06.txt line 23 "CS-01 epoxy grouting completed 22 Aug. Anchor bolts torqued to spec."
+Source conflict on SEQ-ALN-1072: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (0.5 m3) - Actual Finish withheld, scope is partial: 2026-08-23 from dpr_day_06.txt line 24 "HS-01 grouting done. Anchor bolts torqued. Skid alignment verified." (no date in the line - defaulted to the report date)
+Source conflict on SEQ-TKN-1067: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (12 mt) - Actual Finish withheld, scope is partial: 2026-08-23 from dpr_day_06.txt line 20 "TK-1 roof installation complete. Pontoon roof welded and tested." (no date in the line - defaulted to the report date)
+Source conflict on CIV-APN-1022: finish asserted, but the evidence accounts for only 35.7% of the node's planned quantity (280 lm) - Actual Finish withheld, scope is partial: 2026-08-27 from dpr_day_07.txt line 7 "Cable tray buried: remaining 100 lm completed for Zone B. Full 280 lm now instal" (no date in the line - defaulted to the report date)
+Source conflict on PIP-ERC-1033: finish asserted, but the evidence accounts for only 77.8% of the node's planned quantity (8 nos) - Actual Finish withheld, scope is partial: 2026-08-27 from dpr_day_07.txt line 36 "Pressure transmitter mounting: 14 of 18 on piping. 4 remaining — waiting on pipe" (no date in the line - defaulted to the report date)
+Source conflict on PIP-FLG-1039: finish asserted, but the evidence accounts for only 60.0% of the node's planned quantity (20 nos) - Actual Finish withheld, scope is partial: 2026-08-27 from dpr_day_07.txt line 18 "6 inch P-1015 flange bolt-up: 12 of 20 done." (no date in the line - defaulted to the report date)
+Source conflict on SEQ-PMP-1061: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (2 nos) - Actual Finish withheld, scope is partial: 2026-08-27 from dpr_day_07.txt line 24 "Pump alignment P-101B: laser alignment done. Both pumps aligned and grouted." (no date in the line - defaulted to the report date)
+Source conflict on SEQ-TKN-1068: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (1 nos) - Actual Finish withheld, scope is partial: 2026-08-27 from dpr_day_07.txt line 23 "TK-1 hydrotest: ALL PASSED. 48-hour retention complete. Water drained. Tank insp" (no date in the line - defaulted to the report date)
+Source conflict on ELE-LIG-1089: finish asserted, but the evidence accounts for only 50.0% of the node's planned quantity (16 nos) - Actual Finish withheld, scope is partial: 2026-09-02 from dpr_day_08.txt line 33 "Lighting circuit testing: 8 of 16 circuits done." (no date in the line - defaulted to the report date)
+Source conflict on PIP-HYT-1040: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (6 nos) - Actual Finish withheld, scope is partial: 2026-09-02 from dpr_day_08.txt line 12 "24 inch P-1001 hydrotest: ALL 6 sections passed. Full line hydro complete." (no date in the line - defaulted to the report date)
+Source conflict on PIP-HYT-1044: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (3 nos) - Actual Finish withheld, scope is partial: 2026-09-02 from dpr_day_08.txt line 15 "6 inch P-1015 hydrotest: all 3 sections passed." (no date in the line - defaulted to the report date)
+Source conflict on PIP-PCD-1053: finish asserted, but the evidence accounts for only 66.7% of the node's planned quantity (0 nos) - Actual Finish withheld, scope is partial: 2026-09-02 from dpr_day_08.txt line 20 "P&ID punch list close-out: 8 of 12 Cat A closed. 20 of 28 Cat B closed." (no date in the line - defaulted to the report date)
+Source conflict on ELE-FLT-1085: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (186 nos) - Actual Finish withheld, scope is partial: 2026-09-08 from dpr_day_09.txt line 20 "Control cable termination: ALL 186 terminations complete." (no date in the line - defaulted to the report date)
+Source conflict on ELE-LIG-1089: finish asserted, but the evidence accounts for only 87.5% of the node's planned quantity (16 nos) - Actual Finish withheld, scope is partial: 2026-09-08 from dpr_day_09.txt line 22 "Lighting circuit testing: 14 of 16 done." (no date in the line - defaulted to the report date)
+Source conflict on INS-ICS-1105: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (186 nos) - Actual Finish withheld, scope is partial: 2026-09-08 from dpr_day_09.txt line 26 "Marshalling cabinet wiring: ALL 186 terminations complete." (no date in the line - defaulted to the report date)
+Integrity block on actual_start: Actual Start 2026-09-20 for INS-DOC-1111 is after data date 2026-09-15
+Source conflict on INS-ICS-1106: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (1 nos) - Actual Finish withheld, scope is partial: 2026-09-15 from dpr_day_10.txt line 22 "DCS integration: COMPLETE. All signals live on DCS screens." (no date in the line - defaulted to the report date)
+Source conflict on INS-LOOP-1107: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (62 nos) - Actual Finish withheld, scope is partial: 2026-09-15 from dpr_day_10.txt line 20 "Loop check: ALL 62 loops completed and verified." (no date in the line - defaulted to the report date)
+Source conflict on INS-SFT-1109: finish asserted, but the evidence accounts for only 0.0% of the node's planned quantity (4 nos) - Actual Finish withheld, scope is partial: 2026-09-15 from dpr_day_10.txt line 23 "SIS logic test: SIL-2 functions tested. 4 SIFs all passed cause-effect verificat" (no date in the line - defaulted to the report date)
+Source conflict on PIP-PCD-1053: finish asserted, but the evidence accounts for only 66.7% of the node's planned quantity (0 nos) - Actual Finish withheld, scope is partial: 2026-09-15 from dpr_day_10.txt line 9 "P&ID punch list close-out: 8 of 12 Category A items closed. 4 remaining — need v" (no date in the line - defaulted to the report date)
+  dpr_day_01.txt                13 events,   4 linked,   9 review
+  dpr_day_02.txt                15 events,  10 linked,   5 review
+  dpr_day_04.txt                 9 events,   4 linked,   5 review
+  dpr_day_05.txt                22 events,  12 linked,  10 review
+  dpr_day_06.txt                27 events,  19 linked,   8 review
+  dpr_day_07.txt                23 events,  15 linked,   8 review
+  dpr_day_08.txt                31 events,  13 linked,  18 review
+  dpr_day_09.txt                22 events,   8 linked,  14 review
+  dpr_day_10.txt                18 events,  10 linked,   8 review
+  dpr_day_11_messy.txt          16 events,   0 linked,  16 review
+  civil_progress.xlsx           22 events,  21 linked,   1 review
+  piping_progress.xlsx          30 events,  20 linked,  10 review
+
+==============================================================
+  activities                                  120
+  events extracted                            248
+  auto-linked                                 136
+  review items pending                        128
+  activities with actual dates                 64
+    ... of which completed                     38
+  audit records                               257
+  source conflicts recorded                    61
+==============================================================
+
+Reset complete. The running server picks this up immediately;
+reload the browser, no restart needed.

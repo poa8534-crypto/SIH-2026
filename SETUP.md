@@ -147,16 +147,24 @@ Expect a summary like:
   activities                                   120
   events extracted                             266
   auto-linked                                  148
-  review items pending                         118
+  review items pending                         135
   activities with actual dates                  67
-    ... of which completed                      47
-    ... with distinct start and finish          42
-  audit records                                259
-  source conflicts recorded                     35
+    ... of which completed                      38
+  audit records                                275
+  source conflicts recorded                     68
 ```
+
+Verified 2026-09-01. Those exact counts are also the known-good state in
+`DEMO.md`; `METRICS.md` §1 explains why 120 is the *demo schedule* size and not
+the evaluation-corpus size.
 
 Re-running it rebuilds from scratch. `--keep` adds to the existing database
 instead.
+
+If the server later refuses to start with `no such column: activities.wbs_level`,
+the local `dataset\epc_progress.db` predates the v2 baseline work. It is
+gitignored and fully regenerable: run `python scripts\reset_demo.py` once, which
+detects the schema mismatch and recreates the tables.
 
 ---
 
@@ -266,7 +274,7 @@ Use `--offline` to run just the import and dataset checks with no server.
 Finally, the test suite and the evaluation:
 
 ```powershell
-python -m pytest -q          # 264 tests
+python -m pytest -q          # 580 tests (plus 55 frontend: cd frontend; npx vitest run)
 python eval.py               # matcher metrics table
 ```
 

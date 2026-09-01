@@ -1,7 +1,32 @@
 # SIH 26122 — System Architecture
 
-> Converted from the supplied architecture PDF into Markdown for use as the repo-level architecture/specification file.  
+> Converted from the supplied architecture PDF into Markdown for use as the repo-level architecture/specification file.
 > No substantive architectural changes were made during conversion.
+
+> ## How to read this file
+>
+> **§0–§6 are the ORIGINAL DESIGN SPECIFICATION**, written before the build.
+> They record what was intended, including estimates and choices that the
+> implementation later changed. They are kept as written, because the reasoning
+> is still the reasoning — but do **not** read them as a description of the
+> current system.
+>
+> **§7 (Known Limitations) is CURRENT** and is maintained against the code.
+>
+> For what the system does *now*: `FLOW.md` (execution paths), `METRICS.md`
+> (every number, and which corpus it came from), `README.md` §4 (the pipeline
+> in plain English).
+>
+> Corrections to §0–§6 where the spec and the code diverged, so a reader is not
+> misled by a document that is otherwise deliberately frozen:
+>
+> | Spec says | Code does |
+> |---|---|
+> | Embeddings: `bge-small-en-v1.5` (§5) | **`all-MiniLM-L6-v2`**, 384-dim, offline-first, with a deterministic hashed-ngram fallback |
+> | Retrieval: exact tag + BM25 + **fuzzy** + embedding (§1) | Three fusion channels — exact tag, BM25, embedding. **Fuzzy is a ranking feature, not a retrieval channel.** Two further channels (char n-gram, alias lexicon) are built and switched off |
+> | "120 activities" throughout | Correct for the **demo** baseline. A second research baseline has 218 and the server does not load it — `METRICS.md` §1 |
+> | PMXML input worth the effort (§0) | PMXML and XER **import** are declared as `NotImplementedError` providers. **Export** in both formats is implemented |
+> | Recall@20 ≥ 0.95 as a target (§ milestone E) | **Achieved and exceeded: recall@20 is 100%.** The consequence is that all remaining error is ranking, not retrieval |
 
 ## 0. Five places I think you're wrong
 
@@ -407,8 +432,8 @@ Two decisions are worth explicitly defending:
 | Spreadsheet | pandas + openpyxl | Handles merged headers and mixed date types. |
 | Lexical retrieval | rank_bm25 | Pure Python; no external search daemon. |
 | Fuzzy matching | rapidfuzz | Fast token-set matching for word-order drift. |
-| Embeddings | sentence-transformers + `bge-small-en-v1.5` | ~130 MB, CPU-capable, offline, suited to short technical text. |
-| Vector search | NumPy dot product | At 120 × 384 dimensions, brute-force cosine is sufficient. No FAISS/Chroma needed. |
+| Embeddings | sentence-transformers + `bge-small-en-v1.5` *(SPEC — the code ships `all-MiniLM-L6-v2`)* | ~130 MB, CPU-capable, offline, suited to short technical text. |
+| Vector search | NumPy dot product | At 120 × 384 dimensions, brute-force cosine is sufficient. No FAISS/Chroma needed. *(Still true, and re-confirmed in D-026: batching the encoder, not a vector store, was the latency fix.)* |
 | LLM | Ollama `qwen2.5:7b-instruct` primary; API accelerator | Offline path is the tested default rather than an untested fallback. |
 | Structured output | Ollama JSON schema mode | Constrained structured decoding instead of best-effort JSON prompting. |
 | Schedule import | lxml for PMXML | XML with a published schema. |
@@ -552,6 +577,77 @@ Those five elements are the core pitch. Everything else is packaging.
 
 # 7. Known Limitations
 
+## The pipeline as it actually runs today
+
+Verified 2026-09-01 against the code, not against this document's §1.
+
+```
+field input (.txt DPR | .xlsx | voice transcript)
+   |
+   v  extraction/  — deterministic regex pre-pass; LLM optional and OFF
+ExtractedEvent          tags, quantity, uom, dates + basis, discipline,
+   |                    status, percentage, provenance (file, line/row, span)
+   v  matching/retrieval.py — CANDIDATE RETRIEVAL, recall-oriented, top-20
+   |     ACTIVE   TAG    exact/near-exact tag, O(1) dict lookup   weight 1.0
+   |     ACTIVE   BM25   precomputed term x doc matrix            weight 0.7
+   |     ACTIVE   DENSE  all-MiniLM-L6-v2, batched per file       weight 0.7
+   |     off      NGRAM  char 3-5 gram TF-IDF                     weight 0.0
+   |     off      ALIAS  planner corrections                      weight 0.0
+   |     -> reciprocal rank fusion (k=60) -> 20 candidates
+   |        recall@20 = 100% on the held-out test split
+   v  matching/features.py — RANKING, precision-oriented, scored as a matrix
+   |     tag_overlap · fuzzy_similarity · embedding_cosine ·
+   |     date_proximity · discipline_agreement · predecessor_plausibility
+   |     (+5 extra features, built, OFF in production)
+   |     -> weighted blend, renormalised over present features
+   |     -> line-lock floor where a tag identifies a unique activity
+   v  matching/engine.py :: decide_outcome — CALIBRATED DECISION
+   |     score < tau_low                          -> NEW_ACTIVITY
+   |     score >= tau_high AND margin >= margin_min
+   |                        AND no discipline conflict -> AUTO_LINK
+   |     otherwise                                 -> REVIEW
+   v  matching/engine.py :: RollupAccumulator — many-to-one, quantity-based %
+   |     Actual Finish written ONLY at 100% complete AND only when a source
+   |     named the date. Otherwise withheld and routed to the planner.
+   v  server/main.py -> SQLite (dataset/epc_progress.db)
+         activities (actuals only; baseline read-only)
+         linked_events · review_queue · audit_records (APPEND-ONLY)
+         alias_lexicon  <- written here, NOT read back (see below)
+```
+
+## Active vs built-but-disabled
+
+`matching/config.py` holds every switch, so a disabled component is a config
+default rather than deleted code — the negative results stay reproducible.
+
+| Component | State | Why |
+|---|---|---|
+| Char n-gram retrieval channel | **off** | measured +0.00 top-1, +0.50 ms/event |
+| Alias retrieval channel | **off** | see below; ablation could not measure it |
+| Discipline soft gate | **off** | measured **−4.32** top-1, CI [−7.0, −1.6] |
+| Exact-tag short circuit | **off** | correct but fires on only 4.7% of mentions |
+| Extra ranking features | **off** in production | fitted only against the v2 baseline |
+| Learned logistic ranker | **off** in production | v2-only artefact, refused against v1 by a sha256 guard |
+| Gradient-boosted ranker | **rejected** | 97.4% auto-link precision, below the 99% floor |
+| Isotonic calibration | **off** in production | same v2 guard |
+| Cross-encoder rerank | **off**, **accuracy UNMEASURED** | model not cached, no network; costs ~45 ms/event |
+
+## The alias lexicon is written and not read
+
+`server/main.py:_upsert_alias` inserts an `AliasLexicon` row on every planner
+confirm, reassign and new-activity resolve. `HybridRetriever.alias_channel()`
+exists to read them and is unit-tested.
+
+**They are not connected.** `w_alias` is 0.0 in the shipped configuration, and
+no production code path ever populates `EngineConfig.alias_lexicon` — the only
+`db.query(AliasLexicon)` outside tests is the write-side deduplication lookup
+inside `_upsert_alias` itself. A planner correction therefore **cannot**
+influence a later re-ingest today.
+
+The claim "the system learns from planner corrections" is not yet true and must
+not be made. `METRICS.md` §5 carries the safe wording.
+
+
 ## Audit provenance is exact where it exists, and absent where it does not
 
 `AuditRecord` carries a real foreign key, `linked_event_id`, to the
@@ -563,13 +659,20 @@ matching on text. Two identical lines in one file are distinct entries.
 
 The snapshot is deliberately kept alongside the key: `audit_records` is
 append-only and must stay readable as a historical record even if the event
-row is later reinterpreted. On the seeded corpus all 259 audit rows agree
-with their foreign key on all three fields, and no key dangles.
+row is later reinterpreted. On the seeded corpus every audit row agrees with
+its foreign key on all three fields, and no key dangles.
+
+The seeded corpus now holds **275** audit rows (verified 2026-09-01 by
+`python scripts/reset_demo.py`). Earlier revisions of this section quoted 259
+and `DEMO.md` quoted 274; both were captured from older runs. The *proportions*
+below were measured at 259 rows and have not been recomputed — treat them as
+indicative of the shape, not as current exact counts.
 
 What is genuinely absent, and why:
 
-- **165 of 259 rows have an exact position.** The rest are writes with no
-  single originating line. Two cases produce them.
+- **Roughly two thirds of rows have an exact position** (165 of 259 when last
+  counted). The rest are writes with no single originating line. Two cases
+  produce them.
 - **A date taken from the report's own date rather than a line.** When no
   event asserts a start or finish, `RollupAccumulator` falls back to
   `min`/`max` of the events' `reported_date`
@@ -591,7 +694,8 @@ show, not that the line was lost.
 `ScheduleActivityResponse.link_confidence` is not stored. It is read back off
 the audit trail on every `GET /schedule` — the confidence of the most recent
 write that set `actual_start` or `actual_finish`. It exists so the Schedule
-table can show a confidence per row without issuing 120 audit requests.
+table can show a confidence per row without issuing one audit request per
+activity.
 
 It is one grouped query, not a query per activity, so the cost is flat. But
 it does mean the value is a projection of the audit log rather than a fact
@@ -653,19 +757,21 @@ captured execution data. The honest caveat is how little of it there is on the
 seeded corpus, and the UI surfaces the sample size everywhere rather than
 hiding it.
 
-- **47 of 120 activities have both an actual start and finish.** Only those can
-  contribute a duration. Of those 47, **32 show identical planned and actual
-  dates** — zero measured slip; 10 overran and 5 finished early.
+- **38 of 120 activities have both an actual start and finish** (verified
+  2026-09-01). Only those can contribute a duration. This fell from 47 when
+  D-015 stopped writing an Actual Finish that no source had dated — the drop is
+  the system becoming more careful, not losing data.
 - **43 of 67 actual starts equal the planned start.** So most of the
   planned-vs-actual delta is driven by the finish date alone, not by a measured
   execution window. 24 starts do genuinely differ, so this is a majority
   artefact rather than a total one.
-- **26 of 56 activity types have any actual duration; 11 have two or more.**
-  The largest overruns are single-activity types — `CIV-PLT` reads 6d planned
-  against 35d actual from one activity — which is why both the table and the
+- **19 of 56 activity types have any actual duration; 9 have two or more.**
+  The largest overruns are single-activity types — `CIV-APN` reads 9d planned
+  against 32d actual from one activity — which is why both the table and the
   picker show a completed-of-total count on every row, and why the suggested
   duration panel defaults to the worst overrun *among types with at least two
-  completions* rather than the worst overall.
+  completions* rather than the worst overall. It currently opens on `PIP-SPL`:
+  planned median 16d, actual median 17.5d, P80 21d, from 2 completions of 5.
 - **Delay causes are four keyword hits.** `_compute_delay_reasons` substring
   matches a fixed list against audit `source_span` text. All four found are
   civil and each touches one activity. This is keyword recall over DPR prose,
