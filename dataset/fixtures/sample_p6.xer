@@ -1,0 +1,15 @@
+ERMHDR	22.12	2026-09-02	Project	admin	NAVIS	dbxDatabaseNoName	Project Management	USD
+%T	PROJWBS
+%F	wbs_id	proj_id	wbs_short_name	wbs_name
+%R	501	1	CIV	Civil Works
+%R	502	1	PIP	Piping
+%T	TASK
+%F	task_id	proj_id	wbs_id	task_code	task_name	target_start_date	target_end_date
+%R	9001	1	501	CIV-EXC-1001	Excavation for Foundation F-1	2026-06-01 08:00	2026-06-10 17:00
+%R	9002	1	501	CIV-FDN-1002	Foundation Concreting F-1	2026-06-11 08:00	2026-06-20 17:00
+%R	9003	1	502	PIP-ERC-2001	Spool Erection 24 inch Header	2026-06-15 08:00	2026-07-05 17:00
+%T	TASKPRED
+%F	task_pred_id	task_id	pred_task_id	pred_type	lag_hr_cnt
+%R	1	9002	9001	PR_FS	0
+%R	2	9003	9002	PR_SS	16
+%E

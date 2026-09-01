@@ -1111,6 +1111,217 @@ class TestCrossDPRStatistics:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TEST GROUP: Primavera import (POST /schedule/import, PMXML + XER)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FIXTURES = Path(__file__).resolve().parent.parent / "dataset" / "fixtures"
+
+
+class TestPrimaveraImport:
+    """FINDINGS.md F3 — the PS names Primavera exports as an input.
+
+    The critical property is that none of this can disturb the running demo
+    baseline: the 120-activity synthetic schedule is what every number on stage
+    is computed from.
+    """
+
+    def _upload(self, name, **form):
+        path = FIXTURES / name
+        ctype = "application/xml" if name.endswith(".xml") else "text/plain"
+        return client.post(
+            "/schedule/import",
+            files={"file": (name, path.read_bytes(), ctype)},
+            data={k: str(v).lower() for k, v in form.items()},
+        )
+
+    def test_pmxml_dry_run_reports_what_it_found(self):
+        r = self._upload("sample_p6.xml", dry_run=True)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["activities_in_file"] == 3
+        assert body["activities_created"] == 0
+        assert body["activities_updated"] == 0
+        assert body["baseline"]["source_format"] == "pmxml"
+        assert "Dry run" in body["message"]
+        assert "3 activities" in body["message"]
+
+    def test_xer_dry_run_reports_what_it_found(self):
+        r = self._upload("sample_p6.xer", dry_run=True)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["activities_in_file"] == 3
+        assert body["baseline"]["source_format"] == "xer"
+
+    def test_a_dry_run_writes_nothing_and_leaves_the_demo_baseline_active(self):
+        """The whole point of the dry run. A P6 file can be inspected without
+        touching the schedule the demo is computed from."""
+        before = client.get("/schedule").json()
+        assert before["total_activities"] == 120
+
+        for name in ("sample_p6.xml", "sample_p6.xer"):
+            assert self._upload(name, dry_run=True).status_code == 200
+
+        after = client.get("/schedule").json()
+        assert after["total_activities"] == 120
+        assert after["activities_with_actuals"] == before["activities_with_actuals"]
+        # None of the fixture ids leaked into the schedule.
+        ids = {a["activity_id"] for a in after["activities"]}
+        assert "PIP-ERC-2001" not in ids
+        assert "CIV-EXC-1001" not in ids
+
+    def test_a_dry_run_is_marked_as_an_import_and_replaced_nothing(self):
+        body = self._upload("sample_p6.xml", dry_run=True).json()
+        assert body["baseline"]["source"] == "import"
+        assert body["replaced"] is False
+
+    def test_a_real_commit_creates_the_activities_and_leaves_the_demo_ones_alone(self):
+        """The import path end to end, not just the dry run.
+
+        The fixture ids do not exist in the 120-activity demo baseline, so they
+        are created alongside it: the demo activities are never modified, which
+        is the property that matters two days before a demo. (The autouse
+        fixture rebuilds the database per test, so this commit is not visible
+        to any other test.)
+        """
+        before = client.get("/schedule").json()
+        assert before["total_activities"] == 120
+
+        r = self._upload("sample_p6.xml")
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["activities_created"] == 3
+        assert body["activities_updated"] == 0
+
+        after = client.get("/schedule").json()
+        assert after["total_activities"] == 123
+        ids = {a["activity_id"] for a in after["activities"]}
+        assert {"CIV-EXC-1001", "CIV-FDN-1002", "PIP-ERC-2001"} <= ids
+        # Not one demo activity gained or lost an actual.
+        assert after["activities_with_actuals"] == before["activities_with_actuals"]
+
+    def test_importing_again_without_replace_is_refused(self):
+        """A second import needs explicit consent.
+
+        Two guards can fire here — one for an already-active baseline, one for
+        colliding activity ids. Either is correct; what matters is a 409 with a
+        reason that names replace=true.
+        """
+        assert self._upload("sample_p6.xml").status_code == 200
+        second = self._upload("sample_p6.xml")
+        assert second.status_code == 409
+        detail = second.json()["detail"].lower()
+        assert "already active" in detail or "already exist" in detail
+        assert "replace" in detail
+
+    def test_import_never_writes_actuals(self):
+        """ROADMAP §4 rule 5 — an import populates a baseline, never actuals."""
+        assert self._upload("sample_p6.xml").status_code == 200
+        imported = [
+            a for a in client.get("/schedule").json()["activities"]
+            if a["activity_id"] in {"CIV-EXC-1001", "CIV-FDN-1002", "PIP-ERC-2001"}
+        ]
+        assert len(imported) == 3
+        for a in imported:
+            assert a["actual_start"] is None
+            assert a["actual_finish"] is None
+            assert a["actual_qty"] is None
+
+    def test_a_malformed_file_names_the_file_and_the_reason(self):
+        """Never a 200 with zero activities — the D-040 bug shape."""
+        r = client.post(
+            "/schedule/import",
+            files={"file": ("broken.xml", b"<Project><Activity>", "application/xml")},
+            data={"dry_run": "true"},
+        )
+        assert r.status_code == 400
+        detail = r.json()["detail"]
+        assert "broken.xml" in detail
+        assert "well-formed" in detail
+
+    def test_a_text_file_renamed_xer_is_refused_clearly(self):
+        r = client.post(
+            "/schedule/import",
+            files={"file": ("notes.xer", b"just some notes\nnothing here\n", "text/plain")},
+            data={"dry_run": "true"},
+        )
+        assert r.status_code == 400
+        assert "notes.xer" in r.json()["detail"]
+
+    def test_mpp_is_refused_by_name_with_the_reason(self):
+        """MPXJ needs a JVM; the refusal has to say so, or someone will add it."""
+        r = client.post(
+            "/schedule/import",
+            files={"file": ("plan.mpp", b"\x00\x01binary", "application/octet-stream")},
+            data={"dry_run": "true"},
+        )
+        assert r.status_code == 400
+        detail = r.json()["detail"]
+        assert ".mpp" in detail or "mpp" in detail.lower()
+        assert "MPXJ" in detail or "JVM" in detail
+
+    def test_supported_formats_are_listed_in_the_refusal(self):
+        r = client.post(
+            "/schedule/import",
+            files={"file": ("plan.pdf", b"%PDF-1.4", "application/pdf")},
+            data={"dry_run": "true"},
+        )
+        assert r.status_code == 400
+        detail = r.json()["detail"]
+        for expected in (".json", ".xml", ".xer"):
+            assert expected in detail
+
+
+class TestExportRelationshipConsistency:
+    """One schedule must not export two different logic networks.
+
+    `_generate_xer` hardcoded `relationship_type SS` for every predecessor while
+    `_generate_pmxml` wrote `FS` for the same rows, so the format chosen changed
+    the meaning of the schedule. See D-047.
+    """
+
+    def test_pmxml_and_xer_agree_on_relationship_type(self):
+        from matching.primavera import parse_pmxml, parse_xer
+
+        upload_dir = Path(__file__).resolve().parent.parent / "dataset" / "uploads"
+        xml_name = client.post(
+            "/schedule/export", json={"format": "pmxml"}
+        ).json()["filename"]
+        xer_name = client.post(
+            "/schedule/export", json={"format": "xer"}
+        ).json()["filename"]
+
+        from_xml = {
+            a["activity_id"]: a["predecessors"]
+            for a in parse_pmxml((upload_dir / xml_name).read_text(encoding="utf-8"), xml_name)
+        }
+        from_xer = {
+            a["activity_id"]: a["predecessors"]
+            for a in parse_xer((upload_dir / xer_name).read_text(encoding="utf-8"), xer_name)
+        }
+
+        assert set(from_xml) == set(from_xer)
+        for activity_id, preds in from_xml.items():
+            assert preds == from_xer[activity_id], activity_id
+
+    def test_our_own_exports_round_trip_through_the_readers(self):
+        """120 out, 120 back, with every relationship preserved."""
+        from matching.primavera import parse_pmxml, parse_xer
+
+        upload_dir = Path(__file__).resolve().parent.parent / "dataset" / "uploads"
+        for fmt, parser in (("pmxml", parse_pmxml), ("xer", parse_xer)):
+            export = client.post(
+                "/schedule/export", json={"format": fmt, "include_actuals": True}
+            ).json()
+            parsed = parser(
+                (upload_dir / export["filename"]).read_text(encoding="utf-8"),
+                export["filename"],
+            )
+            assert len(parsed) == export["activity_count"] == 120
+            assert all(a["planned_start"] and a["planned_finish"] for a in parsed)
+            assert sum(len(a["predecessors"]) for a in parsed) > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 

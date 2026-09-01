@@ -22,6 +22,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
 
+from matching.primavera import ScheduleParseError
+
 from matching.providers import (
     DEFAULT_RELATIONSHIP,
     BaselineVersion,
@@ -272,18 +274,47 @@ class TestJsonScheduleProvider:
         assert len(provider.read_activities()) == 1, "content was not cached"
 
 
-class TestUnimplementedProviders:
+class TestPrimaveraProviders:
+    """These were stubs that raised NotImplementedError until D-047.
+
+    This class used to assert that they refused. It now asserts they work,
+    because FINDINGS.md F3 is closed. Parsing detail lives in
+    `matching/test_primavera.py`; what is checked here is that they satisfy the
+    provider contract like every other provider.
+    """
+
+    FIXTURES = Path(__file__).resolve().parent.parent / "dataset" / "fixtures"
+
+    @pytest.mark.parametrize(
+        "cls,fixture,fmt",
+        [
+            (PmxmlScheduleProvider, "sample_p6.xml", "pmxml"),
+            (PrimaveraXerScheduleProvider, "sample_p6.xer", "xer"),
+        ],
+    )
+    def test_they_read_a_real_export(self, cls, fixture, fmt):
+        provider = cls(self.FIXTURES / fixture)
+        assert isinstance(provider, ScheduleProvider)
+
+        activities = provider.read_activities()
+        assert len(activities) == 3
+
+        baseline = provider.read_baseline()
+        assert baseline.source_format == fmt
+        assert baseline.activity_count == 3
+        assert len(baseline.sha256) == 64
+
     @pytest.mark.parametrize(
         "cls", [PmxmlScheduleProvider, PrimaveraXerScheduleProvider]
     )
-    def test_stubs_refuse_loudly(self, cls):
-        provider = cls("whatever.xml")
-        assert isinstance(provider, ScheduleProvider)
-        with pytest.raises(NotImplementedError) as e:
-            provider.read_activities()
-        assert "not implemented" in str(e.value)
-        with pytest.raises(NotImplementedError):
-            provider.read_baseline()
+    def test_a_file_that_is_not_a_schedule_still_refuses_loudly(self, cls, tmp_path):
+        """Implemented does not mean permissive: garbage in is still an error
+        naming the file, never an empty baseline."""
+        bad = tmp_path / "notes.xer" if cls is PrimaveraXerScheduleProvider else tmp_path / "notes.xml"
+        bad.write_text("this is not a schedule", encoding="utf-8")
+        with pytest.raises(ScheduleParseError) as e:
+            cls(bad).read_activities()
+        assert bad.name in str(e.value)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
