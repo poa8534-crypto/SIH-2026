@@ -368,3 +368,94 @@ class TestMatchingIsReal:
             assert third["slots"]["activity_id"] in known
         for alt in third["slots"]["alternatives"]:
             assert alt in known
+
+
+# ── Refusing input that is not a progress report ────────────────────────────
+
+class TestUnreportableInputIsRefused:
+    """The matcher ranks; it does not judge.
+
+    Given any string it returns its best candidate with a confidence attached,
+    so "I love kenny boy" came back at 40% and became a review row a planner
+    had to read and dismiss. The gate runs before the matcher and decides only
+    whether the text is a report about work at all.
+    """
+
+    @pytest.mark.parametrize("junk", [
+        "hello hello hello hello",
+        "I love kenny boy",
+        "asdfgh",
+        "ok",
+        "   ",
+        "!!!!",
+        "test test test",
+    ])
+    def test_junk_is_refused_and_writes_nothing(
+        self, client: TestClient, db_session, junk
+    ):
+        from server.db import LinkedEvent, ReviewQueueItem
+
+        db_session.expire_all()
+        before_events = db_session.query(LinkedEvent).count()
+        before_reviews = db_session.query(ReviewQueueItem).count()
+
+        r = client.post("/agent/turn", json={
+            "session_id": str(uuid.uuid4()),
+            "message": junk,
+            "context": CONTEXT,
+        })
+        assert r.status_code == 200, r.text
+        body = r.json()
+
+        assert body["event_created"] is False
+        assert body["match_outcome"] == "not_a_progress_report"
+        assert body["confidence"] == 0.0
+        assert body["review_item_id"] is None
+        assert "can't log that" in body["agent_message"]
+
+        db_session.expire_all()
+        assert db_session.query(LinkedEvent).count() == before_events
+        assert db_session.query(ReviewQueueItem).count() == before_reviews
+
+    @pytest.mark.parametrize("real", [
+        "spool erection on the 24 inch header is done",
+        "poured 40 m3 of the raft today",
+        "backfilling complete at the north trench",
+        "cable glanding finished on panel B",
+        "hydrotest of 24\"-P-1001-A1A passed",
+        "6 joints welded",
+        "instrument loop calibrated",
+        "work delayed, front not available",
+    ])
+    def test_a_real_field_report_is_never_refused(self, client: TestClient, real):
+        r = client.post("/agent/turn", json={
+            "session_id": str(uuid.uuid4()),
+            "message": real,
+            "context": CONTEXT,
+        })
+        assert r.status_code == 200, r.text
+        body = r.json()
+        # It may still ask a follow-up question — what it must NOT do is refuse.
+        assert body["match_outcome"] != "not_a_progress_report", real
+        assert "can't log that" not in body["agent_message"], real
+
+    def test_the_refusal_is_recorded_in_the_transcript(
+        self, client: TestClient, db_session
+    ):
+        from server.db import ConversationTurn
+
+        sid = str(uuid.uuid4())
+        client.post("/agent/turn", json={
+            "session_id": sid, "message": "I love kenny boy", "context": CONTEXT,
+        })
+        db_session.expire_all()
+        turn = (
+            db_session.query(ConversationTurn)
+            .filter(ConversationTurn.session_id == sid)
+            .first()
+        )
+        # Refused, but not hidden: what was said is still on the record.
+        assert turn is not None
+        assert turn.user_message == "I love kenny boy"
+        assert turn.extracted_intent == "not_a_progress_report"
+        assert turn.event_created is False

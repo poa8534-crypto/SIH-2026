@@ -2904,8 +2904,48 @@ def agent_turn(
     clarification = None
     if req.message:
         # The first substantive message is the description: it carries the
-        # activity, and it is what the matcher is run against later.
+        # activity, and it is what the matcher is run against later. Refuse it
+        # here if it is not a report about work at all — the matcher ranks, it
+        # does not judge, so without this gate any string comes back with a
+        # plausible-looking confidence and costs a planner a queue row.
         if slots.description is None:
+            refusal = _unreportable_reason(req.message)
+            if refusal is not None:
+                agent_msg = (
+                    f"I can't log that — {refusal}. Tell me what work was done, "
+                    "for example \"poured 40 m3 of the raft\" or "
+                    "\"24\"-P-1001-A1A hydrotest complete\"."
+                )
+                turn = ConversationTurn(
+                    id=_uuid(),
+                    session_id=session_id,
+                    turn_number=turn_number,
+                    slots_filled=slots.model_dump_json(),
+                    pending_slots=json.dumps([]),
+                    user_message=req.message,
+                    extracted_intent="not_a_progress_report",
+                    agent_response=agent_msg,
+                    event_created=False,
+                    linked_event_id=None,
+                )
+                db.add(turn)
+                db.commit()
+                # Nothing matched, nothing linked, nothing queued.
+                return AgentTurnResponse(
+                    session_id=session_id,
+                    turn_number=turn_number,
+                    agent_message=agent_msg,
+                    slots=slots,
+                    pending_slots=[],
+                    event_created=False,
+                    confidence=0.0,
+                    awaiting_confirmation=False,
+                    match_outcome="not_a_progress_report",
+                    discipline_label=discipline_label(slots.discipline),
+                    status_label=(
+                        STATUS_LABELS.get(slots.status) if slots.status else None
+                    ),
+                )
             slots.description = req.message.strip() or None
         clarification = _fill_slots(slots, req.message, context, db)
 
@@ -3134,6 +3174,87 @@ def _merge_quantity(slots: SlotState, parsed) -> None:
     ):
         # Kept as reported and surfaced, not clamped.
         slots.quantity_over_planned = True
+
+
+# ── Is this text even a progress report? ─────────────────────────────────────
+
+#: Words that make a sentence a report about construction work rather than
+#: chatter. Deliberately broad — a supervisor types in a hurry, in gloves, and
+#: the cost of refusing a real update is far higher than the cost of letting a
+#: marginal one through to a human. Nothing here is discipline-specific enough
+#: to bias the matcher; this list only decides *whether to run it at all*.
+REPORTABLE_TERMS = frozenset("""
+pour poured pouring concrete rcc pcc screed grout grouted grouting
+excavate excavated excavation backfill backfilled trench trenching
+pile piling foundation footing pedestal plinth slab shuttering formwork
+reinforcement rebar blockwork masonry brickwork plaster plastering
+spool spools erect erected erection weld welded welding joint joints
+flange flanges bolt bolted gasket pipe piping line header
+hydrotest hydrotested pressure test tested testing flush flushing
+valve valves support supports hanger skid
+cable cables cabling gland glanded terminate terminated termination
+tray conduit panel panels switchgear transformer breaker earthing
+instrument instruments loop loops calibrate calibrated calibration
+transmitter gauge light lighting fixture
+paint painted painting coating insulation cladding scaffolding
+install installed installing fit fitted fix fixed lay laid erect
+align aligned commission commissioned handover punch snag
+complete completed done finished start started begin begun
+progress ongoing resumed
+delay delayed hold held blocked stopped shutdown breakdown
+inspection inspected approved rejected ncr rfi
+""".split())
+
+#: A bare number with a unit is itself evidence of a measurement.
+_QUANTITY_SIGNAL_RE = re.compile(
+    r"\d+\s*(?:%|m2|m3|sqm|cum|rmt|mtr|mts?|metres?|meters?|nos?|"
+    r"kg|te|ton|tonnes?|inch|\"|joints?|lengths?)",
+    re.IGNORECASE,
+)
+
+
+def _unreportable_reason(text: str, tags=None, quantity=None) -> Optional[str]:
+    """Why this text cannot be a progress report, or None if it might be.
+
+    The matching engine will return *some* candidate for *any* string — it
+    ranks, it does not judge — so "I love kenny boy" came back at 40% and
+    became a review item a planner had to read and dismiss. Ranking is not
+    filtering, and the queue is the planner's time.
+
+    This gate runs BEFORE the matcher and decides only whether the text is a
+    report about work at all. It is deliberately generous: any tag, any
+    measured quantity, or any single construction term is enough to pass. It
+    is applied ONLY on the conversational agent path, never to file ingest, so
+    it cannot affect extraction or the evaluation corpus.
+
+    Returns a short human-readable reason on refusal, None to proceed.
+    """
+    raw = (text or "").strip()
+    if not raw:
+        return "the message was empty"
+
+    # A tag or a measured quantity is self-evidently a report.
+    if tags:
+        return None
+    if quantity is not None:
+        return None
+
+    words = re.findall(r"[a-zA-Z]+", raw.lower())
+    if not words:
+        return "the message contains no words, only symbols or digits"
+
+    # "hello hello hello hello" — repetition is not information.
+    if len(words) >= 3 and len(set(words)) <= 2:
+        return "the message is one word repeated"
+
+    if any(w in REPORTABLE_TERMS for w in words):
+        return None
+    if _QUANTITY_SIGNAL_RE.search(raw):
+        return None
+
+    return (
+        "it does not mention any construction activity, quantity or tag"
+    )
 
 
 def _context_from_request(req_context) -> AgentContext:
