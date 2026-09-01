@@ -64,6 +64,8 @@ transcript of earlier design conversations. Nothing here is presented as recolle
 | D-012 | SQLite, synchronous ingest, and "on submission" rather than "near real time" | Active |
 | D-013 | Adopt a persistent repository memory protocol | Active |
 | D-014 | Backfill history as a parallel H-series; document defects rather than fix them | Active |
+| D-015 | `date_basis` is carried end to end, and a defaulted finish date is never written | Active (supersedes H-016) |
+| D-016 | A missing planned quantity is not a milestone | Active (qualifies D-008) |
 
 **Historical entries H-001 … H-027 are indexed separately at the top of Part 0,
 immediately below.** Four of them qualify a D-entry directly and should be read with
@@ -75,6 +77,7 @@ it:
 | D-002 (precision-first thresholds) | **H-014** — *the server does not run the operating point the headline metric comes from* |
 | D-005 (LLM optional, off by default) | **H-018** — the three specific model errors the guards were written against |
 | D-012 (SQLite, synchronous ingest) | **H-007** — why "near real time" was refused, and why the `Job` table still exists |
+| D-008 (`actual_finish` only at 100%) | **D-015** — and only when a source named the date; **D-016** — and only when 100% means something |
 
 ---
 
@@ -113,7 +116,7 @@ record, it is marked `INFERRED`.
 | H-013 | pre-2026-08-28 | One seeded generator builds the whole corpus, and the circularity is admitted | Implemented |
 | H-014 | pre-2026-08-28 | **Four different threshold sets exist; the demo does not run the headline one** | Implemented (undocumented until now) |
 | H-015 | 2026-08-28 `2da3c92` | The first real bug: dates were extracted and then dropped | Fixed |
-| H-016 | 2026-08-28 `2da3c92` | `date_basis` provenance was specified and deliberately deferred | Deferred |
+| H-016 | 2026-08-28 `2da3c92` | `date_basis` provenance was specified and deliberately deferred | **Superseded by D-015** |
 | H-017 | 2026-08-28 `e664dd8` | Start and finish became distinct assertions; the forecast guard was added | Implemented |
 | H-018 | 2026-08-28 `3c6e59a` | The Ollama path was added opt-in, with guards against three named model errors | Implemented |
 | H-019 | 2026-08-28 `ab137ee` | Schedule context was removed from the LLM prompt; a messy DPR was added | Implemented |
@@ -877,7 +880,9 @@ F-01 is a live instance of it (`_dense_cos` returning `None`).
 ## 2026-08-28 `2da3c92` / H-016 — `date_basis` provenance was specified and deliberately deferred
 
 ### Status
-Deferred. Still absent.
+**Superseded by D-015 (2026-09-01).** `date_basis` is now carried end to end, and the
+cost this entry predicted was measured before it was fixed: eleven activities sharing
+one Actual Finish, two of them with zero duration.
 
 ### Context
 `ARCHITECTURE.md` §2.3 specified a `date_basis` enum on every event:
@@ -2056,3 +2061,197 @@ and Part 0 can be skipped entirely by anyone who only needs current-state reason
 Verification performed for this entry: `python -m pytest -q` → **264 passed**; every
 file, function, class, constant, route and line number named in Part 0 and in the new
 `FLOW.md` sections was confirmed present by reading the source or by `grep`.
+
+---
+
+## 2026-09-01 / D-015 — `date_basis` is carried end to end, and a defaulted finish date is never written
+
+### Context
+`FINDINGS.md` F1 measured the cost of the gap H-016 left open. Eleven activities came
+out of the pipeline carrying `Actual Finish 2026-09-15`, and PIP-FLG-1036 and
+PIP-FLG-1038 carried `actual_start == actual_finish` — zero-duration activities.
+
+The mechanism was two paths that both substituted the report's own date for a date no
+source had given:
+
+1. `Extractor._bind_assertion_dates` — a line that claims completion but names no date
+   ("Flange management for 24 nos completed") was handed the DPR header's date to
+   carry the claim. `dataset/dpr_day_10.txt` is dated 15/09/2026.
+2. `RollupAccumulator.results` — with no finish assertion at all, `actual_finish` fell
+   back to `max(acc["dates"])`, and `acc["dates"]` held each mention's *report* date.
+
+Neither path was distinguishable downstream from a date a supervisor actually wrote
+down, because the field that would have distinguished them —
+`ARCHITECTURE.md` §2.3's `date_basis` — was specified and then deferred (H-016).
+
+This attacked the project's strongest claim directly: that a wrong date is never
+written. A column of identical finish dates on the Schedule screen reads as a system
+that fabricates dates, whatever the matcher underneath is doing.
+
+### Decision
+Reinstate `date_basis` with the three values the specification named, and gate the
+write on it.
+
+1. **`extraction/models.py`** — `DateBasis` enum (`EXPLICIT`, `RELATIVE_RESOLVED`,
+   `DEFAULTED_TO_REPORT_DATE`), plus `reported_date_basis`, `asserted_start_basis` and
+   `asserted_finish_basis` on `ExtractedEvent`.
+2. **`extraction/prepass.py`** — `extract_dates_with_basis` returns each date with how
+   it was found: a date in the span is `EXPLICIT`, `"yesterday"`/`"today"` resolved
+   against the report date is `RELATIVE_RESOLVED`. The prepass never emits
+   `DEFAULTED_TO_REPORT_DATE`; only the caller that substitutes the report date can
+   assign it. `extract_dates_with_flags` and `extract_dates` remain as basis-free views.
+3. **`Extractor._bind_assertion_dates`** returns `(start, start_basis, finish,
+   finish_basis)`. A claim carried by the report's own date comes back
+   `DEFAULTED_TO_REPORT_DATE`.
+4. **`matching/models.py`** — `DateAssertion.basis` and `.is_defaulted`;
+   `RollupResult.actual_start_basis` / `.actual_finish_basis`, plus `withheld_finish`,
+   `withheld_finish_assertions` and `review_reasons`. `DateAssertion.describe()` now
+   says "(no date in the line - defaulted to the report date)" in the audit trail.
+5. **`RollupAccumulator`** — `acc["dates"]` holds `DateAssertion`s rather than bare
+   dates, so the report-date fallback knows its own provenance. `results()` writes
+   `actual_finish` only from assertions whose basis is not `DEFAULTED_TO_REPORT_DATE`.
+   When the only candidate is a defaulted date, the finish is withheld, carried on
+   `withheld_finish` with its evidence, and a reason naming the defaulting is recorded.
+6. **`server/`** — `Activity.actual_start_basis` / `.actual_finish_basis` and the three
+   `LinkedEvent` basis columns (with an additive `_add_missing_columns` migration, since
+   SQLite cannot add them through `create_all`). A withheld finish writes an
+   `actual_finish_withheld` audit row (`auto_applied=False`) and queues a
+   `ReviewQueueItem` with reason `defaulted_finish_date`.
+   `POST /review/{id}/resolve` routes that reason to `_resolve_defaulted_finish`, which
+   accepts only `confirm` (write the date as a planner decision, still marked
+   `DEFAULTED_TO_REPORT_DATE`) or `ignore`.
+7. **API + UI** — `GET /schedule` returns both bases; `DateCell` in
+   `frontend/src/pages/Schedule.tsx` renders an inferred date dotted-underlined with a
+   `~` marker and the reason on hover.
+
+**An explicitly asserted finish date keeps its previous behaviour exactly.**
+
+### Reason
+A date the source named and a date the system supplied are different facts, and the
+schedule is the wrong place to lose that difference. The system is allowed to be
+unable to date a completion; it is not allowed to invent the date and present it like
+an assertion. Routing to the planner is the same rule as D-009: an inference becomes an
+actual only through a human resolution.
+
+The start date is treated differently on purpose. It is still written from the earliest
+report date when no start was asserted, but it is now *marked* — the earliest day work
+was reported is a reasonable floor for a start, whereas the day a report was typed says
+nothing about when work finished. Marking it lets the UI show the difference without
+throwing the signal away.
+
+### Alternatives Considered
+- **Write the defaulted date and mark it in the UI only.** Rejected: the schedule is
+  exported to Primavera/PMXML, and a marker in the React table does not travel with the
+  export. Variance against baseline would still be computed against a fabricated date.
+- **Widen the guard to refuse defaulted start dates too.** Rejected for this change:
+  the earliest report date is genuine evidence that work was underway by that day, and
+  refusing it would drop `actual_start` on 26 activities to buy nothing. It is marked
+  instead.
+- **Keep `max(acc["dates"])` but exclude the last report only.** Rejected: a hack
+  fitted to one dataset. The defect is not "15/09" — it is that basis was not tracked.
+
+### Verification
+`python -m pytest -q` → **435 passed** (was 411 before the new tests).
+New tests: `matching/test_matching.py::TestDefaultedFinishDates` (6),
+`extraction/test_extractor.py::TestDateBasis` (5),
+`server/test_date_basis.py` (9, driving the real `/ingest` and `/review/{id}/resolve`).
+`python eval.py` → headline metrics unchanged (auto-link precision 100.0%, coverage
+50.4%); the roll-up table's eleven identical finish dates became ten withheld finishes
+and one node dropped by D-016. Ingesting the whole dataset through `/ingest`: 38
+activities finish, **all** with basis `EXPLICIT`; **0 zero-duration activities**;
+17 withheld-finish items across 13 activities reach the planner.
+
+### Affected Areas
+`extraction/models.py`, `extraction/prepass.py`, `extraction/extractor.py`,
+`extraction/spreadsheet.py`, `matching/models.py`, `matching/engine.py`,
+`server/db.py`, `server/main.py`, `server/schemas.py`, `frontend/src/types.ts`,
+`frontend/src/pages/Schedule.tsx`, `eval.py`, and four test modules.
+
+### Trade-offs / Consequences
+Easier: a planner can see which dates the field actually asserted; the export carries
+only dates a source named; the zero-duration rows are gone.
+Harder: fewer activities carry an Actual Finish automatically, and a review queue that
+was purely about *links* now also carries *dates*. Coverage of the schedule falls, and
+that is the correct direction — the alternative was coverage bought with invented data.
+
+`eval.py` builds its events from `dataset/ground_truth.csv`, whose `source_date` column
+is the report's date by construction, so **every** date in the eval harness is
+`DEFAULTED_TO_REPORT_DATE` and every finish in its roll-up table is withheld. That is
+an artefact of the harness, not of the pipeline: the real extractor reads dates out of
+the DPR line itself, which is why the `/ingest` path still writes 38 finish dates. The
+eval table now says `withheld` explicitly rather than printing a date, so the two
+cannot be confused.
+
+### Future Notes
+- `_basis_of` in `matching/engine.py` defaults a missing basis to `EXPLICIT`. That is
+  the permissive direction, and it is safe only because every defaulting path in
+  `extraction/` sets the basis explicitly. If a new source of events is added, it must
+  set its bases.
+- The zero-duration invariant in `RollupAccumulator.results()` is defensive: the finish
+  gate above it already makes the condition unreachable. Keep it. It is the line that
+  states the rule.
+
+---
+
+## 2026-09-01 / D-016 — A missing planned quantity is not a milestone
+
+### Context
+`FINDINGS.md` F7: PIP-PCD-1053 ("P&ID Punch List Close-out") reported `0/0 nos,
+100.0%` in the roll-up table, beside F1's identical finish dates.
+
+`RollupAccumulator.add` treated `planned_qty <= 0` as "unquantified node — a milestone,
+where a completion claim is all the evidence there will ever be", and pushed 100% into
+`pct_events`. PIP-PCD-1053 is not a milestone: it is measured in `nos` and its planned
+quantity is simply missing from the baseline. Four punch-list mentions produced a node
+reported complete on no measurable evidence at all.
+
+### Decision
+Split the branch three ways on what the node actually is:
+
+| `planned_qty` | `uom` | Behaviour |
+|---|---|---|
+| `> 0` | any | Unchanged — partial-scope protection (D-008 / H-017) |
+| `<= 0` | set | **New** — planned quantity is *missing*; progress is recorded, no percentage is derived |
+| `<= 0` | empty | Unchanged — a genuine milestone; a completion claim means 100% |
+
+A quantity reported against a node with no planned quantity is likewise recorded as a
+note rather than silently dropped, since `installed / 0` cannot produce a percentage.
+A percentage the *source stated* ("punch list 100% closed") still counts: only a
+percentage **derived** from a missing planned quantity is refused.
+
+### Reason
+`percent_complete` is the gate on `actual_finish` (D-008). A node that reaches 100% on
+no measurable evidence writes a finish date on no measurable evidence. Reading
+`planned_qty == 0` as "this node has no measurable scope" is only true when the node
+also declares no unit; when it declares `nos`, the zero is a data gap in the baseline,
+and a data gap must not resolve to "complete".
+
+### Alternatives Considered
+- **Treat any `planned_qty == 0` node as never completable.** Rejected: it would break
+  genuine milestones, which have no quantity by nature. The unit of measure is the
+  signal that separates the two.
+- **Backfill a planned quantity for PIP-PCD-1053.** Rejected: it fixes one row of one
+  fixture and leaves the arithmetic wrong for the next baseline.
+
+### Verification
+`matching/test_matching.py::TestZeroPlannedQuantity` (3 tests) and
+`::TestMilestoneNode` (1, on a synthetic one-node schedule, since the 120-activity
+baseline contains no genuine milestone). `python eval.py`: PIP-PCD-1053 no longer
+appears in the roll-up table — it now correctly reports 0%, and the count of nodes with
+no measurable quantity moved 65 → 66.
+
+### Affected Areas
+`matching/engine.py` (`RollupAccumulator.add`), `matching/test_matching.py`.
+
+### Trade-offs / Consequences
+Easier: the roll-up table no longer shows `0/0 nos, 100.0%`; a missing planned quantity
+surfaces as a note instead of as false completion.
+Harder: PIP-PCD-1053 now reports 0% and receives no dates, which is one fewer node on
+the Schedule screen. That is the honest reading of the evidence available for it.
+
+### Future Notes
+The real remedy is upstream: a baseline whose punch-list node carries a planned count.
+Until `dataset/baseline_schedule.json` is replaced by a parsed Primavera export
+(`FINDINGS.md` F3), the guard is what stands between a missing number and a fabricated
+percentage.
+

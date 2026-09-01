@@ -17,7 +17,13 @@ from typing import Optional
 from openpyxl import Workbook, load_workbook
 from openpyxl.cell.cell import MergedCell
 
-from .models import Discipline, ExtractedEvent, ExtractionMethod, Provenance
+from .models import (
+    DateBasis,
+    Discipline,
+    ExtractedEvent,
+    ExtractionMethod,
+    Provenance,
+)
 
 
 # ── Column alias map ─────────────────────────────────────────────────────────
@@ -389,8 +395,16 @@ class SpreadsheetParser:
             # (see matching/features.py _date_proximity); the asserted pair
             # below is what reaches the schedule.
             reported_date=end_date or start_date,
+            # A register cell is a date the source wrote down: EXPLICIT. A
+            # spreadsheet row never defaults to a report header date, so
+            # DEFAULTED_TO_REPORT_DATE cannot arise on this path.
+            reported_date_basis=(
+                DateBasis.EXPLICIT if (end_date or start_date) else None
+            ),
             asserted_start=start_date,
+            asserted_start_basis=DateBasis.EXPLICIT if start_date else None,
             asserted_finish=asserted_finish,
+            asserted_finish_basis=DateBasis.EXPLICIT if asserted_finish else None,
             quantity=achieved_qty or planned_qty,
             uom=str(row_data.get("uom", "") or "").strip() or None,
             discipline=discipline,

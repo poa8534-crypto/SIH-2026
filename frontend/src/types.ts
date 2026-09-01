@@ -16,6 +16,10 @@ export interface ReviewItem {
   created_at: string;
 }
 
+/** ARCHITECTURE.md 2.3. EXPLICIT and RELATIVE_RESOLVED both come from the
+ *  source; DEFAULTED_TO_REPORT_DATE is an inference the source never made. */
+export type DateBasis = 'EXPLICIT' | 'RELATIVE_RESOLVED' | 'DEFAULTED_TO_REPORT_DATE';
+
 export interface ScheduleActivity {
   activity_id: string;
   wbs_path: string;
@@ -28,6 +32,11 @@ export interface ScheduleActivity {
   uom: string;
   actual_start: string | null;
   actual_finish: string | null;
+  /** How each actual date was obtained. DEFAULTED_TO_REPORT_DATE means no
+   *  source named the date — the report header's own date stood in — and the
+   *  UI marks it as inferred rather than asserted. Null when the date is null. */
+  actual_start_basis: DateBasis | null;
+  actual_finish_basis: DateBasis | null;
   actual_qty: number | null;
   start_variance_days: number | null;
   finish_variance_days: number | null;

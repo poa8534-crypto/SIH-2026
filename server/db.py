@@ -69,6 +69,16 @@ class Activity(Base):
     actual_finish = Column(Date, nullable=True)
     actual_qty = Column(Float, nullable=True)
 
+    # How each actual date above was obtained: EXPLICIT (a date in the source),
+    # RELATIVE_RESOLVED ("yesterday", resolved against the report date) or
+    # DEFAULTED_TO_REPORT_DATE (the source named no date at all). Stored beside
+    # the date rather than derived from the audit trail, because the UI has to
+    # be able to mark an inferred date differently from an asserted one on
+    # every read. A defaulted finish date is never written automatically - see
+    # matching/engine.py RollupAccumulator.results.
+    actual_start_basis = Column(String, nullable=True)
+    actual_finish_basis = Column(String, nullable=True)
+
     # Variance cache (recomputed on query)
     start_variance_days = Column(Integer, nullable=True)
     finish_variance_days = Column(Integer, nullable=True)
@@ -160,6 +170,13 @@ class LinkedEvent(Base):
     # may be null: most lines assert only one of the two.
     asserted_start = Column(Date, nullable=True)
     asserted_finish = Column(Date, nullable=True)
+    # How each of the three dates above was obtained. Persisted so a replay
+    # through the roll-up (a planner confirming a review item) reaches the same
+    # decision the ingest path did, instead of silently treating a defaulted
+    # date as an asserted one.
+    reported_date_basis = Column(String, nullable=True)
+    asserted_start_basis = Column(String, nullable=True)
+    asserted_finish_basis = Column(String, nullable=True)
     quantity = Column(Float, nullable=True)
     uom = Column(String, nullable=True)
     discipline = Column(String, nullable=False, default="unknown")
@@ -396,9 +413,39 @@ engine = create_engine(
 )
 
 
+# Columns added after the first databases were created. SQLite cannot add them
+# through create_all, and the demo database is not disposable during a run, so
+# they are added in place. Additive only: no column is ever dropped or retyped
+# here, and every one of them is nullable.
+_ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("activities", "actual_start_basis", "VARCHAR"),
+    ("activities", "actual_finish_basis", "VARCHAR"),
+    ("linked_events", "reported_date_basis", "VARCHAR"),
+    ("linked_events", "asserted_start_basis", "VARCHAR"),
+    ("linked_events", "asserted_finish_basis", "VARCHAR"),
+)
+
+
+def _add_missing_columns() -> None:
+    """Bring an existing SQLite file up to the current schema."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table, column, sqltype in _ADDED_COLUMNS:
+            if table not in tables:
+                continue
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            if column in existing:
+                continue
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {sqltype}"))
+
+
 def init_db() -> None:
     """Create all tables."""
     Base.metadata.create_all(bind=engine)
+    _add_missing_columns()
 
 
 def get_db():

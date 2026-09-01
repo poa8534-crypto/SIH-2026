@@ -18,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from extraction.models import (
+    DateBasis,
     Discipline,
     EventStatus,
     ExtractedEvent,
@@ -26,6 +27,7 @@ from extraction.models import (
 )
 from extraction.prepass import (
     extract_dates,
+    extract_dates_with_basis,
     extract_fractions,
     extract_percentages,
     extract_quantities,
@@ -120,6 +122,62 @@ class TestDateExtraction:
     def test_no_dates(self):
         dates = extract_dates("Foundation work ongoing")
         assert dates == []
+
+
+class TestDateBasis:
+    """Every date has to know how it was obtained. A date the span carried is
+    an assertion; the report header's date standing in for one is an
+    inference, and the two must never be written to the schedule alike."""
+
+    def test_explicit_date_is_explicit(self):
+        dated, _w = extract_dates_with_basis(
+            "pour completed on 2026-07-30", date(2026, 8, 15))
+        assert dated[0] == (date(2026, 7, 30), DateBasis.EXPLICIT)
+
+    def test_relative_date_is_resolved_not_explicit(self):
+        dated, _w = extract_dates_with_basis("completed yesterday", date(2026, 8, 3))
+        assert dated[0] == (date(2026, 8, 2), DateBasis.RELATIVE_RESOLVED)
+
+    def test_completion_without_a_date_defaults_to_the_report_date(self):
+        """The F1 case: "Flange management completed" in a report dated
+        15/09. The claim is real; the date is not."""
+        start, start_basis, finish, finish_basis = Extractor._bind_assertion_dates(
+            "Flange management for 24 nos completed",
+            "completed",
+            {"dates": [], "date_bases": []},
+            date(2026, 9, 15),
+        )
+        assert finish == date(2026, 9, 15)
+        assert finish_basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+        assert start is None and start_basis is None
+
+    def test_completion_with_a_date_is_explicit(self):
+        _s, _sb, finish, finish_basis = Extractor._bind_assertion_dates(
+            "Flange management completed on 2026-09-11",
+            "completed",
+            {"dates": ["2026-09-11"], "date_bases": [DateBasis.EXPLICIT.value]},
+            date(2026, 9, 15),
+        )
+        assert finish == date(2026, 9, 11)
+        assert finish_basis is DateBasis.EXPLICIT
+
+    def test_pipeline_marks_a_defaulted_finish(self):
+        """End to end through the real extractor: dpr_day_10.txt is dated
+        15/09/2026, and every completion in it that names no date of its own
+        must come out marked as defaulted."""
+        ext = Extractor(schedule_path=str(DATASET / "baseline_schedule.json"))
+        result = ext.extract(str(DATASET / "dpr_day_10.txt"))
+        defaulted = [
+            e for e in result.events
+            if e.asserted_finish_basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+        ]
+        assert defaulted, "dpr_day_10 should contain undated completion claims"
+        for e in defaulted:
+            assert e.asserted_finish == date(2026, 9, 15)
+        # and a line that carries its own date is not marked defaulted
+        for e in result.events:
+            if e.asserted_finish_basis is DateBasis.EXPLICIT:
+                assert e.asserted_finish is not None
 
 
 class TestQuantityExtraction:

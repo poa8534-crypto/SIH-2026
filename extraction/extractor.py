@@ -24,6 +24,7 @@ from typing import Optional
 from .llm_backend import LLMBackend, NullBackend, make_backend_from_env
 from .textio import read_text
 from .models import (
+    DateBasis,
     Discipline,
     EventStatus,
     ExtractedEvent,
@@ -37,7 +38,7 @@ from .prepass import (
     STARTED_RE,
     is_forecast_language,
     extract_dates,
-    extract_dates_with_flags,
+    extract_dates_with_basis,
     extract_fractions,
     extract_percentages,
     extract_quantities,
@@ -48,6 +49,15 @@ from .prepass import (
 from .spreadsheet import SpreadsheetParser
 
 logger = logging.getLogger(__name__)
+
+
+def _basis_at(hints: dict, i: int) -> DateBasis:
+    """Basis of the i-th date in a prepass hint dict, defaulting to EXPLICIT
+    for hand-built hints that carry dates without bases."""
+    bases = hints.get("date_bases") or []
+    if i < len(bases):
+        return DateBasis(bases[i])
+    return DateBasis.EXPLICIT
 
 
 class Extractor:
@@ -258,7 +268,8 @@ class Extractor:
         ref = report_date or self.reference_date
 
         tags = extract_tags(text)
-        dates, date_warnings = extract_dates_with_flags(text, ref)
+        dated, date_warnings = extract_dates_with_basis(text, ref)
+        dates = [d for d, _b in dated]
         quantities = extract_quantities(text)
         percentages = extract_percentages(text)
         fractions = extract_fractions(text)
@@ -275,6 +286,11 @@ class Extractor:
         return {
             "tags": tags,
             "dates": [d.isoformat() for d in dates],
+            # Basis of each date above, positionally aligned. A date the span
+            # itself carried is EXPLICIT or RELATIVE_RESOLVED; the report
+            # header's date is substituted only downstream, where the caller
+            # marks it DEFAULTED_TO_REPORT_DATE.
+            "date_bases": [b.value for _d, b in dated],
             "date_warnings": date_warnings,
             "quantities": quantities,
             "percentages": percentages,
@@ -344,16 +360,26 @@ class Extractor:
                 pct = llm_output.percentage
 
         # Date this event asserts progress for: the first date resolved from
-        # the span itself, else the DPR header's report date.
+        # the span itself, else the DPR header's report date. The basis records
+        # which of the two happened - a date the span never carried is an
+        # inference, not an assertion, and the roll-up treats it differently.
         reported_date = None
+        reported_basis = None
         if hints.get("dates"):
             reported_date = date.fromisoformat(hints["dates"][0])
+            reported_basis = _basis_at(hints, 0)
         if reported_date is None:
             reported_date = report_date
+            reported_basis = (
+                DateBasis.DEFAULTED_TO_REPORT_DATE if report_date else None
+            )
 
-        asserted_start, asserted_finish = self._bind_assertion_dates(
-            span_text, status, hints, reported_date
-        )
+        (
+            asserted_start,
+            start_basis,
+            asserted_finish,
+            finish_basis,
+        ) = self._bind_assertion_dates(span_text, status, hints, reported_date)
 
         # Compute confidence based on signal strength
         confidence = self._compute_confidence(hints, llm_output)
@@ -362,8 +388,11 @@ class Extractor:
             raw_text=span_text,
             tags=tags,
             reported_date=reported_date,
+            reported_date_basis=reported_basis,
             asserted_start=asserted_start,
+            asserted_start_basis=start_basis,
             asserted_finish=asserted_finish,
+            asserted_finish_basis=finish_basis,
             discipline=discipline,
             status=status,
             percentage=pct,
@@ -381,11 +410,16 @@ class Extractor:
             ),
         )
 
+    @staticmethod
     def _bind_assertion_dates(
-        self, text: str, status: str, hints: dict, reported_date: Optional[date]
-    ) -> tuple[Optional[date], Optional[date]]:
+        text: str, status: str, hints: dict, reported_date: Optional[date]
+    ) -> tuple[
+        Optional[date], Optional[DateBasis], Optional[date], Optional[DateBasis]
+    ]:
         """Decide whether this line asserts a start date, a finish date, both,
         or neither, and bind the extracted dates to those claims.
+
+        Returns (start, start_basis, finish, finish_basis).
 
         A start claim comes from an explicit start verb ("started today").
         A finish claim comes from the inferred status rather than the raw
@@ -395,7 +429,10 @@ class Extractor:
 
         When the line makes both claims and carries two dates, they bind
         positionally in the order the verbs appear. When a claim is made with
-        no in-span date, the report's own date carries it.
+        no in-span date, the report's own date carries it -- and that date
+        comes back marked DEFAULTED_TO_REPORT_DATE, because the line said
+        *that* the work finished, never *when*. The roll-up refuses to write
+        such a finish onto the schedule; it goes to the planner instead.
         """
         # GUARD: a forecast or a rescheduling is not an actual. "TK-1
         # hydrotest now scheduled 25 Aug instead of 23 Aug" carries two real
@@ -404,9 +441,18 @@ class Extractor:
         # lives in code rather than the prompt so it holds for every provider
         # and cannot be talked out of by a model.
         if is_forecast_language(text):
-            return None, None
+            return None, None, None, None
 
         dates = [date.fromisoformat(d) for d in hints.get("dates", [])]
+
+        def at(i: int) -> tuple[Optional[date], Optional[DateBasis]]:
+            """The i-th in-span date with its own basis, else the report's own
+            date marked as the inference it is."""
+            if i < len(dates):
+                return dates[i], _basis_at(hints, i)
+            if reported_date is None:
+                return None, None
+            return reported_date, DateBasis.DEFAULTED_TO_REPORT_DATE
 
         claims_start = bool(STARTED_RE.search(text))
         claims_finish = (
@@ -423,7 +469,7 @@ class Extractor:
         )
 
         if not claims_start and not claims_finish:
-            return None, None
+            return None, None, None, None
 
         if claims_start and claims_finish:
             if len(dates) >= 2:
@@ -433,15 +479,23 @@ class Extractor:
                     or COMPLETED_RE.search(text)
                 )
                 if start_at and finish_at and start_at.start() > finish_at.start():
-                    return dates[1], dates[0]
-                return dates[0], dates[1]
+                    return (
+                        dates[1], _basis_at(hints, 1),
+                        dates[0], _basis_at(hints, 0),
+                    )
+                return (
+                    dates[0], _basis_at(hints, 0),
+                    dates[1], _basis_at(hints, 1),
+                )
             # "started and completed on X" -- one date carries both claims
-            single = dates[0] if dates else reported_date
-            return single, single
+            single, basis = at(0)
+            return single, basis, single, basis
 
         if claims_finish:
-            return None, (dates[0] if dates else reported_date)
-        return (dates[0] if dates else reported_date), None
+            value, basis = at(0)
+            return None, None, value, basis
+        value, basis = at(0)
+        return value, basis, None, None
 
     @staticmethod
     def _validated_discipline(value) -> Discipline:

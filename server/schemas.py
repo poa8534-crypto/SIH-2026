@@ -134,6 +134,12 @@ class ScheduleActivityResponse(BaseModel):
     uom: str = ""
     actual_start: Optional[date] = None
     actual_finish: Optional[date] = None
+    # How each actual date was obtained: EXPLICIT, RELATIVE_RESOLVED or
+    # DEFAULTED_TO_REPORT_DATE. A defaulted date is an inference the source
+    # never asserted, and the UI marks it differently. None when the
+    # corresponding date is None.
+    actual_start_basis: Optional[str] = None
+    actual_finish_basis: Optional[str] = None
     actual_qty: Optional[float] = None
     start_variance_days: Optional[int] = None
     finish_variance_days: Optional[int] = None

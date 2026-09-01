@@ -5,6 +5,7 @@ Run with: python -m pytest matching/test_matching.py -v
 
 from __future__ import annotations
 
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -15,6 +16,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import pytest
 
 from extraction.models import (
+    DateBasis,
     Discipline,
     EventStatus,
     ExtractedEvent,
@@ -47,11 +49,21 @@ def make_event(
     quantity=None,
     uom=None,
     percentage=None,
+    reported_basis=DateBasis.EXPLICIT,
+    asserted_start: date | None = None,
+    asserted_finish: date | None = None,
+    start_basis=DateBasis.EXPLICIT,
+    finish_basis=DateBasis.EXPLICIT,
 ):
     return ExtractedEvent(
         raw_text=raw_text,
         tags=tags or [],
         reported_date=reported,
+        reported_date_basis=reported_basis if reported else None,
+        asserted_start=asserted_start,
+        asserted_start_basis=start_basis if asserted_start else None,
+        asserted_finish=asserted_finish,
+        asserted_finish_basis=finish_basis if asserted_finish else None,
         discipline=discipline,
         status=status,
         quantity=quantity,
@@ -324,5 +336,204 @@ class TestRollup:
         d.outcome = Decision.REVIEW
         acc.add(d, make_event("x", quantity=6, uom="nos"))
         assert acc.results() == []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Date basis: an inferred date is not an asserted one
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestDefaultedFinishDates:
+    """A finish date nobody asserted must not reach the schedule.
+
+    A DPR line that says work is done but never says when is handed the report
+    header's own date to carry the claim. Writing that stamps every completion
+    in a report with the day the report was typed - eleven activities sharing
+    one Actual Finish, two of them with zero duration.
+    """
+
+    @pytest.fixture(scope="class")
+    def engine(self):
+        return MatchingEngine(SCHEDULE)
+
+    def _auto(self, aid, text="x"):
+        fv = FeatureVector(tag_overlap=1.0)
+        return LinkDecision(
+            event_index=0, raw_text=text, source_file="dpr_day_10.txt",
+            outcome=Decision.AUTO_LINK, chosen_activity_id=aid,
+            candidates=[LinkCandidate(activity_id=aid, features=fv, final_score=0.9)],
+        )
+
+    def _complete_zone_a(self, acc, **event_kwargs):
+        """Roll 1200 m2 - the full planned quantity of CIV-SIT-1001."""
+        acc.add(self._auto("CIV-SIT-1001"),
+                make_event("graded", quantity=1200, uom="m2", **event_kwargs))
+        return [r for r in acc.results() if r.activity_id == "CIV-SIT-1001"][0]
+
+    def test_defaulted_finish_assertion_is_not_written(self, engine):
+        r = self._complete_zone_a(
+            RollupAccumulator(engine),
+            reported=date(2026, 9, 15),
+            reported_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+            asserted_finish=date(2026, 9, 15),
+            finish_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+        )
+        assert r.is_complete and r.percent_complete == 100.0
+        assert r.actual_finish is None, "a defaulted finish date reached the schedule"
+        assert r.withheld_finish == date(2026, 9, 15)
+        assert r.review_reasons and "defaulted to" in r.review_reasons[0]
+
+    def test_defaulted_report_date_is_not_written_as_a_finish(self, engine):
+        """The other half of the same defect: no finish claim at all, and the
+        bare report date standing in for one."""
+        r = self._complete_zone_a(
+            RollupAccumulator(engine),
+            reported=date(2026, 9, 15),
+            reported_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+        )
+        assert r.is_complete
+        assert r.actual_finish is None
+        assert r.withheld_finish == date(2026, 9, 15)
+        assert r.withheld_finish_assertions, "no evidence carried to the planner"
+
+    def test_asserted_finish_keeps_its_behaviour(self, engine):
+        r = self._complete_zone_a(
+            RollupAccumulator(engine),
+            reported=date(2026, 6, 3),
+            asserted_finish=date(2026, 6, 6),
+            finish_basis=DateBasis.EXPLICIT,
+        )
+        assert r.actual_finish == date(2026, 6, 6)
+        assert r.actual_finish_basis is DateBasis.EXPLICIT
+        assert r.withheld_finish is None and not r.review_reasons
+
+    def test_relative_resolved_finish_is_written(self, engine):
+        """'completed yesterday' names a day. It is resolved, not defaulted."""
+        r = self._complete_zone_a(
+            RollupAccumulator(engine),
+            reported=date(2026, 6, 6),
+            asserted_finish=date(2026, 6, 5),
+            finish_basis=DateBasis.RELATIVE_RESOLVED,
+        )
+        assert r.actual_finish == date(2026, 6, 5)
+        assert r.actual_finish_basis is DateBasis.RELATIVE_RESOLVED
+
+    def test_no_zero_duration_from_two_defaulted_dates(self, engine):
+        """PIP-FLG-1036 and PIP-FLG-1038: a single mention in the last DPR,
+        start and finish both stamped with the report's own date."""
+        r = self._complete_zone_a(
+            RollupAccumulator(engine),
+            reported=date(2026, 9, 15),
+            reported_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+            asserted_start=date(2026, 9, 15),
+            start_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+            asserted_finish=date(2026, 9, 15),
+            finish_basis=DateBasis.DEFAULTED_TO_REPORT_DATE,
+        )
+        assert not (r.actual_start and r.actual_finish and r.actual_start == r.actual_finish)
+        assert r.actual_start == date(2026, 9, 15)
+        assert r.actual_start_basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+        assert r.actual_finish is None
+
+    def test_dated_mention_still_dates_the_finish(self, engine):
+        """A line that carried its own date, with no completion verb, still
+        closes the node when the quantity does. Only the report header's date
+        is refused."""
+        acc = RollupAccumulator(engine)
+        for qty, day in [(600, 3), (600, 6)]:
+            acc.add(self._auto("CIV-SIT-1001"),
+                    make_event("graded", quantity=qty, uom="m2",
+                               reported=date(2026, 6, day),
+                               reported_basis=DateBasis.EXPLICIT))
+        r = [x for x in acc.results() if x.activity_id == "CIV-SIT-1001"][0]
+        assert r.actual_finish == date(2026, 6, 6)
+        assert r.actual_finish_basis is DateBasis.EXPLICIT
+
+
+class TestZeroPlannedQuantity:
+    """planned_qty == 0 is a MISSING planned quantity on a node measured in a
+    unit, not a zero one. PIP-PCD-1053 reported '0/0 nos, 100.0%'."""
+
+    @pytest.fixture(scope="class")
+    def engine(self):
+        return MatchingEngine(SCHEDULE)
+
+    def _auto(self, aid, text="x"):
+        fv = FeatureVector(tag_overlap=1.0)
+        return LinkDecision(
+            event_index=0, raw_text=text, source_file="t.txt",
+            outcome=Decision.AUTO_LINK, chosen_activity_id=aid,
+            candidates=[LinkCandidate(activity_id=aid, features=fv, final_score=0.9)],
+        )
+
+    def _rollup(self, engine, event):
+        acc = RollupAccumulator(engine)
+        acc.add(self._auto("PIP-PCD-1053"), event)          # planned 0 nos
+        return acc.results()[0]
+
+    def test_completion_claim_yields_no_percentage(self, engine):
+        r = self._rollup(engine, make_event(
+            "P&ID punch list close-out", status=EventStatus.COMPLETED,
+            reported=date(2026, 9, 2),
+        ))
+        assert r.planned_qty == 0
+        assert r.percent_complete == 0.0, "0/0 reported as a percentage"
+        assert not r.is_complete
+        assert r.actual_finish is None
+
+    def test_quantity_yields_no_percentage(self, engine):
+        r = self._rollup(engine, make_event(
+            "12 punch items closed", quantity=12, uom="nos",
+            reported=date(2026, 9, 2),
+        ))
+        assert r.installed_qty == 0.0
+        assert r.percent_complete == 0.0
+        assert any("no planned quantity" in n for n in r.notes)
+
+    def test_source_asserted_percentage_still_counts(self, engine):
+        """A percentage the source stated is evidence in its own right; only a
+        percentage DERIVED from a missing planned quantity is refused."""
+        r = self._rollup(engine, make_event(
+            "punch list 100% closed", percentage=100.0,
+            reported=date(2026, 9, 2),
+        ))
+        assert r.percent_complete == 100.0 and r.is_complete
+
+
+class TestMilestoneNode:
+    """A node with no planned quantity AND no unit of measure is a milestone:
+    a completion claim is the only evidence it will ever have."""
+
+    def test_milestone_completes_on_a_completion_claim(self, tmp_path):
+        schedule = tmp_path / "milestones.json"
+        schedule.write_text(json.dumps([{
+            "activity_id": "MIL-RFC-9001",
+            "wbs_path": "1.9.9.1",
+            "description": "Ready for Commissioning certificate issued",
+            "detail": "Milestone - no measurable quantity",
+            "discipline": "piping",
+            "planned_start": "2026-09-20",
+            "planned_finish": "2026-09-20",
+            "planned_qty": 0,
+            "uom": "",
+            "predecessors": [],
+            "tag": None,
+        }]), encoding="utf-8")
+        engine = MatchingEngine(schedule)
+        fv = FeatureVector(tag_overlap=1.0)
+        acc = RollupAccumulator(engine)
+        acc.add(
+            LinkDecision(
+                event_index=0, raw_text="RFC issued", source_file="t.txt",
+                outcome=Decision.AUTO_LINK, chosen_activity_id="MIL-RFC-9001",
+                candidates=[LinkCandidate(
+                    activity_id="MIL-RFC-9001", features=fv, final_score=0.9)],
+            ),
+            make_event("RFC issued", status=EventStatus.COMPLETED,
+                       reported=date(2026, 9, 20),
+                       asserted_finish=date(2026, 9, 20)),
+        )
+        r = acc.results()[0]
+        assert r.percent_complete == 100.0 and r.is_complete
+        assert r.actual_finish == date(2026, 9, 20)
 
 

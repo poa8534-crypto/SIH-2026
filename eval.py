@@ -29,13 +29,16 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from extraction.extractor import Extractor
 from extraction.models import (
+    DateBasis,
     EventStatus,
     ExtractedEvent,
     ExtractionMethod,
     Provenance,
 )
 from extraction.prepass import (
+    extract_dates_with_basis,
     extract_fractions,
     extract_percentages,
     extract_quantities,
@@ -133,10 +136,33 @@ def _build_event(mention: str, source: str, source_date) -> ExtractedEvent:
             # quantity regex swallowed tag digits (e.g. 'P-1001 flange' → 1001)
             qty, uom = None, None
 
+    # Start and finish claims, bound by the same code the extractor runs, so the
+    # rollup below is scored against production date behaviour rather than a
+    # simplification of it. reported_date deliberately stays the ground-truth
+    # source_date — it is the only date the matcher scores against, and changing
+    # it would move the metrics this file exists to measure. Its basis is
+    # DEFAULTED_TO_REPORT_DATE because it comes from the report, not the mention.
+    reported = _parse_date(source_date)
+    dated, _warnings = extract_dates_with_basis(mention, reported)
+    hints = {
+        "dates": [d.isoformat() for d, _b in dated],
+        "date_bases": [b.value for _d, b in dated],
+    }
+    start, start_basis, finish, finish_basis = Extractor._bind_assertion_dates(
+        mention, status, hints, reported
+    )
+
     return ExtractedEvent(
         raw_text=mention,
         tags=tags,
-        reported_date=_parse_date(source_date),
+        reported_date=reported,
+        reported_date_basis=(
+            DateBasis.DEFAULTED_TO_REPORT_DATE if reported else None
+        ),
+        asserted_start=start,
+        asserted_start_basis=start_basis,
+        asserted_finish=finish,
+        asserted_finish_basis=finish_basis,
         discipline=discipline,
         status=_STATUS_MAP.get(status, EventStatus.UNKNOWN),
         quantity=qty,
@@ -410,6 +436,14 @@ def print_pr_curve(points: list[dict], operating: Thresholds):
     print("  Read: raising tau_high trades coverage for precision.")
 
 
+def _dated(value, basis) -> str:
+    """A date with a marker when it was inferred rather than asserted."""
+    if value is None:
+        return "-"
+    mark = "~" if basis is DateBasis.DEFAULTED_TO_REPORT_DATE else ""
+    return f"{value.isoformat()}{mark}"
+
+
 def print_rollup(scored_rows: list[dict], t: Thresholds):
     title("GRANULARITY - MANY-TO-ONE ROLLUP + QUANTITY-BASED % COMPLETE")
     acc = _rollup_from_decisions(scored_rows, t)
@@ -424,8 +458,10 @@ def print_rollup(scored_rows: list[dict], t: Thresholds):
             r.activity_id, r.n_events,
             f"{r.installed_qty:g}/{r.planned_qty:g} {r.uom}".rstrip(),
             pct(r.percent_complete / 100),
-            r.actual_start.isoformat() if r.actual_start else "-",
-            r.actual_finish.isoformat() if r.actual_finish else "-",
+            _dated(r.actual_start, r.actual_start_basis),
+            _dated(r.actual_finish, r.actual_finish_basis)
+            if r.actual_finish or not r.withheld_finish
+            else "withheld",
         ])
     table(
         ["Activity", "Mentions", "Installed/Planned", "% Complete",
@@ -435,10 +471,16 @@ def print_rollup(scored_rows: list[dict], t: Thresholds):
     )
     touched = len(all_results)
     silent = touched - len(results)
+    withheld = [r for r in all_results if r.withheld_finish]
     print()
     print(f"  {touched} schedule nodes received auto-linked mentions;")
     print(f"  {silent} had no measurable quantity/percent -> 0% written, no dates.")
-    print("  Actual Finish is written ONLY for nodes at 100%.")
+    print("  Actual Finish is written ONLY for nodes at 100% whose finish date")
+    print("  a source actually named. '~' marks a date inferred from the report")
+    print("  date rather than asserted by the source.")
+    if withheld:
+        print(f"  {len(withheld)} complete nodes had their finish date withheld and")
+        print("  routed to the planner: the only candidate was the report date.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

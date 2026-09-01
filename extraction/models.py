@@ -33,6 +33,23 @@ class EventStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+class DateBasis(str, Enum):
+    """How a date on an event was obtained (ARCHITECTURE.md 2.3).
+
+    The distinction is not cosmetic. EXPLICIT and RELATIVE_RESOLVED both come
+    from the span itself - the source said when. DEFAULTED_TO_REPORT_DATE means
+    the source said nothing and the report header's own date was used as a
+    stand-in, which is an inference, not an assertion. Writing an inferred
+    finish date onto the schedule stamps every completion in a report with the
+    day the report was written; the roll-up refuses to do that and routes it to
+    the planner instead (matching/engine.py, RollupAccumulator.results).
+    """
+
+    EXPLICIT = "EXPLICIT"                                # a date written in the span
+    RELATIVE_RESOLVED = "RELATIVE_RESOLVED"              # "yesterday" resolved against the report date
+    DEFAULTED_TO_REPORT_DATE = "DEFAULTED_TO_REPORT_DATE"  # the span carried no date at all
+
+
 class ExtractionMethod(str, Enum):
     PREPASS = "prepass"          # deterministic regex
     LLM = "llm"                 # LLM structured output
@@ -104,6 +121,23 @@ class ExtractedEvent(BaseModel):
             "Date this event asserts work COMPLETED on, when the source says "
             "so. None when the event makes no completion claim - including a "
             "forecast completion date for work still in progress."
+        ),
+    )
+    # How each of the three dates above was obtained. None when the
+    # corresponding date is None.
+    reported_date_basis: Optional[DateBasis] = Field(
+        None, description="How reported_date was obtained"
+    )
+    asserted_start_basis: Optional[DateBasis] = Field(
+        None, description="How asserted_start was obtained"
+    )
+    asserted_finish_basis: Optional[DateBasis] = Field(
+        None,
+        description=(
+            "How asserted_finish was obtained. DEFAULTED_TO_REPORT_DATE means "
+            "the line claimed completion but named no date, so the report "
+            "header's date stood in - never written to the schedule "
+            "automatically."
         ),
     )
     quantity: Optional[float] = Field(None, description="Numeric quantity mentioned")

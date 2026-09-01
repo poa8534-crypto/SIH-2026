@@ -13,6 +13,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
+from extraction.models import DateBasis
+
 
 class Decision(str, Enum):
     AUTO_LINK = "AUTO_LINK"
@@ -93,8 +95,13 @@ class DateAssertion(BaseModel):
     individually rather than collapsed into a min/max so that a disagreement
     between two sources stays visible in the audit trail."""
 
-    field: str          # actual_start | actual_finish
+    field: str          # actual_start | actual_finish | reported_date
     value: date
+    # How the source produced this date. DEFAULTED_TO_REPORT_DATE means the
+    # source claimed the event but named no date, so the report header's date
+    # stood in. Such a claim is evidence, not an assertion, and never becomes
+    # an Actual Finish without a planner.
+    basis: DateBasis = DateBasis.EXPLICIT
     source_file: str = ""
     # Where in that file the claim sits. Carried alongside the span because a
     # span is not an identity: two lines of a DPR can read identically, and an
@@ -117,7 +124,16 @@ class DateAssertion(BaseModel):
         if loc:
             where = f"{where} {loc}"
         span = f' "{self.source_span[:80]}"' if self.source_span else ""
-        return f"{self.value.isoformat()} from {where}{span}"
+        how = (
+            " (no date in the line - defaulted to the report date)"
+            if self.basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+            else ""
+        )
+        return f"{self.value.isoformat()} from {where}{span}{how}"
+
+    @property
+    def is_defaulted(self) -> bool:
+        return self.basis is DateBasis.DEFAULTED_TO_REPORT_DATE
 
 
 class RollupResult(BaseModel):
@@ -131,7 +147,20 @@ class RollupResult(BaseModel):
     percent_complete: float = 0.0
     actual_start: Optional[date] = None
     actual_finish: Optional[date] = None  # set ONLY when percent_complete >= 100
+    # How each written date above was obtained, so the API and the UI can mark
+    # an inferred date differently from an asserted one. None when the date is
+    # None.
+    actual_start_basis: Optional[DateBasis] = None
+    actual_finish_basis: Optional[DateBasis] = None
     is_complete: bool = False
+
+    # A finish date the node is entitled to by percent complete but which was
+    # only ever defaulted to a report date. It is NOT written to the schedule;
+    # it is carried here so the server can queue it for a planner, with the
+    # evidence that produced it.
+    withheld_finish: Optional[date] = None
+    withheld_finish_assertions: list["DateAssertion"] = Field(default_factory=list)
+    review_reasons: list[str] = Field(default_factory=list)
     event_texts: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 

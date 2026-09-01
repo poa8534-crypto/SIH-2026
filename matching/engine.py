@@ -173,6 +173,7 @@ def _rationale(c: LinkCandidate) -> list[str]:
 # Granularity handling: many-to-one rollup
 # ══════════════════════════════════════════════════════════════════════════════
 
+from extraction.models import DateBasis  # noqa: E402
 from .models import DateAssertion, RollupResult  # noqa: E402
 from .textutils import normalize_uom  # noqa: E402
 
@@ -247,6 +248,16 @@ class RollupAccumulator:
             acc["installed"] += qty
             acc["has_progress"] = True
             acc["notes"].append(f"+{qty:g} {uom_act or uom_ev or '?'}")
+        elif qty is not None and rec.planned_qty <= 0:
+            # A quantity with nothing to measure it against. installed/planned
+            # would be qty/0, so no percentage can be derived from it; the
+            # quantity is recorded as progress and the node stays short of
+            # complete until a source says otherwise.
+            acc["has_progress"] = True
+            acc["notes"].append(
+                f"{qty:g} {uom_ev or uom_act or '?'} reported against a node "
+                f"with no planned quantity - percent complete not derived"
+            )
         elif event.percentage is not None:
             acc["pct_events"].append(event.percentage)
             acc["has_progress"] = True
@@ -264,8 +275,20 @@ class RollupAccumulator:
                     f"the node (planned {rec.planned_qty:g} {rec.uom}); scope "
                     "may be partial"
                 )
+            elif rec.uom:
+                # A node measured in a unit but carrying planned_qty 0 has a
+                # MISSING planned quantity, not a zero one. Treating it as a
+                # milestone is how PIP-PCD-1053 reported "0/0 nos, 100.0%":
+                # a completion claim on a node whose scope nobody quantified.
+                # Record the claim, derive no percentage from it.
+                acc["has_progress"] = True
+                acc["notes"].append(
+                    f"completion asserted, but the node has no planned "
+                    f"quantity (0 {rec.uom}) - percent complete not derived"
+                )
             else:
-                # Unquantified node (a milestone): a completion claim is all
+                # Genuinely unquantified node (a milestone: no planned
+                # quantity AND no unit of measure). A completion claim is all
                 # the evidence there is or ever will be.
                 acc["pct_events"].append(100.0)
                 acc["has_progress"] = True
@@ -282,18 +305,30 @@ class RollupAccumulator:
         if getattr(event, "asserted_start", None):
             acc["starts"].append(DateAssertion(
                 field="actual_start", value=event.asserted_start,
+                basis=_basis_of(event, "asserted_start_basis"),
                 source_file=src_file, source_span=src_span,
                 source_line=src_line, source_row=src_row,
             ))
         if getattr(event, "asserted_finish", None):
             acc["finishes"].append(DateAssertion(
                 field="actual_finish", value=event.asserted_finish,
+                basis=_basis_of(event, "asserted_finish_basis"),
                 source_file=src_file, source_span=src_span,
                 source_line=src_line, source_row=src_row,
             ))
 
         if event.reported_date:
-            acc["dates"].append(event.reported_date)
+            # The bare report date is the weakest date evidence there is: it
+            # says when the line was written, not when work started or
+            # finished. It is kept with its basis so the fallback below can
+            # tell a date the line actually carried from the report header's
+            # own date.
+            acc["dates"].append(DateAssertion(
+                field="reported_date", value=event.reported_date,
+                basis=_basis_of(event, "reported_date_basis"),
+                source_file=src_file, source_span=src_span,
+                source_line=src_line, source_row=src_row,
+            ))
         acc["texts"].append(decision.raw_text)
 
     def results(self) -> list[RollupResult]:
@@ -310,28 +345,64 @@ class RollupAccumulator:
 
             starts, finishes = acc["starts"], acc["finishes"]
             conflicts = _describe_conflicts(starts, finishes)
+            review_reasons: list[str] = []
 
             # Earliest start wins, latest finish wins. An explicit assertion
             # always beats the bare reported date, which stays a fallback for
             # events that made no start/finish claim of their own.
             if starts:
                 actual_start = min(a.value for a in starts)
+                actual_start_basis = _basis_for(starts, actual_start)
             elif acc["dates"] and pct > 0:
-                actual_start = min(acc["dates"])
+                earliest = min(a.value for a in acc["dates"])
+                actual_start = earliest
+                actual_start_basis = _basis_for(acc["dates"], earliest)
             else:
                 actual_start = None
+                actual_start_basis = None
 
             # Actual Finish only when the node is actually complete. A
             # withheld finish assertion is reported, not applied.
+            withheld_finish = None
+            withheld_evidence: list[DateAssertion] = []
             if is_complete:
-                if finishes:
-                    actual_finish = max(a.value for a in finishes)
-                elif acc["dates"]:
-                    actual_finish = max(acc["dates"])
+                # A finish date is written only when a source said WHEN the
+                # work finished. A line that claimed completion but named no
+                # date was handed the report header's own date to carry the
+                # claim; writing that would stamp every completion in a report
+                # with the day the report was typed, which is how eleven
+                # activities came to share one Actual Finish. Those go to the
+                # planner instead of onto the schedule.
+                dated_finishes = [a for a in finishes if not a.is_defaulted]
+                dated_reports = [a for a in acc["dates"] if not a.is_defaulted]
+                if dated_finishes:
+                    actual_finish = max(a.value for a in dated_finishes)
+                    actual_finish_basis = _basis_for(dated_finishes, actual_finish)
+                elif dated_reports:
+                    # No finish claim of its own, but the contributing lines
+                    # carried real dates of their own. The latest of them is
+                    # the last day work was reported against the node.
+                    actual_finish = max(a.value for a in dated_reports)
+                    actual_finish_basis = _basis_for(dated_reports, actual_finish)
                 else:
                     actual_finish = None
+                    actual_finish_basis = None
+                    withheld_evidence = [
+                        a for a in finishes + acc["dates"] if a.is_defaulted
+                    ]
+                    if withheld_evidence:
+                        withheld_finish = max(a.value for a in withheld_evidence)
+                        review_reasons.append(
+                            "node is 100% complete but no source named a "
+                            "finish date; the only candidate "
+                            f"({withheld_finish.isoformat()}) was defaulted to "
+                            "the report date - Actual Finish withheld, planner "
+                            "confirmation required: "
+                            + "; ".join(a.describe() for a in withheld_evidence)
+                        )
             else:
                 actual_finish = None
+                actual_finish_basis = None
                 if finishes:
                     conflicts.append(
                         "finish asserted, but the evidence accounts for only "
@@ -340,6 +411,26 @@ class RollupAccumulator:
                         "withheld, scope is partial: "
                         + "; ".join(a.describe() for a in finishes)
                     )
+
+            # Invariant: a zero-duration activity must never be manufactured
+            # out of two dates that were both defaulted to the same report
+            # date. The finish gate above already prevents it; this states the
+            # rule at the point of the write rather than leaving it implicit
+            # in the branch structure above.
+            if (
+                actual_finish is not None
+                and actual_start == actual_finish
+                and actual_start_basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+                and actual_finish_basis is DateBasis.DEFAULTED_TO_REPORT_DATE
+            ):
+                withheld_finish = actual_finish
+                actual_finish = None
+                actual_finish_basis = None
+                review_reasons.append(
+                    "actual_start and actual_finish were both defaulted to "
+                    f"{withheld_finish.isoformat()} - Actual Finish withheld "
+                    "rather than recording a zero-duration activity"
+                )
 
             out.append(RollupResult(
                 activity_id=aid,
@@ -350,7 +441,12 @@ class RollupAccumulator:
                 percent_complete=round(pct, 1),
                 actual_start=actual_start,
                 actual_finish=actual_finish,
+                actual_start_basis=actual_start_basis,
+                actual_finish_basis=actual_finish_basis,
                 is_complete=is_complete,
+                withheld_finish=withheld_finish,
+                withheld_finish_assertions=withheld_evidence,
+                review_reasons=review_reasons,
                 event_texts=list(acc["texts"]),
                 notes=acc["notes"],
                 start_assertions=starts,
@@ -359,6 +455,27 @@ class RollupAccumulator:
             ))
         out.sort(key=lambda r: (-r.n_events, r.activity_id))
         return out
+
+
+def _basis_of(event, attr: str) -> DateBasis:
+    """The basis an event recorded for one of its dates.
+
+    Defaults to EXPLICIT for events built without bases - hand-constructed
+    events in tests, and any caller predating the field. Every path in
+    extraction that substitutes a report date sets the basis explicitly, so
+    the permissive default is only ever reached for a date that came from a
+    source of its own.
+    """
+    value = getattr(event, attr, None)
+    return value if isinstance(value, DateBasis) else DateBasis.EXPLICIT
+
+
+def _basis_for(assertions: list[DateAssertion], value) -> DateBasis | None:
+    """The basis of the assertion that produced the value actually written."""
+    for a in assertions:
+        if a.value == value:
+            return a.basis
+    return None
 
 
 def _describe_conflicts(

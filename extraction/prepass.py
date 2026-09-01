@@ -10,7 +10,7 @@ import re
 from datetime import date, timedelta
 from typing import Optional
 
-from .models import Discipline
+from .models import DateBasis, Discipline
 
 # ── Pipe / equipment tag patterns ────────────────────────────────────────────
 
@@ -258,19 +258,26 @@ def resolve_yearless_date(
     return nearest, None
 
 
-def extract_dates_with_flags(
+def extract_dates_with_basis(
     text: str, reference_date: Optional[date] = None
-) -> tuple[list[date], list[str]]:
-    """Extract dates in encounter order, plus warnings for anything that
-    could not be resolved safely."""
-    dates: list[date] = []
+) -> tuple[list[tuple[date, DateBasis]], list[str]]:
+    """Extract dates in encounter order with the basis of each, plus warnings
+    for anything that could not be resolved safely.
+
+    A date written in the span is EXPLICIT; "yesterday"/"today"/"tomorrow"
+    resolved against the report date is RELATIVE_RESOLVED. Neither is
+    DEFAULTED_TO_REPORT_DATE - that basis belongs to a date the span never
+    carried, and only the caller that substitutes the report date can assign
+    it.
+    """
+    dates: list[tuple[date, DateBasis]] = []
     seen: set[date] = set()
     warnings: list[str] = []
 
-    def _add(d: date) -> None:
+    def _add(d: date, basis: DateBasis = DateBasis.EXPLICIT) -> None:
         if d not in seen:
             seen.add(d)
-            dates.append(d)
+            dates.append((d, basis))
 
     ref = reference_date or date.today()
 
@@ -312,14 +319,24 @@ def extract_dates_with_flags(
     for m in RELATIVE_DATE_RE.finditer(text):
         word = m.group(1).lower()
         if word == "yesterday":
-            _add(ref - timedelta(days=1))
+            _add(ref - timedelta(days=1), DateBasis.RELATIVE_RESOLVED)
         elif word == "today":
-            _add(ref)
+            _add(ref, DateBasis.RELATIVE_RESOLVED)
         elif word == "tomorrow":
-            _add(ref + timedelta(days=1))
+            _add(ref + timedelta(days=1), DateBasis.RELATIVE_RESOLVED)
         # "last week", "this week", "next week" are too vague to resolve
 
     return dates, warnings
+
+
+def extract_dates_with_flags(
+    text: str, reference_date: Optional[date] = None
+) -> tuple[list[date], list[str]]:
+    """Extract dates in encounter order, plus warnings for anything that
+    could not be resolved safely. Basis-free view of
+    extract_dates_with_basis for callers that only need the values."""
+    dated, warnings = extract_dates_with_basis(text, reference_date)
+    return [d for d, _basis in dated], warnings
 
 
 def extract_dates(text: str, reference_date: Optional[date] = None) -> list[date]:

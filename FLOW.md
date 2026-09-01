@@ -203,7 +203,7 @@ frontend/src/pages/Ingest.tsx
     ↓  user selects file
 frontend/src/lib/api.ts :: api.ingestFile(file)
     ↓  POST /ingest  (multipart/form-data)
-server/main.py :: ingest_file()                                    [line 679]
+server/main.py :: ingest_file()                                    [line 769]
     │
     ├─ Path(filename).suffix  →  reject unless .txt .xlsx .csv .md .log   [line 701]
     ├─ sha256 of content  →  duplicate upload ignored entirely
@@ -222,14 +222,17 @@ server/main.py :: ingest_file()                                    [line 679]
     │      │       ↓
     │      │   _prepass_span()  per span
     │      │       ↓  extraction/prepass.py
-    │      │       extract_tags() · extract_dates_with_flags() · extract_quantities()
+    │      │       extract_tags() · extract_dates_with_basis() · extract_quantities()
     │      │       extract_percentages() · extract_fractions()
     │      │       infer_discipline() · infer_status() · is_forecast_language()
     │      │       ↓
     │      │   [optional] extraction/llm_backend.py :: LLMBackend.extract_events()
     │      │       (skipped entirely when EXTRACTION_PROVIDER=rules — the default)
     │      │       ↓
-    │      │   _merge_event()  →  _bind_assertion_dates()         [line 288, 384]
+    │      │   _merge_event()  →  _bind_assertion_dates()         [line 304, 414]
+    │      │       returns (start, start_basis, finish, finish_basis).
+    │      │       A claim with no date in the span is carried by the report
+    │      │       header's date and marked DEFAULTED_TO_REPORT_DATE (D-015).
     │      │
     │      └─ .xlsx → _extract_spreadsheet()                      [line 502]
     │              ↓
@@ -283,11 +286,17 @@ server/main.py :: ingest_file()                                    [line 679]
     │  matching/engine.py :: RollupAccumulator(get_matching_engine())
     │      ↓  .add(decision, event)   per AUTO_LINK pair
     │      │     quantity guards: _qty_swallowed_by_tag() · UOM mismatch · unitless
-    │      │     collects DateAssertion for actual_start / actual_finish
+    │      │     quantity guard: planned_qty <= 0 with a uom → progress noted,
+    │      │       NO percentage derived (D-016); no uom → genuine milestone
+    │      │     collects DateAssertion (with .basis) for actual_start /
+    │      │       actual_finish, and for the bare reported_date fallback
     │      ↓  .results()
     │      │     percent_complete from installed/planned qty, else explicit %
     │      │     actual_start  = earliest assertion, else min(reported_date)
-    │      │     actual_finish = latest assertion — ONLY when 100% complete
+    │      │                     — basis recorded, defaulted dates still written
+    │      │     actual_finish = latest assertion — ONLY when 100% complete AND
+    │      │                     basis is not DEFAULTED_TO_REPORT_DATE (D-015).
+    │      │                     Otherwise → withheld_finish + review_reasons
     │      │     _describe_conflicts()  records disagreement, does not silence it
     │      ↓
     │  RollupResult[]
@@ -296,7 +305,11 @@ server/main.py :: ingest_file()                                    [line 679]
     │      ├─ _build_event_index(event_rows)   maps assertion → originating LinkedEvent
     │      ├─ _prior_write(db, activity_id, field)     most recent audit row
     │      ├─ _cross_file_conflict(prior, new_value, new_file)
-    │      ├─ mutate Activity.actual_start / actual_finish / installed_qty / percent_complete
+    │      ├─ per review_reason:  _write_audit(field="actual_finish_withheld")
+    │      │                      + _queue_defaulted_finish()  → ReviewQueueItem
+    │      │                        (reason="defaulted_finish_date")
+    │      ├─ mutate Activity.actual_start / actual_finish (+ their _basis) /
+    │      │         installed_qty / percent_complete
     │      └─ _write_audit(...) per field mutation        ← append-only
     │
     └─ Job row updated (status="completed", counts) → db.commit()
@@ -317,27 +330,37 @@ reflects the outcome.
 ```
 frontend/src/pages/Reconcile.tsx
     ↓  api.getReviewQueue('pending')      GET /review-queue
-server/main.py :: get_review_queue()                               [line 996]
+server/main.py :: get_review_queue()                               [line 1089]
     ↓
 planner chooses confirm | reassign | create | ignore
     ↓  api.resolveReview(itemId, body)    POST /review/{item_id}/resolve
-server/main.py :: resolve_review_item()                            [line 1038]
+server/main.py :: resolve_review_item()                            [line 1131]
     │
     ├─ load ReviewQueueItem  →  load its LinkedEvent
     ├─ guard: item.status must be "pending"
     │
+    ├─ reason == "defaulted_finish_date" ─────────────────────────
+    │      _resolve_defaulted_finish(db, item, le, req)
+    │      The link is already committed; what is being adjudicated is a DATE
+    │      the roll-up refused to infer (D-015). Only two actions are legal:
+    │        confirm → write le.asserted_finish (else le.reported_date) as
+    │                  Activity.actual_finish, source="planner_review",
+    │                  auto_applied=False, basis stays DEFAULTED_TO_REPORT_DATE
+    │        ignore  → the node stays complete with no Actual Finish
+    │      anything else → HTTP 400
+    │
     ├─ action = confirm ──────────────────────────────────────────
-    │      _write_audit(...)                                       [line 1082]
-    │      _apply_confirmed_event_to_schedule(db, le, target_activity_id)   [1098]
-    │      _upsert_alias(db, le.raw_text, target_activity_id, ...)          [1101]
+    │      _write_audit(...)                                       [line 1182]
+    │      _apply_confirmed_event_to_schedule(db, le, target_activity_id)   [1198]
+    │      _upsert_alias(db, le.raw_text, target_activity_id, ...)          [1201]
     │
     ├─ action = reassign ─────────────────────────────────────────
-    │      _write_audit(...) → _apply_confirmed_event_to_schedule(...)      [1126,1142]
-    │      _upsert_alias(db, le.raw_text, req.activity_id, ...)             [1145]
+    │      _write_audit(...) → _apply_confirmed_event_to_schedule(...)      [1226,1242]
+    │      _upsert_alias(db, le.raw_text, req.activity_id, ...)             [1245]
     │
     ├─ action = create (new activity) ────────────────────────────
-    │      _write_audit(...)                                       [line 1185]
-    │      _upsert_alias(db, le.raw_text, req.new_activity_id, ...)         [1199]
+    │      _write_audit(...)                                       [line 1285]
+    │      _upsert_alias(db, le.raw_text, req.new_activity_id, ...)         [1299]
     │
     └─ action = ignore  →  item closed, schedule untouched
     ↓
@@ -504,6 +527,7 @@ Note:        NO offline persistence — no service worker, no IndexedDB. Field.t
 | `LinkCandidate` / `FeatureVector` | `matching/models.py` | `matching/features.py` | `decide_outcome`, UI |
 | `LinkDecision` | `matching/models.py` | `MatchingEngine.match_event` | `server/main.py`, `eval.py` |
 | `DateAssertion` / `RollupResult` | `matching/models.py` | `RollupAccumulator` | `_apply_rollup_to_schedule` |
+| `DateBasis` | `extraction/models.py` | `prepass` · `Extractor` · `SpreadsheetParser` | `RollupAccumulator.results` (gate) · `Activity.*_basis` · `GET /schedule` · `DateCell` |
 | `SlotState` | `server/agent_slots.py` | `_fill_slots` | `_match_slots` |
 | SQLAlchemy models | `server/db.py` | `server/main.py` | persistence |
 | Response models | `server/schemas.py` | `server/main.py` | `frontend/src/types.ts` |
@@ -806,6 +830,9 @@ a file on disk  /  a supervisor's sentence
 │ reported_date     when the line was written (span date, else header date)   │
 │ asserted_start /  what the line CLAIMS about start/finish; None unless a     │
 │ asserted_finish   claim was actually made; both None on forecast text (H-017)│
+│ *_basis           HOW each date was obtained: EXPLICIT | RELATIVE_RESOLVED   │
+│                   | DEFAULTED_TO_REPORT_DATE. A defaulted finish never       │
+│                   reaches the schedule automatically (D-015)                 │
 │ quantity + uom    a unitless quantity cannot drive progress (D-007)         │
 │ discipline        soft signal; inference from field prose is noisy          │
 │ status            authoritative for finish claims (H-017)                   │
@@ -839,18 +866,23 @@ a file on disk  /  a supervisor's sentence
 └─────────────────────────────────────────────────────────────────────────────┘
         │
         ├── AUTO_LINK ──────► RollupAccumulator.add()
-        │                        DateAssertion{field, value, file, line|row, span}
+        │                        DateAssertion{field, value, BASIS,
+        │                                     file, line|row, span}
         │                        kept individually so disagreement stays visible
         │                              ▼
         │                     RollupResult   percent_complete · actual_start ·
-        │                        actual_finish (ONLY at 100%, D-008) · notes ·
-        │                        conflicts · start/finish_assertions
+        │                        actual_finish (ONLY at 100% (D-008) and only
+        │                        from a non-defaulted basis (D-015)) ·
+        │                        actual_start/finish_basis · withheld_finish ·
+        │                        withheld_finish_assertions · review_reasons ·
+        │                        notes · conflicts · start/finish_assertions
         │                              ▼
         │                     _apply_rollup_to_schedule()
         │                              ▼
         │            ┌──────────────────────────────────────────┐
         │            │ Activity  (server/db.py)   MUTATED HERE   │
         │            │ actual_start · actual_finish · actual_qty │
+        │            │ + actual_start_basis · actual_finish_basis│
         │            │ + compute_variance(DATA_DATE)             │
         │            └──────────────────────────────────────────┘
         │                              │ every field change
@@ -1052,35 +1084,36 @@ never built (H-004).
 - `server/db.py :: _now()` uses the deprecated `datetime.utcnow()`, producing ~17,600
   `DeprecationWarning`s per test run. Cosmetic, but it drowns real warnings.
 
-### 10. `0/0 nos → 100.0%` is real but is NOT the bug it looks like
+### 10. RESOLVED (2026-09-01, D-016) — `0/0 nos → 100.0%`
 
-`FINDINGS.md` F7 flags `PIP-PCD-1053` showing `0/0 nos` at `100.0%` in the roll-up
-table, and proposes guarding "the percent-complete path so `planned_qty == 0` cannot
+`FINDINGS.md` F7 flagged `PIP-PCD-1053` showing `0/0 nos` at `100.0%` in the roll-up
+table, and proposed guarding "the percent-complete path so `planned_qty == 0` cannot
 produce a quantity-derived percentage".
 
-**The observation is correct; the diagnosis is not, and applying the proposed fix
-literally would break D-008.** That 100% is not quantity-derived. `PIP-PCD-1053` is
-*"P&ID Punch List Close-out"* with `planned_qty = 0` — a milestone. The path is the
-deliberate unquantified-node rule in `RollupAccumulator.add()`:
+**This section previously argued the observation was right but the diagnosis wrong,
+and that applying the fix literally would make every milestone un-completable. That
+warning was correct, and D-016 is the fix that avoids it.** The 100% was never
+quantity-derived: it came from the unquantified-node rule in `RollupAccumulator.add()`,
+reached through `elif acc["pct_events"]`, not through the `installed / planned_qty`
+branch (which is, and always was, guarded by `rec.planned_qty > 0`).
 
-```python
-elif event.status is not None and event.status.value == "completed":
-    if rec.planned_qty > 0:
-        ...  # partial scope — NOT applied (D-008)
-    else:
-        # Unquantified node (a milestone): a completion claim is all
-        # the evidence there is or ever will be.
-        acc["pct_events"].append(100.0)
-```
+What the earlier analysis missed is that `planned_qty == 0` is two different states,
+and the **unit of measure** separates them:
 
-`results()` then reaches it through `elif acc["pct_events"]`, never through the
-`installed / planned_qty` branch, which is guarded by `rec.planned_qty > 0`. Gating
-that branch on `planned_qty == 0` would change nothing; gating the `pct_events`
-branch would make every milestone in the schedule permanently un-completable.
+| `planned_qty` | `uom` | What it is | Behaviour |
+|---|---|---|---|
+| `> 0` | any | a quantified node | partial-scope protection (D-008 / H-017) |
+| `<= 0` | `"nos"` | a quantified node with a **missing** planned quantity | progress recorded, **no percentage derived** |
+| `<= 0` | `""` | a genuine **milestone** | a completion claim means 100% — unchanged |
 
-**The real defect is presentational:** the roll-up table renders `installed/planned`
-as `0/0 nos` for a node that has no quantity dimension at all. Fix the display — show
-`—` or `milestone` — not the roll-up logic. Same for `eval.py :: print_rollup`.
+`PIP-PCD-1053` is *"P&ID Punch List Close-out"*, `planned_qty = 0`, `uom = "nos"` — the
+middle row, a data gap in `dataset/baseline_schedule.json`, not a milestone. It now
+reports 0% and receives no dates. The 120-activity baseline contains **no** node in the
+bottom row, so `matching/test_matching.py::TestMilestoneNode` builds a synthetic
+one-node schedule to prove milestones still complete.
+
+A percentage the source *stated* still counts on such a node; only a percentage
+**derived** from a missing planned quantity is refused.
 
 ---
 
@@ -1095,7 +1128,7 @@ trusted. So:
 | `DECISIONS.md` | **CURRENT** | D-series = current reasoning; Part 0 H-series = reconstructed history |
 | `FLOW.md` (this file) | **CURRENT** | §1–§8 verified against commit `1de9b4d`; §0 and §9–§16 verified 2026-08-31 |
 | `Audit-1.md` | **CURRENT** | Independent gap analysis, 11 open findings (F-01…F-11), reproduction commands in its appendix |
-| `FINDINGS.md` | **CURRENT** | Second independent review (2026-08-31), F1–F7 plus a ranked last-day order of work. Overlaps `Audit-1.md` by design; its **F1** is the sharpest statement of `Audit-1.md` F-06, its **F7** is new (see §13.10), and its F3/F4 restate F-10/F-03. Its numbers come from `research/data/eval_output.txt` — i.e. the **eval** operating point, not the server's (§10, H-014). All line citations verified 2026-08-31. |
+| `FINDINGS.md` | **CURRENT** | Second independent review (2026-08-31), F1–F7 plus a ranked last-day order of work. Overlaps `Audit-1.md` by design; its **F1** is the sharpest statement of `Audit-1.md` F-06, its **F7** is new (§13.10, fixed by D-016), and its F3/F4 restate F-10/F-03. Its numbers come from `research/data/eval_output.txt` — i.e. the **eval** operating point, not the server's (§10, H-014). All line citations verified 2026-08-31. |
 | `research/` | **CURRENT** | Eight reproducible harnesses; `EVIDENCE.md` labels every claim MEASURED / AUDITED / RUBRIC / NOT CLAIMED |
 | `SETUP.md`, `DEMO.md` | **CURRENT** | Runbooks |
 | `SIH-2026-PS.txt` | **CURRENT** | The actual problem statement — the authority on scope |
@@ -1221,6 +1254,134 @@ python eval.py | head -20             expect the line:
 ---
 
 ## Current Modification Area
+
+**Task:** Fix the two correctness defects in the roll-up write path — `FINDINGS.md`
+F1 (defaulted report dates written as asserted finish dates) and F7 (an activity with
+`planned_qty == 0` reporting 100% complete).
+**Date:** 2026-09-01 · **Decisions:** D-015, D-016
+
+### Current path
+
+```
+EXTRACTION
+extraction/models.py        + DateBasis{EXPLICIT, RELATIVE_RESOLVED,
+                                        DEFAULTED_TO_REPORT_DATE}
+                            + ExtractedEvent.reported_date_basis
+                                          .asserted_start_basis
+                                          .asserted_finish_basis
+extraction/prepass.py       + extract_dates_with_basis()  → [(date, DateBasis)]
+                              extract_dates_with_flags() / extract_dates() kept
+                              as basis-free views over it
+extraction/extractor.py     + _basis_at(hints, i)                        [line 54]
+                              _prepass_span()  → hints["date_bases"]      [line 264]
+                              _merge_event()   → reported_date_basis      [line 304]
+                              _bind_assertion_dates() now returns          [line 414]
+                                (start, start_basis, finish, finish_basis)
+extraction/spreadsheet.py     _row_to_event() → every basis EXPLICIT
+        ↓
+MATCHING
+matching/models.py          + DateAssertion.basis / .is_defaulted
+                            + RollupResult.actual_start_basis
+                                          .actual_finish_basis
+                                          .withheld_finish
+                                          .withheld_finish_assertions
+                                          .review_reasons
+matching/engine.py          RollupAccumulator.add()                       [line 200]
+                              acc["dates"] now holds DateAssertions
+                              planned_qty <= 0 + uom → no derived %  (D-016)
+                            RollupAccumulator.results()                   [line 334]
+                              actual_finish written ONLY from a
+                              non-defaulted basis (D-015); otherwise
+                              withheld_finish + review_reasons
+                            + _basis_of()                                 [line 460]
+                            + _basis_for()                                [line 473]
+        ↓
+SERVER
+server/db.py                + Activity.actual_start_basis / .actual_finish_basis
+                            + LinkedEvent.reported_date_basis
+                                         .asserted_start_basis
+                                         .asserted_finish_basis
+                            + _add_missing_columns()  (additive SQLite migration,
+                              called from init_db)
+server/main.py              + _basis_value()                              [line 431]
+                            + _basis_or_none()                            [line 436]
+                            + _queue_defaulted_finish()                   [line 448]
+                              _apply_rollup_to_schedule()                 [line 488]
+                                writes *_basis; a withheld finish emits an
+                                audit row field="actual_finish_withheld"
+                                (auto_applied=False) + a ReviewQueueItem
+                                reason="defaulted_finish_date"
+                            + _resolve_defaulted_finish()                 [line 1325]
+                                the confirm|ignore date decision, reached from
+                                resolve_review_item()                     [line 1131]
+server/schemas.py             ScheduleActivityResponse.actual_start_basis
+                                                      .actual_finish_basis
+        ↓
+FRONTEND
+frontend/src/types.ts       + DateBasis; ScheduleActivity.actual_*_basis
+frontend/src/pages/Schedule.tsx
+                              DateCell(value, solid, basis) — an inferred date
+                              renders dotted-underlined with a "~" marker and
+                              the reason on hover; asserted dates unchanged
+        ↓
+HARNESS
+eval.py                     _build_event() now binds start/finish assertions
+                              through Extractor._bind_assertion_dates, so the
+                              roll-up table reflects production date behaviour
+                            print_rollup() prints "withheld" and marks inferred
+                              dates with "~"
+```
+
+### Upstream
+
+```
+POST /ingest          → Extractor → MatchingEngine → RollupAccumulator
+POST /review/{id}/resolve → _resolve_defaulted_finish (new date-only branch)
+GET  /schedule        → ScheduleActivityResponse (now carries both bases)
+eval.py               → RollupAccumulator directly, over ground_truth.csv
+```
+
+### Downstream
+
+```
+Activity.actual_finish       — fewer writes; every remaining one is a date a
+                               source named
+Activity.actual_*_basis      — new; read by GET /schedule and the Schedule table
+AuditRecord                  — new field value "actual_finish_withheld"
+ReviewQueueItem              — new reason "defaulted_finish_date"; the review
+                               queue now carries date decisions, not only links
+schedule export (PMXML/XER)  — inherits the gate: an inferred finish date is not
+                               exported, because it is not written
+```
+
+### Verification performed
+
+```
+python -m pytest -q                 435 passed  (411 before; 24 new tests)
+cd frontend && npx vitest run        55 passed
+cd frontend && npx tsc --noEmit      clean
+python eval.py                       auto-link precision 100.0% (unchanged)
+                                     coverage 50.4% (unchanged)
+                                     roll-up: 11 identical finish dates → 10
+                                     withheld + PIP-PCD-1053 dropped to 0%
+/ingest over the whole dataset       38 activities finish, ALL basis EXPLICIT
+                                     0 zero-duration activities (was 2)
+                                     17 withheld-finish items → planner
+```
+
+### Known follow-ups
+
+- `eval.py`'s events are built from `ground_truth.csv`, whose `source_date` is the
+  report's date by construction, so **every** date in the harness is
+  `DEFAULTED_TO_REPORT_DATE` and every finish in its roll-up table is withheld. The
+  `/ingest` path is not affected — the real extractor reads dates out of the DPR line.
+  A ground-truth column carrying the in-line date would let the harness show both.
+- `FINDINGS.md` F2–F6 remain open. F4 (the write-only alias lexicon) is still the
+  largest gap in the data flow; see §3.
+
+---
+
+## Previous Modification Area (2026-08-31, D-014) — retained for history
 
 **Task:** One-time knowledge handoff — reconstruct the project's history from Git,
 the source, and the repository's own planning and research documents, and persist it
@@ -1353,8 +1514,10 @@ committed (`matching/engine.py:296`, `:330`; `server/main.py:1301`;
 
 Two cross-checks the next agent should carry forward:
 
-- **Its F7 diagnosis is wrong even though its observation is right.** See §13.10.
-  Applying the fix as written would make every milestone un-completable.
+- **Its F7 diagnosis was wrong even though its observation was right.** See §13.10.
+  Applying the fix as written would have made every milestone un-completable; D-016
+  uses the unit of measure to separate a missing planned quantity from a milestone.
+  **F1 and F7 are both fixed as of 2026-09-01 (D-015, D-016).**
 - **Its numbers are the eval operating point**, taken from
   `research/data/eval_output.txt` (0.775/0.5/0.03 on gold mentions), not the
   server's 0.70/0.40/0.03. Its funnel `254 → 128 → 76 → 11` is therefore an

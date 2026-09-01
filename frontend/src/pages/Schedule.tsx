@@ -9,7 +9,13 @@ import {
 } from '@tanstack/react-table';
 import { AlertCircle, AlertTriangle, Download, Lock, X } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
-import { AuditRecord, Discipline, IntegrityWarning, ScheduleActivity } from '../types';
+import {
+  AuditRecord,
+  DateBasis,
+  Discipline,
+  IntegrityWarning,
+  ScheduleActivity,
+} from '../types';
 import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
@@ -20,6 +26,7 @@ const FIELD_LABEL: Record<string, string> = {
   actual_start: 'ACTUAL START',
   actual_finish: 'ACTUAL FINISH',
   actual_qty: 'ACTUAL QTY',
+  actual_finish_withheld: 'FINISH WITHHELD',
   source_conflict: 'SOURCE CONFLICT',
   linked_event_confirmed: 'EVENT CONFIRMED',
   event_reassigned: 'EVENT REASSIGNED',
@@ -31,9 +38,36 @@ function Absent() {
   return <span className="text-muted">—</span>;
 }
 
-function DateCell({ value, solid }: { value: string | null; solid: boolean }) {
+/**
+ * An actual date, marked by how it was obtained. A date no source named — the
+ * report header's date standing in for a line that claimed completion without
+ * saying when — is not the same fact as a date a supervisor wrote down, and it
+ * must not read like one. Inferred dates are dotted-underlined and carry the
+ * reason on hover; asserted dates render plain.
+ */
+function DateCell({
+  value,
+  solid,
+  basis,
+}: {
+  value: string | null;
+  solid: boolean;
+  basis?: DateBasis | null;
+}) {
   if (!value) return <Absent />;
-  return <span className={`font-mono ${solid ? 'text-fg' : 'text-muted'}`}>{value}</span>;
+  const cls = `font-mono ${solid ? 'text-fg' : 'text-muted'}`;
+  if (basis === 'DEFAULTED_TO_REPORT_DATE') {
+    return (
+      <span
+        className={`${cls} underline decoration-dotted decoration-muted underline-offset-[3px]`}
+        title="Inferred: no source named this date — defaulted to the report date"
+      >
+        {value}
+        <span className="text-muted"> ~</span>
+      </span>
+    );
+  }
+  return <span className={cls}>{value}</span>;
 }
 
 /**
@@ -291,7 +325,11 @@ function AuditDrawer({
                 {activity.planned_start ?? <Absent />}
               </div>
               <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
-                {activity.actual_start ?? <Absent />}
+                <DateCell
+                  value={activity.actual_start}
+                  basis={activity.actual_start_basis}
+                  solid
+                />
               </div>
             </div>
             <div className="grid grid-cols-3">
@@ -300,7 +338,11 @@ function AuditDrawer({
                 {activity.planned_finish ?? <Absent />}
               </div>
               <div className="px-2 py-1.5 font-mono text-[12px] text-fg border-l border-hair">
-                {activity.actual_finish ?? <Absent />}
+                <DateCell
+                  value={activity.actual_finish}
+                  basis={activity.actual_finish_basis}
+                  solid
+                />
               </div>
             </div>
           </div>
@@ -481,13 +523,25 @@ export default function Schedule() {
         accessorKey: 'actual_start',
         header: 'Actual Start',
         size: 96,
-        cell: (c) => <DateCell value={c.getValue<string | null>()} solid />,
+        cell: (c) => (
+          <DateCell
+            value={c.getValue<string | null>()}
+            basis={c.row.original.actual_start_basis}
+            solid
+          />
+        ),
       },
       {
         accessorKey: 'actual_finish',
         header: 'Actual Finish',
         size: 96,
-        cell: (c) => <DateCell value={c.getValue<string | null>()} solid />,
+        cell: (c) => (
+          <DateCell
+            value={c.getValue<string | null>()}
+            basis={c.row.original.actual_finish_basis}
+            solid
+          />
+        ),
       },
       {
         accessorKey: 'start_variance_days',

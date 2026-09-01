@@ -64,6 +64,7 @@ from server.agent_slots import (
 )
 from extraction.extractor import Extractor
 from extraction.models import (
+    DateBasis,
     Discipline,
     EventStatus,
     ExtractionMethod,
@@ -427,6 +428,53 @@ def _describe_side(value, source_file, source_line, source_row) -> str:
     return "%s from %s" % (value, where)
 
 
+def _basis_value(basis) -> Optional[str]:
+    """The stored form of a DateBasis, or None when there is no date."""
+    return getattr(basis, "value", None) or (basis if isinstance(basis, str) else None)
+
+
+def _basis_or_none(value) -> Optional[DateBasis]:
+    """A stored basis string back as the enum, tolerating rows written before
+    the column existed."""
+    try:
+        return DateBasis(value) if value else None
+    except ValueError:
+        return None
+
+
+DEFAULTED_FINISH_REASON = "defaulted_finish_date"
+
+
+def _queue_defaulted_finish(db: Session, linked_event_id: str, activity_id: str) -> None:
+    """Put a withheld finish date in front of a planner.
+
+    The link itself is not in question - the event auto-linked. What needs a
+    human is the date: the node is complete, and the only candidate finish date
+    is the report header's, which the source never actually claimed. Resolving
+    the item with "confirm" writes that date as a planner decision; "ignore"
+    leaves the node complete with no Actual Finish.
+    """
+    existing = (
+        db.query(ReviewQueueItem)
+        .filter(
+            ReviewQueueItem.linked_event_id == linked_event_id,
+            ReviewQueueItem.reason == DEFAULTED_FINISH_REASON,
+            ReviewQueueItem.status == "pending",
+        )
+        .first()
+    )
+    if existing is not None:
+        return
+    db.add(ReviewQueueItem(
+        id=_uuid(),
+        linked_event_id=linked_event_id,
+        activity_id=activity_id,
+        reason=DEFAULTED_FINISH_REASON,
+        priority="medium",
+        status="pending",
+    ))
+
+
 def _cross_file_conflict(prior, new_value: str, new_file) -> bool:
     """True when this write contradicts an earlier one from a different file."""
     return bool(
@@ -448,7 +496,11 @@ def _apply_rollup_to_schedule(db: Session, results,
       * actual_start   — earliest reported progress date (integrity-validated)
       * actual_qty     — max(current, rolled-up installed qty); never decreases.
                          Quantity-based percent complete: 40 m of 120 m = 33%.
-      * actual_finish  — written ONLY when the node is 100% complete
+      * actual_finish  — written ONLY when the node is 100% complete AND a
+                         source named the date. A finish that exists only
+                         because the report header's date stood in for a line
+                         that named none is withheld and queued for the
+                         planner instead (reason "defaulted_finish_date").
 
     Every field change gets an immutable AuditRecord
     (source="matching", auto_applied=True).
@@ -552,6 +604,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                     conflict=crossed or len({a.value for a in r.start_assertions}) > 1,
                 )
                 act.actual_start = r.actual_start
+                act.actual_start_basis = _basis_value(r.actual_start_basis)
                 audits += 1
         elif r.actual_start is not None and act.actual_start != r.actual_start:
             # The stored start wins on the earliest-evidence rule, so nothing is
@@ -612,6 +665,42 @@ def _apply_rollup_to_schedule(db: Session, results,
             act.actual_qty = new_qty
             audits += 1
 
+        # A finish the node is entitled to by percent complete, but which no
+        # source dated. It is not written: it is recorded, and put in front of
+        # a planner. Writing it would stamp every completion in a report with
+        # the day the report was typed.
+        for reason in r.review_reasons:
+            logger.info("Actual Finish withheld on %s: %s", r.activity_id, reason)
+            withheld_a = (
+                r.withheld_finish_assertions[0]
+                if r.withheld_finish_assertions
+                else None
+            )
+            w_ev, w_file, w_line, w_row = _origin(prov_index, withheld_a)
+            _write_audit(
+                db, r.activity_id,
+                field="actual_finish_withheld",
+                old_value=None,
+                new_value=(
+                    r.withheld_finish.isoformat() if r.withheld_finish else None
+                ),
+                source="matching",
+                linked_event_id=w_ev,
+                source_file=w_file or default_source_file,
+                source_line=w_line,
+                source_row=w_row,
+                source_span=(withheld_a.source_span if withheld_a else None) or span,
+                confidence=None,
+                auto_applied=False,
+                model_version=MATCHING_MODEL_VERSION,
+                contributing_sources=[
+                    a.describe() for a in r.withheld_finish_assertions
+                ] or None,
+            )
+            audits += 1
+            if w_ev:
+                _queue_defaulted_finish(db, w_ev, r.activity_id)
+
         # Actual Finish — ONLY when the node is actually complete
         if r.is_complete and r.actual_finish is not None:
             try:
@@ -649,6 +738,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                         conflict=crossed or len({a.value for a in r.finish_assertions}) > 1,
                     )
                     act.actual_finish = r.actual_finish
+                    act.actual_finish_basis = _basis_value(r.actual_finish_basis)
                     audits += 1
 
         act.compute_variance(DATA_DATE)
@@ -789,8 +879,11 @@ async def ingest_file(
                 raw_text=event.raw_text,
                 tags=json.dumps(event.tags),
                 reported_date=event.reported_date,
+                reported_date_basis=_basis_value(event.reported_date_basis),
                 asserted_start=event.asserted_start,
+                asserted_start_basis=_basis_value(event.asserted_start_basis),
                 asserted_finish=event.asserted_finish,
+                asserted_finish_basis=_basis_value(event.asserted_finish_basis),
                 quantity=event.quantity,
                 uom=event.uom,
                 discipline=event.discipline.value,
@@ -1061,6 +1154,13 @@ def resolve_review_item(
     alias_count = 0
     target_activity_id = None
 
+    if item.reason == DEFAULTED_FINISH_REASON:
+        # A different kind of item: the link is already committed and is not in
+        # question. What the planner is adjudicating is a DATE the system
+        # refused to infer. Only two answers make sense, so the link-editing
+        # actions are not offered here.
+        return _resolve_defaulted_finish(db, item, le, req)
+
     if req.action == "confirm":
         # Planner confirms the current activity_id
         if not item.activity_id:
@@ -1222,6 +1322,105 @@ def resolve_review_item(
     )
 
 
+def _resolve_defaulted_finish(
+    db: Session, item: ReviewQueueItem, le: LinkedEvent, req: ResolveRequest
+) -> ResolveResponse:
+    """Resolve a withheld finish date.
+
+    The roll-up refused to write this date because no source named it - the
+    line said the work was done, and the report header's date stood in. Only a
+    human can turn that into an actual:
+
+      confirm — write the defaulted date as a planner decision. The audit row
+                records source="planner_review", auto_applied=False and the
+                basis DEFAULTED_TO_REPORT_DATE, so the trail still says the
+                date was inferred rather than asserted.
+      ignore  — leave the node complete with no Actual Finish.
+
+    This is the same rule as D-009: a proposal only becomes an actual date
+    through a planner's resolve call.
+    """
+    if req.action not in ("confirm", "ignore"):
+        raise HTTPException(
+            400,
+            f"Review item {item.id} is a withheld finish date; "
+            "the only actions are 'confirm' and 'ignore'",
+        )
+
+    audit_count = 0
+    activity_id = item.activity_id
+    proposed = le.asserted_finish or le.reported_date
+
+    if req.action == "ignore":
+        item.status = "ignored"
+        item.resolution = "ignore"
+        item.resolution_note = req.note
+        item.resolved_at = _now()
+        db.commit()
+        return ResolveResponse(
+            review_item_id=item.id,
+            resolution="ignore",
+            activity_id=activity_id,
+            alias_entries_created=0,
+            audit_records_created=0,
+            message="Withheld finish date left unwritten",
+        )
+
+    act = db.query(Activity).filter(Activity.activity_id == activity_id).first()
+    if act is None:
+        raise HTTPException(404, f"Activity {activity_id} not found")
+    if proposed is None:
+        raise HTTPException(400, "No candidate finish date on the linked event")
+
+    try:
+        validate_actual_finish(act, proposed)
+    except IntegrityError as e:
+        raise HTTPException(400, f"Integrity rule blocks this finish date: {e}")
+
+    if act.actual_finish != proposed:
+        _write_audit(
+            db, activity_id,
+            field="actual_finish",
+            old_value=act.actual_finish.isoformat() if act.actual_finish else None,
+            new_value=proposed.isoformat(),
+            source="planner_review",
+            linked_event_id=le.id,
+            source_file=le.source_file,
+            source_line=le.source_line,
+            source_row=le.source_row,
+            source_span=le.source_span,
+            confidence=le.confidence,
+            auto_applied=False,
+            model_version=MATCHING_MODEL_VERSION,
+            contributing_sources=[
+                f"{proposed.isoformat()} defaulted to the report date, "
+                f"confirmed by a planner"
+            ],
+        )
+        act.actual_finish = proposed
+        # The date is now a planner's decision, but it is still an inferred
+        # date and the UI must keep saying so.
+        act.actual_finish_basis = DateBasis.DEFAULTED_TO_REPORT_DATE.value
+        act.compute_variance(DATA_DATE)
+        audit_count += 1
+
+    item.status = "resolved"
+    item.resolution = "confirm"
+    item.resolved_activity_id = activity_id
+    item.resolution_note = req.note
+    item.resolved_at = _now()
+    db.commit()
+
+    return ResolveResponse(
+        review_item_id=item.id,
+        resolution="confirm",
+        activity_id=activity_id,
+        alias_entries_created=0,
+        audit_records_created=audit_count,
+        message=f"Actual Finish {proposed.isoformat()} written by planner decision",
+    )
+
+
 def _apply_confirmed_event_to_schedule(
     db: Session, le: LinkedEvent, activity_id: str
 ) -> int:
@@ -1244,8 +1443,11 @@ def _apply_confirmed_event_to_schedule(
         raw_text=le.raw_text,
         tags=le.tag_list(),
         reported_date=le.reported_date,
+        reported_date_basis=_basis_or_none(le.reported_date_basis),
         asserted_start=le.asserted_start,
+        asserted_start_basis=_basis_or_none(le.asserted_start_basis),
         asserted_finish=le.asserted_finish,
+        asserted_finish_basis=_basis_or_none(le.asserted_finish_basis),
         quantity=le.quantity,
         uom=le.uom,
         discipline=Discipline(le.discipline) if le.discipline else Discipline.UNKNOWN,
@@ -1378,6 +1580,8 @@ def get_schedule(
                 uom=act.uom,
                 actual_start=act.actual_start,
                 actual_finish=act.actual_finish,
+                actual_start_basis=act.actual_start_basis,
+                actual_finish_basis=act.actual_finish_basis,
                 actual_qty=act.actual_qty,
                 start_variance_days=act.start_variance_days,
                 finish_variance_days=act.finish_variance_days,
