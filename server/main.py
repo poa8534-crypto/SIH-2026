@@ -37,7 +37,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
@@ -2327,6 +2327,64 @@ def export_schedule(
         activity_count=len(activities),
         content_type="application/xml",
         download_url=f"/uploads/{filename}",
+    )
+
+
+# ── GET /uploads/{filename} ─────────────────────────────────────────────────
+
+#: Extensions this route will serve. Exports are the only thing that legitimately
+#: lands in dataset/uploads for download; refusing everything else means a file
+#: that arrives there by another path cannot be exfiltrated through this route.
+_DOWNLOADABLE = {
+    ".xml": "application/xml",
+    ".xer": "text/plain; charset=utf-8",
+}
+
+
+@app.get("/uploads/{filename}")
+def download_export(filename: str):
+    """Serve a generated export file.
+
+    `ExportResponse.download_url` has always advertised `/uploads/{filename}`
+    while nothing served that path, so every Export in the UI produced a dead
+    link (D-039 gap 3, D-044).
+
+    The filename arrives from the URL, so it is treated as hostile:
+
+      * any separator or parent reference is rejected outright — a name is a
+        name, never a path;
+      * the resolved path must still be inside the uploads directory after
+        `resolve()`, which is what catches a symlink pointing outside it;
+      * only known export extensions are served;
+      * a missing file is a 404, never a 500 and never a stack trace.
+    """
+    if not filename or filename in {".", ".."}:
+        raise HTTPException(400, "Invalid filename")
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(400, "Invalid filename")
+    # A bare name only. This also rejects "C:..." style absolute forms, whose
+    # separators are already caught above.
+    if Path(filename).name != filename or Path(filename).is_absolute():
+        raise HTTPException(400, "Invalid filename")
+
+    suffix = Path(filename).suffix.lower()
+    if suffix not in _DOWNLOADABLE:
+        raise HTTPException(400, f"Unsupported file type: {suffix or '(none)'}")
+
+    upload_dir = (DATASET_DIR / "uploads").resolve()
+    candidate = (upload_dir / filename).resolve()
+
+    # Containment check AFTER resolve, so a symlink out of the directory fails.
+    if candidate != upload_dir and upload_dir not in candidate.parents:
+        raise HTTPException(400, "Invalid filename")
+    if not candidate.is_file():
+        raise HTTPException(404, f"Export {filename} not found")
+
+    return FileResponse(
+        candidate,
+        media_type=_DOWNLOADABLE[suffix],
+        filename=filename,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

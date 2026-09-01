@@ -4471,3 +4471,54 @@ serialisation at ingest, review-queue projection, `_rationale` import) ·
 `frontend/src/pages/Reconcile.tsx`
 
 Supersedes the blocker recorded in D-039, which is now closed.
+
+---
+
+## 2026-09-02 / D-044 - Exports are downloadable; the advertised URL is no longer dead
+
+### Status
+Implemented. Closes the third and last gap listed in D-039.
+
+### Context
+`ExportResponse.download_url` has returned `/uploads/{filename}` since exports
+were built (`server/main.py`, `export_schedule`). Exports are written to
+`dataset/uploads/`. **No route ever served that directory** - there is no static
+mount and no handler - so every Export in the UI produced a link that 404s. The
+frontend had already been reworded to "Saved on server" (D-039) precisely
+because the download did not exist.
+
+### Decision
+Add `GET /uploads/{filename}`, returning the file as an attachment. The
+alternative the pipeline allowed - dropping `download_url` - was rejected
+because a working download is what a judge expects when a button says Export,
+and the endpoint is a dozen lines.
+
+### Reason - the filename is hostile input
+It arrives from the URL, so it is validated rather than trusted:
+
+- rejected outright if it contains `/`, `\` or `..`, or is `.`/`..`, or is not
+  equal to its own `Path(...).name`, or is absolute. A name is a name, never a
+  path.
+- the candidate is `resolve()`d and must still be inside the resolved uploads
+  directory. Doing the containment check *after* resolution is what catches a
+  symlink pointing outside it; checking before would not.
+- only known export extensions are served (`.xml`, `.xer`). A file that reaches
+  that directory by some other route cannot be pulled out through this one.
+- a missing file is a 404, never a 500 and never a stack trace.
+
+### Verification
+`server/test_server.py::TestExportDownload`, 10 tests: a written PMXML export
+round-trips through its own `download_url` with `Content-Disposition:
+attachment`; an XER export likewise; a missing file 404s; five traversal forms
+(`../../server/main.py`, percent-encoded, doubled `....//`, a subdirectory, a
+bare `..`) are refused and never return source; an absolute `/etc/passwd`
+attempt is refused; a planted `.txt` in the uploads directory is refused and its
+contents do not appear in the response.
+
+Full suite unchanged otherwise; `eval.py` output byte-identical to baseline.
+
+### Affected Areas
+`server/main.py` (`download_export`, `_DOWNLOADABLE`, `FileResponse` import),
+`server/test_server.py`. No frontend change was made. **Frontend note:** the
+Schedule export control can now link to `download_url` directly instead of
+saying "Saved on server"; that edit is the frontend agent's.

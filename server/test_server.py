@@ -1111,6 +1111,75 @@ class TestCrossDPRStatistics:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TEST GROUP: Export download (GET /uploads/{filename})
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestExportDownload:
+    """GET /uploads/{filename} — the route ExportResponse.download_url points at.
+
+    Before D-044 that URL was advertised and nothing served it, so every Export
+    in the UI produced a dead link.
+    """
+
+    def test_a_written_export_is_retrievable(self):
+        export = client.post(
+            "/schedule/export", json={"format": "pmxml", "include_actuals": True}
+        ).json()
+        assert export["download_url"] == f"/uploads/{export['filename']}"
+
+        got = client.get(export["download_url"])
+        assert got.status_code == 200
+        assert got.headers["content-disposition"].startswith("attachment")
+        assert export["filename"] in got.headers["content-disposition"]
+        assert got.text.lstrip().startswith("<?xml")
+
+    def test_xer_export_is_retrievable(self):
+        export = client.post("/schedule/export", json={"format": "xer"}).json()
+        got = client.get(export["download_url"])
+        assert got.status_code == 200
+        assert len(got.content) > 0
+
+    def test_missing_file_is_404_not_500(self):
+        got = client.get("/uploads/schedule_export_20000101_000000.xml")
+        assert got.status_code == 404
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "../../server/main.py",
+            "..%2F..%2Fserver%2Fmain.py",
+            "....//....//server/main.py",
+            "subdir/thing.xml",
+            "..",
+        ],
+    )
+    def test_traversal_attempts_are_rejected(self, name):
+        """Nothing outside dataset/uploads is reachable, and nothing 500s."""
+        got = client.get(f"/uploads/{name}")
+        assert got.status_code in (400, 404), got.status_code
+        assert "def " not in got.text  # never the contents of a source file
+
+    def test_absolute_path_is_rejected(self):
+        got = client.get("/uploads//etc/passwd")
+        assert got.status_code in (400, 404)
+        assert "root:" not in got.text
+
+    def test_non_export_extension_is_refused(self):
+        """Only export types are served, so a file that lands in the directory
+        by some other route cannot be pulled out through this one."""
+        upload_dir = Path(__file__).resolve().parent.parent / "dataset" / "uploads"
+        upload_dir.mkdir(exist_ok=True)
+        planted = upload_dir / "secret_notes.txt"
+        planted.write_text("private", encoding="utf-8")
+        try:
+            got = client.get("/uploads/secret_notes.txt")
+            assert got.status_code == 400
+            assert "private" not in got.text
+        finally:
+            planted.unlink(missing_ok=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 
