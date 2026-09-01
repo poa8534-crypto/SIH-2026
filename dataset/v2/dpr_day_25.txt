@@ -1,37 +1,47 @@
 DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
 Report Date: 24/01/2027
-Weather: Heavy rain 1400-1600
+Weather: Clear, 31C
 Contractor: ABC Infra
-Site Engineer: P. Deka
+Site Engineer: S. Hazarika
 
-1. EQUIPMENT
-   a) 72-hour integrated reliability run, process train — 1 nos out of 1 done.
-   b) First crude transfer to TK-2101 held up, awaiting client RFI clearance.
+1. MECHANICAL - EQUIPMENT
+   a) 72-hour integrated reliability run, process train completed.
 
-2. E&I - INSTRUMENTATION
-   a) Install fire and gas detectors, wellhead and manifold, 9 nos out of 32 complete so far.
-   b) Loop check, Unit 1 loops L-1101 to L-1128 in progress, 12 nos out of 28 achieved.
-   c) Fire and gas detection system function test — closed out this week.
-   d) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A — completed on 2 Dec.
-   e) Integrated ESD and blowdown function test completed 2027-01-03.
-   f) Cause and effect testing, ESD shutdown matrix closed out 29/Dec/2026.
-   g) Work front opened for Instrument loops certified (RFSI) on 22 Jan.
-   h) Install pressure transmitters PT-1101 to PT-1114, Unit 1, tag PT-1101 delayed by 5 days, crane availability.
-   i) Calibrate transmitters and switches, workshop bench, 32 nos out of 60 complete so far.
+2. INSTRUMENTS
+   a) Loop check, Unit 1 loops L-1101 to L-1128 held up, awaiting client RFI clearance.
+   b) Instrument loops certified (RFSI) started 24/01/2027.
+   c) Cause and effect testing, ESD shutdown matrix ongoing.
+   d) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line in progress, 22 nos out of 28 achieved, as of 24 Jan 2027.
+   e) Install fire and gas detectors, wellhead and manifold — completed on 2026-12-04.
+   f) Fire and gas detection system function test — completed on 11/Dec/2026.
+   g) Crew deployed on Install pressure transmitters PT-1101 to PT-1114, Unit 1.
+   h) Integrated ESD and blowdown function test under way at the work front.
 
-3. HSE / SAFETY
-   a) Punchlist closure, category A and B items stopped, material shortage at store.
-   b) As-built drawing submission and document close-out to OIL — completed on 03/Mar/2027.
-   c) Provisional handover to Operations, finished 27 Feb, JMR raised.
-   d) Operations training and familiarization, OIL staff is done and signed off.
-   e) Pre-startup safety review (PSSR) walkthrough in progress, 1 nos out of 1 achieved.
-   f) RFSU Unit 2 completed 2027-02-04.
-   g) RFSU Unit 2 — this is the 1 one, 58% done.
+3. HSE
+   a) Punchlist closure, category A and B items taken up at site.
+   b) As-built drawing submission and document close-out to OIL in progress, about 71% complete.
+   c) RFSU Unit 1 in progress, about 69% complete, as of 22/01/2027.
+   d) Work front opened for RFSU Unit 2 on 4 Feb.
+   e) Pre-startup safety review (PSSR) walkthrough — 1 nos out of 1 done, as of 22 Jan.
+   f) Operations training and familiarization, OIL staff taken up at site.
+   g) Provisional handover to Operations, finished 27 Feb, JMR raised.
 
-4. GENERAL / SITE NARRATIVE
-   a) Rework of the guardhouse plinth after client comment, VO pending.
-   b) Site ambulance serviced and returned to standby.
+4. PIPING (contd)
+   a) Work continuing on 10"-P-1602-B1A, about 89% done.
+   b) Team deployed on 24"-P-1001-A1A, balance to follow, as of 21 Jan.
+   c) Work continuing on 10"-P-1602-B1A, about 59% done, as of yesterday.
+
+5. MECHANICAL - EQUIPMENT (contd)
+   a) FST-1301 activity ongoing, no issues reported, as of 24 Jan.
+   b) PK-2401 — crew on site, progress steady.
+
+6. E&I - ELECTRICAL (contd)
+   a) Team deployed on T-1, balance to follow, as of 21 Jan.
+
+7. GENERAL / SITE NARRATIVE
+   a) First aid administered for a minor hand laceration at the fab shed.
+   b) High wind warning issued, crane operations suspended.
 
 REMARKS
-   - Manpower: 78 nos on site.
+   - Manpower: 184 nos on site.
    - Equipment: 4 nos deployed.

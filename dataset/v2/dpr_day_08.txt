@@ -1,39 +1,47 @@
 DAILY PROGRESS REPORT
-Date: 2026-06-11  |  Weather: Windy, 28C, gusts 30 km/h
-Contractor: ABC Infra Pvt. Ltd.  |  Project: OIL Well-Site Duliajan
-Prepared by: M. Rahman, Site Engineer
+Date: 2026-06-11  |  Weather: Hot, 38C
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: R. Gogoi, Site Engineer
 
-1. CIVIL / STRUCTURAL
-   a) Work front opened for Control building blockwork and roofing on 10 Jun.
+1. CIVIL WORKS
+   a) Control building blockwork and roofing — 93 of 145 m2 done, as of 10 Jun.
 
 2. PIPING
-   a) Install tank dewatering lines 3"-P-2104-C5B held up, awaiting client RFI clearance.
-   b) Erect rack steel, Module 2 (Ch 40-80) — completed on 2026-06-15.
-   c) Erect rack steel, Module 2, multi-tier 1 0-40) portion only, balance still open.
-   d) Potable water the two inch line, control building in progress, 51 of 65 m achieved.
+   a) Work front opened for Install tank dewatering lines 3"-P-2104-C5B on 2026-06-12.
+   b) Erect rack steel, Module 2 (Ch 40-80) completed 15 Jun.
+   c) Erect multi-tier rack steel, Module 1 (Ch 0-40) — commenced 2026-06-08.
 
-3. EQUIPMENT
-   a) TK-2101 — Tank roof structure and fittings, TK-2101, 8 of 14 mt complete so far.
-   b) Rig and set vertical separator V-1101 on foundation, tag V-1101 — progress slow, 32% only.
-   c) Set fuel gas skid, utilities plinth U1 ongoing.
-   d) Receive and stage the separator vessel, transport from laydown completed 8 Jun.
-   e) Work front opened for Plumb, alignment and bolt torque, the separator vessel on 11 Jun 2026.
-   f) Tank nozzles and manways fitting, the storage tank and in progress, 10 nos out of 18 achieved.
-   g) Monorail and davit erection, separator platforms — 1 nos out of 1 done.
-   h) Rig and set glycol contactor the separator vessel under way at the work front.
-   i) Tank shell erection, courses 1-3,, 1-2, portion only, balance still open.
-   j) Tank shell erection, courses 1-3, TK-2101, tag TK-2101, 39 of 46 mt complete so far, as of 10 Jun.
-   k) Crew deployed on Motor mounting and bolt torque, P-1401A/B (P-1401A).
-   l) Shell course 3 and wind girder, TK-2101 (TK-2101) under way at the work front.
+3. MECHANICAL - EQUIPMENT
+   a) Monorail and davit erection, separator platforms, finished 13/Jun/2026, JMR raised.
+   b) Tank nozzles and manways fitting, TK-2101 and TK-2102 — 11 nos out of 18 done.
+   c) Tank roof structure and fittings, TK-2101 completed.
+   d) Rig and set vertical the separator vessel on foundation, 1 nos out of 1 complete so far.
+   e) Plumb, alignment and bolt torque, the separator vessel closed out 11/06/2026.
+   f) Rig and set glycol contactor V-1201 ongoing.
+   g) Receive and stage separator V-1101, transport from laydown — 1 nos out of 1 done, as of today.
+   h) Mobilised for Set fuel gas skid, utilities plinth U1.
+   i) Shell courses 1-2, tank TK-2101 closed out 31/05/2026.
+   j) Tank shell erection, courses 1-3, TK-2101 — completed on 5 Jun 2026.
 
 4. ELECTRICAL WORKS
-   a) Install cable tray and risers, substation building completed 10/Jun/2026.
-   b) Area lighting poles and floodlights, wellhead U1/U2, 16 nos out of 22 complete so far.
+   a) Install cable tray and risers, substation building closed out 11/06/2026.
+   b) Area lighting poles and floodlights, wellhead U1/U2 in progress, 12 nos out of 22 achieved.
 
-5. GENERAL / SITE NARRATIVE
-   a) Store bin cards updated after physical verification.
-   b) Diesel consumption reconciliation for the month completed.
+5. PIPING (contd)
+   b) Crew working on Erect flare header to, as of 08/Jun/2026.
+   c) and firewater main, balance to be completed next week, as of 10 Jun 2026.
+
+6. EQUIPMENT (contd)
+   a) Work continuing on TK-2102, about 69% done.
+   b) Work continuing on TK-2101, about 53% done, as of 09/06/2026.
+
+7. INSTRUMENTS (contd)
+   a) JB-101 activity ongoing, no issues reported, as of today.
+
+8. GENERAL / SITE NARRATIVE
+   a) Extra hardstanding for the client vehicle park, not in the BOQ.
+   b) Radiography film review pending with the client inspector.
 
 REMARKS
-   - Manpower: 71 nos on site.
-   - Equipment: 8 nos deployed.
+   - Manpower: 83 nos on site.
+   - Equipment: 9 nos deployed.

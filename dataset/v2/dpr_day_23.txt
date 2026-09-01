@@ -1,39 +1,52 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 27/Dec/2026
-Weather: Humid, 34C, brief shower midday
-Contractor: M/s ABC Infrastructure
-Site Engineer: R. Gogoi
+DAILY PROGRESS REPORT
+Date: 27/12/2026  |  Weather: Humid, 34C, brief shower midday
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: J. Tamuly, Site Engineer
 
-1. MECHANICAL - PIPING
-   a) Erect the twenty four inch, gas service, 1 manifold portion only, balance still open.
-   b) Install restriction orifice spools and sampling connections, Unit 1 stopped, material shortage at store.
+1. PIPING
+   a) Install restriction orifice spools and sampling connections, Unit 1 — completed on 28/11/2026.
+   b) Erect the sixteen inch line, gas service, Unit 1 manifold completed 28/11/2026.
 
-2. MECHANICAL - EQUIPMENT
-   a) 72-hour integrated reliability run, process train — commenced 2027-01-05.
+2. STATIC EQUIPMENT
+   a) 72-hour integrated reliability run, process train — closed out this week.
 
-3. INSTRUMENTS
-   a) Cause and effect testing, ESD shutdown matrix started this morning.
-   b) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A in progress, 22 nos out of 28 achieved.
-   c) Install pressure transmitters transmitter to the pressure transmitter, Unit 1, finished 4 Dec, JMR raised.
-   d) Fire and gas detection system function test in progress, 10 nos out of 32 achieved.
-   e) Instrument loops certified (RFSI) started 24 Dec.
-   f) Loop check, Unit 2 loops progressing at the 1 location as of 27/Dec/2026.
-   g) Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A — 6 nos out of 10 done.
-   h) Install fire and gas detectors, wellhead and manifold completed 2026-12-04.
-   i) Crew deployed on Integrated ESD and blowdown function test.
-   j) Crew deployed on Calibrate transmitters and switches, workshop bench.
+3. E&I - INSTRUMENTATION
+   a) Install pressure transmitters PT-1101 to PT-1114, Unit 1 — closed out this week.
+   b) Integrated ESD and blowdown function test ongoing.
+   c) Cause and effect testing, ESD shutdown matrix delayed by 3 days, crane availability.
+   d) Calibrate transmitters and switches, workshop bench completed 12/12/2026.
+   e) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line stopped, material shortage at store.
+   f) Instrument loops certified (RFSI) in progress, about 31% complete, as of 27 Dec.
+   g) Fire and gas detection system function test — 21 nos out of 32 done.
+   h) Install fire and gas detectors, wellhead and manifold completed.
+   i) Install ESD valve solenoids and actuation hook-up, blowdown headers the six inch line completed 21 Nov 2026.
+   j) Loop check, Unit 1 loops L-1101 to L-1128 completed.
 
-4. HSE
-   a) RFSU Unit 1 in progress, about 77% complete, as of 2026-12-26.
-   b) Compilation of handover dossiers and O&M manuals in progress, about 56% complete.
-   c) As-built markup verification and red-line transfer in progress, about 63% complete.
-   d) Pre-startup safety review (PSSR) walkthrough — completed on 24 Dec.
-   e) Operations training and familiarization, OIL staff, 14 nos out of 24 complete so far.
+4. HSE / SAFETY
+   a) Pre-startup safety review (PSSR) walkthrough held up, awaiting client RFI clearance.
+   b) Compilation of handover dossiers and O&M manuals completed 2 Dec 2026.
+   c) As-built markup verification and red-line transfer ongoing.
+   d) RFSU Unit 1 in progress, about 67% complete.
+   e) Operations training and familiarization, OIL staff, finished 27 Dec, JMR raised.
 
-5. GENERAL / SITE NARRATIVE
-   a) Transporter detention charges under discussion with logistics.
-   b) Fog delayed the morning shift start by two hours.
+5. PIPING WORKS (contd)
+   a) Work continuing on P-1401A, about 26% done, as of 2026-12-26.
+   b) 20"- -2001-A1A, Unit 2 header, balance to be completed next week.
+
+6. ELECTRICAL WORKS (contd)
+   a) Install cable tray rack tier, work in progress.
+
+7. STATIC EQUIPMENT (contd)
+   a) Progressed the V-1101 scope today, 56% complete, as of 26/Dec/2026.
+   b) TK-2101 activity ongoing, no issues reported, as of 27 Dec.
+
+8. CIVIL (contd)
+   a) Progressed the V-1101 scope today, 48% complete, as of 24/12/2026.
+
+9. GENERAL / SITE NARRATIVE
+   a) JMR for November progress billing submitted to OIL.
+   b) Transporter detention charges under discussion with logistics.
 
 REMARKS
-   - Manpower: 212 nos on site.
+   - Manpower: 143 nos on site.
    - Equipment: 5 nos deployed.

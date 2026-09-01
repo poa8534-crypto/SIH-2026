@@ -1256,6 +1256,58 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Raise near-misses to at least 150 of the v2 corpus, concentrated in
+dev and test, and report top-1 three ways.
+**Date:** 2026-09-01 - **Decision:** D-024
+
+### Current path
+
+```
+generate_v2_dataset.py
+  build_near_miss_families()   NEW - discriminator_omitted | adjacent_sequence
+                               | shared_tag; overlapping pairs merged into
+                               complete families so confusable_with is whole
+  build_near_miss_queue()      NEW - fixed count, families cycled
+  build_near_miss()            REWRITTEN - the deciding token is REMOVED
+  _strip_tokens()              NEW - drops the token, the positional noun it
+                               qualified, and the whole tag when the token
+                               lived inside one
+  splits                       third stratification axis: near_miss,
+                               ratio 0.25 / 0.35 / 0.40 train/dev/test
+        |
+dataset/v2/ground_truth_v2.csv   + near_miss_kind, missing_discriminator,
+                                   confusable_with
+        |
+eval.py :: print_near_miss()     NEW - strict top-1 three ways, in-family
+                                 top-1, and the REVIEW rate on the subset
+```
+
+### Verification performed
+
+```
+python -m pytest -q extraction matching server   400 passed
+python eval.py                                   v1 unchanged (87.2 / 100.0 / 50.4)
+held-out test (198):  overall 71.4% | near-miss 26.5% (68) | rest 97.4% (117)
+                      in-family 75.0%, REVIEW on near-misses 100%,
+                      auto-link precision 100.0%, NO_MATCH rejection 84.6%
+pooled CV (814):      overall 82.1% | near-miss 25.0% (160) | rest 97.8%
+                      in-family 78.8%, auto-link precision 99.8%
+```
+
+### Known limitations
+
+- **Strict top-1 on near-misses is partly luck.** Where a mention is compatible
+  with three siblings, no system can pick the gold one from the text. In-family
+  top-1 and the REVIEW rate are the fair readings and are reported beside it.
+- **`shared_tag` dominates the subset** (117 of 160) because v2 has 19 tags
+  spanning 80 activities and only 27 clean discriminator pairs. It is the most
+  realistic kind but the mix is uneven.
+- Corpus grew 700 -> 814 mentions; near-misses were added rather than swapped in.
+
+---
+
+## Previous Modification Area (2026-09-01, D-022/D-023) - retained for history
+
 **Task:** Fix the two confirmed extractor defects recorded in D-020
 (`EQUIPMENT_TAG_RE` digit bound, `FRACTION_RE` unit suffix) and republish every
 evaluation before and after.

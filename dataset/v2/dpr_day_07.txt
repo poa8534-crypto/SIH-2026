@@ -1,33 +1,46 @@
 DPR 30/May/2026
-site: Duliajan  contractor: ABC Infra
+site: Duliajan  contractor: ABC Infra Pvt. Ltd.
 
-1. CIVIL WORKS
-   * Cable trench with precast covers, Unit 2 to substation in progress, 60 of 190 m achieved, as of 28 May. baaki kal karenge.
-   * trench sand bedding and protection tiles, cable routes in progress, 282 of 400 m achieved.
-   - Cable trench with precast covers, Unit 1 to substation in progress, 177 of 210 m achieved.
-   - control building blockwork and roofing — closed out this week.
+1. CIVIL / STRUCTURAL
+   Cable trench with precast covers, Unit 2 to s/s, 157 of 190 m complete so far. baaki kal karenge.
+   - Work front opened for Trench sand bedding and protection tiles, cable routes on 29/May/2026.
+   * Control building blockwork and roofing, 45 of 145 m2 complete so far.
+   * Cable trench with precast covers, Unit 1 to substation completed 26 May.
 
-2. MECHANICAL - PIPING
-   Potable water line 2"-P-2303-C5B, control building started 28 May. material ka issue tha.
+2. PIPING WORKS
+   * potable water line 2"-p-2303-c5b, control building — completed on 28 may. baaki kal karenge.
 
 3. EQUIPMENT
-   * crew deployed on shell courses 1-2, tank tk-2101 (tk-2101).
-   tank shell erection, courses 1-3, tk-2101 (tk-2101) delayed by 3 days, crane availability. kaam chalu hai.
-   * crew deployed on shell course 3 and wind girder, tk-2101, tag tk-2101.
-   * Alignment check, P-1401A/B couplings, tag P-1401A in progress, 1 nos out of 2 achieved. material ka issue tha.
-   - Motor mounting and bolt torque, P-1401A/B (P-1401A) stopped, material shortage at store. kaam chalu hai.
-   Set crude transfer the pumps and, 1 nos out of 2 complete so far.
-   alignment check and coupling, compressor pk-2401 to receiver, tag pk-2401 ongoing. labour kam tha aaj.
-   * Internal floating roof assembly, the storage tank held up, awaiting client RFI clearance. kaam chalu hai.
+   * alignment check, p-1401a/b couplings closed out 28 may.
+   * Set crude transfer pumps P-1401A and P-1401B completed 28 May 2026. kaam chalu hai.
+   - Shell courses 1-2, the storage tank under way at the work front.
+   * Motor mounting and bolt torque, the pump held up, awaiting client RFI clearance.
+   * tank shell erection, courses 1-3, the storage tank, finished 28 may 2026, jmr raised.
+   Shell course 3 and wind girder, the storage tank — completed on 31 May.
+   * Crew deployed on Internal floating roof assembly, TK-2102.
+   alignment check and coupling, compressor pk-2401 to receiver held up, awaiting client rfi clearance.
 
 4. E&I - ELECTRICAL
-   * area lighting poles and floodlights, wellhead u1/u2 closed out 27 may.
-   * Earth grid and earthing pits, site-wide completed 2026-05-25.
+   * area lighting poles and floodlights, wellhead u1/u2 in progress, 6 nos out of 22 achieved.
+   Earth grid and earthing pits, site-wide — 2001 of 2400 m done, as of 30/May/2026.
 
-5. GENERAL / SITE NARRATIVE
-   Near miss reported: dropped spanner at the rack, no injury.
-   * Manpower histogram updated and circulated to the planning cell.
+5. MECHANICAL - EQUIPMENT (contd)
+   * Team deployed on TK-2101, balance to follow.
+   - TK-2101 — crew on site, progress steady.
+
+6. MECHANICAL - PIPING (contd)
+   - Team deployed on 2"-P-2301-A6A, balance to follow, as of 2026-05-28.
+   Erect line Unit header — 76% done.
+
+7. CIVIL WORKS (contd)
+   TK-2102 activity ongoing, no issues reported.
+   * TK-2101 — crew on site, progress steady, as of 29 May.
+
+8. GENERAL / SITE NARRATIVE
+   - Welder qualification tests conducted for four new welders.
+   - Additional 40 m of boundary drain built on the north side at OIL request.
+   - Heat stress advisory issued to all supervisors.
 
 REMARKS
-   - Manpower: 160 nos on site.
-   - Equipment: 4 nos deployed.
+   - Manpower: 197 nos on site.
+   - Equipment: 3 nos deployed.

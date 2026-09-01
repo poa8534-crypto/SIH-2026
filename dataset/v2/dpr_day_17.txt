@@ -1,37 +1,53 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 07/Oct/2026
-Weather: Fog till 0900, then clear
-Contractor: ABC Infra
-Site Engineer: M. Rahman
+DAILY PROGRESS REPORT
+Date: 2026-10-07  |  Weather: Overcast, light drizzle after 4pm
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: M. Rahman, Site Engineer
 
-1. PIPING
-   a) Mobilised for Support fabrication and installation, the twenty four inch line.
-   b) Crew deployed on Erect line 10"-P-2002-A5A, test header Unit 2.
-   c) Shop fabrication, Unit 2 flowline manifolds in progress, 38 of 64 m achieved.
-   d) Erect line 12"-P-1003-A5A, test separator loop completed 21 Oct.
-   e) Work front opened for Shop fabrication, 24"-P-1001-A1A spools on today.
-   f) Erect line 20"-P-2001-A1A, Unit 2 production header, finished 24 Oct 2026, JMR raised.
-   g) Erect Line 24"-P-1001-A1A, Unit 2 rack closed out 16 Oct.
-   h) Pipe supports and guides, Unit 2 rack stretch — completed on 26/Oct/2026.
-   i) 12"-P-2101-A1A — Hydrotest, tank farm manifold and pump suction delayed by 4 days, crane availability.
+1. PIPING WORKS
+   a) Erect the twelve inch line, test separator loop taken up at site.
+   b) Shop fabrication, 24"-P-1001-A1A spools started 6 Oct 2026.
+   c) Shop fabrication, Unit 2 flowline manifolds stopped, material shortage at store.
+   d) Hydrotest, tank farm manifold and pump suction, tag 12"-P-2101-A1A closed out 23/Sep/2026.
+   e) Crew deployed on Erect line 10"-P-2002-A5A, test header Unit 2.
+   f) Erect Line 24"-P-1001-A1A, Unit 2 rack, finished 16/Oct/2026, JMR raised.
+   g) Support fabrication and installation, the twenty four inch line delayed by 5 days, crane availability.
+   h) Erect line 20"-P-2001-A1A, Unit 2 production header — commenced 24 Oct.
+   i) Pipe supports and guides, Unit 2 rack stretch — 11 nos out of 19 done.
 
-2. EQUIPMENT
-   a) Work front opened for Water fill and settlement check, TK-2101 (TK-2101) on 6 Oct.
-   b) PK-2401 — Load test, compressor package PK-2401 started 14 Oct.
-   c) Water fill and calibration strapping, TK-2102 (TK-2102) under way at the work front.
+2. MECHANICAL - EQUIPMENT
+   a) Load test, compressor package PK-2401 in progress, 1 nos out of 1 achieved.
+   b) Water fill and calibration strapping, TK-2102 in progress, 525 of 1010 m3 achieved.
+   c) Mobilised for Water fill and settlement check, TK-2101.
+   d) Motor bump test, pumps P-1401A/B — progress slow, 30% only.
+   e) Performance run, crude transfer the pumps in progress, 1 nos out of 2 achieved.
 
-3. ELECTRICAL WORKS
-   a) Crew deployed on Substation energization.
-   b) Insulation resistance and hi-pot tests, MV cables to T-1 and T-2 — completed on 2026-09-28.
-   c) Protective relay setting and primary injection tests, 10 nos out of 12 complete so far.
+3. E&I - ELECTRICAL
+   a) Substation energization in progress, about 31% complete, as of 5 Oct 2026.
+   b) Insulation resistance and hi-pot tests, MV cables to the transformer and under way at the work front.
+   c) Protective relay setting and primary injection tests — completed on 2 Oct.
 
-4. HSE
-   a) Mechanical Completion, Tank Farm and Utilities in progress, about 60% complete.
+4. HSE / SAFETY
+   a) Mechanical Completion, Tank Farm and Utilities — closed out this week.
 
-5. GENERAL / SITE NARRATIVE
-   a) Subcontractor invoice verification pending with commercial team.
-   b) Ambient temperature 39 C, work rescheduled to early morning.
+5. E&I - INSTRUMENTATION (contd)
+   a) JB-101 — crew on site, progress steady.
+
+6. ELECTRICAL (contd)
+   a) T-2 activity ongoing, no issues reported.
+   b) T-2 — crew on site, progress steady.
+
+7. MECHANICAL - EQUIPMENT (contd)
+   a) V-2201 — crew on site, progress steady, as of 5 Oct.
+   b) Team deployed on WHCP-2101, balance to follow, as of 05/10/2026.
+
+8. CIVIL (contd)
+   a) Team deployed on V-1201, balance to follow, as of 4 Oct 2026.
+
+9. GENERAL / SITE NARRATIVE
+   a) Vendor representative for the compressor arrives next Tuesday.
+   b) Material reconciliation meeting held with the client store.
+   c) Provision of an extra fire extinguisher rack at the workshop, VO raised.
 
 REMARKS
-   - Manpower: 223 nos on site.
-   - Equipment: 4 nos deployed.
+   - Manpower: 128 nos on site.
+   - Equipment: 8 nos deployed.

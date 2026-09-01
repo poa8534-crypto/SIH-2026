@@ -1,38 +1,49 @@
-DAILY PROGRESS REPORT
-Date: 17/Dec/2026  Weather: Heavy rain 1400-1600
-prepared: R. Gogoi
+Progress report - 17/12/2026
+ABC Infra Pvt Ltd / OIL Duliajan
 
 1. PIPING
-   Install restriction orifice spools and sampling connections, Unit 1 completed.
-   * Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold in progress, 33 of 54 m achieved. thoda delay hua.
+   * erect the sixteen inch line, gas service, unit 1 manifold held up, awaiting client rfi clearance. material ka issue tha.
+   Install restriction orifice spools and sampling connections, Unit 1 ongoing.
 
-2. MECHANICAL - EQUIPMENT
-   * 72-hour integrated reliability run, process train — completed on 5 Jan.
+2. EQUIPMENT
+   - 72-hour integrated reliability run, process train stopped, material shortage at store.
 
 3. E&I - INSTRUMENTATION
-   Fire and gas detection system function test — progress slow, 42% only.
-   Calibrate transmitters and switches, workshop bench — completed on 12 Dec 2026.
-   Loop check, Unit 1 loops L-1101 to L-1128 closed out 16 Dec. thoda delay hua.
-   - Crew deployed on Cause and effect testing, ESD shutdown matrix.
-   - Integrated ESD and blowdown function test stopped, material shortage at store. baaki kal karenge.
-   work front opened for instr loops certified (rfsi) on 20 dec 2026. aaj shuru kiya.
-   * install pressure transmitters pt-1101 to pt-1114, unit 1 (pt-1101) closed out 4 dec 2026.
-   - Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A taken up at site.
-   Install instrument air tubing stubs and manifolds, takeoffs from the two inch line — completed on 2 Dec.
-   Install fire and gas detectors, wellhead and manifold in progress, 24 nos out of 32 achieved. material ka issue tha.
+   Cause and effect testing, ESD shutdown matrix — completed on 21 Dec.
+   mobilised for integrated esd and blowdown function test.
+   Fire and gas detection system function test — completed on 11 Dec. material ka issue tha.
+   * Instrument loops certified (RFSI) in progress, about 48% complete. material ka issue tha.
+   Calibrate transmitters and switches, workshop bench, 40 nos out of 60 complete so far.
+   Install fire and gas detectors, wellhead and manifold taken up at site. aaj shuru kiya.
+   Loop check, Unit 1 loops L-1101 to L-1128 is done and signed off.
+   * Install instrument air tubing stubs and manifolds, takeoffs from the two inch line started 14 Dec. thoda delay hua.
+   * Install pressure transmitters PT-1101 to PT-1114, Unit 1 ongoing.
+   Install ESD valve solenoids and actuation hook-up, blowdown headers the six inch line — completed on 21 Nov.
 
-4. HSE
-   pre-startup safety review (pssr) walkthrough, finished 2026-12-22, jmr raised.
-   * Operations training and familiarization, OIL staff completed. baaki kal karenge.
-   * rfsu unit 1 taken up at site.
-   - Compilation of handover dossiers and O&M manuals delayed by 5 days, crane availability.
-   - As-built markup verification and red-line transfer stopped, material shortage at store. aaj shuru kiya.
+4. SAFETY
+   * Operations training and familiarization, OIL staff — closed out this week. aaj shuru kiya.
+   * Pre-startup safety review (PSSR) walkthrough is done and signed off.
+   RFSU Unit 1 completed. kaam chalu hai.
+   * Compilation of handover dossiers and O&M manuals closed out 2026-12-02.
+   - As-built markup verification and red-line transfer taken up at site. kaam chalu hai.
 
-5. GENERAL / SITE NARRATIVE
-   Client comments on the P&ID revision under incorporation.
-   * Access road washed out after overnight rain, grading needed.
-   Snake sighting reported near the tank farm, area cordoned.
+5. CIVIL (contd)
+   * Team deployed on TK-2101, balance to follow.
+   V-1101 activity ongoing, no issues reported.
+   Progressed the V-1101 scope today, 65% complete.
+
+6. MECHANICAL - EQUIPMENT (contd)
+   * Fit internals and demisters, work in progress.
+   - V-1101 activity ongoing, no issues reported.
+
+7. E&I - ELECTRICAL (contd)
+   * T-2 activity ongoing, no issues reported.
+
+8. GENERAL / SITE NARRATIVE
+   - Waterlogging in the excavation, dewatering pumps deployed overnight.
+   Site ambulance serviced and returned to standby.
+   - Extra crash barrier at the tanker turning circle, quoted separately.
 
 REMARKS
-   - Manpower: 60 nos on site.
-   - Equipment: 4 nos deployed.
+   - Manpower: 172 nos on site.
+   - Equipment: 10 nos deployed.

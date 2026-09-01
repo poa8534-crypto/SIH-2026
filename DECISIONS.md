@@ -73,6 +73,7 @@ transcript of earlier design conversations. Nothing here is presented as recolle
 | D-021 | Thresholds are tuned on dev and reported on test | Active (qualifies D-002) |
 | D-022 | A tag's digit count is a numbering convention, not part of what a tag is | Active |
 | D-023 | A unit suffix is not a numerator | Active |
+| D-024 | A near-miss is a mention with its discriminator removed | Active (qualifies D-020) |
 
 **Historical entries H-001 … H-027 are indexed separately at the top of Part 0,
 immediately below.** Four of them qualify a D-entry directly and should be read with
@@ -2762,4 +2763,99 @@ on its own.
 ### Affected Areas
 `extraction/prepass.py`, `extraction/test_extractor.py` (new
 `TestFractionUnitSuffix`, 13 cases).
+
+---
+
+## 2026-09-01 / D-024 - A near-miss is a mention with its discriminator removed
+
+### Status
+Implemented. Supersedes the near-miss construction described in D-020.
+
+### Context
+D-020 recorded that the v2 corpus did not stress the ranker: held-out Top-1 was
+99.2%, only 35 of 700 mentions were near-misses, and 5 of those landed in the
+test split. A metric computed off five hard cases is a property of the corpus.
+
+The deeper problem was the *definition*. D-020's near-misses deliberately KEPT
+the discriminating token, so the label stayed unambiguous and the mention was
+merely superficially similar to a sibling. That is not a hard case; it is a
+normal case with distracting context.
+
+### Decision
+A near-miss is a mention from which the one token that decides the answer has
+been **removed**. Three kinds, built from the v2 schedule's own structure:
+
+| kind | construction | count |
+|---|---|---|
+| `discriminator_omitted` | two siblings differ by one token - Unit 1/Unit 2, Module 1/2/3, Ch 0-160/Ch 160-320 - and that token is deleted | 27 |
+| `adjacent_sequence` | same discipline, same id family, consecutive numbers; the mention keeps only the words the two steps share | 16 |
+| `shared_tag` | one tag carried by several activities (V-1101 appears on 9); the mention names the tag and gives only generic progress | 117 |
+
+**160 of 814 mentions (19.7%)**, against a floor of 150, placed **train 37 /
+dev 55 / test 68** - 74% in the splits where they are measured, by adding
+near-miss as a third stratification axis.
+
+Every near-miss row carries `near_miss_kind`, `missing_discriminator`, and
+`confusable_with` - the rest of the ambiguity set.
+
+### Why three metrics rather than one
+Strict top-1 on this subset is partly a measure of luck. When "Sleeper and
+column footings, pipe rack" is compatible with Module 1, 2 and 3, choosing the
+gold one is a coin toss the system cannot reason its way out of. So the
+evaluation reports:
+
+- **strict top-1** - the number asked for, honest and low;
+- **in-family top-1** - did the ranker land inside the ambiguity set, which is
+  the question the text can actually answer;
+- **the REVIEW rate** - because on text whose discriminator is missing, REVIEW
+  is the *correct* behaviour and a confident auto-link is wrong even when it
+  happens to hit the gold id.
+
+Sibling pairs are merged transitively into complete families. Emitting Module
+1/2/3 as three pairs left every `confusable_with` list one member short, which
+made in-family under-report a ranker that had not actually left the family.
+
+### Measured - held-out test (198 mentions, 185 positives)
+
+| Subset | n | Top-1 |
+|---|---:|---:|
+| Overall | 185 | **71.4%** |
+| Near-miss only | 68 | **26.5%** |
+| All the rest | 117 | **97.4%** |
+
+In-family top-1 on near-misses **75.0%** (51/68). Outcome on near-misses:
+**100% REVIEW**, 0 auto-links - the system does not confidently link text it
+cannot resolve. Auto-link precision **100.0%**, NO_MATCH rejection **84.6%**.
+
+Pooled 5-fold CV over all 814: overall **82.1%**, near-miss **25.0%** (160),
+rest **97.8%** (584), in-family **78.8%**, auto-link precision **99.8%**.
+
+### Reading it honestly
+**Top-1 fell from 99.2% to 71.4% and nothing about the matcher changed.** The
+earlier number measured a corpus that never asked a hard question. 97.4% on
+ordinary mentions is the same engine as before; 26.5% on near-misses is what it
+was always worth on ambiguous text, now visible.
+
+The 75% in-family figure is the useful one for engineering: retrieval finds the
+right neighbourhood three times in four and the *ranker* cannot separate
+siblings - which points at the discriminator features, not at recall.
+
+`shared_tag` is the hardest kind at 20.4%, and it is also the most realistic:
+one tag legitimately spans fabrication, erection, testing and commissioning of
+the same item, and field prose routinely names the tag and nothing else.
+
+### One thing this exposed before the family merge
+An intermediate run scored auto-link precision **98.0%** - below the 99% floor -
+on two wrong auto-links, one of them a Module 1/2/3 near-miss linked at margin
+0.031. After merging families the operating point moved to `margin_min=0.12` and
+precision returned to 100%, but the lesson stands: **the margin rule is what
+protects precision on ambiguous text, and it was previously being calibrated
+against a corpus with almost no ambiguous text in it.**
+
+### Affected Areas
+`generate_v2_dataset.py` (`build_near_miss_families`, `build_near_miss_queue`,
+`build_near_miss`, `_strip_tokens`, three-axis stratification),
+`dataset/v2/*` (regenerated), `eval.py` (`print_near_miss`).
+No threshold was lowered and no near-miss was removed to raise a score.
+`matching/` untouched.
 

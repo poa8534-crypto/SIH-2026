@@ -1,35 +1,48 @@
-DAILY PROGRESS REPORT  (2026-06-22)
-Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt. Ltd.
-Weather: Hot, 38C  |  Prepared by: Vikram Saikia
+DAILY PROGRESS REPORT  (22/06/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra
+Weather: Overcast, light drizzle after 4pm  |  Prepared by: Vikram Saikia
 
-1. PIPING
-   a) Rack cross bracing and kicker supports, full run in progress, 5 nos out of 14 achieved.
-   b) Pipe rack erection, crude header, Unit 2 to tank farm ongoing.
-   c) Erect rack steel, Module 2, 3 80-110) portion only, balance still open.
-   d) Rack erection, Module 3 tier 1, flare header the eighteen inch line and utility lines, finished 24/Jun/2026, JMR raised.
-   e) Erect multi-tier rack steel, Module 1 (Ch 0-40) started this morning.
-   f) Erect rack steel, Module 2 (Ch 40-80) — 15 of 33 mt done.
-   g) Install tank dewatering lines the three inch line held up, awaiting client RFI clearance.
+1. MECHANICAL - PIPING
+   a) Erect rack steel, Module 3 (Ch 80-110) ongoing.
+   b) Rack erection, Module 3 tier 1, flare header 18"-P-1301-B7A and utility lines closed out 24 Jun.
+   c) Rack cross bracing and kicker supports, full run completed 2026-06-26.
+   d) Pipe rack erection, crude header, Unit 2 to tank farm in progress, 16 of 36 m achieved.
+   e) Install tank dewatering lines 3"-P-2104-C5B, 6 of 22 m complete so far.
+   f) Erect multi-tier rack steel, Module 1 (Ch 0-40) ongoing.
+   g) Erect rack steel, Module 2 (Ch 40-80), 27 of 33 mt complete so far.
 
-2. EQUIPMENT
-   a) Set fuel gas skid, utilities plinth U1 — closed out this week.
-   b) Tank nozzles and manways fitting, TK-2101 and TK-2102, 14 nos out of 18 complete so far.
-   c) Plumb, alignment and bolt torque, V-1101, tag V-1101, 1 nos out of 1 complete so far, as of 20 Jun.
-   d) V-1201 — Rig and set glycol contactor V-1201 — completed on 15 Jun.
-   e) Tank roof structure and fittings, the storage tank — 7 of 14 mt done.
-   f) Rig and set vertical the separator vessel on foundation closed out 11/Jun/2026.
-   g) Monorail and davit erection, separator platforms is done and signed off.
+2. STATIC EQUIPMENT
+   a) Plumb, alignment and bolt torque, V-1101 — progress slow, 54% only.
+   b) Crew deployed on Set fuel gas skid, utilities plinth U1.
+   c) Tank roof structure and fittings, TK-2101 started 20 Jun.
+   d) Work front opened for Rig and set vertical separator V-1101 on foundation on today.
+   e) Monorail and davit erection, separator platforms — 1 nos out of 1 done.
+   f) Rig and set glycol contactor V-1201 held up, awaiting client RFI clearance.
+   g) Tank nozzles and manways fitting, the storage tank and delayed by 2 days, crane availability.
 
-3. ELECTRICAL
-   a) Install cable tray and risers, substation building — completed on 11 Jun.
+3. ELECTRICAL WORKS
+   a) Install cable tray and risers, substation building under way at the work front.
 
-4. E&I - INSTRUMENTATION
-   a) Install level transmitters transmitter to the level transmitter, separators in progress, 4 nos out of 6 achieved.
+4. INSTRUMENTS
+   a) Install level transmitters LT-1201 to LT-1206, separators in progress, 2 nos out of 6 achieved.
 
-5. GENERAL / SITE NARRATIVE
-   a) Site flooded near the south fence after the Brahmaputra rose.
-   b) Rebar cutting and bending yard relocated to the east side.
+5. MECHANICAL - PIPING (contd)
+   a) Progressed the 2"-P-2301-A6A scope today, 78% complete.
+   b) Crew working on Hydrotest firewater main 10"- -1602-B1A, Unit 1 to.
+
+6. E&I - INSTRUMENTATION (contd)
+   a) Loop check, Unit loops to ongoing at site.
+
+7. 1. CIVIL / STRUCTURAL (contd)
+   a) Work continuing on V-1101, about 34% done.
+   b) Cable trench with precast covers, to substation — 25% done.
+
+8. SAFETY (contd)
+
+9. GENERAL / SITE NARRATIVE
+   a) Site coordination meeting minutes circulated to all agencies.
+   b) Diesel consumption reconciliation for the month completed.
 
 REMARKS
-   - Manpower: 84 nos on site.
-   - Equipment: 9 nos deployed.
+   - Manpower: 132 nos on site.
+   - Equipment: 6 nos deployed.

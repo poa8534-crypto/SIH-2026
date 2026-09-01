@@ -1,27 +1,37 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 30/Nov/2026
-Weather: Overcast, light drizzle after 4pm
-Contractor: ABC Infra Pvt. Ltd.
-Site Engineer: A. Bhuyan
+DAILY PROGRESS REPORT  (30/Nov/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Clear, 31C  |  Prepared by: R. Gogoi
 
-1. PIPING WORKS
-   a) Install restriction orifice spools and sampling connections, Unit 1 in progress, 2 nos out of 6 achieved.
-   b) Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold, 45 of 54 m complete so far, as of 28 Nov.
+1. PIPING
+   a) Install restriction orifice spools and sampling connections, Unit 1 closed out 27/Nov/2026.
+   b) Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold in progress, 30 of 54 m achieved, as of 29 Nov.
 
-2. INSTRUMENTS
-   a) PT-1101 — Install pressure transmitters PT-1101 to PT-1114, Unit 1 in progress, 5 nos out of 14 achieved, as of 28 Nov.
-   b) Install fire and gas detectors, wellhead and manifold, 11 nos out of 32 complete so far, as of 28 Nov.
-   c) Crew deployed on Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A.
-   d) Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A, 5 nos out of 10 complete so far.
+2. INSTRUMENTATION
+   a) Install fire and gas detectors, wellhead and manifold held up, awaiting client RFI clearance.
+   b) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line completed.
+   c) Install pressure transmitters transmitter to the pressure transmitter, Unit 1 — completed on 2026-11-30.
+   d) Install ESD valve solenoids and actuation hook-up, blowdown headers the six inch line, 7 nos out of 10 complete so far.
 
 3. HSE
-   a) Compilation of handover dossiers and O&M manuals held up, awaiting client RFI clearance.
-   b) As-built markup verification and red-line transfer completed 25/11/2026.
+   a) Compilation of handover dossiers and O&M manuals taken up at site.
+   b) As-built markup verification and red-line transfer — completed on 26/11/2026.
 
-4. GENERAL / SITE NARRATIVE
-   a) Scaffolding material returned to the hire company, 8 loads.
-   b) Material test certificates for the imported valves under verification.
+4. E&I - INSTRUMENTATION (contd)
+   a) Team deployed on JB-101, balance to follow, as of 28 Nov.
+   b) JB-101 — crew on site, progress steady.
+
+5. EQUIPMENT (contd)
+   a) Team deployed on V-1101, balance to follow.
+   b) Work continuing on TK-2102, about 20% done.
+   c) Progressed the PK-2401 scope today, 74% complete, as of 29 Nov.
+
+6. CIVIL WORKS (contd)
+   a) Sleeper and column footings, pipe rack ongoing at site, as of 27/Nov/2026.
+
+7. GENERAL / SITE NARRATIVE
+   a) Subcontractor invoice verification pending with commercial team.
+   b) Idle time recorded for the piling rig, awaiting client decision.
 
 REMARKS
-   - Manpower: 239 nos on site.
-   - Equipment: 9 nos deployed.
+   - Manpower: 142 nos on site.
+   - Equipment: 10 nos deployed.

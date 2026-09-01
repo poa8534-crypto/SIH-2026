@@ -1,24 +1,42 @@
-DAILY PROGRESS REPORT
-Date: 11/Mar/2026  |  Weather: Fog till 0900, then clear
-Contractor: ABC Infra  |  Project: OIL Well-Site Duliajan
-Prepared by: S. Hazarika, Site Engineer
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 11/Mar/2026
+Weather: Windy, 28C, gusts 30 km/h
+Contractor: ABC Infra Pvt Ltd
+Site Engineer: M. Rahman
 
-1. CIVIL
-   a) Work front opened for Topographic survey and grid establishment, well-site boundary on 8 Mar.
-   b) Clearing and grubbing, well pad and approach road delayed by 3 days, crane availability.
-   c) Approach road widening, OIL main gate to site (Ch 0-400) completed 11/03/2026.
-   d) Cut and fill to formation level, well pad Unit 2 started this morning.
-   e) Roadside drain slabs, approach road in progress, 266 of 380 m achieved.
-   f) Bench marking and centre-line offsets, all areas in progress, about 37% complete, as of 11/Mar/2026.
+1. CIVIL WORKS
+   a) Work front opened for Roadside drain slabs, approach road on 14 Mar 2026.
+   b) Clearing and grubbing, well pad and approach road completed 9 Mar.
+   c) Approach road widening, OIL main gate to site (Ch 0-400) in progress, 246 of 400 lm achieved.
+   d) Work front opened for Bench marking and centre-line offsets, all areas on 2026-03-10.
+   e) Topographic survey and grid establishment, well-site boundary — 3921 of 4800 m2 done.
+   f) Cut and fill to formation level, well pad Unit 2 ongoing.
 
-2. SAFETY
-   a) Erection of temporary site office and stores, finished yesterday, JMR raised.
-   b) Mobilised for Fabrication shed and pipe yard establishment.
+2. HSE / SAFETY
+   a) Erection of temporary site office and stores ongoing.
+   b) Fabrication shed and pipe yard establishment started 12 Mar 2026.
 
-3. GENERAL / SITE NARRATIVE
-   a) Extra soak pit constructed for wash bay, variation order raised.
-   b) Radiography film review pending with the client inspector.
+3. ELECTRICAL WORKS (contd)
+   a) Crew working on Set and terminate transformer, 11/0.433 kV, as of 8 Mar 2026.
+
+4. 1. CIVIL / STRUCTURAL (contd)
+   a) Progressed the V-1201 scope today, 76% complete.
+
+5. EQUIPMENT (contd)
+   a) TK-2102 — crew on site, progress steady, as of 8 Mar.
+
+6. MECHANICAL - PIPING (contd)
+   a) 18"-P-1301-B7A — crew on site, progress steady, as of 9 Mar.
+   b) 20"-P-2001-A1A — crew on site, progress steady.
+
+7. HSE (contd)
+   a) Crew working on Mechanical Completion Unit 2, as of 10/03/2026.
+
+8. GENERAL / SITE NARRATIVE
+   a) NCR raised by the client on concrete cube results, under review.
+   b) Night shift cancelled due to lighting tower breakdown.
+   c) Snake sighting reported near the tank farm, area cordoned.
 
 REMARKS
-   - Manpower: 158 nos on site.
-   - Equipment: 9 nos deployed.
+   - Manpower: 207 nos on site.
+   - Equipment: 11 nos deployed.

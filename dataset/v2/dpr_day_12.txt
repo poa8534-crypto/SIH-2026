@@ -1,26 +1,39 @@
 DAILY PROGRESS REPORT
-Date: 02/Aug/2026  |  Weather: Fog till 0900, then clear
-Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
-Prepared by: R. Gogoi, Site Engineer
+Date: 2026-08-02  |  Weather: Overcast, light drizzle after 4pm
+Contractor: M/s ABC Infrastructure  |  Project: OIL Well-Site Duliajan
+Prepared by: M. Rahman, Site Engineer
 
 1. PIPING
-   a) Instrument air header 2"-P-2301-A6A, rack to Unit 2 completed 25 Jul.
-   b) Nitrogen line 3"-P-2302-A6A, package to header, finished 27 Jul 2026, JMR raised.
+   a) Instrument air header the two inch line, rack to Unit 2 in progress, 63 of 95 m achieved, as of 2026-08-01.
+   b) Nitrogen line 3"-P-2302-A6A, package to header closed out 27 Jul 2026.
 
-2. E&I - ELECTRICAL
-   a) Cable glanding, MCC-1 and MCC-2 feeders under way at the work front.
-   b) Pull MV cable 11 kV, — this is the transformer one, 35% done.
-   c) Pull LV power cables, pump motors, 85 of 320 m complete so far.
-   d) Glanding and termination, LV panels, substation, finished 01/08/2026, JMR raised.
-   e) Emergency lighting and exit signage, control building taken up at site.
-   f) Core termination and lacing, MCC-1 and MCC-2 under way at the work front.
-   g) Set and terminate transformer T-1, 11/0.433 kV completed 31 Jul.
-   h) Set and terminate transformer T-2, 11/0.433 kV delayed by 2 days, crane availability.
+2. ELECTRICAL WORKS
+   a) Core termination and lacing, MCC-1 and MCC-2 — 72 nos out of 92 done.
+   b) Glanding and termination, LV panels, substation — commenced 1 Aug.
+   c) Cable glanding, MCC-1 and MCC-2 feeders held up, awaiting client RFI clearance.
+   d) Set and terminate transformer T-1, 11/0.433 kV closed out 30/07/2026.
+   e) Pull LV power cables, pump motors under way at the work front.
+   f) Emergency lighting and exit signage, control building — commenced 30 Jul.
+   g) Set and terminate transformer T-2, 11/0.433 kV — 1 nos out of 1 done.
+   h) Pull MV cable 11 kV, substation to transformer T-1 is done and signed off.
 
-3. GENERAL / SITE NARRATIVE
-   a) Site query raised on the foundation bolt projection detail.
-   b) Night shift cancelled due to lighting tower breakdown.
+3. CIVIL WORKS (contd)
+   a) Team deployed on V-1101, balance to follow.
+   b) V-1101 — crew on site, progress steady, as of 2 Aug.
+   c) Cut and fill to formation level, well, balance to be completed next week.
+
+4. EQUIPMENT (contd)
+   a) Progressed the V-2101 scope today, 84% complete.
+
+5. PIPING (contd)
+   a) Team deployed on 24"-P-1001-A1A, balance to follow, as of 31 Jul.
+   b) Progressed the 20"-P-2001-A1A scope today, 53% complete.
+
+6. GENERAL / SITE NARRATIVE
+   a) Safety harness inspection carried out, 4 units condemned.
+   b) Temporary diesel bowser stand fabricated at the laydown, unplanned scope.
+   c) Material test certificates for the imported valves under verification.
 
 REMARKS
-   - Manpower: 131 nos on site.
-   - Equipment: 6 nos deployed.
+   - Manpower: 211 nos on site.
+   - Equipment: 9 nos deployed.

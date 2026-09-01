@@ -1,38 +1,49 @@
-DAILY PROGRESS REPORT  (11/01/2027)
-Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra
-Weather: Fog till 0900, then clear  |  Prepared by: A. Bhuyan
+DAILY PROGRESS REPORT
+Date: 11/01/2027  |  Weather: Heavy rain 1400-1600
+Contractor: ABC Infra Pvt. Ltd.  |  Project: OIL Well-Site Duliajan
+Prepared by: K. Baruah, Site Engineer
 
 1. PIPING
-   a) Install restriction orifice spools and sampling connections, Unit 1 — closed out this week.
-   b) Erect the twenty four inch, gas service, 1 manifold portion only, balance still open.
+   a) Install restriction orifice spools and sampling connections, Unit 1, 4 nos out of 6 complete so far.
+   b) Erect line 16"-P-1002-A1A, gas service, Unit 1 manifold held up, awaiting client RFI clearance.
 
-2. STATIC EQUIPMENT
-   a) First crude transfer to TK-2101 — progress slow, 37% only.
-   b) 72-hour integrated reliability run, process train completed 08/Jan/2027.
+2. EQUIPMENT
+   a) First crude transfer to TK-2101 stopped, material shortage at store.
+   b) 72-hour integrated reliability run, process train completed 2027-01-08.
 
-3. INSTRUMENTATION
-   a) Cause and effect testing, ESD shutdown matrix held up, awaiting client RFI clearance.
-   b) Install fire and gas detectors, wellhead and manifold completed 04/12/2026.
-   c) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line ongoing.
-   d) Install pressure transmitters PT-1101 to PT-1114, Unit 1 (PT-1101) — 10 nos out of 14 done, as of 10/Jan/2027.
-   e) Calibrate transmitters and switches, workshop bench completed 12 Dec 2026.
-   f) Crew deployed on Integrated ESD and blowdown function test.
-   g) Fire and gas detection system function test started this morning.
-   h) Crew deployed on Loop check, Unit 1 loops L-1101 to L-1128.
-   i) Instrument loops certified (RFSI) started yesterday.
+3. E&I - INSTRUMENTATION
+   a) Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A closed out 2 Dec.
+   b) Work front opened for Instrument loops certified (RFSI) on 11 Jan.
+   c) Fire and gas detection system function test — 8 nos out of 32 done.
+   d) Install pressure transmitters PT-1101 to PT-1114, Unit 1 in progress, 4 nos out of 14 achieved.
+   e) Integrated ESD and blowdown function test completed.
+   f) Loop check, Unit 1 loops to the unit started 11/Jan/2027.
+   g) Calibrate transmitters and switches, workshop bench ongoing.
+   h) Cause and effect testing, ESD shutdown matrix closed out 29 Dec.
+   i) Install fire and gas detectors, wellhead and manifold, 14 nos out of 32 complete so far.
 
 4. HSE / SAFETY
-   a) RFSU Unit 2 closed out 2027-02-04.
-   b) Provisional handover to Operations — completed on 27 Feb.
-   c) Operations training and familiarization, OIL staff started 11 Jan 2027.
-   d) RFSU Unit 2 progressing at the 1 location as of 10/01/2027.
-   e) Pre-startup safety review (PSSR) walkthrough taken up at site.
+   a) Provisional handover to Operations closed out 27 Feb 2027.
+   b) RFSU Unit 2 — completed on 4 Feb.
+   c) RFSU Unit 1 completed 04/01/2027.
+   d) Pre-startup safety review (PSSR) walkthrough is done and signed off.
+   e) Crew deployed on Operations training and familiarization, OIL staff.
 
-5. GENERAL / SITE NARRATIVE
-   a) Welder qualification tests conducted for four new welders.
-   b) Vendor representative for the compressor arrives next Tuesday.
-   c) Housekeeping drive carried out across all work fronts.
+5. STATIC EQUIPMENT (contd)
+   a) V-1101 — crew on site, progress steady, as of 8 Jan 2027.
+   b) Progressed the TK-2101 scope today, 22% complete, as of 9 Jan.
+   c) TK-2101 — crew on site, progress steady.
+
+6. MECHANICAL - PIPING (contd)
+   a) Crew working on Erect rack steel, (Ch ), as of 8 Jan 2027.
+   b) 12"-P-2101-A1A activity ongoing, no issues reported, as of 8 Jan.
+   c) Team deployed on 10"-P-1602-B1A, balance to follow, as of 08/01/2027.
+
+7. GENERAL / SITE NARRATIVE
+   a) As-built markup received from the survey team for checking.
+   b) Client asked for a second wash bay, awaiting commercial approval.
+   c) Concrete mix design approval received from the consultant.
 
 REMARKS
-   - Manpower: 226 nos on site.
+   - Manpower: 157 nos on site.
    - Equipment: 3 nos deployed.

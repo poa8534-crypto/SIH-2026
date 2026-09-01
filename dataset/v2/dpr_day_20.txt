@@ -1,39 +1,48 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 2026-11-17
-Weather: Clear, 31C
-Contractor: ABC Infra Pvt Ltd
-Site Engineer: J. Tamuly
+DAILY PROGRESS REPORT  (17/11/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: M/s ABC Infrastructure
+Weather: Overcast, light drizzle after 4pm  |  Prepared by: Vikram Saikia
 
-1. PIPING
-   a) Flush, dry and reinstate, test packs 1-3 taken up at site.
-   b) Air blowing and drying, instrument air header taken up at site.
-   c) Hydrotest package 1, Unit 1, 2, 2 header twenty portion only, balance still open.
-   d) Field weld and NDT, crude header rack welds 1-18 in progress, 12 nos out of 18 achieved.
-   e) Erect crude header the twenty four inch line, tank farm approach in progress, 23 of 36 m achieved.
+1. MECHANICAL - PIPING
+   a) Flush, dry and reinstate, test packs 1-3 completed.
+   b) Hydrotest package 2, Unit 2 header the twenty inch line — 2 nos out of 3 done.
+   c) Air blowing and drying, instrument air header in progress, 1 nos out of 1 achieved.
+   d) Erect crude header 24"-P-1001-A1A, tank farm approach delayed by 3 days, crane availability.
+   e) Field weld and NDT, crude header rack welds 1-18, finished 09/11/2026, JMR raised.
 
 2. STATIC EQUIPMENT
-   a) Tightness and pressure test, separators V-1101 and V-1201, tag V-1101 held up, awaiting client RFI clearance.
-   b) FST-1301 — Flare pilot ignition and pilot line purge test ongoing.
+   a) Tightness and pressure test, separators V-1101 and V-1201 completed.
+   b) Flare pilot ignition and pilot line purge test (FST-1301), 1 nos out of 1 complete so far.
 
-3. E&I - INSTRUMENTATION
-   a) Loop check, Unit 2 loops to the unit in progress, 19 nos out of 22 achieved.
-   b) Revalidation of loop checks, post hydrotest — 55 nos out of 66 done.
-   c) Install ESD valve solenoids and actuation hook-up, blowdown headers 6"-P-1302-A6A completed 2026-11-18.
-   d) Loop check, tank farm and utilities loops started 16/11/2026.
-   e) Install flow meter elements FE-1401 to FE-1408, Unit 2, tag FE-1401, finished 05/Nov/2026, JMR raised.
+3. INSTRUMENTATION
+   a) Install ESD valve solenoids and actuation hook-up, blowdown headers the six inch line — progress slow, 55% only.
+   b) Loop check, tank farm and utilities loops in progress, 6 nos out of 16 achieved.
+   c) Revalidation of loop checks, post hydrotest in progress, 49 nos out of 66 achieved.
+   d) Install flow meter elements FE-1401 to FE-1408, Unit 2, finished 5 Nov, JMR raised.
+   e) Loop check, Unit 2 loops to the unit — progress slow, 43% only.
 
 4. SAFETY
-   a) PCB consent and factory inspectorate compliance walkthrough in progress, about 42% complete.
-   b) As-built markup verification and red-line transfer is done and signed off.
-   c) PESO statutory inspection, flare system and pressure vessels V-1101/V-1201/V-2101 closed out 9 Nov.
-   d) PESO statutory inspection, tanks the storage tank and ongoing.
-   e) Mechanical Completion Unit 2 — completed on 9 Nov.
+   a) PESO statutory inspection, flare system and pressure vessels V-1101/V-1201/V-2101, finished 2026-11-09, JMR raised.
+   b) As-built markup verification and red-line transfer under way at the work front.
+   c) PCB consent and factory inspectorate compliance walkthrough under way at the work front.
+   d) PESO statutory inspection, tanks TK-2101 and TK-2102 completed 12 Nov.
+   e) Mechanical Completion Unit 2 taken up at site.
 
-5. GENERAL / SITE NARRATIVE
-   a) Heat stress advisory issued to all supervisors.
-   b) Third party inspection agency mobilised for weld review.
-   c) Permit audit carried out by the client HSE officer.
+5. 1. CIVIL / STRUCTURAL (contd)
+   a) FST-1301 — crew on site, progress steady, as of 15 Nov.
+   b) Lay and compact WMM, road U1 — 21% done.
+   c) Crew working on and internal road Unit, as of 17 Nov.
+   d) internal road Unit — 61% done, as of 17/Nov/2026.
+
+6. E&I - ELECTRICAL (contd)
+   a) Work continuing on WHCP-2101, about 80% done.
+
+7. MECHANICAL - EQUIPMENT (contd)
+   a) Team deployed on V-1101, balance to follow.
+
+8. GENERAL / SITE NARRATIVE
+   a) Site flooded near the south fence after the Brahmaputra rose.
+   b) Housekeeping drive carried out across all work fronts.
 
 REMARKS
-   - Manpower: 78 nos on site.
-   - Equipment: 4 nos deployed.
+   - Manpower: 143 nos on site.
+   - Equipment: 5 nos deployed.

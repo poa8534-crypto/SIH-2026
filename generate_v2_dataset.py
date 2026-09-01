@@ -54,6 +54,12 @@ N_DPRS = 28
 MESSY_DPRS = {7, 15, 22, 26}          # deliberately degraded reports
 TARGET_MENTIONS = 700
 MIN_HARD_NEGATIVES = 60
+#: Near-misses are the only part of the corpus that measures whether the
+#: ranker can tell siblings apart. At 35 of 700 the previous corpus could
+#: not answer that question: five landed in test, so held-out Top-1 of
+#: 99.2% was a property of the corpus, not of the matcher.
+MIN_NEAR_MISSES = 150
+TARGET_NEAR_MISSES = 175
 MIN_TAG_FREE_FRACTION = 0.35
 
 rng = random.Random(SEED)
@@ -439,49 +445,288 @@ HARD_NEGATIVES: list[str] = [
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Near-miss pairs
+# Near-miss families
 # ══════════════════════════════════════════════════════════════════════════════
+#
+# A near-miss is NOT "text that superficially resembles another activity". It is
+# text from which the one token that decides the answer has been REMOVED, so the
+# correct activity is genuinely ambiguous from the mention alone.
+#
+# That distinction matters for what the right behaviour is. When the
+# discriminator is present, a confident auto-link is correct. When it is absent,
+# the honest outcome is REVIEW — the system cannot know which sibling is meant,
+# and a confident auto-link is wrong even when it happens to land on the gold
+# label. The evaluation therefore reports strict top-1, in-family top-1, and the
+# REVIEW rate on this subset, because strict top-1 alone rewards a lucky guess.
+#
+# Three kinds, as they occur in the v2 schedule:
+#
+#   discriminator_omitted  two siblings differing by one token — Unit 1/Unit 2,
+#                          Module 2/Module 3, Ch 0-160/Ch 160-320 — with that
+#                          token deleted from the mention
+#   adjacent_sequence      same discipline, same id family, consecutive numbers,
+#                          same area; the mention names the work but not which
+#                          step of it
+#   shared_tag             one tag carried by several activities (V-1101 appears
+#                          on 9), with the mention naming the tag and giving only
+#                          generic progress — fabrication or erection, unstated
 
-def near_miss_partner(act: dict, by_disc: dict[str, list[dict]]) -> dict | None:
-    """A sibling activity of the same discipline whose description is close
-    enough that a careless matcher would confuse the two.
+NEAR_MISS_KINDS = ("discriminator_omitted", "adjacent_sequence", "shared_tag")
 
-    These are the pairs worth testing: v2 is full of "Unit 1"/"Unit 2" and
-    "Module 2"/"Module 3" siblings that differ by one token. The mention keeps
-    the discriminator, so the label is unambiguous — what makes it hard is that
-    everything else in the sentence points at the wrong row.
+
+def _desc_tokens(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9\"']+", text.lower()))
+
+
+def build_near_miss_families(activities: list[dict]) -> list[dict]:
+    """Every group of activities a mention could genuinely fail to separate.
+
+    Returns dicts of {kind, members, discriminator}. `members` is the ambiguity
+    set: the mention is compatible with ALL of them, and one is chosen as the
+    gold label.
     """
-    words = set(re.findall(r"[a-z]{4,}", act["description"].lower()))
-    best, best_score = None, 0.0
-    for other in by_disc[act["discipline"]]:
-        if other["activity_id"] == act["activity_id"]:
+    import itertools
+
+    families: list[dict] = []
+    seen_pairs: set[tuple[str, str]] = set()
+
+    # ── discriminator_omitted ───────────────────────────────────────────────
+    for a, b in itertools.combinations(activities, 2):
+        if a["discipline"] != b["discipline"]:
             continue
-        ow = set(re.findall(r"[a-z]{4,}", other["description"].lower()))
-        if not words or not ow:
+        ta, tb = _desc_tokens(a["description"]), _desc_tokens(b["description"])
+        if not ta or not tb:
             continue
-        overlap = len(words & ow) / len(words | ow)
-        if overlap > best_score:
-            best, best_score = other, overlap
-    return best if best_score >= 0.45 else None
+        jac = len(ta & tb) / len(ta | tb)
+        da, db = ta - tb, tb - ta
+        if jac >= 0.55 and 1 <= len(da) <= 3 and 1 <= len(db) <= 3:
+            key = tuple(sorted((a["activity_id"], b["activity_id"])))
+            seen_pairs.add(key)
+            families.append({
+                "kind": "discriminator_omitted",
+                "members": [a, b],
+                "discriminator": " / ".join(sorted(da) + sorted(db)),
+                "drop_tokens": sorted(da | db),
+            })
+
+    # ── adjacent_sequence ───────────────────────────────────────────────────
+    fam: dict[tuple[str, str], list[tuple[int, dict]]] = defaultdict(list)
+    for a in activities:
+        prefix, _, num = a["activity_id"].rpartition("-")
+        if num.isdigit():
+            fam[(a["discipline"], prefix)].append((int(num), a))
+    for _key, group in fam.items():
+        group.sort(key=lambda t: t[0])
+        for (n1, a), (n2, b) in zip(group, group[1:]):
+            if n2 - n1 > 4:
+                continue
+            pair = tuple(sorted((a["activity_id"], b["activity_id"])))
+            if pair in seen_pairs:
+                continue
+            ta, tb = _desc_tokens(a["description"]), _desc_tokens(b["description"])
+            shared = {t for t in ta & tb if t not in _FILLER and len(t) > 2}
+            # Two consecutive ids are not confusable just because the numbers
+            # are consecutive — they have to describe recognisably the same
+            # work. Without this the "shared" core collapses to a stray "and"
+            # and the mention becomes noise rather than a hard case.
+            if len(shared) < 4 or len(shared) / len(ta | tb) < 0.28:
+                continue
+            seen_pairs.add(pair)
+            families.append({
+                "kind": "adjacent_sequence",
+                "members": [a, b],
+                "discriminator": " / ".join(sorted(ta ^ tb)[:6]),
+                "drop_tokens": sorted(ta ^ tb),
+                "shared_tokens": shared,
+            })
+
+    # Merge transitively-overlapping sibling pairs into complete families.
+    # "pipe rack Module 1 / 2 / 3" is a THREE-way ambiguity, and emitting it as
+    # three pairs leaves every `confusable_with` list one member short — which
+    # makes the in-family metric under-report, because a ranker that picked
+    # Module 3 when the gold was Module 1 looks like it left the family when it
+    # did not.
+    merged: list[dict] = []
+    for fam in families:
+        ids = {m["activity_id"] for m in fam["members"]}
+        for other in merged:
+            if other["kind"] != fam["kind"]:
+                continue
+            if ids & {m["activity_id"] for m in other["members"]}:
+                known = {m["activity_id"] for m in other["members"]}
+                other["members"].extend(
+                    m for m in fam["members"] if m["activity_id"] not in known)
+                other["drop_tokens"] = sorted(
+                    set(other["drop_tokens"]) | set(fam["drop_tokens"]))
+                if "shared_tokens" in other and "shared_tokens" in fam:
+                    other["shared_tokens"] = other["shared_tokens"] & fam["shared_tokens"]
+                break
+        else:
+            merged.append(fam)
+    families = merged
+
+    # ── shared_tag ──────────────────────────────────────────────────────────
+    bytag: dict[str, list[dict]] = defaultdict(list)
+    for a in activities:
+        if a.get("tag"):
+            bytag[a["tag"]].append(a)
+    for tag, members in bytag.items():
+        if len(members) < 2:
+            continue
+        families.append({
+            "kind": "shared_tag",
+            "members": members,
+            "discriminator": f"which activity on {tag}",
+            "drop_tokens": [],
+            "tag": tag,
+        })
+
+    return families
 
 
-def build_near_miss_mention(act: dict, partner: dict, report_date: date) -> tuple[str, str]:
-    """Text that reads like the partner activity but is genuinely about `act`."""
-    _tagged, free = core_phrases(act)
-    partner_free = make_tag_free(partner["description"])
-    # Lead with the shared language, land the discriminator at the end.
-    shared = " ".join(partner_free.split()[:5])
-    disc_bits = [w for w in free.split() if w.lower() not in partner_free.lower()]
-    tail = " ".join(disc_bits[-4:]) if disc_bits else free.split()[-1]
-    when = report_date - timedelta(days=rng.randrange(0, 4))
-    text_date, resolved = render_date(when, report_date)
+#: Words that carry no discriminating meaning, so deleting them does not make a
+#: mention ambiguous and they must not be counted as the removed discriminator.
+_FILLER = {"and", "the", "of", "for", "to", "a", "an", "with", "on", "in", "at"}
+
+#: Positional nouns that only mean something with their number attached.
+#: Deleting the "2" from "Module 2" and leaving "Module" behind produces text no
+#: engineer would write, and leaves a dangling word the matcher can still key on.
+_POSITIONAL = ("unit", "module", "tier", "zone", "train", "phase", "section",
+               "ch", "course", "package", "stage", "block", "bay", "pad", "no")
+
+
+#: A whole tag-like token, so a discriminator that lives inside one takes the
+#: tag with it. Deleting "1101" out of "V-1101" leaves a bare "V", which is
+#: neither something an engineer would write nor genuinely ambiguous — the
+#: stub still points at the same family.
+_TAGGISH_RE = re.compile(r'[A-Za-z0-9"]+(?:[-–][A-Za-z0-9"]+)+')
+
+
+def _strip_tokens(text: str, drop: list[str]) -> str:
+    """Remove the discriminating tokens, and whatever they leave dangling."""
+    drop_set = {t.lower() for t in drop if t not in _FILLER}
+    if not drop_set:
+        return text.strip()
+
+    # Compound tokens first: "Ch 0-160" and "V-1101" must go whole or not at all.
+    def kill_compound(m):
+        parts = re.split(r'[-–]', m.group(0).lower())
+        return "" if any(part in drop_set for part in parts) else m.group(0)
+
+    out = _TAGGISH_RE.sub(kill_compound, text)
+
+    for tok in sorted(drop_set, key=len, reverse=True):
+        # A number goes together with the positional noun it qualifies, so
+        # "well pad Unit 1" becomes "well pad", not "well pad Unit".
+        if tok.isdigit():
+            out = re.sub(
+                rf'\b(?:{"|".join(_POSITIONAL)})\s*-?\s*{re.escape(tok)}\b',
+                "", out, flags=re.IGNORECASE)
+        out = re.sub(rf'(?<![A-Za-z0-9]){re.escape(tok)}(?![A-Za-z0-9])', "",
+                     out, flags=re.IGNORECASE)
+
+    # A positional noun left with no number is itself dangling.
+    out = re.sub(
+        rf'\b(?:{"|".join(_POSITIONAL)})\b(?=\s*(?:[,.]|$))', "", out,
+        flags=re.IGNORECASE)
+    # A one-letter stub is tag debris, never a word.
+    out = re.sub(r'(?<![A-Za-z0-9])[A-Za-z](?![A-Za-z0-9])', " ", out)
+
+    out = re.sub(r'\s+([,.])', r'\1', out)
+    out = re.sub(r'(,\s*)+', ", ", out)
+    out = re.sub(r'[-–]\s*(?=[,.]|$)', "", out)
+    out = re.sub(r'\s{2,}', " ", out)
+    return out.strip(" ,-–")
+
+
+def build_near_miss(family: dict, gold: dict, report_date: date) -> tuple[str, str, str]:
+    """One mention that is genuinely ambiguous across `family`.
+
+    Returns (text, stated_date_iso, missing_discriminator).
+    """
+    stated = ""
+    if family["kind"] == "shared_tag":
+        tag = family["tag"]
+        pct = rng.randrange(20, 90)
+        body = rng.choice([
+            f"Work continuing on {tag}, about {pct}% done",
+            f"{tag} — crew on site, progress steady",
+            f"Progressed the {tag} scope today, {pct}% complete",
+            f"{tag} activity ongoing, no issues reported",
+            f"Team deployed on {tag}, balance to follow",
+        ])
+        if rng.random() < 0.45:
+            when = report_date - timedelta(days=rng.randrange(0, 4))
+            text_date, resolved = render_date(when, report_date)
+            stated = resolved.isoformat()
+            body += f", as of {text_date}"
+        return body, stated, family["discriminator"]
+
+    if family["kind"] == "adjacent_sequence":
+        # Keep the words the two steps have in common, in the gold's own order.
+        # Stripping the symmetric difference instead would delete the verbs and
+        # leave debris ("and, Unit 1 pad") rather than a plausible report line.
+        shared = family["shared_tokens"]
+        kept = [w for w in gold["description"].split()
+                if re.sub(r'[^A-Za-z0-9"]', "", w).lower() in shared
+                or re.sub(r'[^A-Za-z0-9"]', "", w).lower() in _FILLER]
+        stripped = re.sub(r'\s{2,}', " ", " ".join(kept)).strip(" ,-–")
+        if len(stripped.split()) < 3:
+            return "", "", family["discriminator"]
+    else:
+        # discriminator_omitted: delete the one token that decides the answer.
+        stripped = _strip_tokens(gold["description"], family["drop_tokens"])
+        if len(stripped.split()) < 3:                  # nothing left to match on
+            stripped = _strip_tokens(gold["description"], family["drop_tokens"][:1])
+        if len(stripped.split()) < 3:
+            return "", "", family["discriminator"]
+
+    pct = rng.randrange(20, 90)
     body = rng.choice([
-        f"{shared} — this is the {tail} one, {rng.randrange(20, 90)}% done",
-        f"{shared} progressing at the {tail} location as of {text_date}",
-        f"{shared}, {tail} portion only, balance still open",
+        f"{stripped} — {pct}% done",
+        f"{stripped}, work in progress",
+        f"{stripped} ongoing at site",
+        f"Crew working on {stripped}",
+        f"{stripped}, balance to be completed next week",
     ])
-    stated = resolved.isoformat() if text_date in body else ""
-    return re.sub(r'\s{2,}', " ", body).strip(), stated
+    if rng.random() < 0.40:
+        when = report_date - timedelta(days=rng.randrange(0, 4))
+        text_date, resolved = render_date(when, report_date)
+        stated = resolved.isoformat()
+        body += f", as of {text_date}"
+    return re.sub(r'\s{2,}', " ", body).strip(), stated, family["discriminator"]
+
+
+def build_near_miss_queue(activities: list[dict], target: int) -> list[dict]:
+    """A shuffled work queue of (family, gold) pairs to emit as near-misses.
+
+    Families are cycled rather than drained one at a time, so no single sibling
+    pair dominates and every kind is represented. `shared_tag` families are
+    allowed more than one mention per member because the phrasing varies
+    genuinely ("work continuing on V-1101" / "V-1101 activity ongoing"); the
+    discriminator-omitted families are not, because there is only one way to
+    delete a token.
+    """
+    families = build_near_miss_families(activities)
+    rng.shuffle(families)
+
+    slots: list[dict] = []
+    round_no = 0
+    while len(slots) < target and round_no < 6:
+        added = 0
+        for fam in families:
+            if fam["kind"] != "shared_tag" and round_no > 0:
+                continue
+            for gold in fam["members"]:
+                if len(slots) >= target:
+                    break
+                slots.append({"family": fam, "gold": gold})
+                added += 1
+        if not added:
+            break
+        round_no += 1
+    rng.shuffle(slots)
+    return slots
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -687,6 +932,7 @@ def main() -> int:
     dpr_dates = sorted(min(max(d, first), last) for d in dpr_dates)
 
     gt_rows: list[dict] = []
+    near_miss_queue = build_near_miss_queue(activities, TARGET_NEAR_MISSES)
     negatives = list(HARD_NEGATIVES)
     rng.shuffle(negatives)
     neg_i = 0
@@ -736,13 +982,7 @@ def main() -> int:
                 # 65% tag-free — far above the 35% floor, while still leaving
                 # the tag channel something to retrieve on.
                 want_free = rng.random() < 0.30
-                partner = near_miss_partner(act, by_disc) if rng.random() < 0.30 else None
-                if partner is not None:
-                    text, stated = build_near_miss_mention(act, partner, d)
-                    match_type = "near_miss"
-                else:
-                    text, stated = build_mention(act, d, want_free, messy)
-                    match_type = "exact"
+                text, stated = build_mention(act, d, want_free, messy)
 
                 lines.append(f"{bullet(i, messy)}{text}.")
                 gt_rows.append({
@@ -750,13 +990,52 @@ def main() -> int:
                     "source_date": d.isoformat(),
                     "raw_mention": text,
                     "activity_id": act["activity_id"],
-                    "match_type": match_type,
+                    "match_type": "exact",
                     "mention_date": stated,
                     "discipline": act["discipline"],
                 })
                 tag_free_flags.append(not extract_tags(text))
                 unmentioned.discard(act["activity_id"])
             lines.append("")
+
+        # Near-misses, drawn from the queue so the corpus hits a known count
+        # rather than whatever opportunistic sampling happened to produce.
+        per_report = max(1, round(TARGET_NEAR_MISSES / N_DPRS))
+        batch: list[dict] = []
+        while near_miss_queue and len(batch) < per_report:
+            batch.append(near_miss_queue.pop())
+        if batch:
+            by_slot_disc: dict[str, list[dict]] = defaultdict(list)
+            for slot in batch:
+                by_slot_disc[slot["gold"]["discipline"]].append(slot)
+            for disc, slots in by_slot_disc.items():
+                section += 1
+                lines.append(f"{section}. {rng.choice(DISCIPLINE_HEADINGS[disc])}"
+                             f" (contd)")
+                for i, slot in enumerate(slots):
+                    fam, gold = slot["family"], slot["gold"]
+                    text, stated, missing = build_near_miss(fam, gold, d)
+                    if not text:
+                        continue
+                    lines.append(f"{bullet(i, messy)}{text}.")
+                    gt_rows.append({
+                        "source": f"dpr_day_{idx:02d}.txt",
+                        "source_date": d.isoformat(),
+                        "raw_mention": text,
+                        "activity_id": gold["activity_id"],
+                        "match_type": "near_miss",
+                        "mention_date": stated,
+                        "discipline": gold["discipline"],
+                        "near_miss_kind": fam["kind"],
+                        "missing_discriminator": missing,
+                        "confusable_with": "|".join(
+                            m["activity_id"] for m in fam["members"]
+                            if m["activity_id"] != gold["activity_id"]
+                        ),
+                    })
+                    tag_free_flags.append(not extract_tags(text))
+                    unmentioned.discard(gold["activity_id"])
+                lines.append("")
 
         # Hard negatives, folded into the narrative sections where they belong.
         section += 1
@@ -884,19 +1163,41 @@ def main() -> int:
     for r in gt_rows:
         text_groups[r["raw_mention"].strip().lower()].append(r)
 
-    strata: dict[tuple[str, str], list[str]] = defaultdict(list)
+    # Stratify on three axes, not two: discipline, match/no-match, AND whether
+    # the mention is a near-miss. Without the third, near-misses scatter in
+    # proportion to their share of the corpus and the held-out split ends up
+    # with too few to measure — which is exactly how a 99.2% Top-1 came to be
+    # reported off five of them.
+    strata: dict[tuple[str, str, str], list[str]] = defaultdict(list)
     for text, group in text_groups.items():
         head = group[0]
-        kind = "no_match" if head["activity_id"] == "NO_MATCH" else "match"
-        strata[(head["discipline"], kind)].append(text)
+        if head["activity_id"] == "NO_MATCH":
+            kind = "no_match"
+        elif head.get("match_type") == "near_miss":
+            kind = "near_miss"
+        else:
+            kind = "match"
+        strata[(head["discipline"], kind, head.get("near_miss_kind", ""))].append(text)
+
+    #: Near-misses are deliberately concentrated where they are measured. The
+    #: training split does not need them — nothing is fitted on this corpus yet
+    #: — and dev needs enough to calibrate a threshold that has actually seen
+    #: hard cases.
+    SPLIT_RATIOS = {
+        "near_miss": (0.25, 0.35, 0.40),      # train, dev, test
+        "no_match": (0.60, 0.20, 0.20),
+        "match": (0.60, 0.20, 0.20),
+    }
 
     assignment: dict[str, str] = {}
     for key, texts in strata.items():
+        kind = key[1]
+        train_r, dev_r, _test_r = SPLIT_RATIOS[kind]
         texts = sorted(texts)
         split_rng.shuffle(texts)
         n = len(texts)
-        n_train = int(round(n * 0.60))
-        n_dev = int(round(n * 0.20))
+        n_train = int(round(n * train_r))
+        n_dev = int(round(n * dev_r))
         # Tiny strata must still reach test, or a discipline vanishes from the
         # headline metric without anyone noticing.
         if n >= 3:
@@ -916,7 +1217,12 @@ def main() -> int:
     # ── Write ground truth ──────────────────────────────────────────────────
     gt_path = OUT / "ground_truth_v2.csv"
     fields = ["source", "source_date", "raw_mention", "activity_id",
-              "match_type", "mention_date", "discipline", "split"]
+              "match_type", "mention_date", "discipline", "split",
+              # Only populated on near_miss rows. `confusable_with` is the rest
+              # of the ambiguity set, so the evaluation can ask whether the
+              # ranker landed in the right FAMILY even when it picked the wrong
+              # sibling — the fair question when the text omits the answer.
+              "near_miss_kind", "missing_discriminator", "confusable_with"]
     with open(gt_path, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -927,7 +1233,8 @@ def main() -> int:
     split_counts = Counter(r["split"] for r in gt_rows)
     splits_path.write_text(json.dumps({
         "seed": SEED,
-        "stratified_by": ["discipline", "match_or_no_match"],
+        "stratified_by": ["discipline", "match_or_no_match", "near_miss"],
+        "near_miss_ratio_train_dev_test": [0.25, 0.35, 0.40],
         "grouping": "identical mention text is kept in a single split",
         "policy": {
             "train": "model/feature development",
@@ -976,8 +1283,20 @@ def validate(activities, by_id, gt_rows, split_counts) -> int:
     say(f"- hard negatives: **{len(neg)}** ({len(neg)/len(gt_rows):.1%})")
     say(f"- distinct activity ids referenced: **{len({r['activity_id'] for r in pos})}** "
         f"of {len(activities)}")
-    near = sum(1 for r in gt_rows if r["match_type"] == "near_miss")
-    say(f"- deliberate near-miss mentions: **{near}**")
+    near = [r for r in gt_rows if r["match_type"] == "near_miss"]
+    say(f"- deliberate near-miss mentions: **{len(near)}** "
+        f"({len(near)/len(gt_rows):.1%})")
+    kinds = Counter(r.get("near_miss_kind", "") for r in near)
+    for k, v in kinds.most_common():
+        say(f"    - {k}: {v}")
+    if len(near) < MIN_NEAR_MISSES:
+        failures.append(f"only {len(near)} near-misses, minimum {MIN_NEAR_MISSES}")
+        say(f"    - **FAIL** — minimum is {MIN_NEAR_MISSES}")
+    nm_splits = Counter(r["split"] for r in near)
+    say(f"    - split placement: train {nm_splits['train']} | "
+        f"dev {nm_splits['dev']} | test {nm_splits['test']}")
+    say(f"    - every near-miss names the discriminator it omits: "
+        f"{all(r.get('missing_discriminator') for r in near)}")
     say()
 
     # 1. every positive label exists in v2

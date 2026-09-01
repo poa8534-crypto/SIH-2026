@@ -1,21 +1,12 @@
-DAILY PROGRESS REPORT
-Date: 2027-03-12  |  Weather: Overcast, light drizzle after 4pm
-Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
-Prepared by: R. Gogoi, Site Engineer
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 2027-03-12
+Weather: Heavy rain 1400-1600
+Contractor: ABC Infra Pvt. Ltd.
+Site Engineer: A. Bhuyan
 
 1. PROJECT CLOSE-OUT SUMMARY
-   a) Precast drain construction, Unit 1 wellhead periphery completed 15 Apr.
-   b) Culvert placement at road crossing, Unit 1 approach closed out 21 Apr.
-   c) Excavation for foundations V-1101/V-1201 and plinths WHP-1101/WHP-1102 — commenced 11 Mar.
-   d) Excavation for foundations the separator vessel and the wellhead control panel, Unit 2, 390 of 580 m3 complete so far.
-   e) Anchor bolt template survey and setting, the separator vessel, 7 nos out of 16 complete so far, as of 12/Mar/2027.
-   f) Foundation for wellhead control panel, Unit 2 — commenced 11 Mar.
-   g) Grouting, the separator vessel skid, 1 of 1 m3 complete so far.
-   h) Isolated foundations, manifold block valves the unit to in progress, 17 of 42 m3 achieved, as of 11 Mar 2027.
-   a) Flare stack foundation and guy anchor blocks, the flare stack — commenced 10 Mar.
-   b) Sleeper and column footings, pipe rack Module 1 — completed on 24/04/2026.
-   c) Firewater underground tie-ins and hydrant branches, ring main the ten inch line taken up at site.
-   d) Oily water sewer the six inch line, tank farm to the oily water sewer completed.
-   e) Hydrotest firewater main the ten inch line, Manifold to Unit 1 section, finished 14/Apr/2026, JMR raised.
-   f) Hydrotest firewater main the ten inch line, Unit 1 to Unit 2 section delayed by 3 days, crane availability.
-   g) Erect flare stack FST-1301, guys tensioned (FST-1301), 1 nos out of 1 complete so far, as of 11/03/2027.
+   a) Precast drain construction, Unit 1 wellhead periphery, finished 15/Apr/2026, JMR raised.
+   b) Excavation for foundations the separator vessel and the wellhead control panel, Unit 2 in progress, 218 of 580 m3 achieved.
+   c) Isolated foundations, manifold block valves the unit to, 18 of 42 m3 complete so far, as of 12 Mar 2027.
+   d) Oil-water separator pit civil works, the oily water sewer closed out 18 Apr 2026.
+   e) Gate installation, main and emergency exits completed 2026-04-18.

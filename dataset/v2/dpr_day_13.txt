@@ -1,33 +1,48 @@
-DAILY PROGRESS REPORT  (19/08/2026)
-Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
-Weather: Heavy rain 1400-1600  |  Prepared by: J. Tamuly
+DAILY PROGRESS REPORT
+Date: 2026-08-19  |  Weather: Hot, 38C
+Contractor: ABC Infra Pvt. Ltd.  |  Project: OIL Well-Site Duliajan
+Prepared by: Vikram Saikia, Site Engineer
 
-1. PIPING
-   a) Tank farm manifold the twelve inch line, inlet/outlet the storage tank — closed out this week.
-   b) Erect drain header 4"-P-1303-C5B, closed drain in progress, 12 of 36 m achieved.
-   c) Erect flare header the eighteen inch line, manifold to KO drum — completed on 25 Aug.
-   d) Erect the six inch line, fuel gas skid inlet, finished 18 Aug, JMR raised.
-   e) Work front opened for Suction and discharge piping, the pumps to manifold on 28 Aug 2026.
-   f) Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs is done and signed off.
-   g) Alloy weld and PMI, flare header, welds 20-31 — commenced 1 Sep 2026.
+1. MECHANICAL - PIPING
+   a) Erect drain header 4"-P-1303-C5B, closed drain held up, awaiting client RFI clearance.
+   b) Erect line 6"-P-1005-A6A, fuel gas skid inlet in progress, 6 of 18 m achieved.
+   c) Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs, 36 of 44 m complete so far, as of 19/Aug/2026.
+   d) Tank farm manifold 12"-P-2101-A1A, inlet/outlet TK-2101 — 15 of 44 m done.
+   e) Suction and discharge piping, the pumps to manifold completed 28 Aug.
+   f) Alloy weld and PMI, flare header, welds 20-31 in progress, 7 nos out of 12 achieved, as of 17 Aug.
+   g) Erect flare header 18"-P-1301-B7A, manifold to KO drum under way at the work front.
 
 2. E&I - ELECTRICAL
-   a) Core termination and lacing, MCC-1 and MCC-2 under way at the work front.
-   b) Set and terminate the transformer, progressing at the kV location as of 16 Aug.
-   c) Set and terminate transformer T-1, 11/0.433 kV in progress, 1 nos out of 1 achieved.
-   d) Mobilised for Glanding and termination, LV panels, substation.
-   e) Cable glanding, MCC-1 and MCC-2 feeders, finished 2026-08-05, JMR raised.
+   a) Glanding and termination, LV panels, substation, finished 7 Aug, JMR raised.
+   b) Pull MV cable 11 kV, substation to the transformer in progress, 105 of 180 m achieved.
+   c) Set and terminate the transformer, 11/0.433 kV — completed on 5 Aug.
+   d) Cable glanding, the MCC and feeders, 34 nos out of 46 complete so far.
+   e) Core termination and lacing, the MCC and — progress slow, 47% only.
+   f) Crew deployed on Pull MV cable 11 kV, substation to transformer T-1.
+   g) Set and terminate transformer T-1, 11/0.433 kV stopped, material shortage at store.
 
-3. INSTRUMENTATION
-   a) Install junction boxes box to the junction box, field under way at the work front.
-   b) Pull home-run cables, JB-101 to JB-108 to control room FTA started 05/Sep/2026.
-   c) Terminate field instruments at the junction box to under way at the work front.
-   d) Pull instrument cables, rack tier 2 to junction boxes JB-101 to JB-108 closed out 28 Aug.
+3. E&I - INSTRUMENTATION
+   a) Pull home-run cables, the junction box to control room FTA completed 5 Sep 2026.
+   b) Install junction boxes box to the junction box, field, finished 24 Aug, JMR raised.
+   c) Terminate field instruments at JB-101 to JB-108 completed 10/09/2026.
+   d) Pull instrument cables, rack tier 2 to junction boxes JB-101 to JB-108 is done and signed off.
 
-4. GENERAL / SITE NARRATIVE
-   a) Weld map updated for the revised isometric issue.
-   b) Additional 40 m of boundary drain built on the north side at OIL request.
+4. STATIC EQUIPMENT (contd)
+   a) Work continuing on P-1401A, about 66% done, as of 2026-08-18.
+   b) V-1101 activity ongoing, no issues reported, as of 16/Aug/2026.
+   c) Team deployed on TK-2102, balance to follow, as of 17 Aug.
+
+5. PIPING WORKS (contd)
+   a) 10"-P-1602-B1A — crew on site, progress steady, as of 2026-08-17.
+   b) 2"-P-2301-A6A — crew on site, progress steady.
+
+6. ELECTRICAL (contd)
+   a) Install cable tray rack tier ongoing at site, as of yesterday.
+
+7. GENERAL / SITE NARRATIVE
+   a) Emergency contact list updated on all notice boards.
+   b) Fuel tanker delayed at Numaligarh, expected tomorrow.
 
 REMARKS
-   - Manpower: 123 nos on site.
-   - Equipment: 4 nos deployed.
+   - Manpower: 74 nos on site.
+   - Equipment: 10 nos deployed.

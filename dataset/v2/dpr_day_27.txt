@@ -1,36 +1,48 @@
-DAILY PROGRESS REPORT  (19/Feb/2027)
-Project: OIL Well-Site Duliajan  |  Contractor: M/s ABC Infrastructure
-Weather: Overcast, light drizzle after 4pm  |  Prepared by: Vikram Saikia
+DAILY PROGRESS REPORT
+Date: 2027-02-19  |  Weather: Heavy rain 1400-1600
+Contractor: M/s ABC Infrastructure  |  Project: OIL Well-Site Duliajan
+Prepared by: R. Gogoi, Site Engineer
 
 1. STATIC EQUIPMENT
-   a) Crew deployed on 72-hour integrated reliability run, process train.
-   b) First crude transfer to the storage tank — closed out this week.
+   a) 72-hour integrated reliability run, process train completed 08/Jan/2027.
+   b) First crude transfer to TK-2101 — completed on 22/Feb/2027.
 
-2. E&I - INSTRUMENTATION
-   a) Loop check, Unit 2 loops progressing at the 1 location as of 2027-02-18.
-   b) Crew deployed on Integrated ESD and blowdown function test.
-   c) Instrument loops certified (RFSI) in progress, about 64% complete, as of 17 Feb.
-   d) Calibrate transmitters and switches, workshop bench closed out 12/12/2026.
-   e) PT-1101 — Install pressure transmitters PT-1101 to PT-1114, Unit 1 — closed out this week.
-   f) Fire and gas detection system function test, 20 nos out of 32 complete so far, as of 2027-02-18.
-   g) Cause and effect testing, ESD shutdown matrix — 11 nos out of 14 done.
-   h) Install instrument air tubing stubs and manifolds, takeoffs from the two inch line closed out 02/12/2026.
-   i) Install fire and gas detectors, wellhead and manifold completed 4 Dec.
+2. INSTRUMENTS
+   a) Loop check, Unit 1 loops L-1101 to L-1128 — 16 nos out of 28 done, as of yesterday.
+   b) Install pressure transmitters PT-1101 to PT-1114, Unit 1, 8 nos out of 14 complete so far.
+   c) Crew deployed on Install instrument air tubing stubs and manifolds, takeoffs from the two inch line.
+   d) Calibrate transmitters and switches, workshop bench is done and signed off.
+   e) Install fire and gas detectors, wellhead and manifold — closed out this week.
+   f) Instrument loops certified (RFSI) delayed by 2 days, crane availability.
+   g) Cause and effect testing, ESD shutdown matrix, 8 nos out of 14 complete so far.
+   h) Fire and gas detection system function test is done and signed off.
 
-3. SAFETY
-   a) Crew deployed on As-built drawing submission and document close-out to OIL.
-   b) Punchlist closure, category A and B items completed.
-   c) Provisional handover to Operations ongoing.
-   d) Pre-startup safety review (PSSR) walkthrough started 19/02/2027.
-   e) RFSU Unit 2 completed 4 Feb.
-   f) Operations training and familiarization, OIL staff ongoing.
-   g) RFSU Unit 2 — this is the 1 one, 82% done.
+3. HSE
+   a) Punchlist closure, category A and B items — 19 nos out of 38 done.
+   b) Mobilised for RFSU Unit 2.
+   c) RFSU Unit 1 — progress slow, 36% only.
+   d) As-built drawing submission and document close-out to OIL held up, awaiting client RFI clearance.
+   e) Provisional handover to Operations in progress, about 44% complete.
+   f) Pre-startup safety review (PSSR) walkthrough, 1 nos out of 1 complete so far.
 
-4. GENERAL / SITE NARRATIVE
-   a) Concrete mix design approval received from the consultant.
-   b) Two 40-ton trailers arrived at the gate, unloading tomorrow morning.
-   c) Weighbridge calibration certificate received from the vendor.
+4. STATIC EQUIPMENT (contd)
+   b) Work continuing on P-1401A, about 89% done, as of 17 Feb.
+
+5. CIVIL WORKS (contd)
+   a) Lay and compact WMM, road U1, work in progress.
+   b) WHCP-2101 activity ongoing, no issues reported, as of 19/Feb/2027.
+
+6. ELECTRICAL (contd)
+   a) P-1401A — crew on site, progress steady.
+
+7. MECHANICAL - PIPING (contd)
+   a) Work continuing on 10"-P-1602-B1A, about 31% done.
+
+8. GENERAL / SITE NARRATIVE
+   a) Weighbridge calibration certificate received from the vendor.
+   b) Weld map updated for the revised isometric issue.
+   c) Site coordination meeting minutes circulated to all agencies.
 
 REMARKS
-   - Manpower: 237 nos on site.
-   - Equipment: 7 nos deployed.
+   - Manpower: 62 nos on site.
+   - Equipment: 5 nos deployed.

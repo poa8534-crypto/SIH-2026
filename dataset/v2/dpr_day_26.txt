@@ -1,34 +1,49 @@
-DAILY PROGRESS REPORT
-Date: 05/Feb/2027  Weather: Hot, 38C
-prepared: Vikram Saikia
+Progress report - 05/02/2027
+M/s ABC Infrastructure / OIL Duliajan
 
 1. STATIC EQUIPMENT
-   - 72-hour integrated reliability run, process train — progress slow, 34% only.
+   - 72-hour integrated reliability run, process train completed 08/jan/2027.
+   - Work front opened for First crude transfer to the storage tank on 22/02/2027. thoda delay hua.
 
-2. INSTRUMENTATION
-   - Instrument loops certified (RFSI) in progress, about 74% complete. labour kam tha aaj.
-   - Loop check, Unit 2 loops, 1 portion only, balance still open.
-   - Cause and effect testing, ESD shutdown matrix — completed on 29 Dec 2026.
-   * calibrate transmitters and switches, workshop bench — 37 nos out of 60 done.
-   * crew deployed on install pressure transmitters pt-1101 to pt-1114, unit 1, tag pt-1101.
-   install fire and gas detectors, wellhead and manifold — closed out this week.
-   Fire and gas detection system function test stopped, material shortage at store. aaj shuru kiya.
-   integrated esd and blowdown function test completed 3 jan.
-   * install instrument air tubing stubs and manifolds, takeoffs from the two inch line in progress, 15 nos out of 28 achieved. baaki kal karenge.
+2. E&I - INSTRUMENTATION
+   - Install fire and gas detectors, wellhead and manifold — completed on 4 Dec. baaki kal karenge.
+   - install pressure transmitters pt-1101 to pt-1114, unit 1, 4 nos out of 14 complete so far.
+   loop check, unit 1 loops l-1101 to l-1128 — completed on 19/12/2026.
+   * Install instrument air tubing stubs and manifolds, takeoffs from 2"-P-2301-A6A in progress, 20 nos out of 28 achieved, as of 3 Feb.
+   * Fire and gas detection system function test in progress, 15 nos out of 32 achieved.
+   - instr loops certified (RFSI) in progress, about 45% complete, as of 03/Feb/2027.
+   * cause and effect testing, esd shutdown matrix in progress, 8 nos out of 14 achieved.
+   - Calibrate transmitters and switches, workshop bench — 23 nos out of 60 done.
+   - integrated esd and blowdown function test completed 03/01/2027. material ka issue tha.
 
 3. HSE / SAFETY
-   - As-built drawing submission and document close-out to OIL — completed on 3 Mar.
-   * Operations training and familiarization, OIL staff held up, awaiting client RFI clearance. labour kam tha aaj.
-   * Punchlist closure, category A and B items in progress, 25 nos out of 38 achieved, as of 5 Feb.
-   - Provisional handover to Operations in progress, about 63% complete, as of 2027-02-03.
-   * RFSU Unit 2, 1 portion only, balance still open.
-   Pre-startup safety review (PSSR) walkthrough — completed on 24/12/2026.
-   - RFSU Unit 1 — this is the 2 one, 20% done.
+   - Pre-startup safety review (PSSR) walkthrough — commenced yesterday.
+   * RFSU Unit 1 — progress slow, 64% only.
+   - RFSU Unit 2, finished 04/02/2027, JMR raised. material ka issue tha.
+   operations training and familiarization, oil staff held up, awaiting client rfi clearance.
+   As-built drawing submission and document close-out to OIL in progress, about 86% complete, as of 5 Feb 2027. labour kam tha aaj.
+   - Punchlist closure, category A and B items — closed out this week. baaki kal karenge.
+   - Provisional handover to Operations in progress, about 70% complete, as of 3 Feb. baaki kal karenge.
 
-4. GENERAL / SITE NARRATIVE
-   - High wind warning issued, crane operations suspended.
-   - Client requested additional bollards near the gatehouse, not in contract scope.
+4. ELECTRICAL WORKS (contd)
+   * Work continuing on T-1, about 30% done.
+
+5. CIVIL WORKS (contd)
+   - Progressed the V-1101 scope today, 60% complete, as of yesterday.
+   Sleeper and column footings, pipe rack, work in progress.
+   * Flare stack and anchor ongoing at site, as of 03/02/2027.
+
+6. MECHANICAL - EQUIPMENT (contd)
+   * FST-1301 activity ongoing, no issues reported, as of 05/Feb/2027.
+
+7. PIPING (contd)
+   Erect rack steel, Module — 53% done, as of 2 Feb.
+
+8. GENERAL / SITE NARRATIVE
+   Coating DFT gauge sent out for recalibration.
+   * Weekly progress photo compilation submitted to the PMC.
+   - Rebar cutting and bending yard relocated to the east side.
 
 REMARKS
-   - Manpower: 204 nos on site.
-   - Equipment: 6 nos deployed.
+   - Manpower: 81 nos on site.
+   - Equipment: 4 nos deployed.

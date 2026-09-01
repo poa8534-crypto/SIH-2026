@@ -1,27 +1,37 @@
-Progress report - 15/09/2026
-ABC Infra Pvt. Ltd. / OIL Duliajan
+DPR 15/Sep/2026
+site: Duliajan  contractor: ABC Infra
 
-1. MECHANICAL - PIPING
-   * Erect 12"-P-2102-A1A, TK-2102 manifold tie-in stopped, material shortage at store.
-   - Alloy weld and PMI, flare header, welds 20-31 under way at the work front.
-   Erect the eight inch line, glycol feed to contactor the separator vessel completed 14 Sep. aaj shuru kiya.
-   * tank farm manifold the twelve inch line, inlet/outlet the storage tank completed 2026-09-15. labour kam tha aaj.
-   - Field welds and UT, tank farm manifold, welds 40-52, 6 nos out of 13 complete so far, as of 15/Sep/2026.
-   Suction and discharge piping, pumps P-1401A/B to manifold (P-1401A) stopped, material shortage at store. kaam chalu hai.
+1. PIPING
+   * alloy weld and pmi, flare header, welds 20-31, 7 nos out of 12 complete so far.
+   * Tank farm manifold 12"-P-2101-A1A, inlet/outlet TK-2101, 13 of 44 m complete so far. thoda delay hua.
+   * Suction and discharge piping, pumps P-1401A/B to manifold under way at the work front. baaki kal karenge.
+   Erect line 8"-P-1004-A6A, glycol feed to contactor V-1201 ongoing. labour kam tha aaj.
+   - Erect 12"-P-2102-A1A, TK-2102 manifold tie-in completed 14 Sep. thoda delay hua.
+   * Field welds and UT, tank farm manifold, welds 40-52, tag 12"-P-2101-A1A, 7 nos out of 13 complete so far. baaki kal karenge.
 
 2. MECHANICAL - EQUIPMENT
-   * TK-2102 — Water fill and calib strapping, TK-2102 held up, awaiting client RFI clearance. baaki kal karenge.
+   * Water fill and calibration strapping, TK-2102 — 423 of 1010 m3 done. material ka issue tha.
 
-3. INSTRUMENTATION
-   * Pull home-run cables, the junction box to control room FTA started this morning. thoda delay hua.
-   * pull instrument cables, rack tier 2 to junction boxes jb-101 to jb-108 delayed by 5 days, crane availability. baaki kal karenge.
-   * terminate field instrs at jb-101 to jb-108 closed out 15/sep/2026.
+3. INSTRUMENTS
+   * Crew deployed on Terminate field instruments at the junction box to.
+   * work front opened for pull home-run cables, jb-101 to jb-108 to control room fta on 12 sep 2026. aaj shuru kiya.
+   - Pull instr cables, rack tier 2 to junction boxes box to the junction box — completed on 03/Sep/2026. aaj shuru kiya.
 
-4. GENERAL / SITE NARRATIVE
-   - Consumables inventory check carried out at the fabrication shed.
-   Crane operator on leave, replacement mobilised from Guwahati.
-   Site coordination meeting minutes circulated to all agencies.
+4. CIVIL (contd)
+   - Team deployed on V-2101, balance to follow.
+   Ring wall foundation, storage tank ongoing at site.
+   - Work continuing on V-1201, about 84% done.
+
+5. MECHANICAL - EQUIPMENT (contd)
+   Work continuing on TK-2101, about 55% done, as of 13 Sep.
+   - Progressed the PK-2401 scope today, 71% complete, as of 12/Sep/2026.
+   - V-1201 — crew on site, progress steady.
+
+6. GENERAL / SITE NARRATIVE
+   Client comments on the P&ID revision under incorporation.
+   - Ambient temperature 39 C, work rescheduled to early morning.
+   - Method statement for tank erection resubmitted after comments.
 
 REMARKS
-   - Manpower: 91 nos on site.
-   - Equipment: 6 nos deployed.
+   - Manpower: 127 nos on site.
+   - Equipment: 9 nos deployed.

@@ -1,35 +1,47 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 22/Mar/2026
-Weather: Heavy rain 1400-1600
-Contractor: ABC Infra Pvt. Ltd.
-Site Engineer: R. Gogoi
+DAILY PROGRESS REPORT  (22/Mar/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Windy, 28C, gusts 30 km/h  |  Prepared by: S. Hazarika
 
-1. CIVIL WORKS
-   a) Cut and fill to formation level, well pad Unit 1 — completed on 20 Mar.
-   b) BC course laying, approach road, finished 23 Mar, JMR raised.
-   c) Crusher fines laying, equipment laydown yard under way at the work front.
-   d) Work front opened for Excavation for flare pit and burn area, manifold south on 23/Mar/2026.
-   e) Bulk excavation, Unit 2 wellhead cellar — completed on 23 Mar.
-   f) Excavate unsuitable material, Unit 1 pad stopped, material shortage at store.
-   g) Place and compact selected fill, Unit 1 pad closed out 25 Mar.
-   h) Work front opened for Approach road widening, OIL main gate to site (Ch 0-400) on 19/03/2026.
-   i) Clearing and grubbing, well pad and approach road delayed by 3 days, crane availability.
-   j) Cut and fill to formation progressing at the 2 location as of 19 Mar.
-   k) Bench marking and centre-line offsets, all areas in progress, about 28% complete.
+1. CIVIL / STRUCTURAL
+   a) BC course laying, approach road completed 23/03/2026.
+   b) Cut and fill to formation level, well pad Unit 1 — progress slow, 55% only.
+   c) Excavation for flare pit and burn area, manifold south, 336 of 720 m3 complete so far.
+   d) Excavate unsuitable material, Unit 1 pad ongoing.
+   e) Place and compact selected fill, Unit 1 pad completed 2026-03-25.
+   f) Crusher fines laying, equipment laydown yard held up, awaiting client RFI clearance.
+   g) Bulk excavation, Unit 2 wellhead cellar completed.
+   h) Roadside drain slabs, approach road, 173 of 380 m complete so far.
+   i) Approach road widening, OIL main gate to site (Ch 0-400) completed 20 Mar.
+   j) Clearing and grubbing, well pad and approach road in progress, 4435 of 6200 m2 achieved.
+   k) Cut and fill to formation level, well pad Unit 2 stopped, material shortage at store.
+   l) Bench marking and centre-line offsets, all areas ongoing.
 
 2. HSE / SAFETY
-   a) Mobilised for Establish emergency muster points and wind socks.
-   b) Install temporary water supply and septic facility closed out 22 Mar 2026.
-   c) Temporary power distribution boards and cabling is done and signed off.
-   d) Safety signage and barricading, phase 1 work fronts is done and signed off.
-   e) Fabrication shed and pipe yard establishment — progress slow, 56% only.
-   f) Erection of temporary site office and stores in progress, 49 of 180 m2 achieved.
+   a) Temporary power distribution boards and cabling in progress, 1 nos out of 1 achieved, as of 22/Mar/2026.
+   b) Safety signage and barricading, phase 1 work fronts stopped, material shortage at store.
+   c) Establish emergency muster points and wind socks in progress, 2 nos out of 4 achieved, as of 22/03/2026.
+   d) Install temporary water supply and septic facility completed yesterday.
+   e) Fabrication shed and pipe yard establishment is done and signed off.
+   f) Erection of temporary site office and stores closed out 16 Mar.
 
-3. GENERAL / SITE NARRATIVE
-   a) Extra hardstanding for the client vehicle park, not in the BOQ.
-   b) Additional signage in Assamese requested by the district administration.
-   c) Safety harness inspection carried out, 4 units condemned.
+3. PIPING (contd)
+   a) Work continuing on 10"-P-1602-B1A, about 32% done.
+   b) Erect rack steel, (Ch ) ongoing at site.
+   c) for firewater main and, balance to be completed next week.
+
+4. E&I - ELECTRICAL (contd)
+   a) Crew working on Pull MV cable 11 kV, substation to transformer.
+
+5. CIVIL WORKS (contd)
+   a) Cut and fill to formation level, well, balance to be completed next week.
+
+6. E&I - INSTRUMENTATION (contd)
+   a) JB-101 — crew on site, progress steady.
+
+7. GENERAL / SITE NARRATIVE
+   a) PPE stock replenished, 120 helmets received.
+   b) Third party inspection agency mobilised for weld review.
 
 REMARKS
-   - Manpower: 76 nos on site.
-   - Equipment: 6 nos deployed.
+   - Manpower: 83 nos on site.
+   - Equipment: 4 nos deployed.

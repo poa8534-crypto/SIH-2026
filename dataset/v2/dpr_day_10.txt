@@ -1,31 +1,40 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 06/07/2026
-Weather: Fog till 0900, then clear
-Contractor: ABC Infra
-Site Engineer: Vikram Saikia
+DAILY PROGRESS REPORT  (06/07/2026)
+Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
+Weather: Heavy rain 1400-1600  |  Prepared by: K. Baruah
 
 1. PIPING WORKS
-   a) Chemical injection piping 1"-P-2501-A6A, skids to injection points closed out 4 Jul.
-   b) Erect rack steel, Module 2, 3 80-110) portion only, balance still open.
-   c) Rack erection, Module 3 tier 1, flare header the eighteen inch line and utility lines under way at the work front.
-   d) Rack cross bracing and kicker supports, full run, 9 nos out of 14 complete so far, as of 6 Jul 2026.
+   a) Chemical injection piping the 1 inch line, skids to injection points — closed out this week.
+   b) Rack cross bracing and kicker supports, full run — completed on 30/Jun/2026.
+   c) Rack erection, Module 3 tier 1, flare header 18"-P-1301-B7A and utility lines under way at the work front.
+   d) Mobilised for Erect rack steel, Module 3 (Ch 80-110).
 
 2. MECHANICAL - EQUIPMENT
-   a) Set chemical injection skids the unit and, wellhead U1/U2, finished 2026-07-02, JMR raised.
+   a) Set chemical injection skids CS-2501 and CS-2502, wellhead U1/U2 stopped, material shortage at store.
 
-3. ELECTRICAL WORKS
-   a) Pull LV power cables, wellhead panel WHCP-2101 feeders, Unit 2, tag WHCP-2101 ongoing.
-   b) Install cable tray ladder 600 mm, rack tier 3 — 124 of 210 m done, as of today.
-   c) Install cable tray 450 mm, rack tier 3, Unit 2 stretch — progress slow, 53% only.
+3. E&I - ELECTRICAL
+   a) Install cable tray ladder 600 mm, rack tier 3 completed 4 Jul.
+   b) Pull LV power cables, wellhead panel WHCP-2101 feeders, Unit 2 — 197 of 260 m done.
+   c) Install cable tray 450 mm, rack tier 3, Unit 2 stretch, finished 05/07/2026, JMR raised.
 
 4. INSTRUMENTS
-   a) Install instrument cable tray 300 mm, rack tier 2 started this morning.
+   a) Work front opened for Install instrument cable tray 300 mm, rack tier 2 on 6 Jul.
 
-5. GENERAL / SITE NARRATIVE
-   a) PPE stock replenished, 120 helmets received.
-   b) Idle time recorded for the piling rig, awaiting client decision.
-   c) Ground water table encountered higher than the soil report indicated.
+5. CIVIL WORKS (contd)
+   a) V-2201 activity ongoing, no issues reported.
+   b) Sleeper and column footings, pipe rack, work in progress.
+
+6. MECHANICAL - PIPING (contd)
+   a) 10"-P-1602-B1A activity ongoing, no issues reported.
+   b) Team deployed on 10"-P-1602-B1A, balance to follow, as of 3 Jul.
+
+7. EQUIPMENT (contd)
+   a) Progressed the TK-2102 scope today, 63% complete.
+   b) and fit internals and demisters — 28% done.
+
+8. GENERAL / SITE NARRATIVE
+   a) Additional signage in Assamese requested by the district administration.
+   b) Two 40-ton trailers arrived at the gate, unloading tomorrow morning.
 
 REMARKS
-   - Manpower: 66 nos on site.
-   - Equipment: 6 nos deployed.
+   - Manpower: 85 nos on site.
+   - Equipment: 11 nos deployed.

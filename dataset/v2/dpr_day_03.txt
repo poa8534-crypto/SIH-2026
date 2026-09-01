@@ -1,36 +1,49 @@
-DAILY PROGRESS REPORT  (01/04/2026)
-Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra
-Weather: Windy, 28C, gusts 30 km/h  |  Prepared by: J. Tamuly
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 2026-04-01
+Weather: Windy, 28C, gusts 30 km/h
+Contractor: M/s ABC Infrastructure
+Site Engineer: A. Bhuyan
 
-1. CIVIL / STRUCTURAL
-   a) Rock breaking and muck disposal, flare stack base held up, awaiting client RFI clearance.
-   b) Chain-link fencing with posts, site perimeter closed out 30 Mar.
-   c) Soil erosion protection jute matting, embankment slopes, 113 of 310 m2 complete so far.
-   d) Proof roll and level survey, Unit 1 pad formation — 1830 of 2400 m2 done.
-   e) Geotextile separation layer, Unit 2 pad — closed out this week.
-   f) Anti-termite treatment and PCC blinding, Unit 2 pad, 470 of 950 m2 complete so far, as of 31 Mar.
-   g) Sub-grade preparation, internal access road Unit 1 — completed on 03/04/2026.
-   h) Crew deployed on Place and compact selected fill, Unit 1 pad.
-   i) Crusher fines laying, equipment laydown yard — closed out this week.
-   j) Excavation for flare pit and burn area, manifold south taken up at site.
-   k) Mobilised for Excavate unsuitable material, Unit 1 pad.
-   l) Roadside drain slabs, approach road, 176 of 380 m complete so far.
-   m) Bulk excavation, Unit 2 wellhead cellar completed 27/Mar/2026.
-   n) Cut and fill to formation progressing at the 1 location as of 30 Mar.
-   o) Approach road widening, OIL main gate to site (Ch 0-400) stopped, material shortage at store.
-   p) Cut and fill to formation level, well pad Unit 2 closed out 21/Mar/2026.
-   q) BC course laying, approach road delayed by 4 days, crane availability.
+1. CIVIL WORKS
+   a) Proof roll and level survey, Unit 1 pad formation completed 31 Mar 2026.
+   b) Soil erosion protection jute matting, embankment slopes completed 28 Mar 2026.
+   c) Anti-termite treatment and PCC blinding, Unit 2 pad is done and signed off.
+   d) Sub-grade preparation, internal access road Unit 1, 243 of 320 lm complete so far.
+   e) Rock breaking and muck disposal, flare stack base FST-1301 — closed out this week.
+   f) Geotextile separation layer, Unit 2 pad started 3 Apr.
+   g) Chain-link fencing with posts, site perimeter is done and signed off.
+   h) Crusher fines laying, equipment laydown yard — completed on 27 Mar 2026.
+   i) Bulk excavation, Unit 2 wellhead cellar — progress slow, 55% only.
+   j) Roadside drain slabs, approach road ongoing.
+   k) Approach road widening, OIL main gate to site (Ch 0-400) started 30 Mar.
+   l) Excavate unsuitable material, Unit 1 pad in progress, 416 of 850 m3 achieved.
+   m) Work front opened for BC course laying, approach road on 31/Mar/2026.
+   n) Excavation for flare pit and burn area, manifold south is done and signed off.
+   o) Place and compact selected fill, Unit 1 pad stopped, material shortage at store.
+   p) Cut and fill to formation level, well pad Unit 1 ongoing.
+   q) Cut and fill to formation level, well pad Unit 2 taken up at site.
 
 2. HSE / SAFETY
-   a) Temporary power distribution boards and cabling closed out 23 Mar.
-   b) Install temporary water supply and septic facility, 1 nos out of 1 complete so far.
-   c) Establish emergency muster points and wind socks, 3 nos out of 4 complete so far, as of 30/03/2026.
-   d) Safety signage and barricading, phase 1 work fronts taken up at site.
+   a) Establish emergency muster points and wind socks under way at the work front.
+   b) Safety signage and barricading, phase 1 work fronts closed out 2026-03-20.
+   c) Temporary power distribution boards and cabling — 1 nos out of 1 done.
+   d) Install temporary water supply and septic facility in progress, 1 nos out of 1 achieved, as of 2026-04-01.
 
-3. GENERAL / SITE NARRATIVE
-   a) First aid administered for a minor hand laceration at the fab shed.
-   b) Behavioural safety observation cards collected, 34 this week.
+3. MECHANICAL - PIPING (contd)
+   a) firewater main to ongoing at site.
+   b) Erect rack steel, Module, work in progress.
+
+4. STATIC EQUIPMENT (contd)
+   a) Progressed the P-1401A scope today, 75% complete.
+
+5. 1. CIVIL / STRUCTURAL (contd)
+   a) Work continuing on V-1201, about 62% done.
+   b) Anchor and flare stack ongoing at site.
+
+6. GENERAL / SITE NARRATIVE
+   a) Heavy rainfall from 1400 hrs, all work fronts stopped for the day.
+   b) Rework of the guardhouse plinth after client comment, VO pending.
 
 REMARKS
-   - Manpower: 130 nos on site.
-   - Equipment: 7 nos deployed.
+   - Manpower: 94 nos on site.
+   - Equipment: 11 nos deployed.

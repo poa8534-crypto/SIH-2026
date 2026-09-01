@@ -1,36 +1,53 @@
 DAILY PROGRESS REPORT
-Date: 20/04/2026  |  Weather: Windy, 28C, gusts 30 km/h
-Contractor: M/s ABC Infrastructure  |  Project: OIL Well-Site Duliajan
-Prepared by: S. Hazarika, Site Engineer
+Date: 20/04/2026  |  Weather: Clear, 31C
+Contractor: ABC Infra Pvt Ltd  |  Project: OIL Well-Site Duliajan
+Prepared by: K. Baruah, Site Engineer
 
-1. CIVIL WORKS
-   a) Anchor bolts and template, flare stack FST-1301, tag FST-1301 — completed on 11 Apr 2026.
-   b) Lay and compact WMM course, — this is the 0-160 one, 49% done.
-   c) PCC blinding course, V-1101/V-1201 foundations, Unit 1 — 129 of 210 m2 done, as of 19 Apr.
-   d) Mobilised for Gate installation, main and emergency exits.
-   e) Ring wall foundation, storage tank TK-2101 (TK-2101) held up, awaiting client RFI clearance.
-   f) Oil-water separator pit civil works, the oily water sewer stopped, material shortage at store.
-   g) Lay and compact WMM course, — this is the 160-320 one, 85% done.
-   h) Annular plate leveling and grout bed, TK-2101, tag TK-2101 held up, awaiting client RFI clearance.
-   i) Reinforcement and concreting, glycol contactor foundation the separator vessel is done and signed off.
-   j) Granular sub-base and WMM laying, internal road Unit 1 — completed on 15 Apr.
-   k) 7-day wet cure, the separator vessel foundation ongoing.
+1. CIVIL
+   a) Separator foundation, reinforcement and pour, V-2101 — completed on 18/04/2026.
+   b) Excavation for foundations V-1101/V-1201 and plinths WHP-1101/WHP-1102 ongoing.
+   c) Culvert placement at road crossing, Unit 1 approach in progress, 1 nos out of 2 achieved.
+   d) Foundation for wellhead control panel, Unit 2 is done and signed off.
+   e) Fencing, approach road stretch in progress, 205 of 420 m achieved, as of 19 Apr.
+   f) Dyke wall construction, tank farm bund, 66 of 210 m3 complete so far.
+   g) Ring wall foundation, storage tank TK-2102 started 2026-04-18.
+   h) Reinforcement fabrication and placement, separator foundation V-1101 closed out 23 Apr.
+   i) Ring wall foundation, storage tank TK-2101 — 72 of 120 m3 done, as of today.
+   j) Sleeper and column footings, pipe rack Module 1 — completed on 20/Apr/2026.
+   k) Wellhead plinth concreting, WHP-1101 and WHP-1102 closed out 2026-04-24.
+   l) Granular sub-base and WMM laying, internal road Unit 1 ongoing.
+   m) Lay and compact WMM course, road U1 Ch 160-320 in progress, 65 of 160 lm achieved.
+   n) Flare stack foundation and guy anchor blocks, FST-1301 in progress, 13 of 38 m3 achieved.
+   o) Annular plate leveling and grout bed, TK-2101 started 2026-04-22.
 
 2. PIPING
-   a) Trenching for firewater ring main 10"-P-1602-B1A, Unit 1 and manifold completed.
-   b) Firewater hydrant and monitor bases, ring main the ten inch line ongoing.
-   c) Lay and joint GRP firewater main the ten inch line in progress, 355 of 480 m achieved.
-   d) Backfill and compaction, firewater trench 10"-P-1602-B1A in progress, 374 of 480 m achieved.
+   a) Hydrotest firewater main the ten inch line, Unit 1 to Unit 2 section — completed on 16/04/2026.
+   b) Lay and joint GRP firewater main 10"-P-1602-B1A in progress, 342 of 480 m achieved, as of 18 Apr 2026.
+   c) Firewater hydrant and monitor bases, ring main the ten inch line in progress, 7 nos out of 8 achieved.
+   d) Oily water sewer line 6"-P-2103-C5B, tank farm to OWS-2201 — 70 of 130 m done, as of 19 Apr.
+   e) Chamber and catch pit construction, OWS outfall, finished 20 Apr, JMR raised.
+   f) Firewater underground tie-ins and hydrant branches, ring main 10"-P-1602-B1A — 6 nos out of 9 done.
 
-3. EQUIPMENT
-   a) Shop assemble flare stack sections, the flare stack, 11 of 22 mt complete so far, as of today.
-   b) Set flare knockout drum V-1401, tag V-1401 — completed on 22/04/2026.
+3. STATIC EQUIPMENT
+   a) Shop assemble flare stack sections, FST-1301 — completed on 22 Apr.
+   b) Set wellhead control panel skid, Unit 2 stopped, material shortage at store.
 
-4. GENERAL / SITE NARRATIVE
+4. PIPING (contd)
+   a) Team deployed on 10"-P-1602-B1A, balance to follow, as of 17/Apr/2026.
+   b) Progressed the 10"-P-1602-B1A scope today, 33% complete.
+   c) 2, Unit 2 header 20"- -2001-A1A ongoing at site.
+
+5. CIVIL WORKS (contd)
+   a) Crew working on 7-day wet cure, foundation.
+   b) Progressed the V-1101 scope today, 72% complete, as of 19/04/2026.
+
+6. EQUIPMENT (contd)
+   a) FST-1301 activity ongoing, no issues reported, as of 19 Apr 2026.
+
+7. GENERAL / SITE NARRATIVE
    a) Client PMC walkdown carried out, observations noted in the log.
-   b) Provision of an extra fire extinguisher rack at the workshop, VO raised.
-   c) Material reconciliation meeting held with the client store.
+   b) Store bin cards updated after physical verification.
 
 REMARKS
-   - Manpower: 235 nos on site.
-   - Equipment: 7 nos deployed.
+   - Manpower: 135 nos on site.
+   - Equipment: 3 nos deployed.

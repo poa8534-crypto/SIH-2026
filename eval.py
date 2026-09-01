@@ -23,7 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
@@ -164,6 +164,14 @@ def load_ground_truth(engine: MatchingEngine, path=None) -> list[dict]:
             # eval's own date resolution agrees with the corpus.
             "mention_date": (row.get("mention_date") or "").strip(),
             "discipline": (row.get("discipline") or "").strip(),
+            # Near-miss instrumentation. `confusable_with` is the rest of
+            # the ambiguity set the mention is compatible with.
+            "match_type": (row.get("match_type") or "").strip(),
+            "near_miss_kind": (row.get("near_miss_kind") or "").strip(),
+            "missing_discriminator": (row.get("missing_discriminator") or "").strip(),
+            "confusable_with": [
+                a for a in (row.get("confusable_with") or "").split("|") if a
+            ],
         })
     if unresolved:
         print(f"NOTE: {unresolved} rows skipped (gold id not in schedule)")
@@ -514,6 +522,83 @@ def print_pr_curve(points: list[dict], operating: Thresholds):
     print("  Read: raising tau_high trades coverage for precision.")
 
 
+def print_near_miss(rows: list[dict], t: Thresholds):
+    """Top-1 split three ways: overall, near-misses only, everything else.
+
+    A near-miss is a mention whose deciding token has been REMOVED — the sibling
+    activity is genuinely not recoverable from the text. Two consequences for
+    how this table should be read:
+
+      * Strict top-1 on this subset is partly a measure of luck. When "Sleeper
+        and column footings, pipe rack" could mean Module 1, 2 or 3, picking
+        the gold one is a coin toss the system cannot reason its way out of.
+      * So in-family top-1 is reported beside it: did the ranker at least land
+        inside the ambiguity set? That is the question the text can answer.
+      * And the REVIEW rate, because on genuinely ambiguous text a confident
+        auto-link is the WRONG behaviour even when it happens to be correct.
+    """
+    positives = [r for r in rows if r["gold_class"] == GOLD_POSITIVE]
+    near = [r for r in positives if r.get("match_type") == "near_miss"]
+    rest = [r for r in positives if r.get("match_type") != "near_miss"]
+    if not near:
+        return
+
+    def top1(subset):
+        if not subset:
+            return None, 0, 0
+        hits = sum(1 for r in subset
+                   if r["decision"].top1 and r["decision"].top1.activity_id == r["gold"])
+        return hits / len(subset), hits, len(subset)
+
+    title("NEAR-MISS BREAKDOWN - WHERE THE DISCRIMINATOR IS MISSING")
+    rows_out = []
+    for label, subset in (("Overall", positives), ("Near-miss only", near),
+                          ("All the rest", rest)):
+        acc, hits, n = top1(subset)
+        rows_out.append([label, n, f"{hits}/{n}", pct(acc) if acc is not None else "-"])
+    table(["Subset", "n", "Correct", "Top-1"], rows_out, aligns=["<", ">", ">", ">"])
+    print()
+
+    # In-family: did top-1 land anywhere in the ambiguity set?
+    in_family = 0
+    for r in near:
+        c = r["decision"].top1
+        if c and (c.activity_id == r["gold"] or c.activity_id in r["confusable_with"]):
+            in_family += 1
+    print(f"  In-family top-1 (gold OR a sibling it is genuinely confusable")
+    print(f"  with): {in_family}/{len(near)} = {pct(in_family / len(near))}")
+    print("  Strict top-1 on this subset is partly luck; in-family is the")
+    print("  question the text can actually answer.")
+    print()
+
+    # Behaviour: on ambiguous text, REVIEW is correct and AUTO_LINK is not.
+    outcomes = Counter()
+    for r in near:
+        outcome, _chosen = _decision_for(r["decision"].candidates, t)
+        outcomes[outcome.value] += 1
+    table(
+        ["Outcome on near-misses", "n", "Share"],
+        [[k, v, pct(v / len(near))] for k, v in outcomes.most_common()],
+        aligns=["<", ">", ">"],
+    )
+    print()
+    print("  On text whose discriminator is missing, REVIEW is the correct")
+    print("  outcome. An AUTO_LINK here is wrong even when it hits the gold id.")
+    print()
+
+    by_kind = defaultdict(lambda: [0, 0])
+    for r in near:
+        k = r.get("near_miss_kind") or "?"
+        by_kind[k][1] += 1
+        if r["decision"].top1 and r["decision"].top1.activity_id == r["gold"]:
+            by_kind[k][0] += 1
+    table(
+        ["Near-miss kind", "n", "Top-1"],
+        [[k, v[1], pct(v[0] / v[1])] for k, v in sorted(by_kind.items())],
+        aligns=["<", ">", ">"],
+    )
+
+
 def print_date_basis(rows: list[dict]):
     """How the dates on these mentions were obtained.
 
@@ -721,6 +806,7 @@ def main():
     print_headline(m, t, mode)
     print_confusion(m)
     print_pr_curve(precision_at_coverage(report_rows, t), t)
+    print_near_miss(report_rows, t)
     print_date_basis(report_rows)
     print_rollup(report_rows, t)
     print()

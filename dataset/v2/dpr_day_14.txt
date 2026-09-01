@@ -1,40 +1,54 @@
 DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 27/Aug/2026
-Weather: Humid, 34C, brief shower midday
-Contractor: ABC Infra Pvt Ltd
-Site Engineer: A. Bhuyan
+Report Date: 2026-08-27
+Weather: Overcast, light drizzle after 4pm
+Contractor: M/s ABC Infrastructure
+Site Engineer: J. Tamuly
 
 1. MECHANICAL - PIPING
-   a) Erect 12"-P-2102-A1A, TK-2102 manifold tie-in — closed out this week.
-   b) Field welds and UT, tank farm manifold, welds 40-52 — commenced 17 Sep.
-   c) Erect line 8"-P-1004-A6A, glycol feed to contactor V-1201 under way at the work front.
-   d) Mobilised for Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs.
-   e) Erect flare header the eighteen inch line, manifold to KO drum ongoing.
-   f) Tank farm manifold the twelve inch line, inlet/outlet the storage tank, finished 10/09/2026, JMR raised.
-   g) Erect the six inch line, fuel gas skid inlet under way at the work front.
-   h) Erect drain header 4"-P-1303-C5B, closed drain held up, awaiting client RFI clearance.
-   i) Alloy weld and PMI, flare header, welds 20-31 — 3 nos out of 12 done.
-   j) Suction and discharge piping, pumps P-1401A/B to manifold, tag P-1401A stopped, material shortage at store.
+   a) Crew deployed on Erect the eight inch line, glycol feed to contactor the separator vessel.
+   b) 12"-P-2101-A1A — Field welds and UT, tank farm manifold, welds 40-52, 6 nos out of 13 complete so far.
+   c) Erect the twelve inch line, the storage tank manifold tie-in delayed by 4 days, crane availability.
+   d) Erect flare header the eighteen inch line, manifold to KO drum — 64 of 86 m done.
+   e) Erect the six inch line, fuel gas skid inlet in progress, 13 of 18 m achieved.
+   f) Tank farm manifold 12"-P-2101-A1A, inlet/outlet TK-2101, finished 10 Sep, JMR raised.
+   g) Alloy weld and PMI, flare header, welds 20-31 ongoing.
+   h) Work front opened for Erect drain header 4"-P-1303-C5B, closed drain on 29/08/2026.
+   i) Erect blowdown lines 6"-P-1302-A6A, wellhead SDVs in progress, 18 of 44 m achieved, as of 26/Aug/2026.
+   j) Suction and discharge piping, pumps P-1401A/B to manifold — completed on 28 Aug.
 
-2. EQUIPMENT
-   a) Water fill and calibration strapping, the storage tank started 18 Sep.
+2. MECHANICAL - EQUIPMENT
+   a) Water fill and calibration strapping, TK-2102 stopped, material shortage at store.
 
-3. ELECTRICAL
-   a) Set and terminate the transformer, 11/0.433 kV under way at the work front.
-   b) Crew deployed on Pull MV cable 11 kV, substation to transformer T-2.
-   c) Core termination and lacing, the MCC and, finished 8 Aug, JMR raised.
+3. E&I - ELECTRICAL
+   a) Crew deployed on Set and terminate transformer T-2, 11/0.433 kV.
+   b) Pull MV cable 11 kV, substation to transformer T-2 stopped, material shortage at store.
+   c) Core termination and lacing, MCC-1 and MCC-2 completed 8 Aug.
 
-4. INSTRUMENTS
-   a) Terminate field instruments at JB-101 to JB-108 started this morning.
-   b) Pull instrument cables, rack tier 2 to junction boxes JB-101 to JB-108 started 28 Aug.
-   c) Mobilised for Install junction boxes JB-101 to JB-108, field.
-   d) Pull home-run cables, the junction box to control room FTA in progress, 237 of 480 m achieved.
+4. INSTRUMENTATION
+   a) Pull instrument cables, rack tier 2 to junction boxes box to the junction box in progress, 366 of 640 m achieved.
+   b) Install junction boxes JB-101 to JB-108, field, finished 27 Aug 2026, JMR raised.
+   c) Crew deployed on Pull home-run cables, JB-101 to JB-108 to control room FTA.
+   d) Terminate field instruments at JB-101 to JB-108, 62 nos out of 168 complete so far, as of 2026-08-26.
 
-5. GENERAL / SITE NARRATIVE
-   a) Client asked for a second wash bay, awaiting commercial approval.
-   b) Method statement for tank erection resubmitted after comments.
-   c) Unplanned soil replacement below the store shed, 60 m3 removed.
+5. STATIC EQUIPMENT (contd)
+   a) Progressed the P-1401A scope today, 48% complete, as of 24/Aug/2026.
+
+6. E&I - ELECTRICAL (contd)
+   a) Crew working on Pull MV cable 11 kV, substation to transformer.
+
+7. CIVIL (contd)
+   a) Team deployed on TK-2102, balance to follow.
+
+8. PIPING (contd)
+   a) Progressed the FST-1301 scope today, 80% complete.
+
+9. INSTRUMENTATION (contd)
+   a) Progressed the JB-101 scope today, 43% complete, as of 25/08/2026.
+
+10. GENERAL / SITE NARRATIVE
+   a) Crane operator on leave, replacement mobilised from Guwahati.
+   b) Manpower histogram updated and circulated to the planning cell.
 
 REMARKS
-   - Manpower: 144 nos on site.
-   - Equipment: 8 nos deployed.
+   - Manpower: 163 nos on site.
+   - Equipment: 7 nos deployed.

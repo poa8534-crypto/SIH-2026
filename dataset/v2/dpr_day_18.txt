@@ -1,41 +1,52 @@
-DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
-Report Date: 2026-10-21
-Weather: Clear, 31C
-Contractor: M/s ABC Infrastructure
-Site Engineer: M. Rahman
+DAILY PROGRESS REPORT
+Date: 2026-10-21  |  Weather: Humid, 34C, brief shower midday
+Contractor: M/s ABC Infrastructure  |  Project: OIL Well-Site Duliajan
+Prepared by: A. Bhuyan, Site Engineer
 
 1. PIPING WORKS
-   a) Bolt torque and gasket joint assembly, Unit 2 manifold, finished 2 Nov, JMR raised.
-   b) Field weld and RT, Unit 2 header welds 19-34 closed out 30/Oct/2026.
-   c) Pneumatic leak test with nitrogen, flare header is done and signed off.
-   d) Erect crude header 24"-P-1001-A1A, tank farm approach, finished 31/10/2026, JMR raised.
-   e) Hydrotest package 2, Unit 2 — this is the lines sixteen and twelve one, 81% done.
-   f) Erect line 10"-P-2002-A5A, test header Unit 2 in progress, 26 of 31 m achieved, as of 21/10/2026.
-   g) Erect the sixteen inch line,, twenty four 2 rack portion only, balance still open.
-   h) Erect line 12"-P-1003-A5A, test separator loop held up, awaiting client RFI clearance.
-   i) Erect the ten inch line, progressing at the twenty production location as of 19 Oct.
-   j) Support fabrication and installation, the twenty four inch line, 18 nos out of 22 complete so far.
-   k) Pipe supports and guides, Unit 2 rack stretch (20"-P-2001-A1A) completed.
+   a) Mobilised for Field weld and RT, Unit 2 header welds 19-34.
+   b) Bolt torque and gasket joint assembly, Unit 2 manifold — closed out this week.
+   c) Hydrotest package 1, Unit 1 lines the sixteen inch line and the twelve inch line — progress slow, 54% only.
+   d) Mobilised for Erect line 20"-P-2001-A1A, Unit 2 production header.
+   e) 20"-P-2001-A1A — Pipe supports and guides, Unit 2 rack stretch — 7 nos out of 19 done, as of 2026-10-21.
+   f) Pneumatic leak test with nitrogen, flare header, tag 18"-P-1301-B7A — completed on 2 Nov.
+   g) Erect Line 24"-P-1001-A1A, Unit 2 rack completed 18/10/2026.
+   h) Erect line 12"-P-1003-A5A, test separator loop — closed out this week.
+   i) Erect line 10"-P-2002-A5A, test header Unit 2 closed out 26 Oct.
+   j) Erect crude header 24"-P-1001-A1A, tank farm approach, finished 31 Oct 2026, JMR raised.
+   k) Support fabrication and installation, line 24"-P-1001-A1A, finished 19 Oct, JMR raised.
 
 2. MECHANICAL - EQUIPMENT
-   a) Tightness and pressure test, separators V-1101 and V-1201, tag V-1101, 1 nos out of 2 complete so far.
-   b) Load test, compressor package PK-2401, tag PK-2401 closed out 15 Oct.
+   a) Tightness and pressure test, separators V-1101 and V-1201, 1 nos out of 2 complete so far.
+   b) Load test, compressor package under way at the work front.
 
 3. ELECTRICAL
-   a) Install conduits and flexible connections, Unit 1/2 equipment started 29 Oct.
-   b) Substation energization delayed by 3 days, crane availability.
+   a) Install conduits and flexible connections, Unit 1/2 equipment, 16 nos out of 38 complete so far.
+   b) Substation energization in progress, about 50% complete, as of 21 Oct.
 
 4. E&I - INSTRUMENTATION
-   a) Install temperature elements element to the temperature element — closed out this week.
-   b) FE-1401 — Install flow meter elements FE-1401 to FE-1408, Unit 2 completed 2 Nov 2026.
+   a) Install temperature elements element to the temperature element — 10 nos out of 12 done.
+   b) Install flow meter elements FE-1401 to FE-1408, Unit 2 held up, awaiting client RFI clearance.
 
-5. HSE
-   a) Mechanical Completion Unit 1 completed 31 Oct.
+5. HSE / SAFETY
+   a) Work front opened for Mechanical Completion Unit 1 on 2026-10-31.
 
-6. GENERAL / SITE NARRATIVE
-   a) NCR raised by the client on concrete cube results, under review.
-   b) Toolbox talk conducted on working at height for 42 workers.
+6. STATIC EQUIPMENT (contd)
+   a) Progressed the TK-2101 scope today, 75% complete.
+   b) Team deployed on TK-2101, balance to follow.
+   c) Work continuing on V-2101, about 53% done, as of 19 Oct.
+
+7. PIPING (contd)
+
+8. 1. CIVIL / STRUCTURAL (contd)
+   a) V-1101 — crew on site, progress steady, as of 20/Oct/2026.
+   b) Cable trench with precast covers, to substation, work in progress.
+
+9. GENERAL / SITE NARRATIVE
+   a) Additional cable route survey requested for future Unit 3 tie-in.
+   b) Alcohol breathalyser checks carried out at the main gate.
+   c) Near miss reported: dropped spanner at the rack, no injury.
 
 REMARKS
-   - Manpower: 155 nos on site.
-   - Equipment: 3 nos deployed.
+   - Manpower: 96 nos on site.
+   - Equipment: 10 nos deployed.

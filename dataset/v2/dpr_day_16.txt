@@ -1,34 +1,46 @@
-DAILY PROGRESS REPORT
-Date: 25/09/2026  |  Weather: Clear, 31C
-Contractor: ABC Infra Pvt. Ltd.  |  Project: OIL Well-Site Duliajan
-Prepared by: J. Tamuly, Site Engineer
+DAILY PROGRESS REPORT — OIL DULIAJAN WELL-SITE
+Report Date: 2026-09-25
+Weather: Overcast, light drizzle after 4pm
+Contractor: ABC Infra Pvt Ltd
+Site Engineer: S. Hazarika
 
-1. PIPING
-   a) Hydrotest, tank farm manifold and pump suction closed out 22 Sep 2026.
-   b) Erect 12"-P-2102-A1A, TK-2102 manifold tie-in — completed on 17/Sep/2026.
-   c) 12"-P-2101-A1A — Field welds and UT, tank farm manifold, welds 40-52 completed 19 Sep.
-   d) Tank farm manifold the twelve inch line, inlet/outlet the storage tank started this morning.
-   e) Erect line 8"-P-1004-A6A, glycol feed to contactor V-1201 ongoing.
+1. PIPING WORKS
+   a) Hydrotest, tank farm manifold and pump suction (12"-P-2101-A1A) completed.
+   b) Tank farm manifold 12"-P-2101-A1A, inlet/outlet TK-2101 completed 15 Sep.
+   c) Erect 12"-P-2102-A1A, TK-2102 manifold tie-in — progress slow, 53% only.
+   d) 12"-P-2101-A1A — Field welds and UT, tank farm manifold, welds 40-52 in progress, 4 nos out of 13 achieved.
+   e) Erect the eight inch line, glycol feed to contactor the separator vessel — 7 of 26 m done.
 
-2. EQUIPMENT
-   a) P-1401A — Motor bump test, pumps P-1401A/B, 1 nos out of 2 complete so far.
-   b) Set crude transfer the pumps, Performance run, portion only, balance still open.
-   c) Water fill and calibration strapping, TK-2102 (TK-2102) — commenced 22 Sep.
+2. STATIC EQUIPMENT
+   a) Motor bump test, the pumps, 1 nos out of 2 complete so far.
+   b) Performance run, crude transfer the pumps closed out 27 Sep.
+   c) Water fill and calibration strapping, the storage tank in progress, 375 of 1010 m3 achieved.
 
 3. E&I - ELECTRICAL
-   a) Insulation resistance and hi-pot tests, MV cables to the transformer and, 4 nos out of 6 complete so far.
-   b) Protective relay setting and primary injection tests in progress, 5 nos out of 12 achieved.
+   a) Protective relay setting and primary injection tests completed 29/Sep/2026.
+   b) Insulation resistance and hi-pot tests, MV cables to T-1 and T-2 — closed out this week.
 
 4. INSTRUMENTS
-   a) Terminate field instruments at JB-101 to JB-108 — 126 nos out of 168 done.
+   a) Terminate field instruments at JB-101 to JB-108, 77 nos out of 168 complete so far.
 
-5. HSE
-   a) Mobilised for Mechanical Completion, Tank Farm and Utilities.
+5. HSE / SAFETY
+   a) Mechanical Completion, Tank Farm and Utilities in progress, about 87% complete.
 
-6. GENERAL / SITE NARRATIVE
-   a) Weekly progress photo compilation submitted to the PMC.
-   b) JMR for November progress billing submitted to OIL.
+6. PIPING WORKS (contd)
+   a) 10"-P-1602-B1A — crew on site, progress steady.
+   b) Hydrotest firewater main 10"- -1602-B1A, to Unit 1, work in progress, as of 22 Sep.
+   c) Progressed the 24"-P-1001-A1A scope today, 62% complete, as of 23/09/2026.
+   d) Progressed the 2"-P-2301-A6A scope today, 39% complete.
+   e) 12"-P-2101-A1A — crew on site, progress steady, as of 25/09/2026.
+
+7. STATIC EQUIPMENT (contd)
+   a) Progressed the P-1401A scope today, 26% complete.
+
+8. GENERAL / SITE NARRATIVE
+   a) Access road washed out after overnight rain, grading needed.
+   b) Unplanned soil replacement below the store shed, 60 m3 removed.
+   c) Fog delayed the morning shift start by two hours.
 
 REMARKS
-   - Manpower: 197 nos on site.
-   - Equipment: 10 nos deployed.
+   - Manpower: 199 nos on site.
+   - Equipment: 11 nos deployed.

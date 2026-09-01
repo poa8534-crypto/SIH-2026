@@ -1,38 +1,53 @@
-DAILY PROGRESS REPORT  (21/07/2026)
+DAILY PROGRESS REPORT  (2026-07-21)
 Project: OIL Well-Site Duliajan  |  Contractor: ABC Infra Pvt Ltd
-Weather: Windy, 28C, gusts 30 km/h  |  Prepared by: K. Baruah
+Weather: Clear, 31C  |  Prepared by: K. Baruah
 
-1. PIPING
-   a) Nitrogen line 3"-P-2302-A6A, package to header ongoing.
-   b) Instrument air header the two inch line, rack to Unit 2, finished 2026-07-22, JMR raised.
-   c) Chemical injection piping 1"-P-2501-A6A, skids to injection points, finished 07/07/2026, JMR raised.
+1. MECHANICAL - PIPING
+   a) Nitrogen line 3"-P-2302-A6A, package to header taken up at site.
+   b) Chemical injection piping 1"-P-2501-A6A, skids to injection points — closed out this week.
+   c) Instrument air header 2"-P-2301-A6A, rack to Unit 2 under way at the work front.
 
 2. MECHANICAL - EQUIPMENT
-   a) CS-2501 — Set chemical injection skids CS-2501 and CS-2502, wellhead U1/U2 delayed by 2 days, crane availability.
+   a) Set chemical injection skids the unit and, wellhead U1/U2 closed out 2 Jul.
 
-3. E&I - ELECTRICAL
-   a) Set and terminate the transformer, 11/0.433 kV — 1 nos out of 1 done.
-   b) Install MCC panels and switchboard, substation room, finished 17 Jul, JMR raised.
-   c) Glanding and termination, LV panels, substation held up, awaiting client RFI clearance.
-   d) Core termination and lacing, MCC-1 and MCC-2 completed 2026-08-05.
-   e) Emergency lighting and exit signage, control building — closed out this week.
-   f) Pull LV power cables, pump motors P-1401A/B, tag P-1401A started this morning.
-   g) Crew deployed on Cable glanding, MCC-1 and MCC-2 feeders.
-   h) Pull MV cable 11 kV, substation to transformer T-1 — progress slow, 54% only.
-   i) Set and terminate transformer T-1, 11/0.433 kV — 1 nos out of 1 done.
-   j) Crew deployed on Pull MV cable 11 kV, substation to transformer T-2.
-   k) WHCP-2101 — Pull LV power cables, wellhead panel WHCP-2101 feeders, Unit 2 — closed out this week.
-   l) Install cable tray ladder 600 mm, rack tier 3 is done and signed off.
-   m) Install cable tray ladder 600 — this is the 3, Unit 2 stretch one, 66% done.
+3. ELECTRICAL WORKS
+   a) Pull LV power cables, pump motors P-1401A/B, finished 25 Jul 2026, JMR raised.
+   b) Emergency lighting and exit signage, control building, 7 nos out of 14 complete so far.
+   c) Glanding and termination, LV panels, substation, 41 nos out of 84 complete so far.
+   d) Pull MV cable 11 kV, substation to the transformer, finished 03/08/2026, JMR raised.
+   e) Mobilised for Set and terminate transformer T-1, 11/0.433 kV.
+   f) Core termination and lacing, MCC-1 and MCC-2 — closed out this week.
+   g) Cable glanding, MCC-1 and MCC-2 feeders in progress, 27 nos out of 46 achieved, as of 2026-07-19.
+   h) Install MCC panels and switchboard, substation room — 2 nos out of 6 done, as of 19 Jul.
+   i) Set and terminate the transformer, 11/0.433 kV taken up at site.
+   j) Install cable tray 450 mm, rack tier 3, Unit 2 stretch — 55 of 140 m done.
+   k) Install cable tray ladder 600 mm, rack tier 3 stopped, material shortage at store.
+   l) Pull MV cable 11 kV, substation to the transformer in progress, 93 of 180 m achieved.
+   m) Pull LV power cables, wellhead panel WHCP-2101 feeders, Unit 2 under way at the work front.
 
-4. INSTRUMENTATION
-   a) Install instrument cable tray 300 mm, rack tier 2 is done and signed off.
+4. INSTRUMENTS
+   a) Install instrument cable tray 300 mm, rack tier 2 in progress, 110 of 180 m achieved.
 
-5. GENERAL / SITE NARRATIVE
-   a) Coating DFT gauge sent out for recalibration.
-   b) Waterlogging in the excavation, dewatering pumps deployed overnight.
-   c) Temporary diesel bowser stand fabricated at the laydown, unplanned scope.
+5. CIVIL WORKS (contd)
+   a) TK-2101 activity ongoing, no issues reported.
+
+6. ELECTRICAL WORKS (contd)
+   a) Team deployed on T-2, balance to follow, as of 20 Jul 2026.
+
+7. INSTRUMENTS (contd)
+   a) Team deployed on JB-101, balance to follow.
+   b) JB-101 — crew on site, progress steady.
+
+8. EQUIPMENT (contd)
+   a) Crew working on Shell courses, tank TK-2101.
+
+9. PIPING (contd)
+   a) Work continuing on 10"-P-1602-B1A, about 25% done, as of 19 Jul.
+
+10. GENERAL / SITE NARRATIVE
+   a) Client requested additional bollards near the gatehouse, not in contract scope.
+   b) Consumables inventory check carried out at the fabrication shed.
 
 REMARKS
-   - Manpower: 110 nos on site.
-   - Equipment: 11 nos deployed.
+   - Manpower: 226 nos on site.
+   - Equipment: 4 nos deployed.
