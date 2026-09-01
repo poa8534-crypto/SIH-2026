@@ -4243,3 +4243,141 @@ carries the severity, only the noun changed.
 The requested "collapse the four empty Schedule Health rows" change has no
 target on `origin/main`: commit `e7a849c` removed the `ScheduleHealth` component
 and its panel from `Home.tsx` entirely. See the task report for detail.
+## 2026-09-01 / D-042 - The review queue projects the matcher's reasoning, and every candidate carries its own score
+
+### Status
+Implemented. Both parts. Nothing blocked.
+
+### Part 1 - the three missing fields
+
+`match_method`, `margin` and `rationale` are persisted on `LinkedEvent`
+(`db.py` 266/269/270) and were already projected onto `LinkedEventResponse`
+for `GET /jobs/{id}`. `ReviewQueueItemResponse` did not carry them, so the
+Reconcile screen — the one place a planner adjudicates a match — had no
+reasoning to show. Added to the schema and populated in `get_review_queue`
+from the same `le` object the endpoint already loads.
+
+Projection only. No value is computed, rounded differently, or altered.
+
+### Part 2 - per-candidate scores: they exist, and they were being discarded
+
+**Investigated before changing anything. The finding is that the matcher
+already computes a full score for every candidate it ranks.**
+
+`matching/engine.py:177-190` builds a `LinkCandidate` for **every** retrieved
+id, then sorts and ranks them:
+
+```
+scored = [LinkCandidate(activity_id=..., retrieval_sources=...,
+                        rrf_score=..., features=fvs[r], final_score=final[r])
+          for r, i in enumerate(cand_ids)]
+scored.sort(key=lambda c: (-c.final_score, c.activity_id))
+for rank, c in enumerate(scored, 1):
+    c.rank = rank
+```
+
+So `final_score`, `features`, `rrf_score`, `retrieval_sources` and `rank` are
+populated per candidate, not for the winner only. `LinkCandidate`
+(`matching/models.py:72-78`) is the carrier.
+
+**They were discarded at `server/main.py:1052`:**
+
+```
+alternatives=json.dumps([c.activity_id for c in decision.candidates[:3]]),
+```
+
+Everything except the id was thrown away at serialisation. That single
+comprehension is why ranks 2+ had no score.
+
+**What changed.** The same three candidates are serialised with the score the
+engine already gave them, their rank, and their own rationale. The column now
+holds objects instead of bare ids; `LinkedEvent.alternative_candidates()` reads
+both shapes so rows written before this change still work, and
+`alternative_list()` is kept as the id-only view its existing callers
+(`LinkedEventResponse`, the agent slot state) expect. No migration: the column
+was already free-form JSON.
+
+**Per-candidate rationale.** `matching/engine.py:_rationale(c)` is a pure
+function of one candidate's own `features` and `retrieval_sources`. The engine
+already calls it on the top candidate (`engine.py:337`); it is now called on
+each of the three. That is the same code path on the same object, not a
+reimplementation that could drift, and it changes no decision, threshold, score
+or ranking. `matching/` was not modified — the function is imported.
+
+Note the two rationales are different things and are kept separate:
+`LinkedEvent.rationale` is **decision-level** and can carry decision reasons
+(`below_tau_low`, `margin_too_small`); each candidate's rationale is the
+evidence for that candidate alone. Both are exposed; the UI labels them
+distinctly.
+
+**Description** is resolved at read time from the `Activity` table in one
+batched query, not stored, so a baseline re-import cannot leave a stale
+description on a queued item.
+
+### Verified end to end
+
+Ingesting a two-line report through `POST /ingest` and reading
+`GET /review-queue`:
+
+```
+match_method: 'hybrid'   margin: 0.009237
+decision rationale: ['discipline_match','within_planned_window','margin_too_small']
+alternatives:
+  rank 1  PIP-INS-1045  0.681346  ['discipline_match','within_planned_window']
+  rank 2  PIP-ERC-1030  0.672109  ['discipline_match','high_embedding_similarity']
+  rank 3  PIP-ERC-1034  0.666958  ['discipline_match','high_embedding_similarity']
+```
+
+0.681346 - 0.672109 = 0.009237, which is the reported margin. "Why did 1 beat
+2" is answerable from the response: both matched the discipline, but rank 1 sat
+inside the planned window where rank 2 rested on embedding similarity.
+
+### Part 3 - frontend
+
+`MatchReasoning` renders real values; the "this endpoint does not supply
+rationale" fallback is deleted. Candidate cards show each candidate's own
+score and its own signals — never the top candidate's number. A candidate with
+no score of its own (a row ingested before this change) still says "no score
+sent" rather than borrowing one.
+
+`ReviewItem.alternatives` is typed `Array<ReviewCandidate | string>` and
+normalised through `toCandidates()`. Every read goes through that normaliser:
+the auto-select effect briefly indexed `alternatives` directly, which put a
+`ReviewCandidate` object into a `string | null` state and would have posted
+`[object Object]` as the `activity_id` on confirm for any item the matcher
+proposed no activity for. `tsconfig.json` does not set `strict`, so the
+compiler did not reject it; it is fixed and there is no raw indexing of
+`alternatives` left in `src/`. The union mirrors the server's own
+tolerance for legacy rows; it is also what keeps `reconcile.test.tsx`'s fixture
+compiling, and no test was modified. `rationale`/`margin`/`match_method` are
+optional on the client — the endpoint always sends them, but an older server
+would not, and the screen degrades instead of rendering `undefined`.
+
+No new one-off styles: existing primitives and the six-step scales only.
+
+### Verification
+
+- Backend, server suite: **181 passed, 1 failed.** The failure is
+  `test_server.py::TestCrossDPRStatistics::test_ground_truth_coverage`, a
+  `UnicodeDecodeError` reading `dataset/ground_truth.csv`. Confirmed
+  pre-existing by stashing this change and re-running: it fails identically.
+- Backend, whole tree: 461 passed, 5 failed. The other four are the same
+  ground-truth decode issue in `extraction/test_extractor.py` and three in
+  `extraction/test_prepass_defects.py`, a test file that does not belong to
+  this change and was added to the working tree by another person's
+  in-progress work during this session.
+- Collected count is 466, not the 547 quoted in the task. The tree collects
+  466 with the other person's new file present, 455 without it. `CLAUDE.md`
+  still says 264. The 547 figure does not correspond to this tree.
+- Frontend: `tsc --noEmit` clean; **52 passed / 3 failed**, the pre-existing
+  `useDevice` localStorage baseline, unchanged. No test modified.
+
+### Affected Areas
+`server/schemas.py` (`ReviewCandidate` new, three fields on
+`ReviewQueueItemResponse`) · `server/db.py` (`alternative_candidates()` new,
+`alternative_list()` now shape-tolerant) · `server/main.py` (candidate
+serialisation at ingest, review-queue projection, `_rationale` import) ·
+`frontend/src/types.ts` · `frontend/src/components/MatchReasoning.tsx` ·
+`frontend/src/pages/Reconcile.tsx`
+
+Supersedes the blocker recorded in D-039, which is now closed.

@@ -291,13 +291,52 @@ class LinkedEvent(Base):
             return []
 
     def alternative_list(self) -> list[str]:
+        """The candidate activity ids, oldest callers' shape.
+
+        The column stored a bare list of ids until per-candidate scores were
+        serialised into it; it now stores a list of objects. Rows written
+        before that change are still bare id strings, so both shapes are read
+        here and both yield a list of ids. Callers that only want ids —
+        LinkedEventResponse for GET /jobs/{id}, and the agent slot state — are
+        unaffected by the change.
+        """
+        return [c["activity_id"] for c in self.alternative_candidates()]
+
+    def alternative_candidates(self) -> list[dict]:
+        """Every ranked candidate with its own score and rationale.
+
+        Empty `rationale` and a 0.0 `score` on a row written before candidate
+        scores were serialised: the ids are all that row ever stored, and a
+        missing score is reported as missing rather than back-filled with the
+        top candidate's number.
+        """
         if not self.alternatives:
             return []
         import json
         try:
-            return json.loads(self.alternatives)
+            raw = json.loads(self.alternatives)
         except (json.JSONDecodeError, TypeError):
             return []
+        if not isinstance(raw, list):
+            return []
+
+        out: list[dict] = []
+        for i, entry in enumerate(raw, start=1):
+            if isinstance(entry, str):
+                # Pre-change row: an id and nothing else.
+                out.append(
+                    {"activity_id": entry, "rank": i, "score": 0.0, "rationale": []}
+                )
+            elif isinstance(entry, dict) and entry.get("activity_id"):
+                out.append(
+                    {
+                        "activity_id": entry["activity_id"],
+                        "rank": int(entry.get("rank", i)),
+                        "score": float(entry.get("score", 0.0)),
+                        "rationale": list(entry.get("rationale", [])),
+                    }
+                )
+        return out
 
 
 # ── AuditRecord (immutable) ─────────────────────────────────────────────────

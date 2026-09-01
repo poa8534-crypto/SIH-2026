@@ -86,6 +86,14 @@ from matching.providers import (
 from matching.config import production
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
+# The matcher's own per-candidate rationale. `LinkDecision.rationale` is the
+# decision-level list (it can carry decision reasons such as "below_tau_low"),
+# while this derives the evidence for ONE candidate from that candidate's own
+# feature vector. The engine already calls it on the top candidate
+# (`matching/engine.py:337`); calling it on the others changes no decision,
+# threshold, score or ranking, and is the same code path rather than a
+# reimplementation that could drift.
+from matching.engine import _rationale as _candidate_rationale
 
 from .db import (
     Activity,
@@ -133,6 +141,7 @@ from .schemas import (
     ProductivityMetric,
     ResolveRequest,
     ResolveResponse,
+    ReviewCandidate,
     ReviewQueueItemResponse,
     ScheduleActivityResponse,
     ScheduleResponse,
@@ -1049,7 +1058,24 @@ async def ingest_file(
                 percentage=event.percentage,
                 confidence=round(decision.confidence, 2),
                 match_method=event.provenance.method.value,
-                alternatives=json.dumps([c.activity_id for c in decision.candidates[:3]]),
+                # Every ranked candidate, with the score the engine already
+                # gave it and the signals that fired for IT — not for the
+                # winner. `_rationale` is the matcher's own function, applied
+                # to the candidate object the engine already built and scored;
+                # nothing is recomputed and no decision is affected. Without
+                # this only the ids survived, and "why did 1 beat 2" was
+                # unanswerable downstream. See D-042.
+                alternatives=json.dumps(
+                    [
+                        {
+                            "activity_id": c.activity_id,
+                            "rank": c.rank,
+                            "score": round(c.final_score, 6),
+                            "rationale": _candidate_rationale(c),
+                        }
+                        for c in decision.candidates[:3]
+                    ]
+                ),
                 decision=outcome.value,
                 margin=decision.margin,
                 rationale=json.dumps(decision.rationale),
@@ -1263,9 +1289,30 @@ def get_review_queue(
     )
     items = query.order_by(priority_rank.desc(), ReviewQueueItem.created_at).all()
 
+    events = {
+        le.id: le
+        for le in db.query(LinkedEvent)
+        .filter(LinkedEvent.id.in_([i.linked_event_id for i in items]))
+        .all()
+    } if items else {}
+
+    # Descriptions for every candidate across every item, in one query rather
+    # than one per candidate. Resolved at read time so a baseline re-import
+    # cannot leave a stale description on a queued item.
+    candidate_ids = {
+        c["activity_id"]
+        for item in items
+        for c in (events.get(item.linked_event_id).alternative_candidates()
+                  if events.get(item.linked_event_id) else [])
+    }
+    descriptions = {
+        a.activity_id: a.description
+        for a in db.query(Activity).filter(Activity.activity_id.in_(candidate_ids)).all()
+    } if candidate_ids else {}
+
     results = []
     for item in items:
-        le = db.query(LinkedEvent).filter(LinkedEvent.id == item.linked_event_id).first()
+        le = events.get(item.linked_event_id)
         results.append(
             ReviewQueueItemResponse(
                 id=item.id,
@@ -1279,7 +1326,25 @@ def get_review_queue(
                 confidence=le.confidence if le else 0.0,
                 tags=le.tag_list() if le else [],
                 suggested_activity_id=item.activity_id,
-                alternatives=le.alternative_list() if le else [],
+                # Each candidate carries its OWN score and rationale. A row
+                # written before candidate scores were serialised yields
+                # score 0.0 and an empty rationale — reported as absent rather
+                # than back-filled with the top candidate's number.
+                alternatives=[
+                    ReviewCandidate(
+                        activity_id=c["activity_id"],
+                        rank=c["rank"],
+                        score=c["score"],
+                        rationale=c["rationale"],
+                        description=descriptions.get(c["activity_id"]),
+                    )
+                    for c in (le.alternative_candidates() if le else [])
+                ],
+                # Projection only — persisted on the LinkedEvent row and
+                # already returned by GET /jobs/{id}; never computed here.
+                match_method=le.match_method if le else "prepass",
+                margin=le.margin if le else 0.0,
+                rationale=json.loads(le.rationale) if le and le.rationale else [],
                 created_at=item.created_at,
             )
         )

@@ -1,19 +1,43 @@
 import React from 'react';
+import { ReviewCandidate } from '../types';
 
 /**
  * Why the matcher chose what it chose.
  *
- * This is the product's differentiator and until now it was rendered nowhere:
  * `rationale` (deterministic feature names, per D-003 — never LLM prose),
- * `margin` (top-1 minus top-2) and `match_method` are all persisted and were
- * all invisible.
+ * `margin` (top-1 minus top-2) and `match_method` are persisted on the linked
+ * event and are now projected by GET /review-queue as well as GET /jobs/{id},
+ * so this renders real values on Reconcile rather than explaining their
+ * absence. See D-042.
  *
- * The component is deliberately honest about missing data. GET /review-queue
- * does not yet project these three fields (see the note on `ReviewItem` in
- * types.ts), so on Reconcile it renders the "not supplied" line rather than an
- * empty box that reads like a bug or, worse, a fabricated score. On Ingest,
- * where GET /jobs/{id} does supply them, it renders the real values.
+ * Nothing here is ever computed client-side. Where a value is genuinely
+ * missing — a row ingested before per-candidate scores were serialised — it is
+ * reported as missing, never substituted.
  */
+
+/**
+ * Normalise `ReviewItem.alternatives` to candidate objects.
+ *
+ * The field is `Array<ReviewCandidate | string>`: the server's
+ * `alternative_candidates()` reads both shapes because rows written before
+ * per-candidate scores were serialised hold bare ids, and the client mirrors
+ * that tolerance. A bare id yields `score: 0` and no rationale, which the UI
+ * shows as "no score sent" rather than as a zero.
+ */
+export function toCandidates(
+  alternatives: Array<ReviewCandidate | string>
+): ReviewCandidate[] {
+  return alternatives.map((a, i) =>
+    typeof a === 'string'
+      ? { activity_id: a, rank: i + 1, score: 0, rationale: [], description: null }
+      : a
+  );
+}
+
+/** True when this candidate carries a real score of its own. */
+export function hasScore(c: ReviewCandidate): boolean {
+  return c.score > 0;
+}
 
 export function SignalChips({ rationale }: { rationale: string[] }) {
   return (
@@ -45,14 +69,13 @@ export function MatchReasoning({
   className?: string;
 }) {
   const hasSignals = Array.isArray(rationale) && rationale.length > 0;
-  const hasMargin = typeof margin === 'number';
 
   return (
     <div className={`flex flex-col gap-3 ${className}`.trim()}>
       <div className="flex flex-wrap items-baseline gap-5">
         <Figure label="Score">{(confidence * 100).toFixed(1)}%</Figure>
         <Figure label="Margin over next">
-          {hasMargin ? (
+          {typeof margin === 'number' ? (
             margin.toFixed(3)
           ) : (
             <span className="text-muted">—</span>
@@ -70,15 +93,8 @@ export function MatchReasoning({
         {hasSignals ? (
           <SignalChips rationale={rationale} />
         ) : (
-          /* Not an empty state and not a zero — a statement about the API.
-             Nothing here is ever invented client-side. */
-          <span className="text-body text-muted leading-relaxed">
-            GET /review-queue does not return{' '}
-            <span className="font-mono text-fg">rationale</span>,{' '}
-            <span className="font-mono text-fg">margin</span> or{' '}
-            <span className="font-mono text-fg">match_method</span> yet. They are
-            recorded on the linked event and already returned by GET /jobs/
-            {'{id}'} — see the Ingest screen&rsquo;s Why column.
+          <span className="text-body text-muted">
+            No signals recorded for this decision.
           </span>
         )}
       </div>

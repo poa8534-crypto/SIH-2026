@@ -1,5 +1,16 @@
 export type Discipline = 'civil' | 'piping' | 'static_equipment' | 'electrical' | 'instrumentation' | 'hse';
 
+/** One activity the matcher ranked for a review item, with its own score. */
+export interface ReviewCandidate {
+  activity_id: string;
+  rank: number;
+  /** This candidate's own final_score — never the top candidate's. */
+  score: number;
+  /** Feature names that fired for THIS candidate. */
+  rationale: string[];
+  description: string | null;
+}
+
 export interface ReviewItem {
   id: string;
   linked_event_id: string;
@@ -12,29 +23,35 @@ export interface ReviewItem {
   confidence: number;
   tags: string[];
   suggested_activity_id: string | null;
-  alternatives: string[];
+  /**
+   * Every ranked candidate, each carrying its own score and rationale.
+   *
+   * Was `string[]`, which is why ranks 2+ had no score and "why did candidate
+   * 1 beat candidate 2" was unanswerable. The engine scores every candidate
+   * (`matching/engine.py:177-190`); only the ids used to survive
+   * serialisation. See D-042.
+   *
+   * A row ingested before that change yields `score: 0`, `rank` by position
+   * and an empty `rationale` — the UI reports that as absent rather than
+   * substituting the top candidate's number.
+   *
+   * The bare-string arm mirrors `LinkedEvent.alternative_candidates()` on the
+   * server, which reads both shapes for exactly the same reason. Normalise
+   * with `toCandidates()` rather than reading this field directly.
+   */
+  alternatives: Array<ReviewCandidate | string>;
   created_at: string;
 
-  /* ── The matcher's reasoning ──────────────────────────────────────────────
+  /**
+   * The matcher's own record of how it reached this proposal, now projected
+   * by GET /review-queue (`server/schemas.py` ReviewQueueItemResponse,
+   * populated in `get_review_queue`). `rationale` is the DECISION-level list
+   * and can carry decision reasons such as `below_tau_low`; the per-candidate
+   * evidence lives on each entry of `alternatives`.
    *
-   * OPTIONAL BECAUSE THE ENDPOINT DOES NOT SEND THEM YET.
-   *
-   * All three are persisted on the LinkedEvent row this item points at
-   * (`server/db.py` — `match_method` 266, `margin` 269, `rationale` 270) and
-   * all three are already projected onto `LinkedEventResponse`, which is what
-   * GET /jobs/{id} returns (`server/schemas.py` 47/53/54, populated at
-   * `server/main.py` 1230/1236/1237).
-   *
-   * GET /review-queue does not project them. `server/main.py:1264` already
-   * loads the same LinkedEvent as `le` and reads six other fields off it, so
-   * the change is three lines in the `ReviewQueueItemResponse(...)` call at
-   * 1266 plus three fields on the schema at `server/schemas.py:80`.
-   *
-   * That is an endpoint-shape change, which this pass is not permitted to
-   * make. The fields are declared here — and `MatchReasoning` renders them —
-   * so that when the endpoint sends them the UI lights up with no further
-   * frontend work. They are NEVER faked and NEVER computed client-side: when
-   * absent the panel says the endpoint does not supply them. See D-031.
+   * Optional, not because the endpoint omits them — it sends all three with
+   * defaults — but because a response from an older server would not, and the
+   * screen must degrade rather than render `undefined`.
    */
   rationale?: string[];
   margin?: number;
