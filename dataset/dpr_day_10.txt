@@ -6,10 +6,10 @@ Prepared by: Vikram Saikia
 1. PIPING
    - Pipe insulation 8 inch P-1003: ALL 80 m2 complete.
    - Paint coating pipe rack: 720 of 850 m2 done. Should close by 18 Sep.
-   - P&ID punch list close-out: 8 of 12 Category A items closed. 4 remaining — need vendor support for specialty valve issue. 20 of 28 Category B closed.
+   - P&ID punch list close-out: 8 of 12 Category A items closed. 4 remaining â€” need vendor support for specialty valve issue. 20 of 28 Category B closed.
 
 2. ELECTRICAL
-   - SWGR 6.6kV energisation: STAGED APPROACH. First stage completed 10 Sep — bus energised, all interlocks verified. Second stage 12 Sep — transformer to SWGR confirmed. Third stage today — MCC energised from SWGR. All 6 MCC panels live.
+   - SWGR 6.6kV energisation: STAGED APPROACH. First stage completed 10 Sep â€” bus energised, all interlocks verified. Second stage 12 Sep â€” transformer to SWGR confirmed. Third stage today â€” MCC energised from SWGR. All 6 MCC panels live.
    - Motor start-up P-101A: started and run for 4 hours. Vibration: 2.1 mm/s (within limit of 4.5). Current: 85% of FLA. All readings normal.
    - Motor start-up P-101B: started, run-in test ongoing. Same parameters as P-101A, looking good.
    - Area lighting: ALL 32 lights installed. 16 of 16 circuits tested and passed.

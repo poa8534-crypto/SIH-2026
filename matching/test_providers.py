@@ -343,7 +343,9 @@ def _ground_truth_ids() -> list[str]:
     import csv
 
     ids = []
-    with open(DATASET / "ground_truth.csv", encoding="cp1252", newline="") as f:
+    # utf-8 explicitly, never the platform default: the corpus is UTF-8 as of
+    # D-045, and a bare open() would read it as cp1252 on Windows.
+    with open(DATASET / "ground_truth.csv", encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             aid = (row.get("activity_id") or "").strip()
             if aid:

@@ -18,7 +18,7 @@ Prepared by: Rajesh Phukan
 
 3. EQUIPMENT
    - TK-1 roof installation complete. Pontoon roof welded and tested.
-   - TK-1 hydrotest started 21 Aug — water filling in progress. Level at 60%. Expected completion 25 Aug.
+   - TK-1 hydrotest started 21 Aug â€” water filling in progress. Level at 60%. Expected completion 25 Aug.
    - V-101 nozzle-ready inspection: all 6 nozzles verified, blind flanges torque-checked.
    - CS-01 epoxy grouting completed 22 Aug. Anchor bolts torqued to spec.
    - HS-01 grouting done. Anchor bolts torqued. Skid alignment verified.
@@ -27,12 +27,12 @@ Prepared by: Rajesh Phukan
    - LT cable laying: 680 m complete for all pump motors. Route verified.
    - Control cable laying: 2200 m of 3400 m laid. Working on east pipe rack section.
    - Cable termination HT: 16 of 24 ends terminated. Heat-shrink kits applied and tested.
-   - Cable laying for 6.6kV transformer — TR-01 secondary cables routed.
+   - Cable laying for 6.6kV transformer â€” TR-01 secondary cables routed.
 
 5. INSTRUMENTATION
    - All 18 pressure transmitters calibrated and certified.
-   - Field instrument mounting — pressure: 10 of 18 PTs installed on piping.
-   - Field instrument mounting — temperature: 8 of 14 RTDs mounted on exchangers.
+   - Field instrument mounting â€” pressure: 10 of 18 PTs installed on piping.
+   - Field instrument mounting â€” temperature: 8 of 14 RTDs mounted on exchangers.
    - Control valve installation: 3 of 8 CVs installed and stroke-tested.
    - Safety valve PSV-01, PSV-02, PSV-03 installed on V-101. Set pressure verified.
 

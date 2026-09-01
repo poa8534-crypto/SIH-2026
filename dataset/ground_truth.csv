@@ -201,55 +201,55 @@ dpr_day_10.txt,2026-09-15,BBS observations,HSE-BBS-1113,exact
 dpr_day_10.txt,2026-09-15,JMR for August progress billing,NO_MATCH,no_match
 dpr_day_10.txt,2026-09-15,earthing system continuity test,ELE-GRD-1086,exact
 dpr_day_10.txt,2026-09-15,weekly progress photo compilation,NO_MATCH,no_match
-piping_progress.xlsx,2026-09-15,Pipe Rack Steel Erection Tier 1 — ,PIP-1023,exact
-piping_progress.xlsx,2026-09-15,"Pipe Rack Steel Erection Tier 2 — 4 MT remaining, crane issue",PIP-1024,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 24"" Main Header — 18 spools fabricated",PIP-1025,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 12"" Transfer Line — 12 spools completed",PIP-1026,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 8"" Flare Header — 10 of 14 spools done",PIP-1027,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 4"" Utility Water — 8 spools done",PIP-1028,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 6"" Drain Header — 2 of 10 spools done",PIP-1029,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 24"" Main Header — All 18 spools erected",PIP-1030,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 12"" Transfer — 12 spools erected",PIP-1031,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 8"" Flare Header — 14 spools erected",PIP-1032,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 4"" Utility Water — 8 spools erected",PIP-1033,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 6"" Drain Header — 10 spools erected",PIP-1034,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 24"" Main Header — 36 flanges bolted",PIP-1035,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 12"" Transfer — 24 flanges done",PIP-1036,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 8"" Flare Header — 28 flanges bolted",PIP-1037,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 4"" Utility Water — 16 flanges done",PIP-1038,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 6"" Drain Header — 20 flanges bolted",PIP-1039,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 24"" Main Header — All 6 sections passed",PIP-1040,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 12"" Transfer — 4 sections passed",PIP-1041,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 8"" Flare Header — 5 sections passed",PIP-1042,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 4"" Utility Water — 3 sections passed",PIP-1043,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 6"" Drain Header — 3 sections passed",PIP-1044,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 24"" Main Header — 120 m2 done",PIP-1045,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 12"" Transfer — 65 m2 done",PIP-1046,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 8"" Flare Header — 50 of 80 m2 done",PIP-1047,exact
-piping_progress.xlsx,2026-09-15,"Paint Coating — Pipe Rack — 720 of 850 m2, humidity delay",PIP-1048,exact
-piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 1 — 145 supports installed,PIP-1049,exact
-piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 2 — 3 rejected for elevation,PIP-1050,exact
-piping_progress.xlsx,2026-09-15,Skid Piping — CS-01 — 6 spools fab + erect,PIP-1051,exact
-piping_progress.xlsx,2026-09-15,"P&ID Punch List Close-out — 8/12 Cat A, 20/28 Cat B closed",PIP-1053,exact
-civil_progress.xlsx,2026-09-15,Site Clearing Zone A — Complete,CIV-SIT-1001,exact
-civil_progress.xlsx,2026-09-15,Site Clearing Zone B — Complete,CIV-SIT-1002,exact
-civil_progress.xlsx,2026-09-15,Grading & Compaction A+B — 95% MDD achieved,CIV-SIT-1003,exact
-civil_progress.xlsx,2026-09-15,"Bored Piling — Pipe Rack P1-P12 — 1 day over, piling rig breakdown",CIV-PLY-1004,exact
-civil_progress.xlsx,2026-09-15,Bored Piling — Equip Fdn EF1-EF4 — Complete,CIV-PLY-1005,exact
-civil_progress.xlsx,2026-09-15,"Bored Piling — Tank TK-1 — 1 day over, rain delay",CIV-PLY-1006,exact
-civil_progress.xlsx,2026-09-15,"Pedestal Concreting P1-P12 — M30 concrete, cubes passed",CIV-FDN-1007,exact
-civil_progress.xlsx,2026-09-15,"Equip Foundation EF1-EF4 — M35 concrete, 7-day strength OK",CIV-FDN-1008,exact
-civil_progress.xlsx,2026-09-15,Tank Ringwall Foundation TK-1 — Complete,CIV-FDN-1009,exact
-civil_progress.xlsx,2026-09-15,Slab-on-Grade Pump House — 200 mm thk M30,CIV-FDN-1010,exact
-civil_progress.xlsx,2026-09-15,Backfilling — Pipe Rack Trenches — Compacted sand fill,CIV-BKL-1011,exact
-civil_progress.xlsx,2026-09-15,Backfilling — Equipment Pads — Approved backfill material,CIV-BKL-1012,exact
-civil_progress.xlsx,2026-09-15,"Containment Bund Wall Zone A — Complete, 600mm thk RC",CIV-BND-1013,exact
-civil_progress.xlsx,2026-09-15,Grade Beams Pipe Rack — Completed in 2 pours,CIV-GBM-1014,exact
-civil_progress.xlsx,2026-09-15,Drainage Channels Perimeter — Delayed by fencing conflict,CIV-DWG-1015,exact
-civil_progress.xlsx,2026-09-15,"Fence & Gate Plot Boundary — Complete, 3 gates",CIV-FNC-1016,exact
-civil_progress.xlsx,2026-09-15,Firewater Pit Zone B — Lined pit complete,CIV-PLG-1017,exact
-civil_progress.xlsx,2026-09-15,"Foundation — Compressor Skid CS-01 — M35, curing complete",CIV-FND-1018,exact
-civil_progress.xlsx,2026-09-15,"Foundation — Header Skid HS-01 — M30, complete",CIV-FND-1019,exact
-civil_progress.xlsx,2026-09-15,Flooring — MCC Room — Tiles done. Holiday delays,CIV-FLR-1020,exact
-civil_progress.xlsx,2026-09-15,Plastering & Painting MCC Room — 2 coats plaster + distemper,CIV-PLT-1021,exact
-civil_progress.xlsx,2026-09-15,"Cable Tray Buried A+B — Completed, backfilled",CIV-APN-1022,exact
+piping_progress.xlsx,2026-09-15,Pipe Rack Steel Erection Tier 1 â€” ,PIP-1023,exact
+piping_progress.xlsx,2026-09-15,"Pipe Rack Steel Erection Tier 2 â€” 4 MT remaining, crane issue",PIP-1024,exact
+piping_progress.xlsx,2026-09-15,"Spool Fab â€” 24"" Main Header â€” 18 spools fabricated",PIP-1025,exact
+piping_progress.xlsx,2026-09-15,"Spool Fab â€” 12"" Transfer Line â€” 12 spools completed",PIP-1026,exact
+piping_progress.xlsx,2026-09-15,"Spool Fab â€” 8"" Flare Header â€” 10 of 14 spools done",PIP-1027,exact
+piping_progress.xlsx,2026-09-15,"Spool Fab â€” 4"" Utility Water â€” 8 spools done",PIP-1028,exact
+piping_progress.xlsx,2026-09-15,"Spool Fab â€” 6"" Drain Header â€” 2 of 10 spools done",PIP-1029,exact
+piping_progress.xlsx,2026-09-15,"Spool Erection â€” 24"" Main Header â€” All 18 spools erected",PIP-1030,exact
+piping_progress.xlsx,2026-09-15,"Spool Erection â€” 12"" Transfer â€” 12 spools erected",PIP-1031,exact
+piping_progress.xlsx,2026-09-15,"Spool Erection â€” 8"" Flare Header â€” 14 spools erected",PIP-1032,exact
+piping_progress.xlsx,2026-09-15,"Spool Erection â€” 4"" Utility Water â€” 8 spools erected",PIP-1033,exact
+piping_progress.xlsx,2026-09-15,"Spool Erection â€” 6"" Drain Header â€” 10 spools erected",PIP-1034,exact
+piping_progress.xlsx,2026-09-15,"Flange Mgmt â€” 24"" Main Header â€” 36 flanges bolted",PIP-1035,exact
+piping_progress.xlsx,2026-09-15,"Flange Mgmt â€” 12"" Transfer â€” 24 flanges done",PIP-1036,exact
+piping_progress.xlsx,2026-09-15,"Flange Mgmt â€” 8"" Flare Header â€” 28 flanges bolted",PIP-1037,exact
+piping_progress.xlsx,2026-09-15,"Flange Mgmt â€” 4"" Utility Water â€” 16 flanges done",PIP-1038,exact
+piping_progress.xlsx,2026-09-15,"Flange Mgmt â€” 6"" Drain Header â€” 20 flanges bolted",PIP-1039,exact
+piping_progress.xlsx,2026-09-15,"Hydrotest â€” 24"" Main Header â€” All 6 sections passed",PIP-1040,exact
+piping_progress.xlsx,2026-09-15,"Hydrotest â€” 12"" Transfer â€” 4 sections passed",PIP-1041,exact
+piping_progress.xlsx,2026-09-15,"Hydrotest â€” 8"" Flare Header â€” 5 sections passed",PIP-1042,exact
+piping_progress.xlsx,2026-09-15,"Hydrotest â€” 4"" Utility Water â€” 3 sections passed",PIP-1043,exact
+piping_progress.xlsx,2026-09-15,"Hydrotest â€” 6"" Drain Header â€” 3 sections passed",PIP-1044,exact
+piping_progress.xlsx,2026-09-15,"Insulation â€” 24"" Main Header â€” 120 m2 done",PIP-1045,exact
+piping_progress.xlsx,2026-09-15,"Insulation â€” 12"" Transfer â€” 65 m2 done",PIP-1046,exact
+piping_progress.xlsx,2026-09-15,"Insulation â€” 8"" Flare Header â€” 50 of 80 m2 done",PIP-1047,exact
+piping_progress.xlsx,2026-09-15,"Paint Coating â€” Pipe Rack â€” 720 of 850 m2, humidity delay",PIP-1048,exact
+piping_progress.xlsx,2026-09-15,Pipe Support Install â€” Tier 1 â€” 145 supports installed,PIP-1049,exact
+piping_progress.xlsx,2026-09-15,Pipe Support Install â€” Tier 2 â€” 3 rejected for elevation,PIP-1050,exact
+piping_progress.xlsx,2026-09-15,Skid Piping â€” CS-01 â€” 6 spools fab + erect,PIP-1051,exact
+piping_progress.xlsx,2026-09-15,"P&ID Punch List Close-out â€” 8/12 Cat A, 20/28 Cat B closed",PIP-1053,exact
+civil_progress.xlsx,2026-09-15,Site Clearing Zone A â€” Complete,CIV-SIT-1001,exact
+civil_progress.xlsx,2026-09-15,Site Clearing Zone B â€” Complete,CIV-SIT-1002,exact
+civil_progress.xlsx,2026-09-15,Grading & Compaction A+B â€” 95% MDD achieved,CIV-SIT-1003,exact
+civil_progress.xlsx,2026-09-15,"Bored Piling â€” Pipe Rack P1-P12 â€” 1 day over, piling rig breakdown",CIV-PLY-1004,exact
+civil_progress.xlsx,2026-09-15,Bored Piling â€” Equip Fdn EF1-EF4 â€” Complete,CIV-PLY-1005,exact
+civil_progress.xlsx,2026-09-15,"Bored Piling â€” Tank TK-1 â€” 1 day over, rain delay",CIV-PLY-1006,exact
+civil_progress.xlsx,2026-09-15,"Pedestal Concreting P1-P12 â€” M30 concrete, cubes passed",CIV-FDN-1007,exact
+civil_progress.xlsx,2026-09-15,"Equip Foundation EF1-EF4 â€” M35 concrete, 7-day strength OK",CIV-FDN-1008,exact
+civil_progress.xlsx,2026-09-15,Tank Ringwall Foundation TK-1 â€” Complete,CIV-FDN-1009,exact
+civil_progress.xlsx,2026-09-15,Slab-on-Grade Pump House â€” 200 mm thk M30,CIV-FDN-1010,exact
+civil_progress.xlsx,2026-09-15,Backfilling â€” Pipe Rack Trenches â€” Compacted sand fill,CIV-BKL-1011,exact
+civil_progress.xlsx,2026-09-15,Backfilling â€” Equipment Pads â€” Approved backfill material,CIV-BKL-1012,exact
+civil_progress.xlsx,2026-09-15,"Containment Bund Wall Zone A â€” Complete, 600mm thk RC",CIV-BND-1013,exact
+civil_progress.xlsx,2026-09-15,Grade Beams Pipe Rack â€” Completed in 2 pours,CIV-GBM-1014,exact
+civil_progress.xlsx,2026-09-15,Drainage Channels Perimeter â€” Delayed by fencing conflict,CIV-DWG-1015,exact
+civil_progress.xlsx,2026-09-15,"Fence & Gate Plot Boundary â€” Complete, 3 gates",CIV-FNC-1016,exact
+civil_progress.xlsx,2026-09-15,Firewater Pit Zone B â€” Lined pit complete,CIV-PLG-1017,exact
+civil_progress.xlsx,2026-09-15,"Foundation â€” Compressor Skid CS-01 â€” M35, curing complete",CIV-FND-1018,exact
+civil_progress.xlsx,2026-09-15,"Foundation â€” Header Skid HS-01 â€” M30, complete",CIV-FND-1019,exact
+civil_progress.xlsx,2026-09-15,Flooring â€” MCC Room â€” Tiles done. Holiday delays,CIV-FLR-1020,exact
+civil_progress.xlsx,2026-09-15,Plastering & Painting MCC Room â€” 2 coats plaster + distemper,CIV-PLT-1021,exact
+civil_progress.xlsx,2026-09-15,"Cable Tray Buried A+B â€” Completed, backfilled",CIV-APN-1022,exact
