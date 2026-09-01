@@ -4243,3 +4243,83 @@ carries the severity, only the noun changed.
 The requested "collapse the four empty Schedule Health rows" change has no
 target on `origin/main`: commit `e7a849c` removed the `ScheduleHealth` component
 and its panel from `Home.tsx` entirely. See the task report for detail.
+
+---
+
+## 2026-09-01 / D-042 — The product fonts ship with the frontend
+
+> Recovered. This work was originally written as D-039 on a branch that was
+> never merged; `origin/main` independently reused D-039 for the Tier 1
+> restructure, so the entry is renumbered D-042 and re-applied here.
+
+### Status
+Implemented. Presentation-layer only; no component structure, state, props, or
+behaviour changed.
+
+### Context
+D-030 correctly prohibited a runtime font fetch because the demo must work on
+a venue projector without internet. It concluded that the sans stack should
+name only system fonts after noting that the declared Inter face had never
+actually been loaded. That conclusion made the interface dependable but left
+it rendering in Helvetica or Arial, while the existing `font-mono` utilities
+also had no bundled face behind them.
+
+The six-step type scale from D-030 is already adopted in the current JSX. A
+fresh scan found no live bracketed pixel-size utility in a `className`; the
+only `text-[15px]` match is the explanatory example in `index.css`. The scale's
+11px dense-chrome values are therefore already folded into `text-label` at
+12px. No element needed an 11px exemption in this pass.
+
+### Decision
+Supersede D-030's system-font conclusion while preserving its offline
+constraint. Bundle the variable Inter and JetBrains Mono packages through
+`@fontsource`, import their package CSS before application imports, and bind
+the verified family names `Inter Variable` and `JetBrains Mono Variable` to
+the existing Tailwind `--font-sans` and `--font-mono` tokens. The installed
+5.3.0 packages expose no latin-only stylesheet, so the package-root stylesheet
+is the supported fallback; its unicode ranges ensure the browser loads the
+latin face for the demo content.
+
+Use the existing `tabular-nums` utility on Home metrics, Schedule date and
+numeric cells, Memory tables, and confidence badges. Keep the full system-font
+fallback chains for both families.
+
+### Reason
+The font files now travel inside `dist/` with the application. The browser
+does not fetch Google Fonts or any other CDN, so the presentation is stable
+without an internet connection while matching the type choices already named
+throughout the UI. Tabular figures keep changing values aligned in dense rows.
+
+### Alternatives Considered
+- Keep the system-only stack from D-030. Rejected because it preserves offline
+  operation but never renders the intended faces.
+- Add Google Fonts links or a CSS URL import. Rejected because either creates
+  the exact runtime network dependency D-030 prohibited.
+- Hand-write latin-only `@font-face` rules against package internals. Rejected
+  because neither package exposes a supported latin-only stylesheet and the
+  package-root import keeps ownership with `@fontsource`.
+- Introduce a seventh 11px size for dense chrome. Rejected because the existing
+  six-step scale deliberately maps 11px to the 12px `text-label` token, and no
+  current element requires an exemption.
+
+### Verification
+- `npm run lint` — clean (`tsc --noEmit`).
+- `npm test` — 4 files and all 55 tests passed.
+- `npm run build` — succeeded; `dist/` grew from 483,551 bytes (3 files) to
+  793,494 bytes (15 files), a 309,943-byte increase for the bundled fonts and
+  generated CSS.
+- `dist/assets/` contains 12 `.woff2` files. A built-output scan for
+  `fonts.googleapis`, `fonts.gstatic`, and `@import url` returned no matches.
+- The production preview loaded Inter and JetBrains Mono from local
+  `127.0.0.1` assets; computed styles reported the intended variable family
+  names and no browser warnings or errors.
+- Home, Reconcile, Schedule, Memory, and the Field view were checked in light
+  and dark themes. Reconcile's queue, Schedule's single-line headers, both
+  Memory tables, and the Field chrome at 390x844 showed no new wrapping,
+  clipping, or document scrollbar. Schedule retains its intentional table
+  scroller and existing description truncation.
+
+### Affected Areas
+`frontend/package.json`, `frontend/package-lock.json`, `frontend/src/main.tsx`,
+`frontend/src/index.css`, the requested numeric displays in `frontend/src`, and
+`DECISIONS.md`. No server, matcher, extraction, or dataset code changed.

@@ -23,7 +23,7 @@ export function ConfidenceBadge({ value }: ConfidenceBadgeProps) {
   const percentage = (value * 100).toFixed(1);
 
   return (
-    <span className={`font-mono ${colorClass}`} title={band}>
+    <span className={`font-mono tabular-nums ${colorClass}`} title={band}>
       {percentage}%
     </span>
   );
