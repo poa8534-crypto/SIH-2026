@@ -390,6 +390,146 @@ class ExportResponse(BaseModel):
     download_url: str
 
 
+# ── Field notifications ──────────────────────────────────────────────────────
+
+class FieldNotification(BaseModel):
+    """One thing this supervisor's report caused, derived from the audit trail.
+
+    There is no `read` flag: this prototype has no user table to key per-person
+    state by, and an "unread" that nobody can own would be a fiction. See D-049.
+    """
+
+    audit_record_id: str
+    linked_event_id: Optional[str] = None
+    activity_id: str
+    activity_description: Optional[str] = None
+    field_changed: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    #: Days against the baseline. Positive is late. **Null when the activity has
+    #: no planned date to compare against** — never 0 as a stand-in.
+    day_movement: Optional[int] = None
+    message: str
+    confirmed_by_planner: bool = False
+    at: datetime
+
+
+# ── RAID register ────────────────────────────────────────────────────────────
+
+class RaidEvidence(BaseModel):
+    """The row that raised a register item, resolved at read time.
+
+    Null on an item a planner typed in, and null when the source row no longer
+    exists - both are stated rather than papered over.
+    """
+
+    kind: str
+    id: str
+    detail: Optional[str] = None
+    activity_id: Optional[str] = None
+    source_file: Optional[str] = None
+
+
+class RaidItemResponse(BaseModel):
+    id: str
+    kind: str                       # risk | issue | action | decision
+    title: str
+    description: str = ""
+    category: Optional[str] = None
+    status: str = "open"            # open | mitigating | closed | rejected
+    owner: Optional[str] = None
+
+    due_date: Optional[date] = None
+    date_raised: Optional[date] = None
+    date_closed: Optional[date] = None
+
+    # Risk-only. Null on the other three kinds, and `exposure` is null - never
+    # 0.0 - when either factor is unscored, so "not calculable" cannot be
+    # confused with "calculated as zero".
+    probability: Optional[float] = None
+    impact_days: Optional[float] = None
+    exposure: Optional[float] = None
+
+    linked_activity_ids: list[str] = []
+    source_kind: Optional[str] = None
+    source_id: Optional[str] = None
+    source_note: Optional[str] = None
+    evidence: Optional[RaidEvidence] = None
+
+    created_by: str = "planner"
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class RaidCreateRequest(BaseModel):
+    """A register entry. `exposure` is deliberately absent: it is computed."""
+
+    kind: str = Field(..., description="risk | issue | action | decision")
+    title: str = Field(..., min_length=1)
+    description: str = ""
+    category: Optional[str] = None
+    status: str = "open"
+    owner: Optional[str] = None
+    due_date: Optional[date] = None
+    date_raised: Optional[date] = None
+    probability: Optional[float] = Field(None, ge=0.0, le=1.0)
+    impact_days: Optional[float] = Field(None, ge=0.0)
+    linked_activity_ids: list[str] = []
+    source_kind: Optional[str] = None
+    source_id: Optional[str] = None
+    source_note: Optional[str] = None
+    created_by: str = "planner"
+
+
+class RaidPatchRequest(BaseModel):
+    """A partial update. Every field optional; absent means unchanged.
+
+    `exposure` is not accepted here either - re-scoring a risk means sending a
+    new probability or impact, and the arithmetic follows.
+    """
+
+    kind: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    status: Optional[str] = None
+    owner: Optional[str] = None
+    due_date: Optional[date] = None
+    date_closed: Optional[date] = None
+    probability: Optional[float] = Field(None, ge=0.0, le=1.0)
+    impact_days: Optional[float] = Field(None, ge=0.0)
+    linked_activity_ids: Optional[list[str]] = None
+
+
+class RaidCandidate(BaseModel):
+    """A PROPOSED register item. Nothing about it has been stored.
+
+    `committed` is always false. It is in the payload rather than only in the
+    documentation so a client cannot mistake a proposal for a row.
+    """
+
+    kind: str
+    title: str
+    description: str
+    category: str
+    linked_activity_ids: list[str] = []
+    occurrences: int = 0
+    days_lost: float = 0
+    source_kind: str
+    source_id: str
+    source_note: str
+    committed: bool = False
+
+
+class RaidCandidatesResponse(BaseModel):
+    candidates: list[RaidCandidate] = []
+    #: Restated on the envelope: POST /raid is the only way in.
+    note: str = (
+        "Candidates are proposals derived from existing audit evidence. None "
+        "has been written to the register; POST /raid to commit one."
+    )
+
+
 # ── Memory Query ─────────────────────────────────────────────────────────────
 
 class MemoryQueryRequest(BaseModel):

@@ -4471,3 +4471,136 @@ serialisation at ingest, review-queue projection, `_rationale` import) ·
 `frontend/src/pages/Reconcile.tsx`
 
 Supersedes the blocker recorded in D-039, which is now closed.
+
+---
+
+## 2026-09-02 / D-048 - RAID register: one table, arithmetic exposure, and no candidate commits itself
+
+### Status
+Implemented. ROADMAP §14 MUST #2.
+
+### Decision - one typed table, not four
+`raid_item` with `kind` in `{risk, issue, action, decision}`. The four kinds
+share every structural field - title, owner, status, dates, linked activities,
+provenance - and differ only in which optional fields carry a value. Four tables
+would have meant four sets of endpoints, four filters and four migrations to
+keep in step, for nothing. The risk-only fields (`probability`, `impact_days`,
+`exposure`) are null on the other three, and nothing infers them.
+
+`rejected` is a status distinct from `closed`. A risk that was considered and
+dismissed is not the same record as one that was mitigated, and a register that
+conflates the two cannot be audited.
+
+### Exposure is arithmetic, and is not accepted from the caller
+`exposure = probability x impact_days`, computed in `server/raid.py` on every
+create and every update. **No LLM is involved at any point** - the same rule
+that keeps `rationale` free of model prose (D-003). `POST /raid` and
+`PATCH /raid/{id}` do not accept an `exposure` field: sending one is ignored,
+so the register cannot carry a figure that does not follow from its own inputs.
+Re-scoring a risk recomputes it, so it can never go stale.
+
+**Unscored is `None`, never `0.0`.** A risk with no schedule impact genuinely
+scores zero; a risk nobody has assessed has not scored anything. Collapsing the
+two would let an unassessed risk sort as though it had been examined and found
+harmless. `GET /raid` orders scored items first, then unscored by recency -
+it does not sort an unscored item as exposure zero.
+
+### The rule that must hold: a candidate is never auto-committed
+`GET /raid/candidates` reads the delay phrases already in
+`AuditRecord.source_span` - the same evidence the Memory screen's delay
+analysis uses - and returns proposals. **It writes nothing.** An item reaches
+the register only through `POST /raid`, mirroring D-009 for dates and ROADMAP §6
+for governance artefacts. There is deliberately no confidence above which a
+candidate commits itself, because no such threshold would be safe.
+
+Every candidate carries `committed: false` in its own payload, and the envelope
+repeats it, so a client cannot mistake a proposal for a stored row.
+
+**Candidates are `issue`, never a scored `risk`.** The delay has already
+happened and is recorded, so it is a thing that IS wrong, not a thing that MIGHT
+go wrong. Proposals therefore carry no probability and no exposure - inventing a
+probability for an event that already occurred is exactly the fabrication this
+module exists to avoid. A planner who wants a forward-looking risk raises and
+scores one themselves.
+
+### Provenance
+`source_kind` / `source_id` name the LinkedEvent, AuditRecord or delay analysis
+that raised the item, and `GET /raid/{id}` resolves them at read time into an
+`evidence` block. Null for a planner-authored item, and null when the source row
+no longer exists - both stated rather than faked.
+
+### Verification
+`server/test_raid.py`, **30 tests**. The two governing rules first: proposing
+twice leaves the register empty; a candidate reaches it only through POST; a
+committed cause is not proposed again; every candidate declares itself
+uncommitted; candidates are issues with no probability. Then exposure - the
+product, a real zero, `None` for unscored, the API ignoring a supplied value,
+and re-scoring recomputing. Then validation (closed sets for kind and status,
+probability bounded, and **scoring a non-risk refused rather than silently
+dropped** - discarding the number quietly would leave the caller believing it
+was stored), filters by kind/status/activity, ordering, provenance round trip,
+and lifecycle.
+
+`eval.py` byte-identical to baseline.
+
+### Affected Areas
+`server/db.py` (`RaidItem` - a new table, so `create_all` handles it and no
+migration is needed), `server/raid.py` (new), `server/schemas.py`,
+`server/main.py` (four routes), `server/test_raid.py` (new). No frontend change.
+
+---
+
+## 2026-09-02 / D-049 - Field notifications derived from the audit trail, with no read state and no new table
+
+### Status
+Implemented. ROADMAP §14 SHOULD #6; §3.4 calls the loop back to the field the
+part almost every competing product omits.
+
+### Context
+When a planner approves an update, the supervisor who reported it is never told.
+The one piece of feedback that would make reporting feel worth doing never
+arrives.
+
+### Decision - derive on read
+The audit trail already records what each submission caused: the activity, the
+field, the old and new values, and the `linked_event_id` that produced the
+write. `GET /field/notifications` is a projection of that. **No notification
+table**, nothing new captured, nothing to keep in sync.
+
+Scoping is `LinkedEvent.match_method == FIELD_MATCH_METHOD` - the same predicate
+`/field/reports` uses - so the two screens can never disagree about whose work
+it is. An ingested DPR is not "your update" and does not appear.
+
+### What is deliberately missing, and why
+**There is no per-user read/unread state.** This prototype has no user table to
+key it by; login is mock and frontend-only. Storing "seen" would mean inventing
+an identity to hang it on, and an unread count nobody can own is a fiction. When
+real users exist, that table is the right change. The pipeline invited a
+`notification` table "only if genuine per-user read/unread state is needed" -
+it is not, yet.
+
+### Day movement is never invented
+For an actual-date write the message reports the gap between the date the
+supervisor's report established and the baseline planned date; positive is late.
+It is **`None`, and the sentence simply stops**, when there is nothing to
+compare against - never 0 as a stand-in, because a 0 reads as "measured, and on
+plan". `Activity.planned_finish` is NOT NULL, so the reachable case is an audit
+row for an activity the current baseline no longer contains; the trail is
+append-only (D-004), so a row can outlive the baseline it referenced.
+
+A **rejected** proposal produces no notification, and that falls out of the
+design rather than being special-cased: rejecting writes no actual, so no audit
+row links back to that event.
+
+### Verification
+`server/test_notifications.py`, **13 tests**: +2 days named correctly, a
+negative movement for an early finish, "on plan" rather than "0 days late", the
+link back to the audit row, auto-applied vs planner-confirmed, a rejected
+proposal producing nothing, an empty database returning `[]` rather than an
+error, an ingested DPR excluded, a `source_conflict` row excluded, newest first,
+and three cases where the movement is null rather than invented.
+
+### Affected Areas
+`server/notifications.py` (new), `server/schemas.py` (`FieldNotification`),
+`server/main.py` (`GET /field/notifications`), `server/test_notifications.py`
+(new). No frontend change.
