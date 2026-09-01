@@ -4471,3 +4471,95 @@ serialisation at ingest, review-queue projection, `_rationale` import) ·
 `frontend/src/pages/Reconcile.tsx`
 
 Supersedes the blocker recorded in D-039, which is now closed.
+
+---
+
+## 2026-09-02 / D-046 - Schedule-side EVM, and why its headline SPI is flagged unsafe on this dataset
+
+### Status
+Implemented, with the whole-project SPI **deliberately marked not safe to
+display as a KPI**. Read the diagnosis below before using the number.
+
+### Context
+ROADMAP §5 / §14 MUST #4. `GET /evm` returns PV, EV, SV and SPI for the project
+and per discipline, computed on read. No new table, no migration, no dependency,
+no LLM anywhere in the path.
+
+### Decisions
+**Duration weighting.** `weight = (planned_finish - planned_start).days + 1`,
+minimum 1. Not `planned_qty`: 66 of the 120 baseline activities have no
+quantity, and quantity-weighting would silently drop more than half the schedule.
+
+**Percent complete has three rules, in order:** `actual_finish` set -> 100%;
+else `max(LinkedEvent.percentage)`; else 0%. `Activity` has no
+`percent_complete` column - it is derived here exactly as `get_schedule` derives
+it. Rule 3 is a floor, never an estimate.
+
+**SPI is `None` when PV is 0**, never `0.0` and never a ZeroDivisionError.
+
+**No cost half.** No AC, CV, CPI, EAC, VAC or TCPI. No ingested source carries
+cost or man-hours. `cost_metrics_available: false` ships with a reason string so
+the limitation is data, not an absence the reader has to notice.
+
+### The diagnosis the pipeline asked for
+The pipeline's sanity check was: *"for 120 activities with 38 complete, if SPI is
+above 1.5 or below 0.2, do not ship it - diagnose and say so."*
+
+**Measured whole-project SPI: 0.1783. That is below 0.2, so it is not shipped as
+a headline.** The premise was also wrong: **1 activity is complete, not 38.**
+D-008 withholds `actual_finish` unless a source names the date at 100% scope, and
+`eval.py` reports ten complete nodes with their finish withheld for exactly that
+reason.
+
+Measured on the demo corpus (120 activities, all ten DPRs ingested):
+
+| | PV | EV | SV | SPI |
+|---|---:|---:|---:|---:|
+| whole project | 1285.0 | 229.1 | -1055.9 | **0.1783** |
+| evidenced subset | 300.0 | 229.1 | -70.9 | **0.7638** |
+
+`percent_source_counts`: `actual_finish` 1, `linked_event_percentage` 29,
+`no_evidence_floor` **90**.
+
+The arithmetic is correct and the whole-project figure is still misleading. PV is
+charged across every activity the baseline says should be underway; EV can only
+be earned by an activity that reported something. Ten daily reports mention 30 of
+120 activities, so 90 activities carry full PV and can earn no EV. **0.1783
+measures reporting coverage, not schedule performance.**
+
+### What was built instead of suppressing it
+Three additional fields, so the number cannot be misread:
+
+- `evidence_coverage` - weight and activity counts with evidence vs total
+  (**24.1% of schedule weight, 30 of 120 activities**).
+- `spi_headline_safe: false` plus `spi_headline_reason` - an explicit
+  instruction not to print `project.spi` as a KPI, with the arithmetic reason.
+  Threshold `HEADLINE_COVERAGE_MIN = 0.60`, named and justified in the module.
+- `evidenced_subset` - the same arithmetic over activities that reported
+  something. **SPI 0.7638**, which sits inside the sanity band and is the
+  defensible figure: of the work we can see, it is running at 76% of plan.
+
+Nothing is estimated. It is one arithmetic over a stated subset, plus a flag
+saying which figure is safe.
+
+### Verification
+`server/test_evm.py`, 19 tests. PV/EV/SV/SPI asserted to the decimal against a
+hand-computed four-activity fixture with the arithmetic written out in the
+docstring; pro-rata PV for an activity straddling the data date; PV=0 -> SPI is
+`None`; `actual_finish` beating a lower event percentage; highest event
+percentage winning; no events -> 0 and counted as a floor; per-discipline totals
+reconciling to the project; the response asserted to contain **no** cost key
+against an explicit forbidden set; and three tests on the coverage guard.
+
+`eval.py` byte-identical to baseline. `pytest -q`: 455 passed, 2 failed - the two
+failures are the `dataset/ground_truth.csv` encoding defect fixed on
+`fix/dataset-encoding`, which is not in this branch's ancestry.
+
+### Affected Areas
+`server/evm.py` (new), `server/main.py` (`GET /evm`, one import),
+`server/test_evm.py` (new). No frontend change.
+
+**Frontend note:** do not bind an SPI gauge to `project.spi` while
+`spi_headline_safe` is false. Bind to `evidenced_subset.spi` and render
+`evidence_coverage` beside it, or the dashboard will state that the project is
+82% behind when the truth is that three quarters of it has not reported.

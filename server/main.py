@@ -86,6 +86,7 @@ from matching.providers import (
 from matching.config import production
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
+from server.evm import compute_evm
 # The matcher's own per-candidate rationale. `LinkDecision.rationale` is the
 # decision-level list (it can carry decision reasons such as "below_tau_low"),
 # while this derives the evidence for ONE candidate from that candidate's own
@@ -2328,6 +2329,20 @@ def export_schedule(
         content_type="application/xml",
         download_url=f"/uploads/{filename}",
     )
+
+
+# ── GET /evm ────────────────────────────────────────────────────────────────
+
+@app.get("/evm")
+def get_evm(db: Session = Depends(get_db)):
+    """Schedule-side earned value as of DATA_DATE.
+
+    Deterministic arithmetic over the baseline and the linked events; see
+    `server/evm.py` for the weighting choice, the three-rule percent-complete
+    precedence, and why the cost half is deliberately absent. Computed on read —
+    no table, no migration, nothing stored.
+    """
+    return compute_evm(db, DATA_DATE)
 
 
 def _generate_pmxml(activities: list[Activity], include_actuals: bool) -> str:
