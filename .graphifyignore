@@ -1,0 +1,6 @@
+# Scope for the CODE graph (graphify-out/code-graph/).
+# datasets/real is a 630 MB vendored third-party corpus — data the system reads,
+# not code it is made of. tmp/ is benchmark scratch.
+datasets/
+tmp/
+graphify-out/
