@@ -55,6 +55,17 @@ from matching import (
     Thresholds,
     decide_outcome,
 )
+from evalstats import (
+    BOOTSTRAP_RESAMPLES,
+    BOOTSTRAP_SEED,
+    bootstrap_ci,
+    brier_score,
+    expected_calibration_error,
+    macro_f1,
+    micro_f1,
+    per_discipline_f1,
+    reliability_bins,
+)
 from matching.providers import check_ground_truth_agreement
 
 DATASET = PROJECT_ROOT / "dataset"
@@ -631,6 +642,175 @@ def recall_at_k(subset: list[dict], k: int) -> tuple[float | None, int, int]:
     return hits / len(subset), hits, len(subset)
 
 
+#: Activity-id prefix -> discipline. The ids encode it; the v1 ground-truth CSV
+#: does not carry a discipline column.
+_ID_DISCIPLINE = {
+    "CIV": "civil", "PIP": "piping", "SEQ": "static_equipment",
+    "ELE": "electrical", "INS": "instrumentation", "HSE": "hse",
+}
+
+
+def _gold_discipline(row: dict) -> str:
+    """The discipline of the mention's gold activity, or `no_match`."""
+    gold = (row.get("gold") or "").strip().upper()
+    if not gold or row.get("gold_class") != GOLD_POSITIVE:
+        return "no_match"
+    return _ID_DISCIPLINE.get(gold.split("-", 1)[0], "other")
+
+
+def _calibration_observations(rows: list[dict], t: Thresholds) -> tuple[list, list]:
+    """Two views of the same predictions, for calibration and for F1.
+
+    `pairs` is (confidence, was_correct) over every mention that produced a
+    concrete suggestion — the predictions whose confidence the thresholds act
+    on. `observations` adds the discipline and whether the mention was a gold
+    positive, for the per-discipline breakdown.
+
+    Nothing here re-scores or re-ranks: it reads the decisions `evaluate` acted
+    on.
+    """
+    pairs, observations = [], []
+    for r in rows:
+        cands = r["decision"].candidates
+        outcome, chosen = _decision_for(cands, t)
+        gold_positive = r["gold_class"] == GOLD_POSITIVE
+        suggested = outcome in (Decision.AUTO_LINK, Decision.REVIEW) and chosen is not None
+        correct = bool(suggested and chosen == r["gold"])
+
+        if suggested and cands:
+            pairs.append((float(cands[0].final_score), correct))
+
+        observations.append({
+            # From the GOLD activity id prefix, not from the row: the v1 ground
+            # truth has no discipline column, so reading it there collapsed
+            # every mention into one "unknown" bucket and made the macro
+            # average meaningless. The gold id encodes the discipline as a
+            # fact, and a NO_MATCH mention has no gold activity to take one
+            # from — it is bucketed as such rather than guessed.
+            "discipline": _gold_discipline(r),
+            "suggested": suggested,
+            "correct": correct,
+            "gold_positive": gold_positive,
+        })
+    return pairs, observations
+
+
+def print_calibration(rows: list[dict], t: Thresholds, label: str):
+    """Brier, ECE, reliability table, bootstrap CIs and macro/micro F1.
+
+    ROADMAP §12. Additive: every figure above this section is unchanged. If
+    calibration is poor it is printed poorly — see D-051.
+    """
+    pairs, observations = _calibration_observations(rows, t)
+
+    title("CALIBRATION - DOES THE CONFIDENCE SCORE MEAN ANYTHING?")
+    print(f"  basis           : {label}, {len(pairs)} concrete suggestions")
+    if not pairs:
+        print("  no concrete suggestions - nothing to calibrate.")
+        return
+
+    brier = brier_score(pairs)
+    ece = expected_calibration_error(pairs)
+    print(f"  Brier score     : {brier:.4f}   (0 is perfect, lower is better)")
+    print(f"  Expected Cal Err: {ece:.4f}   (mean gap between claimed and observed)")
+    print()
+    table(
+        ["confidence bin", "n", "mean conf", "observed acc", "gap"],
+        [
+            [
+                f"{b['lo']:.1f}-{b['hi']:.1f}",
+                b["n"],
+                f"{b['mean_confidence']:.3f}",
+                f"{b['observed_accuracy']:.3f}",
+                f"{b['observed_accuracy'] - b['mean_confidence']:+.3f}",
+            ]
+            for b in reliability_bins(pairs)
+        ],
+        ["<", ">", ">", ">", ">"],
+    )
+    print()
+    print("  A positive gap means the system is better than it claims;")
+    print("  negative means it is overconfident in that band. Empty bins are")
+    print("  omitted: the score is bimodal by construction, and printing zero")
+    print("  rows would misrepresent an absence as a measurement.")
+
+    # ── Confidence intervals ────────────────────────────────────────────────
+    title("95% CONFIDENCE INTERVALS (percentile bootstrap)")
+    gold_pos = [r for r in rows if r["gold_class"] == GOLD_POSITIVE]
+
+    def _top1(sample):
+        scored = [r for r in sample if r["decision"].candidates]
+        if not scored:
+            return None
+        return sum(
+            1 for r in scored if r["decision"].candidates[0].activity_id == r["gold"]
+        ) / len(scored)
+
+    def _auto_precision(sample):
+        autos = []
+        for r in sample:
+            outcome, chosen = _decision_for(r["decision"].candidates, t)
+            if outcome is Decision.AUTO_LINK and chosen is not None:
+                autos.append(chosen == r["gold"])
+        return (sum(autos) / len(autos)) if autos else None
+
+    def _coverage(sample):
+        if not sample:
+            return None
+        autos = sum(
+            1 for r in sample
+            if _decision_for(r["decision"].candidates, t)[0] is Decision.AUTO_LINK
+        )
+        return autos / len(sample)
+
+    ci_rows = []
+    for name, items, fn in (
+        ("Top-1 accuracy", gold_pos, _top1),
+        ("Coverage (auto-linked)", rows, _coverage),
+        ("Auto-link precision", rows, _auto_precision),
+    ):
+        point = fn(items)
+        ci = bootstrap_ci(items, fn)
+        ci_rows.append([
+            name,
+            len(items),
+            "-" if point is None else pct(point),
+            "-" if ci is None else f"{pct(ci[0])} - {pct(ci[1])}",
+        ])
+    table(["metric", "n", "point", "95% CI"], ci_rows, ["<", ">", ">", ">"])
+    print()
+    print(f"  {BOOTSTRAP_RESAMPLES} resamples, seed {BOOTSTRAP_SEED} so the interval is")
+    print("  reproducible. The interval covers SAMPLING variation only - it says")
+    print("  nothing about whether this corpus represents other projects.")
+
+    # ── Macro vs micro F1 ───────────────────────────────────────────────────
+    title("PER-DISCIPLINE F1 - MACRO ALONGSIDE MICRO")
+    per_discipline = per_discipline_f1(observations)
+    table(
+        ["discipline", "n", "suggested", "correct", "precision", "recall", "F1"],
+        [
+            [
+                r["discipline"], r["n"], r["suggested"], r["correct"],
+                "-" if r["precision"] is None else f"{r['precision']:.3f}",
+                "-" if r["recall"] is None else f"{r['recall']:.3f}",
+                "-" if r["f1"] is None else f"{r['f1']:.3f}",
+            ]
+            for r in per_discipline
+        ],
+        ["<", ">", ">", ">", ">", ">", ">"],
+    )
+    macro = macro_f1(per_discipline)
+    micro = micro_f1(observations)
+    print()
+    print(f"  macro-F1 : {'-' if macro is None else f'{macro:.3f}'}"
+          "   (every discipline counted equally)")
+    print(f"  micro-F1 : {'-' if micro is None else f'{micro:.3f}'}"
+          "   (dominated by the frequent disciplines)")
+    print("  A macro well below micro means a rare discipline is being carried")
+    print("  by a common one. Disciplines with no suggestions have an undefined")
+    print("  F1 and are excluded from the macro rather than scored as zero.")
+
+
 def print_recall_at_k(rows: list[dict], label: str = ""):
     """Recall@k at the depths that matter, split the same three ways as top-1.
 
@@ -914,6 +1094,7 @@ def main():
     else:
         recall_label = "full dataset"
     print_recall_at_k(report_rows, recall_label)
+    print_calibration(report_rows, t, recall_label)
     print_date_basis(report_rows)
     print_rollup(report_rows, t)
     print()

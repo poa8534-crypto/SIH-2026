@@ -4993,3 +4993,90 @@ Measured on this checkout: 124 artifacts / 263.6 MB, 1,462 validation checks,
 `server/evidence.py` (new), `server/schemas.py` (five models),
 `server/main.py` (`GET /evidence/corpus`), `server/test_evidence.py` (new).
 No frontend change.
+## 2026-09-02 / D-051 - eval.py reports calibration, confidence intervals and macro-F1, and the calibration result is mixed
+
+### Status
+Implemented, additive. **Every number `eval.py` printed before this change still
+prints, unchanged** - verified by asserting all 120 baseline output lines still
+appear, in order, in the 166-line output.
+
+### Context
+ROADMAP §12. This system's claim is "we know when we don't know": it auto-links
+above `tau_high`, asks a planner in the middle, refuses below `tau_low`. That is
+only meaningful if the confidence score carries the meaning the thresholds
+assume. `eval.py` calibrated *thresholds* but never measured whether the *score*
+was calibrated.
+
+### What was added
+`evalstats.py` (new, pure functions, no engine dependency) and one
+`print_calibration` section in `eval.py`'s existing `title()` / `table()` style:
+
+- **Brier score and Expected Calibration Error**, with a reliability table -
+  bin, n, mean confidence, observed accuracy, and the signed gap.
+- **Percentile bootstrap 95% CIs** on Top-1, coverage and auto-link precision.
+  2000 resamples at a fixed seed, so a quoted interval is reproducible.
+- **Macro-F1 alongside micro**, per discipline.
+
+### The measured result, reported as it came out
+
+```
+Brier score      : 0.1203
+Expected Cal Err : 0.0821
+
+  bin        n   mean conf  observed  gap
+  0.5-0.6   16     0.552     0.500   -0.052
+  0.6-0.7   24     0.650     0.500   -0.150
+  0.7-0.8   76     0.757     0.776   +0.019
+  0.8-0.9  115     0.843     0.957   +0.114
+  0.9-1.0   18     0.917     1.000   +0.083
+```
+
+**This is mixed, and saying so is the point.** Above 0.7 the system is
+*under*-confident: it claims 0.843 in the 0.8-0.9 band and is right 95.7% of the
+time. That is the safe direction and it is why auto-link precision holds at
+100%. Below 0.7 it is *over*-confident - the 0.6-0.7 band claims 0.650 and
+delivers 0.500, a 15-point gap on 24 mentions. An ECE of 0.082 is not a good
+calibration score in absolute terms.
+
+The practical reading: the score is trustworthy exactly where the design relies
+on it (the auto-link band) and unreliable in the middle, which is the band that
+already goes to a planner. The design survives the measurement; the score does
+not deserve to be described as "calibrated" without that qualification.
+
+**Confidence intervals**
+
+| metric | n | point | 95% CI |
+|---|---:|---:|---|
+| Top-1 accuracy | 242 | 87.2% | **83.1% - 91.3%** |
+| Coverage | 254 | 50.4% | 44.1% - 56.3% |
+| Auto-link precision | 254 | 100.0% | 100.0% - 100.0% |
+
+The auto-link interval is degenerate because there is not one wrong AUTO_LINK in
+the data to resample. That is a real property of this corpus at this n, not
+evidence that the figure cannot move on other data - and the section says the
+interval covers sampling variation only.
+
+**Per-discipline F1**: macro **0.855**, micro **0.843**. HSE is the weakest at
+0.769 against civil at 0.909, on 20 mentions. Close macro and micro means no
+discipline is being carried by another - which is the thing the macro average
+exists to detect.
+
+### One defect found and fixed while building it
+The first version read `row["discipline"]` and produced a single `unknown`
+bucket of 254, because the v1 ground-truth CSV has no discipline column - a
+per-discipline table with one row is worse than none. Discipline is now derived
+from the **gold activity id prefix**, which encodes it as a fact rather than an
+inference, and a NO_MATCH mention is bucketed as `no_match` rather than assigned
+a discipline it does not have.
+
+### What is null rather than zero
+`brier_score`, `expected_calibration_error` and `bootstrap_ci` return `None` on
+empty input; a discipline with no suggestions has an undefined F1 and is
+**excluded from the macro rather than scored as 0**. Empty reliability bins are
+omitted: the score distribution is bimodal by construction, and printing zero
+rows would misrepresent an absence as a measurement.
+
+### Affected Areas
+`evalstats.py` (new), `eval.py` (`print_calibration`,
+`_calibration_observations`, `_gold_discipline`, one import, one call site).
+No threshold, weight, model or existing metric changed. `matching/` untouched.
