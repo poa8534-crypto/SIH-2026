@@ -169,6 +169,11 @@
   --color-disc-ins: var(--disc-ins);
   --color-disc-hse: var(--disc-hse);
 
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono',
+    'Segoe UI Mono', Consolas, monospace;
+
   /* ==========================================================================
      TYPE SCALE — six steps, and there is no seventh.
 
@@ -217,13 +222,10 @@
 body {
   background-color: var(--bg);
   color: var(--text-muted);
-  /* Inter was declared here for months and never loaded — no <link>, no
-     @font-face, no @import, no package — so every screen has in fact been
-     rendering in Helvetica. Rather than add a network dependency that fails
-     silently on a venue projector with no internet, the declaration now names
-     what actually ships. See D-030. */
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  /* Inter is bundled locally via @fontsource and emitted with the app, so it
+     remains available offline without making a network request. See D-043,
+     which supersedes D-030's conclusion while preserving its constraint. */
+  font-family: var(--font-sans);
   font-size: var(--text-body);
   margin: 0;
   height: 100vh;

@@ -80,7 +80,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
   return (
     <>
       <div className="overflow-auto max-h-[420px]">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse tabular-nums">
           <thead className="sticky top-0 bg-raised">
             <tr className="border-b border-hair">
               <Th>Activity type</Th>
@@ -222,7 +222,7 @@ function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
   }
   return (
     <>
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse tabular-nums">
         <thead>
           <tr className="border-b border-hair">
             <Th>Cause</Th>

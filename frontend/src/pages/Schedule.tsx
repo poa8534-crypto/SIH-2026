@@ -66,7 +66,7 @@ function DateCell({
   basis?: DateBasis | null;
 }) {
   if (!value) return <Absent />;
-  const cls = `font-mono ${solid ? 'text-fg' : 'text-muted'}`;
+  const cls = `font-mono tabular-nums ${solid ? 'text-fg' : 'text-muted'}`;
   if (basis === 'DEFAULTED_TO_REPORT_DATE') {
     return (
       <span
@@ -88,10 +88,10 @@ function DateCell({
  */
 function VarianceCell({ value }: { value: number | null }) {
   if (value === null || value === undefined) return null;
-  if (value === 0) return <span className="font-mono text-muted">0d</span>;
+  if (value === 0) return <span className="font-mono tabular-nums text-muted">0d</span>;
   const late = value > 0;
   return (
-    <span className={`font-mono ${late ? 'text-danger' : 'text-accent'}`}>
+    <span className={`font-mono tabular-nums ${late ? 'text-danger' : 'text-accent'}`}>
       {late ? '+' : ''}
       {value}d
     </span>
@@ -538,13 +538,13 @@ export default function Schedule() {
         accessorKey: 'planned_start',
         header: 'Planned Start',
         size: 96,
-        cell: (c) => <span className="font-mono text-muted">{c.getValue<string>() ?? '—'}</span>,
+        cell: (c) => <span className="font-mono tabular-nums text-muted">{c.getValue<string>() ?? '—'}</span>,
       },
       {
         accessorKey: 'planned_finish',
         header: 'Planned Finish',
         size: 96,
-        cell: (c) => <span className="font-mono text-muted">{c.getValue<string>() ?? '—'}</span>,
+        cell: (c) => <span className="font-mono tabular-nums text-muted">{c.getValue<string>() ?? '—'}</span>,
       },
       {
         accessorKey: 'actual_start',
@@ -589,7 +589,7 @@ export default function Schedule() {
         cell: (c) => {
           const v = c.getValue<number | null>();
           if (v === null || v === undefined) return <Absent />;
-          return <span className="font-mono text-fg">{v.toFixed(0)}%</span>;
+          return <span className="font-mono tabular-nums text-fg">{v.toFixed(0)}%</span>;
         },
       },
       {

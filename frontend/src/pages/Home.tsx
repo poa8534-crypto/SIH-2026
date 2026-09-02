@@ -119,7 +119,7 @@ function Tile({
         <Skeleton height="h-8" className="w-20 mt-1" />
       ) : (
         <div
-          className={`font-mono text-h1 leading-none mt-1 ${
+          className={`font-mono tabular-nums text-h1 leading-none mt-1 ${
             error ? 'text-danger' : accent ? 'text-danger' : 'text-fg'
           }`}
         >
