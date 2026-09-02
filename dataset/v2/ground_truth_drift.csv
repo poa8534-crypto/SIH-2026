@@ -1,0 +1,214 @@
+source,source_date,raw_mention,activity_id,match_type,mention_date,discipline,split,near_miss_kind,missing_discriminator,confusable_with,drift_kind
+drift_bench_v1,2026-03-03,Survey gang finished grid and level marks along the site boundary,CIV-SRV-1001,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-03-10,"JCB clearing done up to the approach, stumps and topsoil removed",CIV-SRV-1002,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-21,"U1 pad cut and fill brought to formation, levels checked",CIV-EXC-1003,terminology_drift,,civil,test,,,CIV-EXC-1004,paraphrase
+drift_bench_v1,2026-03-13,Unit 2 pad filled and cut to formation level today,CIV-EXC-1004,terminology_drift,,civil,test,,,CIV-EXC-1003,paraphrase
+drift_bench_v1,2026-03-21,Bad soil dug out and carted away from the U1 pad,CIV-EXC-1005,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-26,Fill soil placed and rolled in layers on the Unit 1 pad,CIV-FIL-1006,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-24,Crusher dust spread and levelled in the laydown yard,CIV-YRD-1046,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-12,Widening of the gate-to-site road done up to chainage 400,CIV-EXC-1049,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-03-24,Bituminous carpet laid on the approach road today,CIV-RDS-1050,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-15,Drain slabs cast along the roadside near the gate,CIV-DRA-1051,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-21,Chain link mesh fixed along the full road stretch,CIV-FNC-1052,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-28,Jute matting laid on the embankment slopes against washout,CIV-DRA-1055,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-04,Subgrade rolling completed for the internal road in U1,CIV-RDS-1010,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-14,GSB and wet mix macadam laid on the internal road,CIV-RDS-1011,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-15,WMM compacted up to chainage 160 on the U1 road,CIV-RDS-1012,terminology_drift,,civil,test,,,CIV-RDS-1013,sibling_hard
+drift_bench_v1,2026-04-19,"Second stretch of wet mix finished, Ch 160 to 320",CIV-RDS-1013,terminology_drift,,civil,test,,,CIV-RDS-1012,sibling_hard
+drift_bench_v1,2026-04-07,Precast drain sections placed around the U1 wellhead,CIV-DRA-1014,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-19,Two culverts lowered at the road crossing,CIV-DRA-1015,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-03-24,Mass digging finished for the Unit 2 wellhead cellar,CIV-EXC-1020,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-03,Anti-termite spray and blinding concrete done on the U2 pad,CIV-FLR-1021,terminology_drift,,civil,test,,,CIV-FLR-1022,paraphrase
+drift_bench_v1,2026-04-04,Geotextile sheet spread over the Unit 2 pad area,CIV-FLR-1022,terminology_drift,,civil,test,,,CIV-FLR-1021,paraphrase
+drift_bench_v1,2026-03-24,"Digging for the flare pit and burn area completed, south of manifold",CIV-EXC-1030,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-03-31,Rock broken and debris cleared at the FST-1301 base,CIV-EXC-1031,terminology_drift,,civil,test,,,CIV-FDN-1126,terminology
+drift_bench_v1,2026-03-31,Perimeter fencing posts and mesh completed,CIV-FNC-1032,terminology_drift,,civil,test,,,CIV-FNC-1052,terminology
+drift_bench_v1,2026-04-17,Main and emergency exit gates fixed today,CIV-FNC-1033,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-03-11,Bench marks and centre-line offsets given all over site,CIV-YRD-1054,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-03-11,Porta cabins for site office and store put up,HSE-TMP-1040,terminology_drift,,hse,test,,,,terminology
+drift_bench_v1,2026-03-20,Temporary water supply and septic tank commissioned,HSE-TMP-1041,terminology_drift,,hse,test,,,,paraphrase
+drift_bench_v1,2026-03-21,Temp power boards and site cabling arranged,HSE-TMP-1042,terminology_drift,,hse,test,,,,paraphrase
+drift_bench_v1,2026-03-20,Sign boards and barricades placed at the phase 1 fronts,HSE-SGN-1043,terminology_drift,,hse,test,,,HSE-SGN-1044,paraphrase
+drift_bench_v1,2026-03-26,Muster points and windsocks set up at site,HSE-SGN-1044,terminology_drift,,hse,test,,,HSE-SGN-1043,terminology
+drift_bench_v1,2026-03-13,Fab shed and pipe yard ready for use,HSE-TMP-1053,terminology_drift,,hse,test,,,,paraphrase
+drift_bench_v1,2026-04-11,"Pit digging for V-1101, V-1201 foundations and wellhead plinths completed",CIV-EXC-1100,terminology_drift,,civil,test,,,CIV-EXC-1115,terminology
+drift_bench_v1,2026-04-19,PCC blinding done below the V-1101 and V-1201 footings,CIV-FDN-1101,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-24,Rebar tied and placed for the separator foundation at V-1101,CIV-FDN-1102,terminology_drift,,civil,test,,,CIV-FDN-1103,terminology
+drift_bench_v1,2026-05-01,Formwork fixed and M25 poured for the V-1101 separator base,CIV-FDN-1103,terminology_drift,,civil,test,,,CIV-FDN-1102,terminology
+drift_bench_v1,2026-05-05,"Curing started on the V-1101 foundation, wet hessian kept for 7 days",CIV-FDN-1104,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-05-13,Anchor bolts set on the separator skid base at V-1101,CIV-FDN-1105,terminology_drift,,civil,test,,,CIV-FDN-1108,paraphrase
+drift_bench_v1,2026-05-16,Grouting of the V-1101 base ring completed with non-shrink grout,CIV-FDN-1106,terminology_drift,,civil,test,,,CIV-FDN-1109,paraphrase
+drift_bench_v1,2026-04-21,Steel and concrete work finished for the glycol contactor base V-1201,CIV-FDN-1107,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-25,Bolt template set and surveyed at V-1201,CIV-FDN-1108,terminology_drift,,civil,test,,,CIV-FDN-1105|CIV-FDN-1127,paraphrase
+drift_bench_v1,2026-05-04,Base ring grout filled at V-1201,CIV-FDN-1109,terminology_drift,,civil,test,,,CIV-FDN-1106,terminology
+drift_bench_v1,2026-04-25,Concrete plinths cast for WHP-1101 and WHP-1102,CIV-FDN-1110,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-05-05,Kerb stones cast around the U1 wellhead cellar,CIV-FDN-1111,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-09,Foundation pits dug for V-2101 and the WHCP in Unit 2,CIV-EXC-1115,terminology_drift,,civil,test,,,CIV-EXC-1100,terminology
+drift_bench_v1,2026-04-17,WHCP-2101 base cast and finished today,CIV-FDN-1116,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-18,V-2101 separator base: steel fixed and concrete poured,CIV-FDN-1117,terminology_drift,,civil,test,,,CIV-FDN-1118,terminology
+drift_bench_v1,2026-04-24,Wet curing begun on the V-2101 foundation,CIV-FDN-1118,terminology_drift,,civil,test,,,CIV-FDN-1117|CIV-FDN-1104,terminology
+drift_bench_v1,2026-05-02,Skid grouting done at V-2101,CIV-FDN-1119,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-24,Plinth cast for the test separator V-2201 at Unit 2,CIV-FDN-1120,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-08,Small footings cast for the MV-1101 to MV-1108 block valves,CIV-FDN-1125,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-07,FST-1301 base concrete and guy anchor blocks done,CIV-FDN-1126,terminology_drift,,civil,test,,,CIV-EXC-1031,terminology
+drift_bench_v1,2026-04-11,Bolts set with template at the flare stack base,CIV-FDN-1127,terminology_drift,,civil,test,,,CIV-FDN-1108,terminology
+drift_bench_v1,2026-04-14,Ring wall for tank TK-2101 concreted,CIV-FDN-1150,terminology_drift,,civil,test,,,CIV-FDN-1152,paraphrase
+drift_bench_v1,2026-04-23,Annular plates levelled and grout bed laid under the TK-2101 shell,CIV-FDN-1151,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-18,TK-2102 ring wall pour finished,CIV-FDN-1152,terminology_drift,,civil,test,,,CIV-FDN-1150,sibling_hard
+drift_bench_v1,2026-04-14,Pit shuttering and concrete completed for the oil-water separator,CIV-FDN-1153,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-04-21,Bund wall raised around the tank farm,CIV-FDN-1154,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-04-21,Sewer line laid from the tank farm to the OWS,PIP-UGS-1155,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-04-21,Catch pits and chambers built at the OWS outfall,PIP-UGS-1156,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-05-07,Substation building plinth concrete completed,CIV-FDN-1160,terminology_drift,,civil,test,,,CIV-FDN-1162,paraphrase
+drift_bench_v1,2026-05-20,Brick work taken up to roof level for the control building,CIV-BLD-1161,terminology_drift,,civil,test,,,,terminology
+drift_bench_v1,2026-05-12,Plinths cast for both transformers and trenches excavated,CIV-FDN-1162,terminology_drift,,civil,test,,,CIV-FDN-1160,terminology
+drift_bench_v1,2026-04-21,Footings for rack sleepers and columns cast in Module 1,CIV-FDN-1165,terminology_drift,,civil,test,,,CIV-FDN-1166|CIV-FDN-1167,sibling_hard
+drift_bench_v1,2026-04-28,Rack footing concrete done between Ch 40 and 80,CIV-FDN-1166,terminology_drift,,civil,test,,,CIV-FDN-1165|CIV-FDN-1167,sibling_hard
+drift_bench_v1,2026-05-05,Third module footings for the pipe rack finished,CIV-FDN-1167,terminology_drift,,civil,test,,,CIV-FDN-1165|CIV-FDN-1166,sibling_hard
+drift_bench_v1,2026-05-19,"Cable trench built with precast cover slabs, U1 to substation",CIV-UGS-1180,terminology_drift,,civil,test,,,CIV-UGS-1181,paraphrase
+drift_bench_v1,2026-05-22,Trench with covers completed from Unit 2 to the s/s,CIV-UGS-1181,terminology_drift,,civil,test,,,CIV-UGS-1180,sibling_hard
+drift_bench_v1,2026-05-24,Sand bedding and warning tiles laid in the cable routes,CIV-UGS-1182,terminology_drift,,civil,test,,,,paraphrase
+drift_bench_v1,2026-06-07,V-1101 separator received from laydown and shifted to position,STA-SET-1200,terminology_drift,,static_equipment,test,,,STA-SET-1201,paraphrase
+drift_bench_v1,2026-06-10,V-1101 lifted and placed on its foundation by crane,STA-SET-1201,terminology_drift,,static_equipment,test,,,STA-SET-1200|STA-SET-1210,terminology
+drift_bench_v1,2026-06-11,"V-1101 levelled, aligned and hold-down bolts torqued",STA-SET-1202,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2026-06-13,Glycol contactor vessel erected at Unit 1,STA-SET-1203,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2026-05-06,Manifold headers positioned and set at Unit 1,STA-SET-1204,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-09,"Welding of the U1 manifold spools completed, 12 joints",STA-WLD-1205,terminology_drift,,static_equipment,test,,,PIP-WLD-1313,paraphrase
+drift_bench_v1,2026-05-08,Flowline risers put in at both wellheads,STA-SET-1206,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-06-16,Fuel gas skid placed on the utilities plinth,STA-SET-1207,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-06,V-2101 vessel set on its support at Unit 2,STA-SET-1210,terminology_drift,,static_equipment,test,,,STA-SET-1211|STA-SET-1201,terminology
+drift_bench_v1,2026-05-01,Test separator positioned in Unit 2,STA-SET-1211,terminology_drift,,static_equipment,test,,,STA-SET-1210,sibling_hard
+drift_bench_v1,2026-04-24,Wellhead control panel skid lifted into place,STA-SET-1212,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-12,Demister pads and internals fitted inside V-2101,STA-INT-1213,terminology_drift,,static_equipment,test,,,STA-INT-1214,terminology
+drift_bench_v1,2026-05-05,Trays and demister fitted to the test separator,STA-INT-1214,terminology_drift,,static_equipment,test,,,STA-INT-1213,sibling_hard
+drift_bench_v1,2026-05-12,Air receiver installed in the utilities area,STA-SET-1215,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-14,Compressor package PK-2401 positioned on its plinth,STA-MCH-1216,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-19,Compressor and receiver aligned and coupled,STA-MCH-1217,terminology_drift,,static_equipment,test,,,STA-MCH-1241,terminology
+drift_bench_v1,2026-04-23,Flare stack sections assembled in the shop,STA-FLR-1220,terminology_drift,,static_equipment,test,,,STA-FLR-1221,paraphrase
+drift_bench_v1,2026-05-01,Flare stack raised vertical with guys tensioned,STA-FLR-1221,terminology_drift,,static_equipment,test,,,STA-FLR-1220,terminology
+drift_bench_v1,2026-04-23,Knock-out drum V-1401 set near the flare,STA-FLR-1222,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2026-05-05,Flare tip with molecular seal fitted on top of the stack,STA-FLR-1223,terminology_drift,,static_equipment,test,,,STA-FLR-1224,paraphrase
+drift_bench_v1,2026-05-06,Ignition panel and pilot line hooked up at the flare,STA-FLR-1224,terminology_drift,,static_equipment,test,,,STA-FLR-1223,sibling_hard
+drift_bench_v1,2026-05-26,First three shell courses of TK-2101 erected,STA-TNK-1230,terminology_drift,,static_equipment,test,,,STA-TNK-1231|STA-TNK-1232,paraphrase
+drift_bench_v1,2026-06-01,Wind girder fitted at course 3 of TK-2101,STA-TNK-1232,terminology_drift,,static_equipment,test,,,STA-TNK-1230,terminology
+drift_bench_v1,2026-06-06,Roof structure of TK-2101 erected with fittings,STA-TNK-1233,terminology_drift,,static_equipment,test,,,STA-TNK-1234,paraphrase
+drift_bench_v1,2026-05-03,TK-2102 shell and roof work completed,STA-TNK-1234,terminology_drift,,static_equipment,test,,,STA-TNK-1233,sibling_hard
+drift_bench_v1,2026-05-18,Internal floating deck assembled inside TK-2102,STA-TNK-1235,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2026-06-10,Nozzles and manways fitted on both storage tanks,STA-TNK-1236,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-05-26,Crude pumps P-1401A and B set on the baseplate,STA-MCH-1240,terminology_drift,,static_equipment,test,,,STA-MCH-1241,paraphrase
+drift_bench_v1,2026-05-29,Pump couplings aligned for P-1401A/B,STA-MCH-1241,terminology_drift,,static_equipment,test,,,STA-MCH-1242|STA-MCH-1217,terminology
+drift_bench_v1,2026-05-30,Motors mounted and hold-down bolts torqued on the crude pumps,STA-MCH-1242,terminology_drift,,static_equipment,test,,,STA-MCH-1241,terminology
+drift_bench_v1,2026-07-01,Chemical skids placed at wellhead U1/U2,STA-SET-1243,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-06-14,Monorail beam and davit put up on the separator platform,STA-SET-1244,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-06-09,"Rack steel work started, multi-tier structure at Module 1",PIP-ERC-1300,terminology_drift,,piping,test,,,PIP-ERC-1301|PIP-ERC-1302,paraphrase
+drift_bench_v1,2026-06-16,Module 2 rack structure erected between Ch 40 and 80,PIP-ERC-1301,terminology_drift,,piping,test,,,PIP-ERC-1300|PIP-ERC-1302,sibling_hard
+drift_bench_v1,2026-06-23,Third module rack columns and beams up,PIP-ERC-1302,terminology_drift,,piping,test,,,PIP-ERC-1300|PIP-ERC-1301,sibling_hard
+drift_bench_v1,2026-06-27,Bracing and kicker supports fixed along the full rack run,PIP-ERC-1303,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-06-19,"Rack erected for the crude header stretch, U2 to tank farm",PIP-ERC-1304,terminology_drift,,piping,test,,,PIP-ERC-1305,paraphrase
+drift_bench_v1,2026-06-25,Tier 1 of Module 3 rack carrying the flare header piping,PIP-ERC-1305,terminology_drift,,piping,test,,,PIP-ERC-1304|PIP-ERC-1330,sibling_hard
+drift_bench_v1,2026-10-06,Spools for the 24 inch crude line fabricated in shop,PIP-FAB-1310,terminology_drift,,piping,test,,,PIP-ERC-1311,terminology
+drift_bench_v1,2026-10-17,24 inch crude line erected on the U2 rack today,PIP-ERC-1311,terminology_drift,,piping,test,,,PIP-ERC-1312|PIP-FAB-1310,terminology
+drift_bench_v1,2026-11-01,Crude header piping run up to the tank farm approach,PIP-ERC-1312,terminology_drift,,piping,test,,,PIP-ERC-1311,sibling_hard
+drift_bench_v1,2026-11-06,Joints 1 to 18 on the crude header rack welded and radiographed,PIP-WLD-1313,terminology_drift,,piping,test,,,STA-WLD-1205,terminology
+drift_bench_v1,2026-10-20,Pipe supports made and fixed along the 24 inch crude line,PIP-HLT-1314,terminology_drift,,piping,test,,,PIP-HLT-1325,paraphrase
+drift_bench_v1,2026-11-25,Gas line erection finished at the Unit 1 manifold,PIP-ERC-1315,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-10-22,Loop piping to the test separator erected,PIP-ERC-1316,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-09-15,Glycol feed line to the contactor erected,PIP-ERC-1317,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-08-16,Fuel gas inlet line hooked up to the skid,PIP-ERC-1318,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-11-28,RO spools and sample connections installed at Unit 1,PIP-INS-1319,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-10-02,U2 flowline manifolds fabricated at the shop,PIP-FAB-1320,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-10-25,Production header at Unit 2 erected,PIP-ERC-1321,terminology_drift,,piping,test,,,PIP-ERC-1322,paraphrase
+drift_bench_v1,2026-10-27,Test header line put up in Unit 2,PIP-ERC-1322,terminology_drift,,piping,test,,,PIP-ERC-1321,sibling_hard
+drift_bench_v1,2026-10-31,Welds 19 to 34 on the U2 header done and RT cleared,PIP-WLD-1323,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-11-03,Flange joints bolted and torqued on the U2 manifold,PIP-BLT-1324,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-10-27,Supports and guides fixed along the U2 rack stretch,PIP-HLT-1325,terminology_drift,,piping,test,,,PIP-HLT-1314,paraphrase
+drift_bench_v1,2026-08-26,Flare header line laid to the KO drum,PIP-ERC-1330,terminology_drift,,piping,test,,,PIP-ERC-1331|PIP-HYT-1512,terminology
+drift_bench_v1,2026-05-05,Riser up the flare stack erected,PIP-ERC-1331,terminology_drift,,piping,test,,,PIP-ERC-1330,sibling_hard
+drift_bench_v1,2026-09-02,"Alloy welding on the flare header done, PMI for joints 20 to 31",PIP-WLD-1332,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-08-29,Blowdown piping to the wellhead SDVs erected,PIP-ERC-1333,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-08-30,Closed drain header installed,PIP-ERC-1334,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-09-11,Manifold piping at the tank farm completed for TK-2101 in and out,PIP-ERC-1340,terminology_drift,,piping,test,,,PIP-ERC-1342,paraphrase
+drift_bench_v1,2026-08-29,Pump suction and delivery piping completed,PIP-ERC-1341,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-09-15,Tie-in piping for the TK-2102 manifold erected,PIP-ERC-1342,terminology_drift,,piping,test,,,PIP-ERC-1340,sibling_hard
+drift_bench_v1,2026-06-13,Tank water draw-off lines installed,PIP-ERC-1343,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-09-18,Manifold welds 40 to 52 completed with UT,PIP-WLD-1344,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-07-23,Instrument air line run from the rack to Unit 2,PIP-ERC-1350,terminology_drift,,piping,test,,,PIP-DRY-1515,terminology
+drift_bench_v1,2026-07-25,Nitrogen piping from the package to the header done,PIP-ERC-1351,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-04-21,Underground firewater tie-ins and hydrant branches completed,PIP-ERC-1352,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-05-29,Drinking water line laid to the control building,PIP-ERC-1353,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-07-05,Chemical injection lines run from skids to dosing points,PIP-ERC-1354,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-04-07,Trench dug for the firewater main between Unit 1 and the manifold,PIP-UGS-1170,terminology_drift,,piping,test,,,PIP-UGS-1171,terminology
+drift_bench_v1,2026-04-09,GRP pipe laid and jointed for the firewater loop,PIP-UGS-1171,terminology_drift,,piping,test,,,PIP-UGS-1170,terminology
+drift_bench_v1,2026-04-14,Firewater main tested between manifold and U1,PIP-UGS-1172,terminology_drift,,piping,test,,,PIP-UGS-1173,sibling_hard
+drift_bench_v1,2026-04-16,Section from Unit 1 to Unit 2 pressurised and held,PIP-UGS-1173,terminology_drift,,piping,test,,,PIP-UGS-1172,sibling_hard
+drift_bench_v1,2026-04-17,Trench refilled and compacted after the firewater test,PIP-UGS-1174,terminology_drift,,piping,test,,,,terminology
+drift_bench_v1,2026-04-15,Hydrant and monitor foundations cast on the ring main,PIP-UGS-1175,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-07-02,600 mm ladder-type tray fixed on rack tier 3,EL-TRK-1360,terminology_drift,,electrical,test,,,EL-TRK-1361,terminology
+drift_bench_v1,2026-07-04,Tray work on tier 3 above Unit 2 completed,EL-TRK-1361,terminology_drift,,electrical,test,,,EL-TRK-1360|INS-TRK-1363,terminology
+drift_bench_v1,2026-10-30,Conduits and flexibles taken to the U1/U2 equipment,EL-TRK-1362,terminology_drift,,electrical,test,,,,paraphrase
+drift_bench_v1,2026-07-07,300 mm instrument tray laid on tier 2,INS-TRK-1363,terminology_drift,,instrumentation,test,,,EL-TRK-1360,terminology
+drift_bench_v1,2026-06-07,Trays and risers installed at the substation building,EL-TRK-1370,terminology_drift,,electrical,test,,,,paraphrase
+drift_bench_v1,2026-07-31,Transformer T-1 positioned and HT/LT terminations done,EL-TRF-1371,terminology_drift,,electrical,test,,,EL-TRF-1372,terminology
+drift_bench_v1,2026-08-04,T-2 transformer set and terminated,EL-TRF-1372,terminology_drift,,electrical,test,,,EL-TRF-1371,sibling_hard
+drift_bench_v1,2026-07-12,MCC and switchboard panels installed in the substation room,EL-SWB-1373,terminology_drift,,electrical,test,,,,paraphrase
+drift_bench_v1,2026-08-04,11 kV cable pulled from the substation to T-1,EL-CBL-1374,terminology_drift,,electrical,test,,,EL-CBL-1375,terminology
+drift_bench_v1,2026-08-08,MV feeder cable drawn to transformer T-2,EL-CBL-1375,terminology_drift,,electrical,test,,,EL-CBL-1374,sibling_hard
+drift_bench_v1,2026-07-26,Power cables laid for the crude pump motors,EL-CBL-1376,terminology_drift,,electrical,test,,,EL-CBL-1377,terminology
+drift_bench_v1,2026-07-09,Feeder cables pulled to the wellhead panel,EL-CBL-1377,terminology_drift,,electrical,test,,,EL-CBL-1376,sibling_hard
+drift_bench_v1,2026-05-20,Earthing grid and pits completed across the site,EL-GRD-1378,terminology_drift,,electrical,test,,,EL-GRD-1379,terminology
+drift_bench_v1,2026-05-06,Lightning masts erected with down conductors at the flare,EL-GRD-1379,terminology_drift,,electrical,test,,,EL-GRD-1378,paraphrase
+drift_bench_v1,2026-05-26,Light poles and floodlights installed at the wellheads,EL-LTG-1380,terminology_drift,,electrical,test,,,EL-LTG-1381,terminology
+drift_bench_v1,2026-07-21,Emergency lights and exit boards fitted in the control building,EL-LTG-1381,terminology_drift,,electrical,test,,,EL-LTG-1380,paraphrase
+drift_bench_v1,2026-08-02,LV panels glanded and terminated at the substation,EL-CBL-1382,terminology_drift,,electrical,test,,,EL-CBL-1383,paraphrase
+drift_bench_v1,2026-08-04,Glanding of MCC feeder cables completed,EL-CBL-1383,terminology_drift,,electrical,test,,,EL-CBL-1384|EL-CBL-1382,terminology
+drift_bench_v1,2026-08-06,Cores terminated and laced at both MCCs,EL-CBL-1384,terminology_drift,,electrical,test,,,EL-CBL-1383,terminology
+drift_bench_v1,2026-12-01,Air tubing take-offs and manifolds fitted for the instruments,INS-IMP-1390,terminology_drift,,instrumentation,test,,,,paraphrase
+drift_bench_v1,2026-12-01,PTs mounted at Unit 1 grade and on the rack,INS-FIT-1391,terminology_drift,,instrumentation,test,,,INS-FIT-1392,terminology
+drift_bench_v1,2026-06-18,Level transmitters fixed on the vessels,INS-FIT-1392,terminology_drift,,instrumentation,test,,,INS-FIT-1391,sibling_hard
+drift_bench_v1,2026-10-31,Temp elements installed at their points,INS-FIT-1393,terminology_drift,,instrumentation,test,,,,terminology
+drift_bench_v1,2026-11-03,Flowmeters fitted at the Unit 2 lines,INS-FIT-1394,terminology_drift,,instrumentation,test,,,,terminology
+drift_bench_v1,2026-08-25,Field JB's mounted and ready,INS-JBX-1395,terminology_drift,,instrumentation,test,,,INS-CBL-1396,terminology
+drift_bench_v1,2026-08-29,Instrument cables pulled from tier 2 to the JB's,INS-CBL-1396,terminology_drift,,instrumentation,test,,,INS-CBL-1397|INS-JBX-1395,terminology
+drift_bench_v1,2026-09-06,Home runs drawn from the JB's to the control room FTA,INS-CBL-1397,terminology_drift,,instrumentation,test,,,INS-CBL-1396,terminology
+drift_bench_v1,2026-09-11,Field cable terminations completed at the junction boxes,INS-TER-1398,terminology_drift,,instrumentation,test,,,,paraphrase
+drift_bench_v1,2026-11-19,Solenoids fitted on ESD valves and hooked to the blowdown lines,INS-IMP-1399,terminology_drift,,instrumentation,test,,,,paraphrase
+drift_bench_v1,2026-12-01,F&G detectors mounted at the wellhead and manifold,INS-FIT-1400,terminology_drift,,instrumentation,test,,,,terminology
+drift_bench_v1,2026-12-08,Transmitters and switches calibrated on the bench,INS-CAL-1405,terminology_drift,,instrumentation,test,,,,paraphrase
+drift_bench_v1,2026-12-16,Loops checked out for Unit 1,INS-CHK-1406,terminology_drift,,instrumentation,test,,,INS-CHK-1407|INS-CHK-1408,terminology
+drift_bench_v1,2026-11-08,U2 loop continuity checks done,INS-CHK-1407,terminology_drift,,instrumentation,test,,,INS-CHK-1406|INS-CHK-1408,sibling_hard
+drift_bench_v1,2026-11-14,Tank farm and utility loops verified,INS-CHK-1408,terminology_drift,,instrumentation,test,,,INS-CHK-1406|INS-CHK-1407,sibling_hard
+drift_bench_v1,2026-12-22,C&E test of the shutdown matrix done,INS-CHK-1409,terminology_drift,,instrumentation,test,,,INS-CHK-1542,terminology
+drift_bench_v1,2026-11-02,Hydrotest of the first package cleared for the U1 lines,PIP-HYT-1510,terminology_drift,,piping,test,,,PIP-HYT-1511,terminology
+drift_bench_v1,2026-11-11,Second test pack pressurised and held on the U2 header,PIP-HYT-1511,terminology_drift,,piping,test,,,PIP-HYT-1510|PIP-HYT-1513,terminology
+drift_bench_v1,2026-11-03,Nitrogen leak test done on the flare header,PIP-HYT-1512,terminology_drift,,piping,test,,,PIP-ERC-1330,terminology
+drift_bench_v1,2026-09-23,Tank farm manifold and pump suction lines hydro tested,PIP-HYT-1513,terminology_drift,,piping,test,,,PIP-HYT-1511,terminology
+drift_bench_v1,2026-11-13,"Test packs flushed, dried and reinstated",PIP-FLS-1514,terminology_drift,,piping,test,,,,paraphrase
+drift_bench_v1,2026-11-11,Air blowing of the instrument air header completed,PIP-DRY-1515,terminology_drift,,piping,test,,,PIP-ERC-1350,paraphrase
+drift_bench_v1,2026-11-05,"Both separators held pressure, tightness ok",STA-PRS-1520,terminology_drift,,static_equipment,test,,,PIP-HYT-1513,terminology
+drift_bench_v1,2026-10-01,TK-2101 filled with water for settlement observation,STA-DRY-1521,terminology_drift,,static_equipment,test,,,STA-DRY-1522,terminology
+drift_bench_v1,2026-09-19,TK-2102 water filled and strapping calibration done,STA-DRY-1522,terminology_drift,,static_equipment,test,,,STA-DRY-1521,sibling_hard
+drift_bench_v1,2026-09-25,Pump motors bumped in both directions,STA-ROT-1523,terminology_drift,,static_equipment,test,,,STA-ROT-1524,terminology
+drift_bench_v1,2026-09-28,Crude pumps ran on performance trial,STA-ROT-1524,terminology_drift,,static_equipment,test,,,STA-ROT-1523,terminology
+drift_bench_v1,2026-10-15,Compressor package loaded and tested,STA-CMP-1525,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2026-11-05,Pilot ignited and purge line cleared at the flare,STA-FLS-1526,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2027-01-06,72-hour reliability run of the process train completed,STA-RUN-1527,terminology_drift,,static_equipment,test,,,,paraphrase
+drift_bench_v1,2026-09-26,Hi-pot and IR values taken for the MV feeders,EL-ENS-1530,terminology_drift,,electrical,test,,,,terminology
+drift_bench_v1,2026-09-30,Relays set and primary injection completed,EL-ENS-1531,terminology_drift,,electrical,test,,,,terminology
+drift_bench_v1,2026-10-12,Substation charged up today,EL-ENS-1532,terminology_drift,,electrical,test,,,,terminology
+drift_bench_v1,2026-11-16,Loops rechecked after the hydrotest,INS-CHK-1540,terminology_drift,,instrumentation,test,,,INS-CHK-1406,terminology
+drift_bench_v1,2026-12-09,Fire and gas system function tested,INS-CMS-1541,terminology_drift,,instrumentation,test,,,INS-FIT-1400,terminology
+drift_bench_v1,2027-01-02,ESD with blowdown tested end to end,INS-CHK-1542,terminology_drift,,instrumentation,test,,,INS-CHK-1409,terminology
+drift_bench_v1,2026-12-20,"Loop certificates signed, RFSI ready",INS-MS-1543,terminology_drift,,instrumentation,test,,,,paraphrase
+drift_bench_v1,2026-11-09,PESO inspection of both storage tanks over,HSE-REG-1544,terminology_drift,,hse,test,,,HSE-REG-1545,terminology
+drift_bench_v1,2026-11-07,Statutory inspection cleared for the flare and vessels,HSE-REG-1545,terminology_drift,,hse,test,,,HSE-REG-1544,sibling_hard
+drift_bench_v1,2026-11-12,Pollution board compliance round done,HSE-REG-1546,terminology_drift,,hse,test,,,,terminology
+drift_bench_v1,2026-12-23,Pre-startup safety round completed,HSE-PSC-1550,terminology_drift,,hse,test,,,,terminology
+drift_bench_v1,2026-11-20,Red-lines transferred to the as-built drawings,HSE-DOC-1551,terminology_drift,,hse,test,,,HSE-DOC-1559,terminology
+drift_bench_v1,2026-11-24,Handover dossiers and O&M manuals compiled,HSE-DOC-1552,terminology_drift,,hse,test,,,HSE-DOC-1559,paraphrase
+drift_bench_v1,2026-12-24,Operators trained and familiarised,HSE-TRN-1553,terminology_drift,,hse,test,,,,paraphrase
+drift_bench_v1,2027-01-04,Unit 1 declared ready for start-up,HSE-HDO-1554,terminology_drift,,hse,test,,,HSE-HDO-1555,terminology
+drift_bench_v1,2027-02-04,RFSU given for Unit 2,HSE-HDO-1555,terminology_drift,,hse,test,,,HSE-HDO-1554,sibling_hard
+drift_bench_v1,2027-02-22,First crude pumped into TK-2101,STA-MS-1556,terminology_drift,,static_equipment,test,,,,terminology
+drift_bench_v1,2027-02-27,Plant handed over provisionally to operations,HSE-HDO-1557,terminology_drift,,hse,test,,,,terminology
+drift_bench_v1,2027-03-02,Category A and B punches closed out,HSE-PUN-1558,terminology_drift,,hse,test,,,,terminology
+drift_bench_v1,2027-03-04,As-builts submitted and documents closed with OIL,HSE-DOC-1559,terminology_drift,,hse,test,,,HSE-DOC-1551|HSE-DOC-1552,terminology

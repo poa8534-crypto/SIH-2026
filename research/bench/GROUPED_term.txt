@@ -1,0 +1,128 @@
+config          : term
+Scoring calibration rows ...
+  thresholds: tau_high=0.625 tau_low=0.5 margin=0.12 (18.6s)
+  protocol  : thresholds calibrated on THIS corpus's dev split (251 rows), metrics on its test split (239 rows)
+
+==============================================================================
+ QUALITY — LEGACY v2 test split (audit comparison)
+==============================================================================
+  gold positives              : 185
+  >=6-token verbatim overlap  :  39.5%  (desc+detail)    39.5%  (description only)   <- copy-circularity
+  >=4-token verbatim overlap  :  61.1%
+  token-Jaccard mean / median : 0.482 / 0.500   (description-only mean 0.482)
+  activity id named outright  :   0.0%
+  equipment tag named outright:  54.6%
+
+==============================================================================
+ QUALITY — EVAL CORPUS (ground_truth_v2_grouped.csv)
+==============================================================================
+  gold positives              : 226
+  >=6-token verbatim overlap  :  48.7%  (desc+detail)    48.7%  (description only)   <- copy-circularity
+  >=4-token verbatim overlap  :  71.7%
+  token-Jaccard mean / median : 0.523 / 0.556   (description-only mean 0.523)
+  activity id named outright  :   0.0%
+  equipment tag named outright:  54.0%
+
+==============================================================================
+ EVALUATION — ground_truth_v2_grouped.csv, config=term
+==============================================================================
+  mentions            : 239
+  Top-1 accuracy      :  76.5%  (173/226)
+  Recall@3            :  87.2%
+  Recall@20           : 100.0%
+  suggestion precision:  76.2%
+  coverage (auto)     :  56.5%
+  auto-link precision :  97.8%
+  review rate         :  38.5%
+  NO_MATCH rejection  :  92.3%  (n_neg=13)
+  latency             : 45.13 ms/mention (batched, cold caches)
+  near-miss mix       : 64/239 mentions, top-1 14/64 = 21.9%
+
+==============================================================================
+ LEGACY v2 HELD-OUT TEST under the same config (term)
+==============================================================================
+  Top-1 accuracy      :  71.4%  (132/185)
+  coverage (auto)     :  46.0%
+  auto-link precision :  98.9%
+  suggestion precision:  71.0%
+  near-miss top-1     : 18/68 = 26.5%
+  Recall@20           : 100.0%
+
+==============================================================================
+ SIBLING-HARD SUBSET (deliberately ambiguous)
+==============================================================================
+  n                   : 0
+  strict top-1        :   0.0%  (partly luck, as on near-misses)
+  outcomes            : 
+
+==============================================================================
+ FAILURE CATEGORIES (drift benchmark)
+==============================================================================
+  correct               :  173  (76.5%)
+  sibling_confusion     :   36  (15.9%)
+  ranking_other         :    9  (4.0%)
+  term_mapping_miss     :    8  (3.5%)
+
+==============================================================================
+ WORKED EXAMPLES
+==============================================================================
+  FIELD : Crew working on Set and terminate transformer, 11/0.433 kV, as of 8 Mar 2026
+  GOLD  : EL-TRF-1372 — Set and terminate transformer T-2, 11/0.433 kV
+  TOP-3 : EL-TRF-1372 0.595; EL-TRF-1371 0.592; EL-CBL-1375 0.440
+  DECIDE: REVIEW conf=0.595 margin=0.003
+  CLASS : correct
+
+  FIELD : Progressed the V-1201 scope today, 76% complete
+  GOLD  : CIV-FDN-1107 — Reinforcement and concreting, glycol contactor foundation V-
+  TOP-3 : CIV-FDN-1107 0.590; STA-SET-1203 0.565; PIP-ERC-1317 0.562
+  DECIDE: REVIEW conf=0.590 margin=0.025
+  CLASS : correct
+
+  FIELD : Safety signage and barricading, phase 1 work fronts stopped, material shortage at store
+  GOLD  : HSE-SGN-1043 — Safety signage and barricading, phase 1 work fronts
+  TOP-3 : HSE-SGN-1043 0.893; HSE-TMP-1040 0.595; CIV-FIL-1006 0.586
+  DECIDE: AUTO_LINK conf=0.893 margin=0.298
+  CLASS : correct
+
+  FIELD : Install temporary water supply and septic facility completed yesterday
+  GOLD  : HSE-TMP-1041 — Install temporary water supply and septic facility
+  TOP-3 : HSE-TMP-1041 0.908; HSE-TMP-1040 0.677; HSE-TMP-1053 0.523
+  DECIDE: AUTO_LINK conf=0.908 margin=0.231
+  CLASS : correct
+
+  FIELD : Proof roll and level survey, Unit 1 pad formation completed 31 Mar 2026
+  GOLD  : CIV-FIL-1007 — Proof roll and level survey, Unit 1 pad formation
+  TOP-3 : CIV-FIL-1007 0.934; CIV-EXC-1003 0.727; CIV-EXC-1004 0.703
+  DECIDE: AUTO_LINK conf=0.934 margin=0.207
+  CLASS : correct
+
+  FIELD : Rock breaking and muck disposal, flare stack base FST-1301 — closed out this week
+  GOLD  : CIV-EXC-1031 — Rock breaking and muck disposal, flare stack base FST-1301
+  TOP-3 : CIV-EXC-1031 0.894; CIV-FDN-1126 0.706; CIV-FDN-1127 0.694
+  DECIDE: AUTO_LINK conf=0.894 margin=0.188
+  CLASS : correct
+
+  FIELD : Safety signage and barricading, phase 1 work fronts closed out 2026-03-20
+  GOLD  : HSE-SGN-1043 — Safety signage and barricading, phase 1 work fronts
+  TOP-3 : HSE-SGN-1043 0.944; CIV-EXC-1005 0.558; CIV-RDS-1010 0.480
+  DECIDE: AUTO_LINK conf=0.944 margin=0.386
+  CLASS : correct
+
+  FIELD : Install temporary water supply and septic facility in progress, 1 nos out of 1 achieved, as of 2026-04-01
+  GOLD  : HSE-TMP-1041 — Install temporary water supply and septic facility
+  TOP-3 : HSE-TMP-1041 0.916; HSE-TMP-1040 0.672; HSE-TMP-1042 0.641
+  DECIDE: AUTO_LINK conf=0.916 margin=0.244
+  CLASS : correct
+
+  FIELD : Culvert placement at road crossing, Unit 1 approach in progress, 1 nos out of 2 achieved
+  GOLD  : CIV-DRA-1015 — Culvert placement at road crossing, Unit 1 approach
+  TOP-3 : CIV-DRA-1015 0.947; CIV-FNC-1052 0.607; CIV-RDS-1010 0.606
+  DECIDE: AUTO_LINK conf=0.947 margin=0.341
+  CLASS : correct
+
+  FIELD : Fencing, approach road stretch in progress, 205 of 420 m achieved, as of 19 Apr
+  GOLD  : CIV-FNC-1052 — Fencing, approach road stretch
+  TOP-3 : CIV-FNC-1052 0.915; CIV-RDS-1011 0.714; CIV-FNC-1032 0.646
+  DECIDE: AUTO_LINK conf=0.915 margin=0.201
+  CLASS : correct
+
