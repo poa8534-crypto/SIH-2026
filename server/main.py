@@ -90,6 +90,16 @@ from matching.primavera import ScheduleParseError
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
 from server.evm import compute_evm
+from server.notifications import field_notifications
+from server.raid import (
+    KINDS as RAID_KINDS,
+    STATUSES as RAID_STATUSES,
+    RaidValidationError,
+    compute_exposure as compute_raid_exposure,
+    evidence_for as raid_evidence_for,
+    propose_candidates as propose_raid_candidates,
+    validate as raid_validate,
+)
 # The matcher's own per-candidate rationale. `LinkDecision.rationale` is the
 # decision-level list (it can carry decision reasons such as "below_tau_low"),
 # while this derives the evidence for ONE candidate from that candidate's own
@@ -110,6 +120,7 @@ from .db import (
     IntegrityWarning,
     Job,
     LinkedEvent,
+    RaidItem,
     MemoryCache,
     ReviewQueueItem,
     engine,
@@ -145,6 +156,13 @@ from .schemas import (
     ProductivityMetric,
     ResolveRequest,
     ResolveResponse,
+    RaidCandidate,
+    RaidCandidatesResponse,
+    RaidCreateRequest,
+    RaidEvidence,
+    FieldNotification,
+    RaidItemResponse,
+    RaidPatchRequest,
     ReviewCandidate,
     ReviewQueueItemResponse,
     ScheduleActivityResponse,
@@ -2463,6 +2481,190 @@ def get_evm(db: Session = Depends(get_db)):
     no table, no migration, nothing stored.
     """
     return compute_evm(db, DATA_DATE)
+# ── GET /field/notifications ────────────────────────────────────────────────
+
+@app.get("/field/notifications", response_model=list[FieldNotification])
+def get_field_notifications(
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """What this supervisor's own updates actually changed, newest first.
+
+    Closes the loop back to the field (ROADMAP §3.4): a supervisor who reports
+    progress is otherwise never told what it did. Derived on read from the
+    append-only audit trail — no notification table, and nothing new is
+    captured. A rejected proposal produces nothing, because rejecting writes no
+    actual and so leaves no audit row pointing at that event.
+    """
+    return [
+        FieldNotification(**n)
+        for n in field_notifications(db, FIELD_MATCH_METHOD, limit=limit)
+    ]
+
+
+# ── RAID register ───────────────────────────────────────────────────────────
+
+def _raid_response(db: Session, item: RaidItem) -> RaidItemResponse:
+    """One register row, with its source evidence resolved at read time."""
+    evidence = raid_evidence_for(db, item)
+    return RaidItemResponse(
+        id=item.id,
+        kind=item.kind,
+        title=item.title,
+        description=item.description or "",
+        category=item.category,
+        status=item.status,
+        owner=item.owner,
+        due_date=item.due_date,
+        date_raised=item.date_raised,
+        date_closed=item.date_closed,
+        probability=item.probability,
+        impact_days=item.impact_days,
+        exposure=item.exposure,
+        linked_activity_ids=item.activity_list(),
+        source_kind=item.source_kind,
+        source_id=item.source_id,
+        source_note=item.source_note,
+        evidence=RaidEvidence(**evidence) if evidence else None,
+        created_by=item.created_by,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+    )
+
+
+@app.get("/raid", response_model=list[RaidItemResponse])
+def list_raid(
+    kind: Optional[str] = Query(None, description="risk | issue | action | decision"),
+    status: Optional[str] = Query(None, description="open | mitigating | closed | rejected"),
+    activity_id: Optional[str] = Query(None, description="items touching this activity"),
+    db: Session = Depends(get_db),
+):
+    """The register, highest exposure first.
+
+    A scored risk outranks an unscored item, and within the unscored the newest
+    comes first. An item with no exposure is not sorted as though it scored
+    zero - it has not been scored at all.
+    """
+    query = db.query(RaidItem)
+    if kind:
+        if kind not in RAID_KINDS:
+            raise HTTPException(400, f"Unknown kind '{kind}'. Expected one of {', '.join(RAID_KINDS)}.")
+        query = query.filter(RaidItem.kind == kind)
+    if status:
+        if status not in RAID_STATUSES:
+            raise HTTPException(400, f"Unknown status '{status}'. Expected one of {', '.join(RAID_STATUSES)}.")
+        query = query.filter(RaidItem.status == status)
+
+    items = query.all()
+    if activity_id:
+        items = [i for i in items if activity_id in i.activity_list()]
+
+    items.sort(
+        key=lambda i: (
+            0 if i.exposure is not None else 1,
+            -(i.exposure or 0.0),
+            -(i.created_at.timestamp() if i.created_at else 0),
+        )
+    )
+    return [_raid_response(db, i) for i in items]
+
+
+@app.get("/raid/candidates", response_model=RaidCandidatesResponse)
+def raid_candidates(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """RAID items the existing evidence suggests. **Writes nothing.**
+
+    Mirrors D-009 for dates: the system proposes, a human commits. There is no
+    confidence above which a candidate commits itself, because no such
+    threshold would be safe for a governance artefact (ROADMAP §6).
+    """
+    return RaidCandidatesResponse(
+        candidates=[RaidCandidate(**c) for c in propose_raid_candidates(db, limit=limit)]
+    )
+
+
+@app.get("/raid/{item_id}", response_model=RaidItemResponse)
+def get_raid_item(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(RaidItem).filter(RaidItem.id == item_id).first()
+    if not item:
+        raise HTTPException(404, f"RAID item {item_id} not found")
+    return _raid_response(db, item)
+
+
+@app.post("/raid", response_model=RaidItemResponse, status_code=201)
+def create_raid_item(req: RaidCreateRequest, db: Session = Depends(get_db)):
+    """Add an item to the register. The only way anything gets in.
+
+    `exposure` is not accepted from the caller - it is computed from
+    probability and impact so the register cannot carry a figure that does not
+    follow from its own inputs.
+    """
+    try:
+        raid_validate(req.kind, req.status, req.probability, req.impact_days)
+    except RaidValidationError as e:
+        raise HTTPException(400, str(e))
+
+    item = RaidItem(
+        kind=req.kind,
+        title=req.title,
+        description=req.description or "",
+        category=req.category,
+        status=req.status,
+        owner=req.owner,
+        due_date=req.due_date,
+        date_raised=req.date_raised or date.today(),
+        probability=req.probability,
+        impact_days=req.impact_days,
+        exposure=compute_raid_exposure(req.probability, req.impact_days),
+        linked_activity_ids=json.dumps(list(req.linked_activity_ids)),
+        source_kind=req.source_kind,
+        source_id=req.source_id,
+        source_note=req.source_note,
+        created_by=req.created_by,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _raid_response(db, item)
+
+
+@app.patch("/raid/{item_id}", response_model=RaidItemResponse)
+def patch_raid_item(item_id: str, req: RaidPatchRequest, db: Session = Depends(get_db)):
+    """Update an item. Absent fields are left alone.
+
+    Exposure is recomputed whenever either factor moves, so it can never drift
+    out of step with the numbers it is derived from.
+    """
+    item = db.query(RaidItem).filter(RaidItem.id == item_id).first()
+    if not item:
+        raise HTTPException(404, f"RAID item {item_id} not found")
+
+    kind = req.kind if req.kind is not None else item.kind
+    status = req.status if req.status is not None else item.status
+    probability = req.probability if req.probability is not None else item.probability
+    impact_days = req.impact_days if req.impact_days is not None else item.impact_days
+    try:
+        raid_validate(kind, status, probability, impact_days)
+    except RaidValidationError as e:
+        raise HTTPException(400, str(e))
+
+    for field in ("kind", "title", "description", "category", "status", "owner",
+                  "due_date", "date_closed", "probability", "impact_days"):
+        value = getattr(req, field)
+        if value is not None:
+            setattr(item, field, value)
+    if req.linked_activity_ids is not None:
+        item.linked_activity_ids = json.dumps(list(req.linked_activity_ids))
+
+    item.exposure = compute_raid_exposure(item.probability, item.impact_days)
+    # Closing an item dates it, so a closed register row always says when.
+    if item.status in ("closed", "rejected") and item.date_closed is None:
+        item.date_closed = date.today()
+    db.commit()
+    db.refresh(item)
+    return _raid_response(db, item)
 
 
 def _generate_pmxml(activities: list[Activity], include_actuals: bool) -> str:

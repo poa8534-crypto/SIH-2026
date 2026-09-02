@@ -438,6 +438,79 @@ class ReviewQueueItem(Base):
     activity = relationship("Activity", back_populates="review_items")
 
 
+# ── RaidItem (governance register) ──────────────────────────────────────────
+
+class RaidItem(Base):
+    """One entry in the Risk / Issue / Action / Decision register.
+
+    ONE table, not four. The four kinds share every structural field - a title,
+    an owner, a status, a due date, links back to the activities and the
+    evidence that raised them - and differ only in which optional fields carry a
+    value. Four tables would have meant four sets of endpoints, four filters and
+    four migrations to keep in step, for no gain.
+
+    `kind` is one of `risk`, `issue`, `action`, `decision`. The risk-only
+    fields (`probability`, `impact_days`, `exposure`) are null on the other
+    three; nothing infers them.
+
+    EXPOSURE IS ARITHMETIC, NEVER A JUDGEMENT.
+    `exposure = probability x impact_days`, computed in `server/raid.py` and
+    written on every create and update. No LLM is involved at any point, in
+    keeping with the project rule that a number on a dashboard is computed
+    deterministically (ROADMAP; and D-003 for the same reason on `rationale`).
+
+    PROVENANCE. `source_kind` / `source_id` name the LinkedEvent or AuditRecord
+    that raised the item, so a register entry can always be traced back to the
+    field report behind it. They are null for an item a planner typed from
+    scratch, which is an honest distinction rather than a missing value.
+
+    See D-048.
+    """
+
+    __tablename__ = "raid_item"
+
+    id = Column(String, primary_key=True, default=_uuid)
+
+    kind = Column(String, nullable=False)          # risk | issue | action | decision
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False, default="")
+    category = Column(String, nullable=True)       # e.g. weather, resource, design
+    status = Column(String, nullable=False, default="open")  # open|mitigating|closed|rejected
+    owner = Column(String, nullable=True)
+
+    due_date = Column(Date, nullable=True)
+    date_raised = Column(Date, nullable=True)
+    date_closed = Column(Date, nullable=True)
+
+    # Risk-only. Null on issue / action / decision.
+    probability = Column(Float, nullable=True)     # 0.0 - 1.0
+    impact_days = Column(Float, nullable=True)     # schedule days at stake
+    exposure = Column(Float, nullable=True)        # probability x impact_days
+
+    # JSON list of activity ids this item bears on.
+    linked_activity_ids = Column(Text, nullable=False, default="[]")
+
+    # What raised it. Null when a planner typed it in directly.
+    source_kind = Column(String, nullable=True)    # linked_event | audit_record | delay_analysis
+    source_id = Column(String, nullable=True)
+    source_note = Column(Text, nullable=True)
+
+    created_by = Column(String, nullable=False, default="planner")
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+    def activity_list(self) -> list[str]:
+        """The linked activity ids. Never raises on malformed stored JSON."""
+        if not self.linked_activity_ids:
+            return []
+        import json
+        try:
+            value = json.loads(self.linked_activity_ids)
+        except (json.JSONDecodeError, TypeError):
+            return []
+        return [str(v) for v in value] if isinstance(value, list) else []
+
+
 # ── AliasLexicon (training signal) ──────────────────────────────────────────
 
 class AliasLexicon(Base):
