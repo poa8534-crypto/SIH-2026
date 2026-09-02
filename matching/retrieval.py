@@ -362,13 +362,21 @@ class HybridRetriever:
                 return self._short_circuit_result(only)
 
         self.full_retrievals += 1
+        # Controlled terminology expansion (off by default): canonical
+        # schedule vocabulary is APPENDED to the query side only.
+        q_tokens = tokenize(raw_text)
+        q_text = raw_text
+        if cfg.term_expansion:
+            from . import terminology
+            q_tokens = q_tokens + terminology.expansion_tokens(raw_text)
+            q_text = terminology.canonicalise(raw_text)
         channels: dict[str, list[tuple[int, float]]] = {
             "TAG": self.tag_channel(event_tags, text_sizes),
-            "BM25": self.bm25_channel(tokenize(raw_text)),
-            "DENSE": dense_hits if dense_hits is not None else self.dense_channel(raw_text),
+            "BM25": self.bm25_channel(q_tokens),
+            "DENSE": dense_hits if dense_hits is not None else self.dense_channel(q_text),
         }
         if cfg.use_ngram:
-            channels["NGRAM"] = self.ngram_channel(raw_text)
+            channels["NGRAM"] = self.ngram_channel(q_text)
         if cfg.use_alias:
             channels["ALIAS"] = self.alias_channel(raw_text)
 
@@ -451,6 +459,14 @@ class HybridRetriever:
         """
         cfg = self.config
         disciplines = disciplines or [None] * len(texts)
+        # Terminology expansion (off by default): only the DENSE batch pass
+        # canonicalises here. retrieve() canonicalises the query side itself,
+        # so the per-mention calls below must still receive the raw text —
+        # canonicalising twice would append the phrases twice.
+        dense_texts = texts
+        if cfg.term_expansion:
+            from . import terminology
+            dense_texts = [terminology.canonicalise(t) for t in texts]
         results: list[tuple[list[int], dict[int, dict]] | None] = [None] * len(texts)
 
         needs_dense: list[int] = []
@@ -463,7 +479,7 @@ class HybridRetriever:
                     continue
             needs_dense.append(i)
 
-        dense = self.dense_channel_many([texts[i] for i in needs_dense])
+        dense = self.dense_channel_many([dense_texts[i] for i in needs_dense])
         for slot, i in enumerate(needs_dense):
             results[i] = self.retrieve(
                 texts[i], tags[i], dense_hits=dense[slot],

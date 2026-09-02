@@ -69,8 +69,8 @@ DATE_ISO_RE = re.compile(r'\b(\d{4})-(\d{1,2})-(\d{1,2})\b')
 # no year. A year-less date is resolved against the report's own header
 # date -- see resolve_yearless_date().
 DATE_DMY_ALPHA_RE = re.compile(
-    r'\b(\d{1,2})\s*/?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*'
-    r'(?:\s*/?\s*(\d{4})\b)?',
+    r'\b(\d{1,2})\s*[-/]?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*'
+    r'(?:\s*[-/]?\s*(\d{4})\b)?',
     re.IGNORECASE,
 )
 
@@ -92,15 +92,17 @@ RELATIVE_DATE_RE = re.compile(
 # ── Quantity + UOM patterns ─────────────────────────────────────────────────
 
 QUANTITY_RE = re.compile(
-    r'(\d+(?:\.\d+)?)\s*'
+    r'(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*'
     r'(m3|m2|lm|mt|km|nos?|mm|cm|ltr|tonnes?|tons?|spools?|flanges?|panels?|'
     r'meters?|metres?|ends?|cables?|readings?|cycles?|nozzles?|sif|sifs?|'
     r'obs(?:ervations?)?|lites?|lights?|jbs?|circuits?)\b',
     re.IGNORECASE,
 )
 
-# Standalone bare meters: "800 m of", "1200 m "
-BARE_METER_RE = re.compile(r'(\d+(?:\.\d+)?)\s+m\b')
+# Standalone bare meters: "800 m of", "1,200 m " (comma thousands allowed)
+BARE_METER_RE = re.compile(
+    r'(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s+m\b'
+)
 
 # Percentage
 PERCENT_RE = re.compile(r'(\d+(?:\.\d+)?)\s*%')
@@ -188,6 +190,7 @@ FORECAST_RE = re.compile(
     r'\b(now scheduled|rescheduled|re-scheduled|reschedul\w*|planned for|'
     r'scheduled for|scheduled on|expected|expecting|instead of|postponed|'
     r'pushed to|moved to|deferred|will (?:start|begin|commence|complete|finish)|'
+    r'will\s+be\s+(?:complet\w*|finish\w*|done|erect\w*|install\w*|cast|test\w*)|'
     r'to be (?:started|completed|done)|forecast\w*|anticipated|'
     r'target(?:ed)? (?:date|completion)|upcoming|tomorrow|next week)\b',
     re.IGNORECASE,
@@ -241,6 +244,13 @@ def extract_tags(text: str) -> list[str]:
         tag = f"{prefix}-{suffix}"
         # Filter out false positives (date fragments, section numbers)
         if prefix in ("JB", "PSV", "LT", "PT", "TT", "FT", "CV", "SDV", "ESD"):
+            continue
+        # Filter out MATERIAL GRADES: "SS-304" pipe installed, "M-20 concrete
+        # poured". These are material callouts, not equipment, and no schedule
+        # tag in any baseline has this shape — treating them as tags pollutes
+        # the event's tag list and the audit trail. (MCC-1, MV-1101 etc. are
+        # unaffected: their prefixes are longer and their numbers longer.)
+        if re.fullmatch(r"(SS-\d{2,3}|M-\d{1,2})", tag):
             continue
         # Longest match wins. Now that the suffix bound reaches five digits,
         # this pattern also matches the LINE portion of a full pipe tag
@@ -404,15 +414,18 @@ def extract_quantities(text: str) -> list[tuple[float, str]]:
 
     for m in QUANTITY_RE.finditer(text):
         seen_spans.add(m.start())
-        qty = float(m.group(1))
+        # Indian-format thousands separators: "1,200 nos" is one thousand two
+        # hundred, not two hundred — the comma group must be stripped before
+        # the float conversion, not truncated by it.
+        qty = float(m.group(1).replace(",", ""))
         uom = m.group(2).lower()
         uom = _normalize_uom(uom)
         results.append((qty, uom))
 
-    # Also match bare meters: "800 m of"
+    # Also match bare meters: "800 m of", "1,200 m "
     for m in BARE_METER_RE.finditer(text):
         if m.start() not in seen_spans:
-            results.append((float(m.group(1)), "m"))
+            results.append((float(m.group(1).replace(",", "")), "m"))
 
     return results
 

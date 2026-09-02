@@ -29,7 +29,16 @@ class RetrievalConfig:
     w_bm25: float = 0.7
     w_dense: float = 0.7
     w_ngram: float = 0.0        # 0.0 = channel off
+    # ── Alias lexicon ──
     w_alias: float = 0.0        # 0.0 = channel off
+
+    # ── Controlled terminology expansion (matching/terminology.py) ──
+    # Appends canonical schedule vocabulary to the QUERY side (BM25 tokens,
+    # dense/ngram query text, and the event text the fuzzy feature reads)
+    # when field language drifts from schedule language ("hydrotest" vs
+    # "hydrostatic testing"). OFF by default: it must earn its place in an
+    # ablation on the terminology-drift benchmark before anything enables it.
+    term_expansion: bool = False
 
     top_k: int = 20
 

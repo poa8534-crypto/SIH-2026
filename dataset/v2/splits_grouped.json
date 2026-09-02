@@ -1,0 +1,70 @@
+{
+  "seed": 20260901,
+  "grouping_key": [
+    "1. equipment tag line (parse_tag of the activity's tag)",
+    "2. else level-4 WBS parent (wbs_path[-2]) within the discipline",
+    "3. NO_MATCH rows keep their original mention-level split"
+  ],
+  "assignment": "greedy fill: families shuffled + sorted by size desc, each to the split with the largest positive deficit",
+  "targets_from_original_positives": {
+    "train": 387,
+    "dev": 172,
+    "test": 185
+  },
+  "near_miss_targets_from_original": {
+    "train": 37,
+    "dev": 55,
+    "test": 68
+  },
+  "near_miss_counts": {
+    "train": 53,
+    "dev": 43,
+    "test": 64
+  },
+  "counts": {
+    "train": 324,
+    "dev": 251,
+    "test": 239
+  },
+  "no_match_rows_kept": {
+    "train": 43,
+    "test": 13,
+    "dev": 14
+  },
+  "families_total": 103,
+  "families_leaking_across_splits": 0,
+  "example_families": {
+    "tag:tk-2101": [
+      "CIV-FDN-1150",
+      "CIV-FDN-1151",
+      "STA-DRY-1521",
+      "STA-MS-1556",
+      "STA-TNK-1230",
+      "STA-TNK-1231",
+      "STA-TNK-1232",
+      "STA-TNK-1233"
+    ],
+    "tag:v-1101": [
+      "CIV-FDN-1102",
+      "CIV-FDN-1103",
+      "CIV-FDN-1104",
+      "CIV-FDN-1105",
+      "CIV-FDN-1106",
+      "STA-SET-1200",
+      "STA-SET-1201",
+      "STA-SET-1202"
+    ],
+    "tag:fst-1301": [
+      "CIV-EXC-1031",
+      "CIV-FDN-1126",
+      "CIV-FDN-1127",
+      "PIP-ERC-1331",
+      "STA-FLR-1220",
+      "STA-FLR-1221",
+      "STA-FLR-1223",
+      "STA-FLR-1224",
+      "STA-FLS-1526"
+    ]
+  },
+  "note": "This split answers a stronger question than the mention-level split: can the matcher generalise to an activity family it never saw a sibling of during training/dev?"
+}

@@ -145,8 +145,18 @@ class MatchingEngine:
             info[i].get("dense_cos") if "DENSE" in info[i]["sources"] else None
             for i in cand_ids
         ]
+        # Controlled terminology expansion (off by default): the fuzzy feature
+        # reads event.raw_text, so when expansion is on it must read the same
+        # canonicalised query the retrieval channels saw. A copy is scored —
+        # the decision record keeps the ORIGINAL raw_text untouched.
+        score_event = event
+        if self.config.retrieval.term_expansion and event.raw_text:
+            from . import terminology
+            score_event = event.model_copy(
+                update={"raw_text": terminology.canonicalise(event.raw_text)}
+            )
         M, _present, locked = score_pool(
-            self.index, event, cand_ids, event.reported_date, dense_cos, extra=extra
+            self.index, score_event, cand_ids, event.reported_date, dense_cos, extra=extra
         )
         if self._ranker is not None:
             scores = self._ranker.score(M)
