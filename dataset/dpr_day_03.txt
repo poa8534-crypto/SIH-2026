@@ -5,15 +5,15 @@ Prepared by: Rajesh Phukan, Asst. Engineer
 
 1. CIVIL
    - Grade beams pipe rack: pour of M30 concrete completed for section between P4-P8 on 9 Aug. Remaining section P8-P12 planned 13 Aug.
-   - Firewater pit Zone B: excavation done. Lining work started — 12 m3 of 45 m3 placed.
-   - Flooring MCC room — tiles ka kaam chalu hai. 40 m2 out of 95 m2 done. Kal se bhi chalega.
+   - Firewater pit Zone B: excavation done. Lining work started â€” 12 m3 of 45 m3 placed.
+   - Flooring MCC room â€” tiles ka kaam chalu hai. 40 m2 out of 95 m2 done. Kal se bhi chalega.
 
 2. PIPING
    - 24 inch P-1001 spool erection: ALL 18 spools now erected on rack! Flange management start from tomorrow.
-   - 4 inch utility water P-1010 spool erection started — 3 spools up, 5 remaining. Alignment with pipe rack supports needs attention.
+   - 4 inch utility water P-1010 spool erection started â€” 3 spools up, 5 remaining. Alignment with pipe rack supports needs attention.
    - Pipe support installation Tier 1: 98 out of 145 supports done. Grinding marks on some supports to be rectified.
    - Tier 2 pipe rack steel is almost done, only 4 MT left. Erection should close by 13 Aug.
-   - 24 inch main header P-1002 flange start — P-1002 flange boltup begins.
+   - 24 inch main header P-1002 flange start â€” P-1002 flange boltup begins.
 
 3. EQUIPMENT
    - V-101 separator: setting complete on 9 Aug. Nozzle-ready inspection scheduled.
@@ -23,11 +23,11 @@ Prepared by: Rajesh Phukan, Asst. Engineer
 
 4. ELECTRICAL
    - HT cable laying: 800 m of 33kV cable laid from substation to MCC trench. About 400 m more to go.
-   - MCC panels installed — all 6 panels set in position. Wiring connections started.
-   - Transformer TR-01 oil filling in progress — 8 tonnes filled, moisture test passed.
+   - MCC panels installed â€” all 6 panels set in position. Wiring connections started.
+   - Transformer TR-01 oil filling in progress â€” 8 tonnes filled, moisture test passed.
 
 5. INSTRUMENTATION
-   - Calibrated 10 of 12 level transmitters. 2 remaining — low-range LT needs re-ranging.
+   - Calibrated 10 of 12 level transmitters. 2 remaining â€” low-range LT needs re-ranging.
    - Junction boxes JB-01, JB-02, JB-03 installed in field. Tagging done.
    - Transmitter mounting on V-101: 4 LTs installed on vessel. Working on V-102 mounts next week.
 

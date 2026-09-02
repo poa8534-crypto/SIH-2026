@@ -4522,3 +4522,77 @@ Full suite unchanged otherwise; `eval.py` output byte-identical to baseline.
 `server/test_server.py`. No frontend change was made. **Frontend note:** the
 Schedule export control can now link to `download_url` directly instead of
 saying "Saved on server"; that edit is the frontend agent's.
+## 2026-09-02 / D-045 - The committed corpus is UTF-8, and the generator can no longer write anything else
+
+### Status
+Implemented. Takes the suite from 436 passed / 2 failed to **438 passed / 0
+failed** - the first fully green run in the project's history.
+
+### Context
+Two tests had been failing for an unknown length of time:
+
+```
+extraction/test_extractor.py::TestGroundTruthAlignment::test_ground_truth_loadable
+server/test_server.py::TestCrossDPRStatistics::test_ground_truth_coverage
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0x97 in position 15056
+```
+
+`0x97` is the cp1252 em-dash. It is not valid UTF-8 at any position.
+
+Scanning every tracked text file found **12** affected, not one:
+`dataset/ground_truth.csv`, all ten `dataset/dpr_day_01..10.txt`, and
+`research/bench/ABLATION_RESULTS.txt`. 87 occurrences in the ground truth alone.
+**The ten DPR files are the demo's own input documents.**
+
+Root cause is three writes in `generate_all.py` with no `encoding=` argument
+(lines 161, 770, 916). Python then uses the platform default, which on the
+machine that generated the corpus was cp1252.
+
+The repository had already met this bug and fixed it in two places without
+fixing the cause:
+
+- `extraction/textio.py` exists solely to decode source documents through an
+  explicit cascade, and its docstring describes this exact byte (D-010).
+- `eval.py::_open_ground_truth` carries its own cascade and a comment saying
+  "the v1 key is cp1252, the v2 key is UTF-8".
+
+Meanwhile `matching/test_providers.py` hardcoded `encoding="cp1252"` to work
+around it, and the two failing tests used a bare `open()`. So the same file was
+being read as cp1252 in one place, UTF-8 in another, and through a cascade in a
+third. That is not a test problem; it is a corpus problem.
+
+### Decision
+1. Re-encode the eleven `dataset/` files from cp1252 to UTF-8.
+2. Name `encoding="utf-8"` on all three writes in `generate_all.py`, with the
+   reason stated once in the module docstring.
+3. Replace the `cp1252` workaround in `matching/test_providers.py` with an
+   explicit `utf-8`.
+
+`research/bench/ABLATION_RESULTS.txt` is **left alone**: `research/` is outside
+this agent's lane and another agent has uncommitted work there. It is a results
+artifact no code reads. Flagged, not touched.
+
+### Reason - why re-encode rather than teach every reader a cascade
+`textio.py`'s cascade is right for *ingested* documents, which arrive from the
+outside in whatever encoding a site produced. It is the wrong answer for files
+this repository generates and commits: those have one correct encoding and the
+generator should emit it. Adding a fourth cascade would have made the
+inconsistency permanent.
+
+### Verification - nothing was regenerated
+The conversion decodes cp1252 and re-encodes UTF-8. No generator was run, so no
+label, mention or activity id could move. Proven mechanically: for all eleven
+files, `git show HEAD:<path>.decode("cp1252")` equals the new file decoded as
+UTF-8, character for character.
+
+- `python eval.py` **byte-identical** to the pre-change capture. All four
+  headline figures unchanged: Top-1 87.2%, Coverage 50.4%, Auto-link precision
+  100.0%, NO_MATCH rejection 8.3%.
+- `pytest -q`: **438 passed, 0 failed** (was 436 passed, 2 failed).
+- **Neither failing test was modified.** They pass because the data they read is
+  now valid. That is the distinction between fixing a defect and silencing one.
+
+### Affected Areas
+`dataset/ground_truth.csv`, `dataset/dpr_day_01..10.txt` (re-encoded, content
+identical), `generate_all.py` (three writes + docstring),
+`matching/test_providers.py` (workaround removed). No frontend change.

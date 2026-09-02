@@ -14,8 +14,8 @@ Prepared by: Rajesh Phukan
    - 6 inch P-1015 drain header: all 10 spools erected. 20 of 20 flanges bolted.
    - 6 inch P-1015 hydrotest: all 3 sections passed.
    - 4 inch P-1010 hydro: already complete (done earlier).
-   - Pipe insulation 24 inch P-1001 started — mineral wool wrapping on 40 m2 done. Aluminium cladding next.
-   - Pipe insulation 12 inch P-1002 started — 20 m2 done.
+   - Pipe insulation 24 inch P-1001 started â€” mineral wool wrapping on 40 m2 done. Aluminium cladding next.
+   - Pipe insulation 12 inch P-1002 started â€” 20 m2 done.
    - Skid piping CS-01: all 6 spools fabricated and erected. Flange management complete.
    - P&ID punch list close-out: 8 of 12 Cat A closed. 20 of 28 Cat B closed.
 
@@ -28,10 +28,10 @@ Prepared by: Rajesh Phukan
    - Cable termination LT: 44 of 48 ends. 4 remaining at motor side P-102A.
    - Cable termination control: 120 of 186 terminations done.
    - Insulation resistance testing HT: all 24 cables tested, ALL PASSED.
-   - LT cable laying fully complete — confirmed.
+   - LT cable laying fully complete â€” confirmed.
    - Insulation resistance testing LT started: 20 of 48 tested, all OK.
    - Lighting circuit testing: 8 of 16 circuits done.
-   - Cable tray 6.6kV from substation — buried routing verified.
+   - Cable tray 6.6kV from substation â€” buried routing verified.
 
 5. INSTRUMENTATION
    - Marshalling cabinet wiring: 140 of 186 terminations.

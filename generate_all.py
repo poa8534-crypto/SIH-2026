@@ -2,6 +2,11 @@
 """
 Generate synthetic EPC field-reporting dataset for SIH26122.
 All artifacts cross-reference each other. ground_truth.csv is the evaluation key.
+
+Every write names encoding="utf-8" explicitly. Without it Python uses the
+platform default, which on Windows is cp1252 - and that is how an em-dash was
+written into the committed corpus as the single byte 0x97, which is not valid
+UTF-8 at all. See D-045.
 """
 import json, csv, os, random
 from openpyxl import Workbook
@@ -158,7 +163,7 @@ act("HSE-EMG-1120","1.6.5.2","Emergency Drill — Tank Fire","Tabletop and live 
 act("HSE-DSH-1121","1.6.6.1","Site Safety Statistics Report","Monthly safety stats — LTI, near-miss, first-aid","hse","2026-06-01","2026-09-28",4,"nos",["HSE-BBS-1113"],None)
 
 assert len(activities) == 120, f"Expected 120, got {len(activities)}"
-with open("dataset/baseline_schedule.json", "w") as f:
+with open("dataset/baseline_schedule.json", "w", encoding="utf-8") as f:
     json.dump(activities, f, indent=2)
 print(f"[A] baseline_schedule.json — {len(activities)} activities written")
 
@@ -767,7 +772,7 @@ Prepared by: Vikram Saikia
 # Write DPR files and build ground truth from DPRs
 gt_rows = []
 for date, day_num, mentions, text in dprs:
-    with open(f"dataset/dpr_day_{day_num:02d}.txt", "w") as f:
+    with open(f"dataset/dpr_day_{day_num:02d}.txt", "w", encoding="utf-8") as f:
         f.write(text)
     for mention, aid in mentions:
         gt_rows.append({
@@ -913,7 +918,7 @@ print("[C] piping_progress.xlsx and civil_progress.xlsx written")
 # D) GROUND TRUTH CSV
 # ══════════════════════════════════════════════════════════════════════════════
 
-with open("dataset/ground_truth.csv", "w", newline="") as f:
+with open("dataset/ground_truth.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=["source","source_date","raw_mention","activity_id","match_type"])
     writer.writeheader()
     writer.writerows(gt_rows)
