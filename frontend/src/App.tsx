@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Monitor, Smartphone, LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon } from 'lucide-react';
+import { Monitor, Smartphone, LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useDevice } from './hooks/useDevice';
 import { useTheme } from './hooks/useTheme';
@@ -17,11 +17,34 @@ import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
 import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
+import Login from './pages/Login';
+import ExecutiveOverview from './pages/executive/Overview';
+import ExecutiveExposure from './pages/executive/Exposure';
+import ExecutiveProvenance from './pages/executive/Provenance';
+import {
+  ROLE_PROFILES,
+  clearRole,
+  readRole,
+  writeRole,
+  type Role,
+} from './lib/role';
 import { Button, ErrorState } from './components/ui';
 
 // Placeholder route components
 
-function DesktopShell({ children }: { children: React.ReactNode }) {
+type NavItem = { path: string; label: string; icon: typeof LayoutDashboard };
+
+function DesktopShell({
+  children,
+  navItems,
+  roleLabel,
+  onSignOut,
+}: {
+  children: React.ReactNode;
+  navItems: NavItem[];
+  roleLabel: string;
+  onSignOut: () => void;
+}) {
   const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -39,14 +62,6 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
     queryFn: () => api.getSchedule(undefined, false),
     retry: false,
   });
-
-  const navItems = [
-    { path: '/home', label: 'Home', icon: LayoutDashboard },
-    { path: '/reconcile', label: 'Reconcile', icon: ListTodo },
-    { path: '/schedule', label: 'Schedule', icon: CalendarDays },
-    { path: '/ingest', label: 'Ingest', icon: Upload },
-    { path: '/memory', label: 'Memory', icon: Database },
-  ];
 
   const projectName = scheduleData
     ? scheduleData.project
@@ -79,7 +94,7 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
             {headerError ? 'Project unavailable' : projectName}
           </h1>
           <p className="text-label font-medium leading-4 tracking-[0.05em] text-muted truncate">
-            {PLANNER_ROLE}
+            {roleLabel}
           </p>
         </div>
 
@@ -127,6 +142,14 @@ function DesktopShell({ children }: { children: React.ReactNode }) {
           >
             {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
+
+          <button
+            onClick={onSignOut}
+            className="mt-2 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
+          >
+            <LogOut size={12} />
+            Switch Role
           </button>
         </div>
       </div>
@@ -244,15 +267,49 @@ function MobileShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PLANNER_NAV: NavItem[] = [
+  { path: '/home', label: 'Home', icon: LayoutDashboard },
+  { path: '/reconcile', label: 'Reconcile', icon: ListTodo },
+  { path: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { path: '/ingest', label: 'Ingest', icon: Upload },
+  { path: '/memory', label: 'Memory', icon: Database },
+];
+
+/* Senior Management gets three destinations and no review queue. That absence
+   is the design, not an omission: ROADMAP §3.3 keeps this role read-only so
+   the plan keeps a single accountable owner. */
+const EXECUTIVE_NAV: NavItem[] = [
+  { path: '/executive', label: 'Overview', icon: LineChart },
+  { path: '/executive/exposure', label: 'Exposure', icon: ShieldAlert },
+  { path: '/executive/provenance', label: 'Data', icon: FileSearch },
+];
+
 export default function App() {
   const { device } = useDevice();
+  const [role, setRole] = useState<Role | null>(() => readRole());
 
-  if (device === 'mobile') {
+  const signIn = (next: Role) => {
+    writeRole(next);
+    setRole(next);
+  };
+  const signOut = () => {
+    clearRole();
+    setRole(null);
+  };
+
+  // No role chosen yet: the picker is the whole app. Rendered before the
+  // router, so there is no route a signed-out visitor can deep-link past it.
+  if (!role) {
+    return <Login onPick={signIn} />;
+  }
+
+  // The Field Supervisor is a phone-first role, and the mobile shell is the
+  // one built for it. A narrow viewport still forces it for everyone else,
+  // which is what the existing device override is for.
+  if (role === 'field' || device === 'mobile') {
     return (
       <BrowserRouter>
         <MobileShell>
-          {/* Four real routes, each its own page. The bottom nav lives in
-              the shell so it is identical everywhere. */}
           <Routes>
             <Route path="/field" element={<Field />} />
             <Route path="/field/reports" element={<FieldReports />} />
@@ -265,9 +322,34 @@ export default function App() {
     );
   }
 
+  if (role === 'executive') {
+    return (
+      <BrowserRouter>
+        <DesktopShell
+          navItems={EXECUTIVE_NAV}
+          roleLabel={ROLE_PROFILES.executive.title}
+          onSignOut={signOut}
+        >
+          <Routes>
+            <Route path="/executive" element={<ExecutiveOverview />} />
+            <Route path="/executive/exposure" element={<ExecutiveExposure />} />
+            <Route path="/executive/provenance" element={<ExecutiveProvenance />} />
+            {/* Anything else this role has no business opening returns to the
+                overview rather than 404-ing into a planner screen. */}
+            <Route path="*" element={<Navigate to="/executive" replace />} />
+          </Routes>
+        </DesktopShell>
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
-      <DesktopShell>
+      <DesktopShell
+        navItems={PLANNER_NAV}
+        roleLabel={ROLE_PROFILES.planner.title}
+        onSignOut={signOut}
+      >
         <Routes>
           <Route path="/home" element={<Home />} />
           <Route path="/reconcile" element={<Reconcile />} />

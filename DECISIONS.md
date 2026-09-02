@@ -5412,3 +5412,62 @@ keep rendering as an empty state, not as an error.
 Verified in the browser under both conditions — API down, every panel names the
 failure and every tile reads "—"; API up, 120/67/135/38 and 18 conflicts render
 unchanged.
+
+---
+
+## 2026-09-02 / D-060 — Three roles behind a role picker, and an executive view that never shows a queue
+
+### Status
+Implemented. Frontend only; no endpoint, schema or matcher touched.
+
+### Context
+The product had two shells — planner and field — reachable only by a device
+override, and no way to demonstrate the third role the problem statement
+describes. ROADMAP §3 defines all three and is explicit about what separates
+them: the Project Manager sees the full evidence chain and is the only role
+that commits a change; Senior Management gets aggregates, exceptions and trend,
+**never a review queue**, because an executive who can approve an update
+bypasses the single accountable owner of the plan.
+
+### Decision
+`lib/role.ts` holds the role, persisted in `localStorage` behind a total
+accessor. `Login.tsx` is a role picker. `DesktopShell` now takes its nav and
+role label as props, so one shell serves both desktop roles rather than a
+second copy drifting from the first.
+
+Senior Management gets three pages: **Overview** (SPI, earned/planned,
+activities evidenced, source conflicts, per-discipline SPI worst-first, biggest
+finish slips), **Exposure** (RAID register plus unresolved source conflicts),
+and **Data provenance** (the real corpus, from `GET /evidence/corpus`).
+
+Two things are deliberate. The login screen states in its own copy that there
+is no authentication and that no endpoint is restricted — a login box that
+accepts anything teaches a reviewer the wrong thing, and ROADMAP §14 rules out
+auth complexity for a three-role prototype. And the Overview leads with the
+server's own caveat: SPI reads 0.43 only because 64 of 120 activities have no
+evidence at all, so the figure is shown **with** that sentence rather than as a
+performance claim.
+
+### Reason
+The provenance page renders its caveats from the API's `caveats` array rather
+than from strings in the component. A limitation written into the frontend can
+be deleted by a frontend change; one that arrives with the data cannot. The
+same reasoning puts `percent_source_counts` on screen — it is what makes SPI
+auditable rather than merely displayed.
+
+Nothing on these pages is computed in the browser except sorting.
+
+### Verification
+- `npx tsc --noEmit` clean; `npm test` 76/76; production build succeeds.
+- All three executive pages checked live at 1440x900 against the running API:
+  SPI 0.43 with the unevidenced-activity banner, 554/1285 earned/planned, 56 of
+  120 evidenced, 18 source conflicts, per-discipline SPI SEQ 0.02 → CIV 0.96,
+  and the corpus page showing 124 artifacts / 0.26 GB / 1,462 checks / 0 errors
+  with all four caveats rendered.
+- The RAID register is empty and says why: candidates stay proposals until a
+  planner adjudicates them (D-048).
+
+### Affected Areas
+`frontend/src/lib/role.ts` (new), `pages/Login.tsx` (new),
+`pages/executive/{Overview,Exposure,Provenance}.tsx` (new), `App.tsx`,
+`lib/api.ts`, `types.ts`, `DECISIONS.md`. No backend change.

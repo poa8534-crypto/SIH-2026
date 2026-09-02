@@ -11,6 +11,9 @@ import {
   JobSummary,
   MemoryQueryResponse,
   SourceConflict,
+  EvmResponse,
+  EvidenceCorpus,
+  RaidItem,
   ResolveResponse,
   ReviewItem,
   ScheduleResponse
@@ -157,6 +160,28 @@ export const api = {
   getConflicts: (limit: number = 50): Promise<SourceConflict[]> => {
     return fetchWithHandler(`/schedule/conflicts?limit=${limit}`);
   },
+
+  /**
+   * Schedule-side earned value. PV, EV, SV and SPI only — the cost half needs
+   * ACWP, which no daily progress report carries. See D-046.
+   */
+  getEvm: (): Promise<EvmResponse> => fetchWithHandler('/evm'),
+
+  /**
+   * The RAID register. Only entries a planner has accepted appear here;
+   * detected candidates live behind /raid/candidates and are proposals.
+   */
+  getRaid: (kind?: string, status?: string): Promise<RaidItem[]> => {
+    const params = new URLSearchParams();
+    if (kind) params.append('kind', kind);
+    if (status) params.append('status', status);
+    const q = params.toString();
+    return fetchWithHandler(`/raid${q ? `?${q}` : ''}`);
+  },
+
+  /** What the real corpus actually contains, read from its own manifests. */
+  getEvidenceCorpus: (): Promise<EvidenceCorpus> =>
+    fetchWithHandler('/evidence/corpus'),
 
   /** Newest audit writes across all activities. */
   getRecentAudit: (limit: number = 20): Promise<AuditFeedItem[]> => {

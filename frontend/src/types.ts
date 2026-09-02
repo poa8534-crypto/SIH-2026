@@ -427,3 +427,96 @@ export interface AgentTurnResponse {
   /** Options to show under a question, when it has a closed set. */
   choices: string | null;
 }
+
+// ── Earned value (schedule half only) ────────────────────────────────────────
+
+/**
+ * One EVM figure set, for the project or for one discipline.
+ *
+ * `spi` is nullable on purpose: when planned value is zero there is no ratio to
+ * report, and the server sends null rather than 0.0 so the UI cannot render an
+ * absence as a measured collapse. See D-046.
+ */
+export interface EvmFigures {
+  planned_value: number;
+  earned_value: number;
+  schedule_variance: number;
+  spi: number | null;
+  total_weight: number;
+  activity_count: number;
+  /**
+   * How each activity's percent-complete was obtained. This is what makes SPI
+   * auditable: `no_evidence_floor` counts activities scored at 0% because no
+   * source reported anything, not because work stalled.
+   */
+  percent_source_counts: {
+    actual_finish: number;
+    linked_event_percentage: number;
+    no_evidence_floor: number;
+  };
+}
+
+export interface EvmResponse {
+  data_date: string;
+  weighting: string;
+  project: EvmFigures;
+  by_discipline: Record<string, EvmFigures>;
+  cost_metrics_available?: boolean;
+  cost_metrics_reason?: string;
+  headline_safe?: boolean;
+  headline_warning?: string | null;
+}
+
+// ── Real-corpus provenance ───────────────────────────────────────────────────
+
+export interface CorpusCaveat {
+  id: string;
+  statement?: string;
+  text?: string;
+  detail?: string;
+}
+
+export interface EvidenceCorpus {
+  data_origin: string;
+  built_at_utc: string;
+  validated_at_utc: string;
+  artifacts: {
+    count: number;
+    bytes: number;
+    by_extension: Record<string, number>;
+    by_source: Record<string, number>;
+  };
+  records: Record<string, number>;
+  ocr: { pages: number; lines: number; activity_mentions: number; verified: boolean };
+  validation: { passed: boolean; checks_run: number; errors: number; warnings: number };
+  caveats: CorpusCaveat[];
+  source?: unknown;
+}
+
+// ── RAID register ────────────────────────────────────────────────────────────
+
+export type RaidKind = 'risk' | 'issue' | 'action' | 'decision';
+
+/**
+ * One accepted register entry. Nothing reaches this shape automatically:
+ * candidates detected from field reports stay proposals until a Project
+ * Manager adjudicates them, per ROADMAP §6 and D-048.
+ */
+export interface RaidItem {
+  id: string;
+  kind: RaidKind;
+  title: string;
+  description: string | null;
+  category: string | null;
+  status: string;
+  owner: string | null;
+  due_date: string | null;
+  date_raised: string | null;
+  date_closed: string | null;
+  probability: number | null;
+  impact_days: number | null;
+  /** probability x impact, computed server-side. Never in the browser. */
+  exposure: number | null;
+  linked_activity_ids: string[];
+  created_at: string;
+}
