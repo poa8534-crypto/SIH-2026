@@ -5582,3 +5582,114 @@ coverage is unknown" while the server was reporting 45.13%. The SPI guard held
 regardless, since it keys on `spi_headline_safe` — but an explanation that is
 wrong about its own evidence is worth very little. `_coverage_fraction` now
 accepts both shapes, with a regression test for each.
+
+## 2026-09-02 / D-061 - The alias learning loop cannot help, and the reason is architectural
+
+FINDINGS.md F4 has stood open since 2026-08-31: planner corrections are written
+to `alias_lexicon` and never read. The remaining work was described as wiring
+the read path and turning `w_alias` up. It was measured first. **It does not
+work, and building it would have produced exactly +0.00.**
+
+Three measurements, each sufficient on its own:
+
+**1. The key never matches.** The lexicon is keyed on `alias_key()` — the
+normalised mention text, matching what `server/main.py:1783` writes. On the
+814-mention v2 corpus:
+
+```
+train gold mentions : 387   (384 distinct alias keys)
+test  gold mentions : 185
+test keys ALSO seen in train:  0   (0.0%)
+whole corpus: 793 distinct keys; only 16 repeat, covering 37 of 814 mentions
+```
+
+Free-text DPR lines do not recur verbatim. An exact-string lexicon can fire on
+about 4.5% of mentions in the best case and on 0% across a realistic
+train/test boundary.
+
+**2. The ablation already said so.** `research/bench/ABLATION_RESULTS.txt`:
+ALIAS recall@20 on the test split is **0.0%**, and row 1, "+ alias lexicon
+channel", is +0.00 on top-1, near-miss, coverage and precision alike.
+
+**3. It could not help even with a perfect key.** This is the part that
+settles it. The alias channel is a RETRIEVAL channel, and fusion recall@20 is
+already **100%** (D-027): the gold activity is always inside the top-20 pool.
+A retrieval channel can only change *what is retrieved*. There is nothing left
+to retrieve. Every remaining error is a ranking error.
+
+**Decision: `w_alias` stays 0.0 and the read path is not wired.** F4 moves from
+OPEN to CLOSED-AS-MEASURED rather than being implemented.
+
+**The diagnosis worth carrying forward: the loop is wired to the wrong stage.**
+Corrections are the strongest evidence the system will ever get, and D-001
+keeps retrieval and ranking as separate stages. The signal was plumbed into the
+saturated one. `matching/features.py` has no correction-derived feature at all.
+If the learning loop is ever closed, it belongs in ranking, and it must
+generalise across mentions — a prior over *activities*, not a lookup on exact
+text.
+
+`server/db.py` claimed in a docstring that "the matcher uses these to improve
+fuzzy matching during the demo". That was never true. It now says what is
+actually the case and points here. The rows are still written: they are the
+audit record of planner decisions and the training data any ranking-stage
+version would be fitted on.
+
+Pinned by `matching/test_config_floor.py::TestAliasChannelStaysOff`.
+
+## 2026-09-02 / D-062 - `extra_features=True` does not transfer from v2 to v1, and breaches the floor
+
+The search for auto-link recall headroom (52.9%) closed off in three
+directions, and the third produced a defect worth recording.
+
+**Thresholds are already at the frontier.** The precision-at-coverage sweep in
+`eval.py` shows tau_high = 0.775 is the exact knee:
+
+```
+  0.750   coverage 57.1%   auto-precision  97.9%
+  0.775   coverage 50.4%   auto-precision 100.0%   <-- operating point
+  0.800   coverage 44.9%   auto-precision 100.0%
+```
+
+The shipped operating point is the lowest threshold that still holds 100%. No
+coverage is available from threshold tuning; the setting is principled, not
+arbitrary.
+
+**Retrieval is saturated.** recall@20 = 100% (D-027). Nothing to add.
+
+**Ranking is the only lever — and the obvious hand-weighted one is a trap.**
+Row 8a of the v2 ablation reports the hand-weighted extra features at 100.0%
+auto-link precision for +0.5 coverage, which reads as free. Measured on the v1
+baseline the server actually runs, at the shipped thresholds:
+
+```
+                     baseline    extra=True     delta
+  coverage             50.39%       53.54%     +3.15
+  auto precision      100.00%       94.85%     -5.15
+  wrong auto-links          0            7        +7
+  top-1 accuracy       87.19%       84.71%     -2.48
+  NO_MATCH rejection    8.33%        0.00%     -8.33
+```
+
+Seven false actual dates written onto the schedule to buy three points of
+coverage, and top-1 got *worse*. Disqualified.
+
+The finding is not "the extra features are bad" — under `production()`, where
+they travel with a ranker fitted on the same baseline, they are the selected
+configuration (+7.6 coverage at an unchanged 100% floor on v2). The finding is
+that **the flag does not transfer across baselines on its own.** Hand-set
+weights are tuned to one schedule's feature distribution: v2 has 218 activities
+and four-digit tags, v1 has 120 and three-digit ones.
+
+`production()` already guards the *fitted* artefacts with a baseline sha256
+check and refuses a mismatch. That guard does not cover the bare
+`extra_features` flag, and row 8a makes it look safe to set. Anyone reading the
+ablation and enabling it for the v1 demo would ship seven wrong dates.
+
+**Decision: `extra_features` stays False in `DEFAULT`.** Legitimate only inside
+`production()`, paired with a matched fitted ranker. Pinned by
+`matching/test_config_floor.py::TestExtraFeaturesStayOffWithoutAFittedRanker`.
+
+**Recall headroom therefore remains real but unreachable on v1 without
+fitting**, and fitting on v1 would contaminate the 254-mention corpus that
+`METRICS.md` publishes the headline from. That is a methodology problem, not a
+tuning one, and it is left open rather than papered over.

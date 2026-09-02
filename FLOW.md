@@ -1256,6 +1256,50 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Measure the alias learning loop (F4) and the auto-link recall
+headroom. Both closed as measured; no behaviour changed.
+**Date:** 2026-09-02 - **Decisions:** D-061, D-062
+
+```
+THE ALIAS LOOP — write path exists, read path deliberately NOT wired
+
+  POST /review/{id}/resolve          server/main.py:1783-1793
+    └─ _upsert_alias()  ──────────>  alias_lexicon table   (rows ARE written)
+                                       │
+                                       x   NOTHING reads them into the engine
+                                       │
+  get_matching_engine()              server/main.py:441
+    └─ production(sha) -> DEFAULT      alias_lexicon = None,  w_alias = 0.0
+         │
+  HybridRetriever.build_pool()       matching/retrieval.py:380
+    └─ if cfg.use_alias:  ─────────>   FALSE, so alias_channel() never runs
+         alias_channel()              matching/retrieval.py:281  (exists, tested)
+
+  WHY it is not wired (D-061):
+    alias_key() is exact normalised text  matching/textutils.py:145
+      -> 0 of 185 test mentions match a train key
+      -> 16 of 793 distinct keys repeat in the whole corpus
+    AND fusion recall@20 = 100% (D-027): the gold is ALWAYS in the pool, so a
+    RETRIEVAL channel has nothing left to add, whatever its key.
+    matching/features.py has NO correction-derived feature — the ranking stage,
+    which is where the signal would have to live, was never given it.
+
+RECALL HEADROOM — three directions, all closed (D-062)
+
+  thresholds   eval.py precision_at_coverage()   0.775 is the exact knee
+                 0.750 -> auto-precision 97.9%   (floor breached)
+  retrieval    recall@20 = 100%                  saturated
+  ranking      EngineConfig(extra_features=True) on v1:
+                 coverage 50.39% -> 53.54%, auto-precision 100% -> 94.85%,
+                 7 wrong auto-links            DISQUALIFIED
+               production(sha) is the ONLY legitimate route: extra_features
+               paired with a ranker fitted on the SAME baseline, guarded by a
+               sha256 check that refuses a mismatch  matching/config.py:131
+
+---
+
+### Also completed this session
+
 **Task:** Evaluation metrics (classification + regression), the first evaluation
 of the duration-suggestion feature, and a read-only Q&A agent over project data.
 **Date:** 2026-09-02 - **Decisions:** D-058, D-059, D-063
@@ -1296,13 +1340,18 @@ server/qa_agent.py  (new, D-063)
                                   deterministic phrasing
       exception / generate=None   -> grounded figures, model_available=False
   NO database handle. NO write path. Public surface is answer() alone.
+
+---
+
+### Previous area (retained for context)
 ```
 
 ### Verification for this area
 
 ```
-python -m pytest -q      657 passed (was 618; +39 new)
+python -m pytest -q      678 passed  (634 upstream + 39 eval-metrics + 5 config-floor)
 python eval.py           auto-link precision 100.0%, coverage 50.4% - UNCHANGED
+                         (no production behaviour was altered by either branch)
 ```
 
 ---
