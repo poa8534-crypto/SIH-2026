@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { readStored, writeStored } from '../lib/storage';
 
 type Theme = 'dark' | 'light';
 
@@ -19,12 +20,10 @@ function apply(theme: Theme) {
 }
 
 function stored(): Theme | null {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === 'light' || value === 'dark' ? value : null;
-  } catch {
-    return null; // private mode / storage disabled
-  }
+  // Guarded read — see lib/storage.ts. Private mode and blocked site data both
+  // throw here, and a theme preference is not worth a white screen.
+  const value = readStored(STORAGE_KEY);
+  return value === 'light' || value === 'dark' ? value : null;
 }
 
 export function useTheme() {
@@ -39,11 +38,9 @@ export function useTheme() {
   const toggleTheme = () => {
     setTheme((prev) => {
       const next: Theme = prev === 'dark' ? 'light' : 'dark';
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        /* not fatal — the theme still applies for this session */
-      }
+      // Not fatal — the theme still applies for this session if it cannot be
+      // persisted; only the preference across reloads is lost.
+      writeStored(STORAGE_KEY, next);
       return next;
     });
   };

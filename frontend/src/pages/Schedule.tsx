@@ -8,7 +8,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Download, ListFilter, Lock, X } from 'lucide-react';
-import { api, errorDetail } from '../lib/api';
+import { api, errorDetail, getBaseUrl } from '../lib/api';
 import {
   AuditRecord,
   DateBasis,
@@ -439,7 +439,10 @@ export default function Schedule() {
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [exportFormat, setExportFormat] = useState<'pmxml' | 'xer'>('pmxml');
   const [exportState, setExportState] = useState<
-    { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; name: string } | { kind: 'error'; detail: string }
+    | { kind: 'idle' }
+    | { kind: 'busy' }
+    | { kind: 'done'; name: string; url: string }
+    | { kind: 'error'; detail: string }
   >({ kind: 'idle' });
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -613,15 +616,17 @@ export default function Schedule() {
   });
 
   /**
-   * Export writes the file on the server and returns its name.
+   * Export writes the file on the server, then downloads it.
    *
-   * It does NOT put a file in the planner's Downloads folder, and the button
-   * used to say "Wrote <name>" in success green, which reads as a completed
-   * download. `ExportResponse.download_url` is `/uploads/{filename}`
-   * (`server/main.py:2229`) but nothing serves that path — there is no static
-   * mount and no download route — so there is no URL to send the browser to.
-   * Until that route exists the honest thing is to say where the file actually
-   * is. See D-031.
+   * `GET /uploads/{filename}` now serves the file as an attachment (D-044), so
+   * `ExportResponse.download_url` finally resolves — it pointed at a route
+   * nothing served for the whole life of the feature, which is why this button
+   * used to say "Saved on server" (D-031, D-039 gap 3).
+   *
+   * The click is triggered programmatically AND the filename is left on screen
+   * as a real link: a browser that blocks the automatic download still leaves
+   * the planner something to click, rather than a button that silently did
+   * nothing.
    */
   const handleExport = async () => {
     setExportState({ kind: 'busy' });
@@ -631,7 +636,18 @@ export default function Schedule() {
         include_actuals: true,
         filter_discipline: discipline || undefined,
       });
-      setExportState({ kind: 'done', name: res.filename });
+
+      // download_url is server-relative; in development the app is served from
+      // a different origin, so it has to be resolved against the API base.
+      const url = `${getBaseUrl()}${res.download_url}`;
+      setExportState({ kind: 'done', name: res.filename, url });
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = res.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (e) {
       setExportState({
         kind: 'error',
@@ -723,12 +739,16 @@ export default function Schedule() {
 
         <div className="ml-auto flex items-center gap-2">
           {exportState.kind === 'done' && (
-            <span
-              className="font-mono text-label text-ok max-w-[420px] truncate"
-              title={`Written on the server as ${exportState.name}. No browser download is triggered: the API returns a download_url of /uploads/${exportState.name}, and no route serves that path.`}
+            /* The download has already been triggered. This stays for a few
+               seconds as the fallback for a browser that blocked it. */
+            <a
+              href={exportState.url}
+              download={exportState.name}
+              className="font-mono text-label text-ok max-w-[420px] truncate hover:underline"
+              title={`Downloaded ${exportState.name}. Click to download again.`}
             >
-              Saved on server: {exportState.name}
-            </span>
+              Downloaded {exportState.name}
+            </a>
           )}
           {exportState.kind === 'error' && (
             <span className="font-mono text-label text-danger">{exportState.detail}</span>

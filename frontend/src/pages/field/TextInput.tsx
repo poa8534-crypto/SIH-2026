@@ -23,7 +23,13 @@ export function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') onSend();
+          // The same guard the Send button carries. Without it Enter is a way
+          // round `disabled`: a second press while a turn is still in flight
+          // starts another one on the same session_id, and `send` only guards
+          // the empty case, not `thinking`. On a phone with a slow connection
+          // — which is the field supervisor's actual situation — pressing Enter
+          // again because nothing happened yet is the obvious thing to do.
+          if (e.key === 'Enter' && !disabled) onSend();
         }}
         placeholder={grow ? 'Type your update' : 'Or type your update'}
         className="rounded-sm w-full bg-raised border border-hair text-fg text-lead placeholder:text-muted px-4 pr-12 py-3 transition-colors focus:outline-none focus:border-accent"

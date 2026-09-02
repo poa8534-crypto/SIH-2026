@@ -1256,6 +1256,55 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Frontend defect fixing — restore React type checking, guard every
+browser-storage access, add an error boundary, and make the export download.
+**Date:** 2026-09-02 - **Decisions:** D-053, D-054, D-055, D-056
+
+### What runs now that did not before
+
+```
+main.tsx
+  <ErrorBoundary>                        src/components/ErrorBoundary.tsx
+    └─ <QueryClientProvider>             any render throw below is CAUGHT
+         └─ <RouterProvider>             (previously: white screen, no message)
+
+Shell mount
+  useDevice()                            src/hooks/useDevice.ts
+    ├─ sessionOverride  (module-level)   survives an unwritable localStorage
+    └─ readStored/writeStored            src/lib/storage.ts  ── total, never throw
+  useTheme()                             same helper; no raw localStorage in src/
+
+Schedule "Export"                        src/pages/Schedule.tsx
+  POST /schedule/export -> { download_url: "/uploads/{file}" }
+    └─ getBaseUrl() + download_url       src/lib/api.ts (getBaseUrl now EXPORTED)
+         └─ programmatic <a download>.click()
+              + visible <a href download> fallback link
+                                         GET /uploads/{filename}  server/main.py
+
+Field text entry                         src/pages/field/TextInput.tsx
+  Enter  ──> if (!disabled) onSend()     disabled = !typed.trim() || thinking
+  Send   ──> if (!disabled) onSend()     the two paths now agree
+    └─ send(typed)  Field.tsx:104        POST /agent/turn  (one turn per session)
+```
+
+### Verification gate for this area
+
+`cd frontend` then:
+
+```
+node_modules/typescript/bin/tsc --noEmit     strict:true — 0 errors
+node_modules/vitest/vitest.mjs run           7 files, 70 tests, 0 failures
+node_modules/vite/bin/vite.js build          467 kB / 135 kB gzip
+```
+
+The type check is only meaningful as of D-053. Before that commit it passed
+while verifying nothing about React, because `@types/react` was absent and
+TypeScript resolves an unresolvable module to `any`.
+
+---
+
+### Previous area (retained for context)
+
 **Task:** Restructure the Tier 1 demo-path screens so each answers one question
 and offers one primary action. Layout, hierarchy and composition may change;
 API contracts, endpoint shapes and backend calls may not.

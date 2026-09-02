@@ -5163,3 +5163,118 @@ weight of its own) rather than what would be convenient.
 `matching/vocabulary.py` (new), `matching/test_vocabulary.py` (new),
 `server/main.py` (two routes, one import). No frontend change. No change to any
 matcher module.
+
+---
+
+## 2026-09-02 / D-053 - The frontend had no React type checking at all, and now does
+
+`frontend/package.json` listed `typescript`, `@types/node` and a `tsc --noEmit`
+step that CLAUDE.md names as the frontend type check. It did **not** list
+`@types/react` or `@types/react-dom`, and nothing pulled them in transitively.
+
+TypeScript resolves an unresolvable module to `any` rather than failing, so the
+check ran, exited 0, and verified almost nothing about the React half of the
+codebase. Proof, run against the tree as it stood:
+
+```ts
+import { useState } from 'react';
+const x: number = useState<string>('a')[0];   // no error
+```
+
+Assigning a `string` to a `number` passed. Every prop, hook, event handler and
+component signature in the application was untyped. This is why a class
+component could not see its own `props` or `setState` — `Component` was `any`,
+so extending it produced a class with no known members — and it is the real
+reason an earlier defect put a `ReviewCandidate` object into a `string | null`
+state and would have posted `[object Object]` as an activity id.
+
+**Decision: add `@types/react` and `@types/react-dom` as devDependencies, and
+turn `strict` on.**
+
+The second half is not the bolder change it looks like. The whole codebase was
+measured under `--strict` before the flag was committed: **zero errors**, with
+the flag proven live against a deliberate `noImplicitAny` and `strictNullChecks`
+violation, so the zero is a real result and not a silently skipped check. The
+code was written well enough to be strict-clean; it had simply never been asked.
+Taking the free half now is worth more than taking it after the demo, because
+from here the check actually fails when something is wrong.
+
+Cost: two devDependencies and 85 added lines in `package-lock.json`, zero
+removed. `npm ci` would have failed on a package.json/lockfile mismatch, so the
+lockfile was regenerated with `--package-lock-only` rather than left behind.
+
+Superseded nothing. It makes `cd frontend && npx tsc --noEmit`, already listed in
+CLAUDE.md as a verification command, mean what it has always claimed to mean.
+
+## 2026-09-02 / D-054 - An error boundary, because a render throw was a white screen
+
+React unmounts the entire tree when a render throws and nothing catches it.
+There was no boundary anywhere in the application, so any such throw produced a
+blank page: no message, no reload affordance, nothing naming what failed.
+
+That was not hypothetical. `useDevice` read `localStorage` unguarded inside an
+effect that runs on every mount of the shell (see D-055), and in Safari private
+browsing or with site data blocked it threw — taking the whole application down
+rather than one preference.
+
+`ErrorBoundary` wraps `QueryClientProvider` in `main.tsx`. Three properties are
+deliberate:
+
+- **Dependency-free.** It uses no shared primitive, no API client, no router and
+  no hook. A boundary that can itself throw is not a boundary. Only CSS custom
+  properties are referenced, each with a literal fallback, because those resolve
+  even if every module above it failed to load.
+- **It shows the error.** `error.name` and `error.message`, not "Something went
+  wrong". The person reading this screen is a developer or a presenter mid-demo,
+  and a friendly nothing costs them the one useful fact.
+- **It offers dismissal as well as reload.** A transient failure in one panel
+  should not cost the whole session.
+
+Tested in `src/test/errorBoundary.test.tsx`. Note what that file had to work
+around: a component that throws once and then succeeds never reaches the
+boundary at all, because React retries a failed render and the retry passes. The
+fault has to persist across retries and then be cleared from outside the render,
+or the dismissal path is not actually being exercised.
+
+## 2026-09-02 / D-055 - localStorage access goes through one total helper
+
+Three unguarded `window.localStorage` accesses in `useDevice`, inside an effect
+that runs on every mount of the shell. `localStorage` throws — not returns null —
+when a browser blocks site data, in Safari private browsing, and where the global
+exists but is `undefined`. `useTheme` already carried its own try/catch for
+exactly this, which is the tell: the hazard was known and handled in one place
+out of two.
+
+`src/lib/storage.ts` provides `readStored` / `writeStored` / `removeStored`.
+Every one is total: a read returns `null` when storage cannot be read, a write
+returns whether it persisted. There is now no raw `localStorage` access anywhere
+in `src/` outside that module.
+
+The part worth recording is what `useDevice` does with a failed write. It holds
+the view override in a module-level variable first and only then tries to
+persist it. The Planner/Field toggle therefore still works for the whole session
+when nothing can be saved — the preference is lost for next time, which is the
+correct and much smaller failure. Writing this the other way round, persist-then-
+read-back, would have made an unwritable storage look like a broken toggle.
+
+## 2026-09-02 / D-056 - Enter and the Send button agree about when a turn may start
+
+`TextInput`'s Send button carried `disabled={!typed.trim() || thinking}`. Its
+Enter handler carried no guard, and `send()` refuses only an empty message, not
+one sent while a turn is in flight.
+
+So Enter bypassed the `thinking` half: a second press during a slow turn started
+a second `POST /agent/turn` on the same `session_id`. That is the normal
+behaviour of a field supervisor on a slow connection who sees nothing happen and
+presses Enter again.
+
+Fixed in the presentational component, where the mismatch actually lived, rather
+than by adding a second guard inside `send()`. `src/test/textInput.test.tsx`
+covers it, and the test was confirmed to fail with the guard removed — two cases
+red — so it tests the behaviour rather than restating the implementation.
+
+Worth recording because the first read of this was wrong: pressing Enter in a
+browser appeared to do nothing, which looked like "Enter never submits". It does
+submit. `POST /agent/turn` fires and the stage advances; the turn simply takes
+longer than the few seconds the observation allowed. The defect is the narrow
+one described above, not the broad one it first resembled.

@@ -45,7 +45,12 @@ export function errorDetail(error: unknown): string {
   return `Could not reach the API at ${getBaseUrl()}.`;
 }
 
-const getBaseUrl = () => {
+/**
+ * Where the API lives. Exported because a download has to be an ABSOLUTE URL:
+ * `ExportResponse.download_url` is a server-relative `/uploads/{file}`, and the
+ * frontend is served from a different origin in development.
+ */
+export const getBaseUrl = () => {
   return import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
 };
 
