@@ -4932,3 +4932,64 @@ and three cases where the movement is null rather than invented.
 `server/notifications.py` (new), `server/schemas.py` (`FieldNotification`),
 `server/main.py` (`GET /field/notifications`), `server/test_notifications.py`
 (new). No frontend change.
+## 2026-09-02 / D-050 - The Evidence API reports the corpus from its own manifests, caveats included
+
+### Status
+Implemented.
+
+### Context
+`datasets/real` is 630 MB across 864 tracked files - 124 verified raw artifacts
+including 63 PDFs, 18,601 PAIMANA project-month rows, 43,753 CFIHOS records,
+3,520 ConstructCIE causal spans, and more. The user's standing position is that
+this data should be **surfaced, not swapped**: it is evidence for an Evidence
+page, never a replacement for the synthetic 120-activity demo baseline.
+
+### Decision - read the manifests, never the corpus
+`GET /evidence/corpus` is built entirely from two files the corpus build already
+produced: `manifests/dataset_summary.json` and `reports/validation.json`. **No
+raw artifact is opened.** Loading 630 MB per request is not a design, and
+re-deriving the counts here would produce a second set of numbers free to
+disagree with the first. Read once and cached for the process; the corpus is
+static.
+
+Absence is a **404, not a 500**, naming the missing file. The corpus is a large
+optional download and its absence is a fact about a checkout, not a server
+fault.
+
+### The honesty fields are structured data, not prose
+The corpus is genuinely useful and genuinely partial. The partial half has to
+travel with it or the Evidence page becomes a marketing slide. Four claims are
+easy to overstate, so each ships as its own object with a status, a value, a
+detail sentence, and a named boolean refusing the specific overclaim:
+
+| caveat | what it refuses |
+|---|---|
+| `distinct_schedule_activities` | **27**, not 200-300. `padded_with_synthetic_or_taxonomy: false` - the 1,661 CPWD reference work items are reference rows and are NOT relabelled as schedule activities to make the number look better. |
+| `wsdot_ocr_and_hard_negatives_unverified` | `manually_verified: false` - rule-based cross-contract candidates, not gold. |
+| `constructcie_labels_are_source_published` | `authored_by_this_project: false` - those 3,520 spans are ConstructCIE's annotations, not ours. |
+| `real_and_synthetic_are_separate` | `mixed: false` - real under `datasets/real`, synthetic under `dataset`, and the demo baseline stays synthetic. |
+
+Every value is lifted from the manifest's own `benchmark_target_audit` block, so
+this endpoint and the corpus build cannot drift apart. **This project reports
+these numbers; it did not author them.**
+
+### Verification
+`server/test_evidence.py`, **16 tests**. Counts are asserted *against the
+manifest files themselves* rather than against hardcoded figures, so a corpus
+rebuild that changes a number fails the test instead of silently disagreeing
+with the API. The four caveats are asserted present with their booleans; one
+test specifically checks that 1,661 reference rows coexist with 27 activities
+without either being confused for the other.
+
+Two tests cover the cost claim: `builtins.open` is monkeypatched for the
+duration of a request and **no path under `datasets/real/raw` or `_staging` may
+be opened**, and the manifest read is asserted to happen once and be cached.
+A final test asserts a missing manifest is a 404 naming the file.
+
+Measured on this checkout: 124 artifacts / 263.6 MB, 1,462 validation checks,
+0 errors, 0 warnings, 73 OCR pages marked unverified.
+
+### Affected Areas
+`server/evidence.py` (new), `server/schemas.py` (five models),
+`server/main.py` (`GET /evidence/corpus`), `server/test_evidence.py` (new).
+No frontend change.

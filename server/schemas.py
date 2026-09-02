@@ -528,6 +528,60 @@ class RaidCandidatesResponse(BaseModel):
         "Candidates are proposals derived from existing audit evidence. None "
         "has been written to the register; POST /raid to commit one."
     )
+# ── Evidence corpus ──────────────────────────────────────────────────────────
+
+class EvidenceCaveat(BaseModel):
+    """One thing about the corpus that must not be overclaimed.
+
+    Structured rather than prose so the Evidence page renders it instead of
+    composing (or omitting) it. Every value is taken from the corpus build's own
+    `benchmark_target_audit`; this project reports them, it does not author them.
+    """
+
+    id: str
+    headline: str
+    status: str = ""
+    value: Optional[int] = None
+    detail: str = ""
+    #: Only one of these is set per caveat, naming the specific claim refused.
+    padded_with_synthetic_or_taxonomy: Optional[bool] = None
+    manually_verified: Optional[bool] = None
+    authored_by_this_project: Optional[bool] = None
+    mixed: Optional[bool] = None
+
+
+class EvidenceArtifacts(BaseModel):
+    count: int = 0
+    bytes: int = 0
+    by_extension: dict[str, int] = {}
+    by_source: dict[str, int] = {}
+
+
+class EvidenceOcr(BaseModel):
+    pages: int = 0
+    lines: int = 0
+    activity_mentions: int = 0
+    #: Always false. These are rule-based candidates, not manual gold.
+    verified: bool = False
+
+
+class EvidenceValidation(BaseModel):
+    passed: bool = False
+    checks_run: int = 0
+    errors: int = 0
+    warnings: int = 0
+
+
+class EvidenceCorpusResponse(BaseModel):
+    data_origin: str = "real"
+    built_at_utc: Optional[str] = None
+    validated_at_utc: Optional[str] = None
+    artifacts: EvidenceArtifacts
+    records: dict[str, int] = {}
+    ocr: EvidenceOcr
+    validation: EvidenceValidation
+    caveats: list[EvidenceCaveat] = []
+    source: str = ""
 
 
 # ── Memory Query ─────────────────────────────────────────────────────────────

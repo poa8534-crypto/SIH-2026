@@ -100,6 +100,7 @@ from server.raid import (
     propose_candidates as propose_raid_candidates,
     validate as raid_validate,
 )
+from server.evidence import CorpusUnavailable, corpus_summary
 # The matcher's own per-candidate rationale. `LinkDecision.rationale` is the
 # decision-level list (it can carry decision reasons such as "below_tau_low"),
 # while this derives the evidence for ONE candidate from that candidate's own
@@ -144,6 +145,7 @@ from .schemas import (
     ClarificationResponse,
     ConflictSide,
     ExportRequest,
+    EvidenceCorpusResponse,
     FieldReportResponse,
     JobSummaryResponse,
     SourceConflict,
@@ -2986,6 +2988,29 @@ def ask_clarification(
         answered=False,
         matched_activity_id=event.activity_id if event else None,
     )
+
+
+# ── GET /evidence/corpus ────────────────────────────────────────────────────
+
+@app.get("/evidence/corpus", response_model=EvidenceCorpusResponse)
+def get_evidence_corpus():
+    """What the real corpus contains, read from its own manifests.
+
+    Read-only and cheap: no raw artifact is opened and nothing is re-derived,
+    so the numbers here cannot disagree with the build that produced them.
+
+    The `caveats` block is the point. The corpus is genuinely useful and
+    genuinely partial - 27 distinct schedule activities rather than 200-300,
+    unverified OCR matches, source-published ConstructCIE labels - and those
+    facts ship as structured fields so the Evidence page states them rather
+    than leaving a reader to assume otherwise. See D-050.
+    """
+    try:
+        return EvidenceCorpusResponse(**corpus_summary())
+    except CorpusUnavailable as e:
+        # 404, not 500: the corpus is a large optional download, and its absence
+        # is a fact about this checkout rather than a fault in the server.
+        raise HTTPException(404, str(e))
 
 
 # ── GET /memory/query ────────────────────────────────────────────────────────
