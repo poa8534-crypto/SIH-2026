@@ -517,7 +517,16 @@ class AliasLexicon(Base):
     """Training signal from planner corrections.
 
     Every planner confirmation/reassignment creates an entry here.
-    The matcher uses these to improve fuzzy matching during the demo.
+
+    **The matcher does NOT read these.** An earlier version of this docstring
+    said it did, which was never true and is the kind of claim that is worse
+    than silence. `w_alias = 0.0` and no production code path populates
+    `EngineConfig.alias_lexicon`. See D-061 for why that is deliberate rather
+    than unfinished: the channel was measured and cannot help.
+
+    The rows are still written, and are still worth writing. They are the
+    audit record of what a planner decided, and the training data any future
+    ranking-stage use of corrections would be fitted on.
     """
 
     __tablename__ = "alias_lexicon"
