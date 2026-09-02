@@ -89,6 +89,7 @@ from matching.config import production
 from matching.primavera import ScheduleParseError
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
+from matching.vocabulary import resolve as resolve_vocabulary, vocabulary
 from server.evm import compute_evm
 from server.notifications import field_notifications
 from server.raid import (
@@ -2988,6 +2989,41 @@ def ask_clarification(
         answered=False,
         matched_activity_id=event.activity_id if event else None,
     )
+
+
+# ── GET /vocabulary/activity-types ──────────────────────────────────────────
+
+@app.get("/vocabulary/activity-types")
+def get_activity_type_vocabulary():
+    """The canonical activity-type vocabulary (ROADMAP §11).
+
+    **Not used by the matcher.** `wired_into_matching: false` ships in the
+    response. Matching keys on descriptions and tags, which are project-specific;
+    this vocabulary is the key a lesson learned would need to transfer to a
+    contract with different activity ids. Wiring it into retrieval changes
+    scoring, so it is a separate and measured change. See D-052.
+    """
+    return vocabulary()
+
+
+@app.get("/vocabulary/resolve")
+def resolve_activity_type(
+    description: str = Query(..., min_length=1, description="free text to classify"),
+    activity_id: Optional[str] = Query(None, description="wins when supplied"),
+):
+    """Resolve free text onto a canonical activity type, or nothing.
+
+    Deterministic. An input that matches nothing returns `matched: false` rather
+    than a nearest guess — a wrong activity type on a lesson learned is worse
+    than no activity type.
+    """
+    found = resolve_vocabulary(description, activity_id)
+    return {
+        "query": description,
+        "activity_id": activity_id,
+        "matched": found is not None,
+        "activity_type": found.as_dict() if found else None,
+    }
 
 
 # ── GET /evidence/corpus ────────────────────────────────────────────────────

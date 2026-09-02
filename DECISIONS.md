@@ -5080,3 +5080,86 @@ rows would misrepresent an absence as a measurement.
 `evalstats.py` (new), `eval.py` (`print_calibration`,
 `_calibration_observations`, `_gold_discipline`, one import, one call site).
 No threshold, weight, model or existing metric changed. `matching/` untouched.
+
+---
+
+## 2026-09-02 / D-052 - An activity-type vocabulary from CFIHOS and Uniclass, built and deliberately not wired in
+
+### Status
+Implemented. ROADMAP §11. **Not connected to matching**, by instruction and by
+test.
+
+### Context
+Matching keys on descriptions and tags, both project-specific: `PIP-ERC-1030`
+means nothing on the next contract. For a lesson learned to transfer, it has to
+key on *what kind of work this was*. That key did not exist.
+
+### Decision - three layers, each carrying its provenance
+1. **project** - the 56 discipline+type codes the demo baseline actually uses,
+   derived from the activity ids in `dataset/baseline_schedule.json` rather than
+   hand-typed, so the vocabulary cannot drift from the schedule it describes.
+2. **uniclass** - Uniclass 2015 table Ac, Construction group (`Ac_10_40`).
+3. **cfihos** - CFIHOS v2.0 CORE discipline table, 34 real discipline codes.
+
+`GET /vocabulary/activity-types` returns the vocabulary;
+`GET /vocabulary/resolve` maps free text onto a type.
+
+### The honest finding: Uniclass does not cover this work
+Uniclass 2015 is a **building**-construction taxonomy. Its entire Construction
+group is 14 entries - Bricklaying, Carpentry, Carpet laying, Tiling, Plastering,
+Plumbing. It has **no entry for spool erection, hydrotest, flange bolt-up, loop
+checking, tank shell erection or vessel delivery**, which is most of an oil and
+gas EPC schedule.
+
+So `standard_code` is populated only where a real correspondence exists, and is
+`None` everywhere else: **26 of 56 types, 46% coverage**, reported on the
+response as `standard_coverage` rather than implied. Mapping `PIP-HYT`
+(Hydrotest) onto `Ac_10_40_67` (Plumbing) would have raised the number and
+lowered the truth; a test asserts specifically that it is not done. CFIHOS has
+no macro discipline matching HSE or static equipment, so those carry no code
+either.
+
+The pipeline suggested "a curated subset covering the six disciplines rather
+than all 15,375 rows". That is what this is - but the reason is not size. It is
+that the standards genuinely do not describe this work at this granularity, and
+the vocabulary says so.
+
+### Ambiguous labels are declared, not hidden
+17 of the 56 codes cover more than one activity heading: `CIV-FDN` spans
+"Pedestal Concreting", "Equipment Foundation Concreting", "Slab-on-Grade" and
+"Tank Foundation Ringwall". Picking one silently would mislabel the other three,
+so every type carries `label_variants` and `label_is_unambiguous`.
+
+The resolver indexes **every** variant, not just the chosen label - indexing
+only `label` would have left "Pedestal Concreting" unresolvable purely because
+"Slab-on-Grade" happened to be the more frequent heading.
+
+### The resolver
+Deterministic and total. An `activity_id` wins over prose, because the id
+encodes the type as a fact and prose is an inference. Longer keywords are tried
+first, so a specific phrase beats a substring of it. **Text that matches nothing
+returns `None`, never a nearest guess** - a wrong activity type on a lesson
+learned is worse than no activity type.
+
+### Not wired into matching, and tested as such
+`eval.py` output is **byte-identical** before and after. Four tests enforce it:
+the response declares `wired_into_matching: false`; `engine.py`,
+`retrieval.py`, `features.py`, `config.py`, `schedule_index.py` and
+`learned.py` are grepped and none may reference the vocabulary; the alias
+channel is asserted still off (`RetrievalConfig().w_alias == 0.0`); and the
+module's own imports are asserted to pull in no matcher machinery.
+
+**Known limitation, stated rather than hidden:** `import matching.vocabulary`
+does load the matcher, because `matching/__init__.py` eagerly imports the engine
+and the schedule index. That is a property of the package, not of this module,
+and fixing it means restructuring `__init__` - out of scope for a step told to
+change nothing about matching. The test asserts what is true (the module adds no
+weight of its own) rather than what would be convenient.
+
+### Verification
+`matching/test_vocabulary.py`, **23 tests**. `eval.py` byte-identical.
+
+### Affected Areas
+`matching/vocabulary.py` (new), `matching/test_vocabulary.py` (new),
+`server/main.py` (two routes, one import). No frontend change. No change to any
+matcher module.
