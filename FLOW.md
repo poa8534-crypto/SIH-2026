@@ -1287,13 +1287,24 @@ Field text entry                         src/pages/field/TextInput.tsx
     └─ send(typed)  Field.tsx:104        POST /agent/turn  (one turn per session)
 ```
 
+```
+Any Home panel / tile                    src/pages/Home.tsx
+  useQuery(...)  ──> queryView(q)        src/lib/queryState.ts
+       ├─ kind 'error'   -> <ErrorState error=...>   (q.error ?? q.failureReason)
+       ├─ kind 'pending' -> <Skeleton>               (status === 'pending')
+       └─ kind 'ready'   -> <List items={data}>      genuinely empty stays empty
+  NEVER keyed on isLoading: that is isPending && isFetching, so it is false
+  between retries while error is still null — the gap that rendered an
+  unreachable API as "Queue clear". D-057.
+```
+
 ### Verification gate for this area
 
 `cd frontend` then:
 
 ```
 node_modules/typescript/bin/tsc --noEmit     strict:true — 0 errors
-node_modules/vitest/vitest.mjs run           7 files, 70 tests, 0 failures
+node_modules/vitest/vitest.mjs run           8 files, 76 tests, 0 failures
 node_modules/vite/bin/vite.js build          467 kB / 135 kB gzip
 ```
 

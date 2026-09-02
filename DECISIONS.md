@@ -5278,3 +5278,50 @@ browser appeared to do nothing, which looked like "Enter never submits". It does
 submit. `POST /agent/turn` fires and the stage advances; the turn simply takes
 longer than the few seconds the observation allowed. The defect is the narrow
 one described above, not the broad one it first resembled.
+
+## 2026-09-02 / D-057 - An unreachable API must never render as good news
+
+With the backend stopped, Home rendered:
+
+- "Queue clear — every extracted event has been matched or resolved" — 134 items
+  were pending;
+- "No two field sources have contradicted each other" — there were 18 conflicts;
+- "Nothing recorded yet" — there were 275 audit records.
+
+Sampled 14 times over 7 seconds in a real browser, this was **stable**, not a
+flicker. Only a small truncated header banner said anything was wrong.
+
+For a progress-tracking system this is the worst failure mode available. It does
+not look broken, it looks like the project is in perfect shape — and the whole
+product argument rests on the numbers being trustworthy.
+
+**Cause.** Two TanStack Query behaviours combining:
+
+- `isLoading` is `isPending && isFetching`, not `isPending`. Between the
+  attempts driven by our 3s `refetchInterval` (D-031), a failing query is
+  pending but not fetching, so `isLoading` is false.
+- `error` is populated only once the query reaches `status === 'error'`. While
+  it is pending-and-retrying, `error` is null.
+
+Home's panels were written `error ? <ErrorState/> : isLoading ? <Skeleton/> :
+<List items={data ?? []} />`. With `error` null, `isLoading` false and `data`
+undefined, every panel fell through to the last branch, and `?? []` turned
+"never loaded" into "loaded, and there is nothing to report".
+
+**Decision: classify on `status`, never on `isLoading`.** `src/lib/queryState.ts`
+exposes `queryView()`, returning `error` | `pending` | `ready`. `status` is
+exhaustive, so the gap cannot exist. It also reports `failureReason` — the last
+failed attempt while retries continue — so an unreachable API says so
+immediately instead of showing a skeleton until retries exhaust.
+
+It is a shared helper rather than seven inline fixes because the rule is general
+and the failure is silent: nothing about the wrong version looks wrong in review,
+which is exactly why it survived this long.
+
+The distinction the fix must preserve, and is tested for: a genuinely empty
+successful result is still `ready`. "There are honestly zero conflicts" must
+keep rendering as an empty state, not as an error.
+
+Verified in the browser under both conditions — API down, every panel names the
+failure and every tile reads "—"; API up, 120/67/135/38 and 18 conflicts render
+unchanged.

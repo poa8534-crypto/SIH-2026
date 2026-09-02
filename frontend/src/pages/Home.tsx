@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
+import { queryView } from '../lib/queryState';
 import {
   AuditFeedItem,
   JobSummary,
@@ -443,6 +444,15 @@ export default function Home() {
     queryFn: () => api.listJobs(10),
   });
 
+  // Never key a render on `isLoading`: it is false between retry attempts, and
+  // `error` is null until retries are exhausted, so the success branch renders
+  // an empty list as "nothing to report" while the API is simply unreachable.
+  const scheduleView = queryView(schedule);
+  const queueView = queryView(queue);
+  const conflictsView = queryView(conflicts);
+  const auditView = queryView(audit);
+  const jobsView = queryView(jobs);
+
   const activityMap = useMemo(() => {
     const m = new Map<string, ScheduleActivity>();
     for (const a of schedule.data?.activities ?? []) m.set(a.activity_id, a);
@@ -458,20 +468,20 @@ export default function Home() {
           <Tile
             label="Activities in baseline"
             value={schedule.data?.total_activities ?? null}
-            loading={schedule.isLoading}
-            error={Boolean(schedule.error)}
+            loading={scheduleView.kind === 'pending'}
+            error={scheduleView.kind === 'error'}
           />
           <Tile
             label="With actual dates"
             value={schedule.data?.activities_with_actuals ?? null}
-            loading={schedule.isLoading}
-            error={Boolean(schedule.error)}
+            loading={scheduleView.kind === 'pending'}
+            error={scheduleView.kind === 'error'}
           />
           <Tile
             label="Awaiting your review"
             value={queue.data?.length ?? null}
-            loading={queue.isLoading}
-            error={Boolean(queue.error)}
+            loading={queueView.kind === 'pending'}
+            error={queueView.kind === 'error'}
             accent
           />
           {/* Every tile is a figure off /schedule or /review-queue. There is
@@ -480,8 +490,8 @@ export default function Home() {
           <Tile
             label="Completed"
             value={schedule.data?.activities_completed ?? null}
-            loading={schedule.isLoading}
-            error={Boolean(schedule.error)}
+            loading={scheduleView.kind === 'pending'}
+            error={scheduleView.kind === 'error'}
           />
         </section>
 
@@ -491,9 +501,9 @@ export default function Home() {
           badge={conflicts.data?.length}
           action={<PanelAction to="/schedule" label="Schedule" />}
         >
-          {conflicts.error ? (
-            <ErrorState error={conflicts.error} mode="bare" className="px-4 py-4" />
-          ) : conflicts.isLoading ? (
+          {conflictsView.kind === 'error' ? (
+            <ErrorState error={conflictsView.error} mode="bare" className="px-4 py-4" />
+          ) : conflictsView.kind === 'pending' ? (
             <SkeletonRows rows={4} />
           ) : (
             <SourceConflicts conflicts={conflicts.data ?? []} />
@@ -507,9 +517,9 @@ export default function Home() {
             span="lg:col-span-3"
             action={<PanelAction to="/reconcile" label="Reconcile" />}
           >
-            {queue.error ? (
-              <ErrorState error={queue.error} mode="bare" className="px-4 py-4" />
-            ) : queue.isLoading ? (
+            {queueView.kind === 'error' ? (
+              <ErrorState error={queueView.error} mode="bare" className="px-4 py-4" />
+            ) : queueView.kind === 'pending' ? (
               <SkeletonRows rows={5} />
             ) : (
               <NeedsAttention items={queue.data ?? []} activities={activityMap} />
@@ -517,13 +527,11 @@ export default function Home() {
           </Panel>
 
           <Panel title="Recent activity" span="lg:col-span-2">
-            {audit.error && jobs.error ? (
-              <ErrorState error={audit.error} mode="bare" className="px-4 py-4" />
-            ) : audit.error ? (
-              <ErrorState error={audit.error} mode="bare" className="px-4 py-4" />
-            ) : jobs.error ? (
-              <ErrorState error={jobs.error} mode="bare" className="px-4 py-4" />
-            ) : audit.isLoading || jobs.isLoading ? (
+            {auditView.kind === 'error' ? (
+              <ErrorState error={auditView.error} mode="bare" className="px-4 py-4" />
+            ) : jobsView.kind === 'error' ? (
+              <ErrorState error={jobsView.error} mode="bare" className="px-4 py-4" />
+            ) : auditView.kind === 'pending' || jobsView.kind === 'pending' ? (
               <SkeletonRows rows={6} height="h-3" />
             ) : (
               <RecentActivity audit={audit.data ?? []} jobs={jobs.data ?? []} />
