@@ -4685,3 +4685,120 @@ failures are the `dataset/ground_truth.csv` encoding defect fixed on
 `spi_headline_safe` is false. Bind to `evidenced_subset.spi` and render
 `evidence_coverage` beside it, or the dashboard will state that the project is
 82% behind when the truth is that three quarters of it has not reported.
+## 2026-09-02 / D-047 - Primavera PMXML and XER are read, not just written; FINDINGS F3 closed
+
+### Status
+Implemented. Closes **FINDINGS.md F3**, the only "MISSING" row in
+`research/PS_ANALYSIS.md` that is both in the backend's lane and not explicitly
+excluded by the user.
+
+### Context
+The problem statement names Primavera exports as an **input**. This system only
+ever wrote them: `POST /schedule/export` produces PMXML and XER, while
+`PmxmlScheduleProvider` and `PrimaveraXerScheduleProvider` raised
+`NotImplementedError`, and `POST /schedule/import` accepted `.json` only - its
+own error message said so.
+
+Three separate research documents converge on this as the top gap:
+`research/NAVIS_TECHNICAL_AUDIT.md` ("Input: Primavera PMXML / XER import -
+NOT FOUND"), `research/PS_ANALYSIS.md` ("MISSING - baseline is hand-written
+JSON; PMXML/XER exist as export only"), and FINDINGS F3.
+
+### Decision
+New module `matching/primavera.py` with `parse_pmxml` and `parse_xer`; the two
+stub providers now delegate to it; `POST /schedule/import` accepts `.xml` and
+`.xer` alongside `.json`.
+
+**Pure standard library.** `xml.etree` and string splitting, nothing else.
+
+**MPXJ and `.mpp` were considered and rejected.** MPXJ is a Java library
+requiring a JVM on the machine, which breaks the offline guarantee this project
+rests on; `.mpp` is a compiled binary with no pure-Python reader worth trusting.
+The refusal message names MPXJ and the JVM explicitly, and a test asserts it
+does, so the next reader does not "fix" the omission.
+
+### Two dialects per format, because our own exporter is not canonical
+Each parser reads the canonical Oracle shape **and** the shape this repository
+emits, since round-tripping our own export is the first thing anyone will try.
+
+- **PMXML.** Oracle nests scalars as child elements (`<Activity><Id>A1000</Id>`);
+  `_generate_pmxml` writes them as attributes with `<StartDate>` children.
+- **XER.** A real XER is a table dump - `%T` table, `%F` header, `%R` rows, with
+  the baseline in `TASK` and the logic in `TASKPRED`, and `task_code` (not the
+  internal `task_id`) as the human activity id. `_generate_xer` writes something
+  else entirely: one `T<tab>ACTIVITY<tab>ACT<tab>key<tab>value` line per field.
+
+### Defect found and fixed: our XER export contradicted our PMXML export
+`_generate_xer` hardcoded `relationship_type SS` for **every** predecessor while
+`_generate_pmxml` wrote `FS` for the same rows. One schedule therefore exported
+two different logic networks depending on the format chosen, and the XER one was
+simply wrong - a bare predecessor id in the baseline has always meant FS with
+zero lag. Changed to `FS`, with a regression test that parses both exports and
+asserts the relationships match.
+
+**Still open, reported not fixed:** `_generate_xer` does not emit valid XER and
+would not import into P6. Fixing the writer is a larger change than this one and
+is not required by the PS, which asks for import. Recorded here so it is not
+mistaken for working.
+
+### Safety - the demo baseline cannot be disturbed
+`dry_run=true` parses, validates, reports counts, and **writes nothing**: no
+activity, no audit row, no baseline version, and the stored copy is removed so
+it leaves no trace on disk either. That is what an upload screen should call
+first. The existing guards are unchanged: a commit over an active baseline, or
+over colliding ids, is refused with 409 unless `replace=true`.
+
+A malformed file raises `ScheduleParseError` naming the file and the reason. A
+file that parses to **zero activities is an error**, never a 200 with an empty
+baseline - that is the bug shape D-040 fixed for CSV uploads and it must not
+come back through a new door.
+
+### Verification
+- `matching/test_primavera.py`, **23 tests**. Two fixtures under
+  `dataset/fixtures/` written in the **canonical Oracle shapes**, so the parsers
+  are proven against something resembling a real P6 export rather than only
+  against their own round trip. Both describe the same three activities, which
+  lets one test assert the two formats agree on ids, dates, logic and lag.
+  Covers: namespaced elements, `task_code` vs `task_id`, `PR_FS`/`PR_SS` prefix
+  stripping, `lag_hr_cnt` 16h -> 2 days at P6's 8h day, WBS resolution from
+  `PROJWBS`, and six malformed-input cases.
+- `server/test_server.py::TestPrimaveraImport`, **9 tests** - dry run reports
+  counts and writes nothing, the 120-activity demo baseline is byte-for-byte
+  unchanged after both dry runs, a real commit creates 3 and updates 0, import
+  never writes actuals, and MPP/PDF are refused by name.
+- `server/test_server.py::TestExportRelationshipConsistency` - the two exporters
+  now agree, and 120 activities round-trip through both readers with all 146
+  relationships preserved.
+- `python eval.py` **byte-identical** to baseline after the change.
+
+### Two existing tests were rewritten, and why that is not silencing them
+Both asserted that this feature does **not** exist:
+
+- `matching/test_providers.py::TestUnimplementedProviders::test_stubs_refuse_loudly`
+  asserted `NotImplementedError`. Replaced by `TestPrimaveraProviders`, which
+  asserts the providers satisfy the contract - and keeps a case proving that a
+  file which is not a schedule still refuses loudly.
+- `server/test_baseline.py::test_a_non_json_baseline_is_refused` asserted the
+  error message contained "PMXML" and "not implemented". Replaced by a test that
+  a well-formed XML file with no activities is still refused with a reason that
+  names the file, plus a new test that an unsupported extension is still refused
+  - so implementing two formats did not open the door to everything.
+
+A third failure was my own doing and was fixed in the code, not the test: I had
+generalised "Baseline is not readable JSON" to "not readable", breaking
+`test_unreadable_json_is_refused`. The message now carries the format name, so
+JSON files still say JSON.
+
+### Affected Areas
+`matching/primavera.py` (new), `matching/providers.py` (two stubs implemented via
+a shared `_PrimaveraProvider`), `matching/test_primavera.py` (new),
+`matching/test_providers.py`, `server/main.py` (import endpoint accepts the two
+formats, `dry_run`, XER relationship fix), `server/test_server.py`,
+`server/test_baseline.py`, `dataset/fixtures/sample_p6.{xml,xer}` (new).
+No frontend change.
+
+**Frontend note - the intake upload UI:** `POST /schedule/import`, multipart,
+field `file`, extensions `.json` `.xml` `.xer`. Send `dry_run=true` first and
+show `activities_in_file`, `baseline.source_format` and `message`; commit with
+`replace=true` only on explicit confirmation. Errors are 400 with a `detail`
+naming the file and the reason, or 409 when a baseline is already active.

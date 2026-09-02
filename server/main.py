@@ -80,10 +80,13 @@ from matching import (
 )
 from matching.providers import (
     JsonScheduleProvider,
+    PmxmlScheduleProvider,
+    PrimaveraXerScheduleProvider,
     ScheduleProvider,
     validate_activities,
 )
 from matching.config import production
+from matching.primavera import ScheduleParseError
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
 from server.evm import compute_evm
@@ -2140,17 +2143,28 @@ def _baseline_response(row: Optional[BaselineVersion]) -> Optional[BaselineVersi
 
 # ── POST /schedule/import ───────────────────────────────────────────────────
 
-BASELINE_IMPORT_SUFFIXES = (".json",)
+#: Baseline formats the importer reads. PMXML and XER are Primavera exports
+#: (D-047); MPP is deliberately absent - it needs MPXJ and a JVM, which would
+#: break the offline guarantee.
+BASELINE_IMPORT_SUFFIXES = (".json", ".xml", ".xer")
+
+#: suffix -> provider. One place, so the endpoint has no format branching.
+_BASELINE_PROVIDERS = {
+    ".json": JsonScheduleProvider,
+    ".xml": PmxmlScheduleProvider,
+    ".xer": PrimaveraXerScheduleProvider,
+}
 
 
 @app.post("/schedule/import", response_model=BaselineImportResponse)
 async def import_schedule(
     file: UploadFile = File(...),
     replace: bool = Form(False),
+    dry_run: bool = Form(False),
     note: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    """Import a baseline schedule (JSON).
+    """Import a baseline schedule: JSON, Primavera PMXML, or Primavera XER.
 
     Refuses by default when a baseline is already active: replacing the
     schedule that every captured actual is attached to is not something to do
@@ -2168,6 +2182,13 @@ async def import_schedule(
 
     Every created or updated activity gets an audit row naming the file and its
     sha256, and the import is summarised as a `baseline_versions` row.
+
+    `dry_run=true` parses and validates, reports what it found, and **writes
+    nothing** - no activity, no audit row, no baseline version, and the active
+    baseline is untouched. That is what an upload screen should call first, so a
+    planner sees the activity count and any validation problem before deciding
+    to commit. It is also the safe way to inspect a P6 export without disturbing
+    the running demo baseline.
     """
     filename = file.filename or "unknown.json"
     suffix = Path(filename).suffix.lower()
@@ -2175,9 +2196,9 @@ async def import_schedule(
         raise HTTPException(
             400,
             f"Unsupported baseline format '{suffix or filename}'. "
-            f"Supported: {', '.join(BASELINE_IMPORT_SUFFIXES)}. "
-            "PMXML and XER providers are declared but not implemented "
-            "(matching/providers.py).",
+            f"Supported: {', '.join(BASELINE_IMPORT_SUFFIXES)} "
+            "(JSON baseline, Primavera PMXML, Primavera XER). "
+            "MPP is not supported: it requires MPXJ and a JVM.",
         )
 
     content = await file.read()
@@ -2202,14 +2223,26 @@ async def import_schedule(
     stored_path = upload_dir / f"baseline_{sha256[:12]}_{Path(filename).name}"
     stored_path.write_bytes(content)
 
-    provider = JsonScheduleProvider(
-        stored_path, name=Path(filename).stem, filename=Path(filename).name,
-    )
+    provider_cls = _BASELINE_PROVIDERS[suffix]
+    if provider_cls is JsonScheduleProvider:
+        provider = provider_cls(
+            stored_path, name=Path(filename).stem, filename=Path(filename).name,
+        )
+    else:
+        provider = provider_cls(stored_path, name=Path(filename).stem)
+
     try:
         activities = provider.read_activities()
+    except ScheduleParseError as e:
+        # Names the file and the reason. Never a 200 with zero activities -
+        # that is the bug shape D-040 fixed for CSV uploads.
+        stored_path.unlink(missing_ok=True)
+        raise HTTPException(400, f"Could not read {filename}: {e.reason}")
     except (json.JSONDecodeError, ValueError) as e:
         stored_path.unlink(missing_ok=True)
-        raise HTTPException(400, f"Baseline is not readable JSON: {e}")
+        raise HTTPException(
+            400, f"Baseline is not readable {provider.source_format.upper()}: {e}"
+        )
 
     if not activities:
         stored_path.unlink(missing_ok=True)
@@ -2221,6 +2254,37 @@ async def import_schedule(
         raise HTTPException(
             400,
             "Baseline failed validation: " + "; ".join(problems[:10]),
+        )
+
+    if dry_run:
+        # Report and stop. Nothing was written; the stored copy is removed so a
+        # dry run leaves no trace on disk either.
+        stored_path.unlink(missing_ok=True)
+        already = db.query(Activity).filter(
+            Activity.activity_id.in_([a["activity_id"] for a in activities])
+        ).count()
+        dated = sum(
+            1 for a in activities if a.get("planned_start") and a.get("planned_finish")
+        )
+        return BaselineImportResponse(
+            baseline=BaselineVersionResponse(
+                name=Path(filename).stem,
+                filename=Path(filename).name,
+                sha256=sha256,
+                activity_count=len(activities),
+                source_format=provider.source_format,
+                source="import",
+                imported_at=datetime.now(),
+            ),
+            activities_created=0,
+            activities_updated=0,
+            activities_in_file=len(activities),
+            replaced=False,
+            message=(
+                f"Dry run: {filename} parsed as {provider.source_format} - "
+                f"{len(activities)} activities, {dated} with both planned dates, "
+                f"{already} ids already in the schedule. Nothing was written."
+            ),
         )
 
     existing = {
@@ -2492,7 +2556,11 @@ def _generate_xer(activities: list[Activity], include_actuals: bool) -> str:
                 f"T\tFUNCDD\tREL\tproject_id\tprj-001",
                 f"T\tFUNCDD\tREL\tpredecessor_act_id\t{pred_id}",
                 f"T\tFUNCDD\tREL\tsuccessor_act_id\t{act.activity_id}",
-                f"T\tFUNCDD\tREL\trelationship_type\tSS",
+                # A bare predecessor id has always meant FS with zero lag, and
+                # _generate_pmxml writes FS for the same rows. This said SS,
+                # so one schedule exported two different logic networks
+                # depending on the format chosen. See D-047.
+                f"T\tFUNCDD\tREL\trelationship_type\tFS",
                 f"T\tFUNCDD\tREL\tlag\t0d",
             ])
             lines.append("")

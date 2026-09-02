@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Canonical Oracle PMXML shape: scalars as CHILD elements, namespaced.
+     Deliberately not the attribute shape server/main.py::_generate_pmxml
+     writes, so the reader is proven against a real P6 export and not only
+     against our own round trip. 3 activities, 2 relationships. -->
+<APIBusinessObjects xmlns="http://xmlns.oracle.com/Primavera/P6/V8.2/API/BusinessObjects">
+  <Project>
+    <Id>DULIAJAN</Id>
+    <Name>OIL Well-Site Duliajan</Name>
+    <WBS>
+      <ObjectId>101</ObjectId>
+      <Name>Civil Works</Name>
+    </WBS>
+    <Activity>
+      <Id>CIV-EXC-1001</Id>
+      <Name>Excavation for Foundation F-1</Name>
+      <WBSPath>Duliajan &gt; Civil Works</WBSPath>
+      <PlannedStartDate>2026-06-01T08:00:00</PlannedStartDate>
+      <PlannedFinishDate>2026-06-10T17:00:00</PlannedFinishDate>
+    </Activity>
+    <Activity>
+      <Id>CIV-FDN-1002</Id>
+      <Name>Foundation Concreting F-1</Name>
+      <WBSPath>Duliajan &gt; Civil Works</WBSPath>
+      <PlannedStartDate>2026-06-11T08:00:00</PlannedStartDate>
+      <PlannedFinishDate>2026-06-20T17:00:00</PlannedFinishDate>
+      <Predecessor>
+        <PredecessorActivityId>CIV-EXC-1001</PredecessorActivityId>
+        <Type>FS</Type>
+        <Lag>0d</Lag>
+      </Predecessor>
+    </Activity>
+    <Activity>
+      <Id>PIP-ERC-2001</Id>
+      <Name>Spool Erection 24 inch Header</Name>
+      <WBSPath>Duliajan &gt; Piping</WBSPath>
+      <PlannedStartDate>2026-06-15T08:00:00</PlannedStartDate>
+      <PlannedFinishDate>2026-07-05T17:00:00</PlannedFinishDate>
+      <Predecessor>
+        <PredecessorActivityId>CIV-FDN-1002</PredecessorActivityId>
+        <Type>SS</Type>
+        <Lag>16h</Lag>
+      </Predecessor>
+    </Activity>
+  </Project>
+</APIBusinessObjects>

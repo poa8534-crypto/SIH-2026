@@ -20,8 +20,8 @@ importer all see the same shape whatever the file looked like.
 activity count - so that any number computed downstream can name the baseline it
 came from. A metric without that identity is not reproducible.
 
-PMXML and XER providers are declared here and deliberately not implemented; see
-`PmxmlScheduleProvider`.
+PMXML and XER are read by `matching/primavera.py`; see `PmxmlScheduleProvider`
+and `PrimaveraXerScheduleProvider`.
 """
 
 from __future__ import annotations
@@ -32,6 +32,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
+
+from matching.primavera import ScheduleParseError, parse_pmxml, parse_xer
 
 # Predecessor relationship types, as Primavera defines them.
 RELATIONSHIP_TYPES = ("FS", "SS", "FF", "SF")
@@ -345,56 +347,83 @@ class JsonScheduleProvider(ScheduleProvider):
         )
 
 
-class _UnimplementedProvider(ScheduleProvider):
-    """Shared body for the formats that are declared but not built."""
+class _PrimaveraProvider(ScheduleProvider):
+    """Shared body for the two Primavera export formats.
 
-    format_label = "this format"
-    tracking_note = ""
+    Both read the same way: decode the file, hand the text to the parser in
+    `matching/primavera.py`, normalise. The only difference is which parser.
+    """
+
+    source_format = "primavera"
+    parser = None  # set by the subclasses
 
     def __init__(self, path: str | Path, name: str | None = None):
         self.path = Path(path)
         self.name = name or self.path.stem
+        self._activities: list[dict] | None = None
 
-    def _refuse(self):
-        raise NotImplementedError(
-            f"{type(self).__name__} is a stub: reading {self.format_label} is not "
-            f"implemented. {self.tracking_note} Use JsonScheduleProvider, or "
-            f"convert the export to the JSON baseline shape first."
-        )
+    @property
+    def filename(self) -> str:
+        return self.path.name
+
+    def _bytes(self) -> bytes:
+        return self.path.read_bytes()
+
+    def _decode(self, raw: bytes) -> str:
+        """Same explicit cascade the rest of the project uses (D-010, D-045).
+
+        A P6 export is usually UTF-8 or UTF-16, and occasionally cp1252 when it
+        has been round-tripped through a Windows tool.
+        """
+        for encoding in ("utf-8-sig", "utf-8", "utf-16", "cp1252"):
+            try:
+                return raw.decode(encoding)
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+        return raw.decode("utf-8", errors="replace")
 
     def read_activities(self) -> list[dict]:
-        self._refuse()
+        if self._activities is None:
+            text = self._decode(self._bytes())
+            parsed = type(self).parser(text, self.filename)
+            self._activities = [normalize_activity(a) for a in parsed]
+        return self._activities
 
     def read_baseline(self) -> BaselineVersion:
-        self._refuse()
+        return BaselineVersion(
+            name=self.name,
+            filename=self.filename,
+            sha256=hashlib.sha256(self._bytes()).hexdigest(),
+            activity_count=len(self.read_activities()),
+            source_format=self.source_format,
+            path=str(self.path),
+        )
 
 
-class PmxmlScheduleProvider(_UnimplementedProvider):
-    """Primavera P6 PMXML (`.xml`) — DECLARED, NOT IMPLEMENTED.
+class PmxmlScheduleProvider(_PrimaveraProvider):
+    """Primavera P6 PMXML (`.xml`).
 
-    The problem statement names Primavera exports as an *input* and the system
-    currently only writes them (`POST /schedule/export`). When this is built it
-    walks `<Activity>` elements into the shape `normalize_activity` already
-    produces; calendars and resources are not required for the baseline.
-    See FINDINGS.md F3.
+    Reads both the canonical Oracle shape, where scalars are child elements
+    (`<Activity><Id>A1000</Id>`), and the attribute shape this repository's own
+    exporter writes (`<Activity ActivityID="A1000">`). Calendars and resources
+    are not read: nothing downstream consumes them. Closes FINDINGS.md F3.
     """
 
     source_format = "pmxml"
-    format_label = "Primavera PMXML"
-    tracking_note = "See FINDINGS.md F3."
+    parser = staticmethod(parse_pmxml)
 
 
-class PrimaveraXerScheduleProvider(_UnimplementedProvider):
-    """Primavera `.xer` — DECLARED, NOT IMPLEMENTED.
+class PrimaveraXerScheduleProvider(_PrimaveraProvider):
+    """Primavera `.xer`.
 
-    XER is a tab-delimited table dump; the baseline lives in the `TASK` table
-    and the logic in `TASKPRED`. `POST /schedule/export` already writes the
-    format, which fixes the column vocabulary a reader would need.
+    Reads a real XER table dump - `%T` table, `%F` header, `%R` rows, with the
+    baseline in `TASK` and the logic in `TASKPRED` - and also the simplified
+    shape `server/main.py::_generate_xer` emits, so our own export round-trips.
+    That writer does not produce valid XER; see D-047. Closes FINDINGS.md F3.
     """
 
     source_format = "xer"
-    format_label = "Primavera XER"
-    tracking_note = "See FINDINGS.md F3."
+    parser = staticmethod(parse_xer)
 
 
 # ── Ground-truth agreement guard ─────────────────────────────────────────────

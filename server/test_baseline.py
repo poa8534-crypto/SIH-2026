@@ -152,7 +152,14 @@ class TestImportRefusals:
         assert seeded.query(Activity).count() == 120
         assert get_active_baseline(seeded).filename == "baseline_schedule.json"
 
-    def test_a_non_json_baseline_is_refused(self, client, seeded):
+    def test_an_xml_file_with_no_activities_is_refused(self, client, seeded):
+        """PMXML is now READ, not refused (D-047 closes FINDINGS F3).
+
+        This used to assert the endpoint said PMXML was "not implemented". It
+        is implemented, so the assertion is now the behaviour that replaced it:
+        a well-formed XML file that contains no activities is still refused,
+        and the reason says why rather than blaming the format.
+        """
         response = client.post(
             "/schedule/import",
             files={"file": ("schedule.xml", b"<Project/>", "application/xml")},
@@ -160,7 +167,20 @@ class TestImportRefusals:
         )
         assert response.status_code == 400
         detail = response.json()["detail"]
-        assert "PMXML" in detail and "not implemented" in detail
+        assert "schedule.xml" in detail
+        assert "<Activity>" in detail
+        assert "not implemented" not in detail
+
+    def test_an_unsupported_extension_is_still_refused(self, client, seeded):
+        """Adding PMXML and XER must not have opened the door to everything."""
+        response = client.post(
+            "/schedule/import",
+            files={"file": ("plan.mpp", b"\x00binary", "application/octet-stream")},
+            data={"replace": "true"},
+        )
+        assert response.status_code == 400
+        detail = response.json()["detail"]
+        assert "MPXJ" in detail or "JVM" in detail
 
     def test_unreadable_json_is_refused(self, client, seeded):
         response = client.post(
