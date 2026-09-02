@@ -1256,6 +1256,59 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Evaluation metrics (classification + regression), the first evaluation
+of the duration-suggestion feature, and a read-only Q&A agent over project data.
+**Date:** 2026-09-02 - **Decisions:** D-058, D-059, D-060
+
+```
+evalstats.py   (appended, D-058)
+  confusion_counts / precision / recall / accuracy / f1   classification
+  rmse / mae / r2                                         regression
+  -> undefined returns None, never 0.0
+  -> r2 returns None on a zero-variance target (0/0)
+  -> accuracy documented as never-quotable under class imbalance
+
+evalduration.py  (new, D-059)
+  evaluate_duration_predictions(rows, predictor=baseline_planned_mean)
+    rows = GET /memory/query -> duration_distribution[]
+    scores predictor vs actual_mean_days, per activity type
+    ├─ excludes actuals_count == 0            (counted: no_actuals)
+    ├─ excludes predictor -> None             (counted: no_prediction)
+    ├─ excludes non-numeric actual            (counted: malformed)
+    ├─ MIN_N_FOR_R2 = 8   below it r2 is WITHHELD, not computed
+    └─ bootstrap_ci() from evalstats on every reported figure
+  format_duration_report(result) -> fixed-width table, n on every line
+
+server/qa_agent.py  (new, D-060)
+  QAAgent(generate: Callable[[str], str] | None)     __slots__ = ("_generate",)
+    .answer(question, data) -> {answer, citations, grounded, model_available}
+      _build_facts(data)          facts computed in PYTHON from
+        ├─ delay_reasons          /memory/query
+        ├─ duration_distribution  /memory/query
+        ├─ productivity           /memory/query
+        ├─ suggested_duration     /memory/query
+        └─ evm                    /evm  -> _coverage_fraction() accepts the
+                                   REAL nested {fraction: ...} object
+      _select(facts, question)    topic + entity match; none -> grounded=False
+      generate(_build_prompt(..)) model PHRASES only
+        └─ _accept()              rejects any number not in the facts, and any
+                                  withheld SPI figure -> falls back to
+                                  deterministic phrasing
+      exception / generate=None   -> grounded figures, model_available=False
+  NO database handle. NO write path. Public surface is answer() alone.
+```
+
+### Verification for this area
+
+```
+python -m pytest -q      657 passed (was 618; +39 new)
+python eval.py           auto-link precision 100.0%, coverage 50.4% - UNCHANGED
+```
+
+---
+
+### Previous area (retained for context)
+
 **Task:** Frontend defect fixing — restore React type checking, guard every
 browser-storage access, add an error boundary, and make the export download.
 **Date:** 2026-09-02 - **Decisions:** D-053, D-054, D-055, D-056
