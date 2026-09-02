@@ -38,21 +38,27 @@ class TestCommaThousands:
 
 
 class TestDdMonYyyyDates:
+    """`extract_dates_with_basis` returns TWO things: the (date, basis) pairs
+    and the warnings for spans it could not resolve safely. Iterating the
+    return value without unpacking walks [dates, warnings], not the dates —
+    which fails as "not enough values to unpack" rather than as a wrong date,
+    so it reads like a product defect when it is a test one."""
+
     def test_hyphenated_month_name(self):
-        got = extract_dates_with_basis("completed 03-Aug-2026", None)
+        got, _warnings = extract_dates_with_basis("completed 03-Aug-2026", None)
         assert [(d.isoformat(), b.value) for d, b in got] == [
             ("2026-08-03", "EXPLICIT")
         ]
 
     def test_slash_form_still_works(self):
-        got = extract_dates_with_basis("completed 03/Aug/2026", None)
+        got, _warnings = extract_dates_with_basis("completed 03/Aug/2026", None)
         assert [d.isoformat() for d, _b in got] == ["2026-08-03"]
 
     def test_iso_and_numeric_untouched(self):
-        assert [d.isoformat() for d, _b in
-                extract_dates_with_basis("done 2026-08-03", None)] == ["2026-08-03"]
-        assert [d.isoformat() for d, _b in
-                extract_dates_with_basis("done 03/08/2026", None)] == ["2026-08-03"]
+        iso, _w1 = extract_dates_with_basis("done 2026-08-03", None)
+        numeric, _w2 = extract_dates_with_basis("done 03/08/2026", None)
+        assert [d.isoformat() for d, _b in iso] == ["2026-08-03"]
+        assert [d.isoformat() for d, _b in numeric] == ["2026-08-03"]
 
 
 class TestForecastWording:

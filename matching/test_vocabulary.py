@@ -172,16 +172,53 @@ class TestNotWiredIntoMatching:
         assert "NOT used by the matcher" in voc["note"]
 
     def test_no_matching_module_imports_the_vocabulary(self):
-        """The real guard. Grep the engine, retriever, features and config —
-        an import here is the change this step was told not to make."""
+        """The real guard. Parse the engine, retriever, features and config —
+        an import here is the change this step was told not to make.
+
+        This reads the AST rather than grepping for the substring. The first
+        version searched the raw source, which meant a comment using
+        "vocabulary" as an ordinary English word — `retrieval.py` has "schedule
+        vocabulary is APPENDED to the query side only" — failed the test while
+        the constraint it guards was perfectly intact. A guard that fires on
+        prose is one people learn to switch off, which would have cost the
+        real protection.
+        """
+        import ast
+
         base = Path(__file__).resolve().parent
         for name in ("engine.py", "retrieval.py", "features.py", "config.py",
                      "schedule_index.py", "learned.py"):
             path = base / name
             if not path.exists():
                 continue
-            source = path.read_text(encoding="utf-8")
-            assert "vocabulary" not in source, f"{name} references the vocabulary"
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=name)
+
+            for node in ast.walk(tree):
+                # `import matching.vocabulary` / `import vocabulary`
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        assert "vocabulary" not in alias.name.split("."), (
+                            f"{name} imports the vocabulary"
+                        )
+                # `from matching.vocabulary import ...` / `from .vocabulary import ...`
+                elif isinstance(node, ast.ImportFrom):
+                    module = node.module or ""
+                    assert "vocabulary" not in module.split("."), (
+                        f"{name} imports from the vocabulary"
+                    )
+                    # Checked for EVERY from-import, not only `from matching`:
+                    # a bare relative `from . import vocabulary` has
+                    # node.module None, and gating on the module name let it
+                    # through.
+                    for alias in node.names:
+                        assert alias.name != "vocabulary", (
+                            f"{name} imports the vocabulary module"
+                        )
+                # Any `vocabulary.something` attribute access in real code.
+                elif isinstance(node, ast.Attribute):
+                    value = node.value
+                    if isinstance(value, ast.Name) and value.id == "vocabulary":
+                        raise AssertionError(f"{name} calls into the vocabulary")
 
     def test_the_alias_channel_is_still_off(self):
         """The vocabulary must not have been used as a way to switch it on."""
