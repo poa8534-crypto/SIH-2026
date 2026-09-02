@@ -209,3 +209,190 @@ def micro_f1(observations: Sequence[dict]) -> Optional[float]:
     if precision + recall == 0:
         return None
     return 2 * precision * recall / (precision + recall)
+
+
+# ── Classification and regression metrics (D-058) ────────────────────────────
+
+_ZERO_VARIANCE_EPS = 1e-12
+
+
+def confusion_counts(observations: Sequence[dict]) -> dict:
+    """Count tp / fp / fn / tn over link observations.
+
+    WHY: precision, recall, accuracy and F1 are all ratios of these four
+    counts. Deriving them from one function keeps every metric and every
+    report agreeing on what a hit and a miss are.
+
+    Definitions for this matcher:
+      tp  a link was suggested and it was correct
+      fp  a link was suggested and it was wrong
+      fn  a gold-positive item did not receive a correct suggestion
+      tn  nothing was suggested and there was nothing to find
+
+    A wrong suggestion on a gold-positive item is BOTH an fp and an fn, so
+    tp + fp + fn + tn may exceed len(observations). That is deliberate: the
+    wrong link must be charged against precision (a wrong fact was offered)
+    and the missed link against recall (the right fact was not found).
+    A row flagged correct=True but suggested=False is treated as not
+    correct: you cannot be right about a link you never offered.
+    """
+    tp = fp = fn = tn = 0
+    for obs in observations:
+        suggested = bool(obs.get("suggested"))
+        correct = suggested and bool(obs.get("correct"))
+        gold = bool(obs.get("gold_positive"))
+        if suggested and correct:
+            tp += 1
+        if suggested and not correct:
+            fp += 1
+        if gold and not correct:
+            fn += 1
+        if not suggested and not gold:
+            tn += 1
+    return {"tp": tp, "fp": fp, "fn": fn, "tn": tn}
+
+
+def precision(observations: Sequence[dict]) -> Optional[float]:
+    """Fraction of suggested links that were correct: tp / (tp + fp).
+
+    WHY: precision is the product's hard floor. Every wrong auto-link is a
+    wrong fact planted into the baseline schedule, so this single number
+    decides whether the auto-link threshold is safe to ship.
+
+    Returns None when nothing was suggested. With zero suggestions there is
+    no precision to report; 0.0 would read as "every suggestion was wrong"
+    when in truth there were none.
+    """
+    counts = confusion_counts(observations)
+    suggested = counts["tp"] + counts["fp"]
+    if suggested == 0:
+        return None
+    return counts["tp"] / suggested
+
+
+def recall(observations: Sequence[dict]) -> Optional[float]:
+    """Fraction of gold-positive items that received a correct link: tp / gold.
+
+    WHY: recall measures how much of the human's linking work the system
+    actually removed. A matcher that refuses everything has perfect
+    precision and is useless; recall is what stops us gaming the floor.
+
+    Returns None when there are no gold positives: with nothing to find,
+    recall is undefined rather than zero.
+    """
+    counts = confusion_counts(observations)
+    gold = sum(1 for obs in observations if bool(obs.get("gold_positive")))
+    if gold == 0:
+        return None
+    return counts["tp"] / gold
+
+
+def accuracy(observations: Sequence[dict]) -> Optional[float]:
+    """Fraction of observations the matcher got right, including correct
+    refusals: (correct suggestions + correct non-suggestions) / n.
+
+    WHY it exists: it is the only metric that credits the matcher for
+    correctly staying silent, which is a real behaviour of this product.
+
+    WHY it must NEVER be quoted as a headline: this matcher is heavily
+    class-imbalanced. Most report lines link to nothing, so a system that
+    suggests nothing at all scores very high accuracy while delivering
+    zero value. Accuracy hides exactly the failure mode we care about.
+    Quote precision (the floor) and recall (the value) instead; use this
+    number only as a diagnostic alongside confusion_counts.
+
+    Returns None on empty input.
+    """
+    n = len(observations)
+    if n == 0:
+        return None
+    right = 0
+    for obs in observations:
+        suggested = bool(obs.get("suggested"))
+        correct = suggested and bool(obs.get("correct"))
+        gold = bool(obs.get("gold_positive"))
+        if correct or (not suggested and not gold):
+            right += 1
+    return right / n
+
+
+def f1(observations: Sequence[dict]) -> Optional[float]:
+    """Harmonic mean of precision and recall.
+
+    WHY: it punishes trading one for the other, which matters here because
+    the threshold can be pushed to buy precision at the cost of recall.
+
+    Returns None when precision or recall is undefined (None), and also
+    when both are exactly 0: the harmonic mean is 0/0 there and reporting
+    0.0 would present an undefined quantity as a measured one.
+    """
+    p = precision(observations)
+    r = recall(observations)
+    if p is None or r is None:
+        return None
+    if p == 0.0 and r == 0.0:
+        return None
+    return 2.0 * p * r / (p + r)
+
+
+def rmse(pairs: Sequence[tuple[float, float]]) -> Optional[float]:
+    """Root mean squared error over (predicted, actual) pairs.
+
+    WHY: RMSE is in the unit of the target (days) and penalises large
+    misses more than small ones, which is the right shape for durations
+    where one 30-day miss costs more than ten 3-day misses.
+
+    Returns None on empty input.
+    """
+    if not pairs:
+        return None
+    total = 0.0
+    for predicted, actual in pairs:
+        diff = float(actual) - float(predicted)
+        total += diff * diff
+    return (total / len(pairs)) ** 0.5
+
+
+def mae(pairs: Sequence[tuple[float, float]]) -> Optional[float]:
+    """Mean absolute error over (predicted, actual) pairs.
+
+    WHY: MAE is the plain "typical miss in days" that a planner can act on,
+    and it is robust to the single wild actual that dominates RMSE. The
+    gap between RMSE and MAE tells you how much the error is driven by
+    outliers.
+
+    Returns None on empty input.
+    """
+    if not pairs:
+        return None
+    total = 0.0
+    for predicted, actual in pairs:
+        total += abs(float(actual) - float(predicted))
+    return total / len(pairs)
+
+
+def r2(pairs: Sequence[tuple[float, float]]) -> Optional[float]:
+    """Coefficient of determination: 1 - SS_res / SS_tot over (predicted, actual).
+
+    WHY: R2 says how much better the prediction is than simply guessing the
+    mean actual. Negative values are legitimate and mean the predictor is
+    worse than the mean, which is exactly what we need to detect for an
+    unvalidated duration model.
+
+    Returns None on empty input.
+
+    Returns None when the actual values have ZERO VARIANCE. SS_tot is then
+    0 and R2 is 0/0: undefined. Returning 1.0 would claim a perfect fit and
+    returning 0.0 would claim no explanatory power, and neither is a
+    measurement. A single pair always has zero variance and also yields None.
+    """
+    n = len(pairs)
+    if n == 0:
+        return None
+    actuals = [float(actual) for _, actual in pairs]
+    mean_actual = sum(actuals) / n
+    ss_tot = sum((a - mean_actual) ** 2 for a in actuals)
+    if ss_tot <= _ZERO_VARIANCE_EPS:
+        return None
+    ss_res = sum((float(actual) - float(predicted)) ** 2 for predicted, actual in pairs)
+    return 1.0 - ss_res / ss_tot

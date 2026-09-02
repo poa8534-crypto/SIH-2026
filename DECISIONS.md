@@ -5471,3 +5471,114 @@ Nothing on these pages is computed in the browser except sorting.
 `frontend/src/lib/role.ts` (new), `pages/Login.tsx` (new),
 `pages/executive/{Overview,Exposure,Provenance}.tsx` (new), `App.tsx`,
 `lib/api.ts`, `types.ts`, `DECISIONS.md`. No backend change.
+
+## 2026-09-02 / D-058 - Classification and regression metrics, and what each is allowed to measure
+
+`evalstats.py` gains `precision`, `recall`, `accuracy`, `f1`,
+`confusion_counts` (classification) and `rmse`, `mae`, `r2` (regression). Pure
+Python, no numpy, appended to the existing module rather than added as a
+parallel one, so there is a single definition of what a hit and a miss are.
+
+Three rules are encoded in the code rather than left to the caller:
+
+- **Undefined returns `None`, never `0.0`.** No suggestions means precision is
+  undefined, not zero — `0.0` would read as "every suggestion was wrong" when
+  none were made. Same for recall with no gold positives, and F1 when either
+  input is undefined or both are exactly zero.
+- **`r2` returns `None` on a zero-variance target.** SS_tot is 0 there and R2
+  is 0/0. Returning 1.0 would claim a perfect fit and 0.0 would claim no
+  explanatory power; neither is a measurement. A single pair always has zero
+  variance and so also yields `None`.
+- **`accuracy` is computed but is documented as unquotable.** This matcher is
+  heavily class-imbalanced: a system that suggests nothing scores high accuracy
+  while delivering nothing. It is a diagnostic to read beside
+  `confusion_counts`, never a headline.
+
+`confusion_counts` charges a wrong suggestion on a gold-positive item as both a
+false positive and a false negative, so the four counts can exceed the number
+of observations. That is deliberate — the wrong link has to cost precision (a
+wrong fact was offered) and the missed link has to cost recall (the right fact
+was not found).
+
+RMSE and R2 do **not** apply to matching, which is classification and ranking
+with no continuous target. Their only legitimate use here is D-059.
+
+## 2026-09-02 / D-059 - The baseline plan is a worse duration predictor than the mean, and now we can say so
+
+`_compute_suggested_duration` (`server/main.py:3230`) suggests how long an
+activity type really takes. It had never been evaluated. `evalduration.py`
+scores a predictor against observed `actual_mean_days` per activity type, with
+the baseline plan as the default predictor so there is always a reference point.
+
+Measured on the live corpus (56 activity types, 37 excluded for having no
+completed instances, 19 scored):
+
+```
+rmse   12.8021   95% CI [ 7.1638, 17.0614]   n=19
+mae     7.2053   95% CI [ 2.6316, 12.2263]   n=19
+r2     -0.6596   95% CI [-1.6558, -0.0087]   n=19
+```
+
+**R2 is negative and its whole interval sits below zero.** The baseline plan
+predicts actual durations *worse than guessing the mean actual duration would*.
+That is the quantified case for learning durations from captured actuals rather
+than trusting the plan, and it is the first time that claim has had a number.
+
+**The caveat, which must travel with the figure.** The result is driven by six
+civil types that ran 15-29 days over plan — CIV-PLT +29, CIV-GBM +26, CIV-APN
++23, CIV-DWG +21, CIV-FLR +20, CIV-FNC +15 — and **every one of those has
+n=1**. Twelve of the nineteen scored types came in at delta 0.0. So the honest
+statement is "the plan misses badly on a minority of civil scope, measured on
+single instances", not "the plan is universally wrong".
+
+Two guards keep the module from overstating:
+
+- `MIN_N_FOR_R2 = 8`. Below it R2 is withheld rather than computed, because at
+  n of 1-3 it swings on the movement of a single point and the bootstrap mostly
+  resamples duplicates.
+- Nothing is dropped silently. Every excluded row is counted under a reason
+  (`no_actuals`, `no_prediction`, `malformed`) and printed, and `n` appears on
+  every metric line so a figure cannot be read apart from its sample size.
+
+## 2026-09-02 / D-063 - A read-only Q&A agent that cannot state a number the data does not contain
+
+`server/qa_agent.py` answers questions over project data — "why is the project
+delayed", "what should I do next" — on the local Qwen 3 8B. It is deliberately
+NOT the existing `POST /agent/turn`, which is slot-filling data *entry* with
+the LLM as a dissector into JSON. This one only reads.
+
+Four properties are structural, not prompt-level, because prompt-level versions
+of them fail:
+
+1. **Read-only by construction.** `__slots__ = ("_generate",)`. The class holds
+   one callable and cannot have a database handle attached — `agent.db = ...`
+   raises. Its entire public surface is `answer()`. A Q&A agent with write
+   access is one prompt injection away from mutating the schedule, and the
+   product's whole claim is that it never writes an unverified date (D-009).
+2. **Facts are computed in Python; the model only phrases them.** Every figure
+   is derived from the supplied data before the model is called, and the reply
+   is *rejected* if it contains any number not present in those facts. A model
+   that answers "the project is 87% complete" is discarded and the deterministic
+   phrasing is returned. The model is never asked to do arithmetic.
+3. **The SPI guard.** When `spi_headline_safe` is false the figure is withheld
+   and the coverage is given instead. Verified against live data: the server
+   reports SPI 0.4311 at 45.1% coverage and the agent states neither the figure
+   nor a judgement, in grounded mode *and* when a model tries to smuggle it back
+   into the prose. "How is the project doing?" is the most likely question a
+   judge asks, and an unsafe SPI is the most damaging thing available to answer
+   it with.
+4. **It degrades, never fails.** `generate=None` and a `generate` that raises
+   both return the grounded figures with `model_available=False`, and produce
+   byte-identical answers. An Ollama outage must never be a NAVIS outage (D-005).
+
+Dependency injection at the boundary — the agent takes a
+`Callable[[str], str]` rather than building an HTTP client — is what makes all
+of the above testable with no network and no database.
+
+**One defect found only by running it against the live server.** `GET /evm`
+returns `evidence_coverage` as an object (`{fraction, weight_with_evidence,
+weight_total, ...}`), not a float. Read as a float, the agent said "evidence
+coverage is unknown" while the server was reporting 45.13%. The SPI guard held
+regardless, since it keys on `spi_headline_safe` — but an explanation that is
+wrong about its own evidence is worth very little. `_coverage_fraction` now
+accepts both shapes, with a regression test for each.
