@@ -6320,3 +6320,83 @@ The new tests clear `AuditRecord` and `RaidItem` around each case. Without
 that they passed alone and failed in sequence, counting rows an earlier test
 had left behind — the same mistake as counting audit rows, made in the test
 suite.
+
+---
+
+## 2026-09-03 / D-072 — The design brief enters the repository, dated to a commit
+
+### Context
+Three design documents had been sitting untracked in the working tree: a
+backend-to-interface audit, a superseded Stitch prompt pack, and the rewritten
+`prompts.md` that replaces it. They were written against `34e4a1c` while four
+remote commits were unmerged, so by the time anyone read them they described a
+tree that no longer existed: a repository "4 commits behind", 29 HTTP
+operations, 302 backend tests, 76 frontend tests, and a `QAAgent` that lived
+only on the remote.
+
+### Decision
+Refresh all three against `ca63ba0` and commit them. Two rules apply to this
+class of document from now on:
+
+1. **A design brief states the commit it was measured against.** Every source
+   permalink in the audit points at that commit, so a reader can see exactly
+   the code the finding was written from. A brief with no basis commit is a
+   brief that cannot be checked.
+2. **A re-checked finding says what the re-check found.** Section 4 now carries
+   a Status column with four values — open, partly closed, closed, and the
+   commit that closed it. Deleting a fixed finding would have hidden the fact
+   that it was ever true; leaving it unmarked would have kept a design team
+   working around a control that no longer exists.
+
+### What the refresh actually changed
+- Git state: 0/0 against origin, not 4 behind.
+- Counts: 30 HTTP operations (`GET /agent/llm-status` is new), 394 backend
+  tests, 101 frontend tests, `tsc --noEmit` clean, build clean, 334 indexed
+  files.
+- Two P1 findings closed by `d0bcede`: the Force Mobile View control is gone,
+  and Field "Return to role selection" now clears `navis.role` instead of
+  swapping the shell.
+- One P1 partly closed: the executive Overview gained a banner naming the
+  unevidenced-activity count, but it keys on `no_evidence_floor > 0` rather
+  than the server's `spi_headline_safe`, and `frontend/src/types.ts` still
+  declares `headline_safe` / `headline_warning` for wire fields actually named
+  `spi_headline_safe` / `spi_headline_reason`, with `evidence_coverage` and
+  `evidenced_subset` absent entirely.
+- The three P0 resolve-action mismatches are **still open**, re-verified line
+  by line: `Reconcile.tsx` sends `confirm` with an `activity_id` the server's
+  confirm branch never reads, `new_activity` where the server accepts `create`
+  and demands `new_activity_id` too, and `reject` where the server accepts
+  `ignore` and 400s on anything else.
+- `server/qa_agent.py` is merged locally, and merging it connected nothing:
+  neither `server/main.py` nor `frontend/src/lib/api.ts` mentions it.
+- D-071's wording reached the prompts: the Memory panel table is "Delay
+  causes" with a **Reports** column, and the prompt now says to draw small
+  numbers rather than inflated occurrence counts.
+
+### Reason
+The three P0s pass the entire 394-test suite, because no test asserts the
+frontend's request body against the set of actions the backend accepts. That is
+the strongest argument for keeping this brief in the repository rather than
+beside it: it records a defect class the test suite structurally cannot see, and
+an untracked file records nothing.
+
+### Alternatives Considered
+- **Commit them unchanged.** Rejected: a document that says "4 commits behind"
+  and "29 operations" reads as authoritative and is wrong, which is the failure
+  mode `CLAUDE.md` opens by naming.
+- **Delete the superseded prompt pack.** Rejected for the same reason
+  `DECISIONS.md` never deletes an entry. It is marked superseded at the top,
+  points at `prompts.md`, and keeps the deeper per-endpoint state notes the
+  rewrite deliberately dropped.
+- **Fix the three P0s in this pass.** Out of scope and a different kind of
+  change: it touches the resolve contract and needs its own tests. The brief
+  now says precisely what to send, which is what makes that a bounded task.
+
+### Affected Areas
+`Design/NAVIS_BACKEND_UI_AUDIT.md`, `Design/NAVIS_STITCH_PROMPTS.md`,
+`prompts.md`. No application code was changed by this entry.
+
+### Trade-offs / Consequences
+The audit is now dated to a commit, which means it goes stale on the next merge
+that touches a cited line. That is the intended cost: a document with a basis
+commit can be re-checked mechanically, and one without cannot be checked at all.

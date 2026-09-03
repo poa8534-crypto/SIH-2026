@@ -1275,6 +1275,47 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The three untracked design documents were refreshed against the
+current HEAD and committed. Documentation only — no application code changed.
+**Date:** 2026-09-03 · **Decision:** D-072
+
+```
+DESIGN BRIEF → THE CONTRACT THE FRONTEND DOES NOT YET HONOUR      (D-072)
+
+  Design/NAVIS_BACKEND_UI_AUDIT.md   basis commit ca63ba0, all links pinned
+    §4 Status column: open / partly closed / closed (+ closing commit)
+         |
+         +-- 3 x P0 still open, and the 394-test suite cannot see them:
+         |     frontend/src/pages/Reconcile.tsx L331  action 'confirm'
+         |       + activity_id  ->  server/main.py L1474 reads item.activity_id
+         |                          and never req.activity_id
+         |     frontend/src/pages/Reconcile.tsx L348  action 'new_activity'
+         |       ->  server/main.py L1558 wants 'create'
+         |           + new_activity_id + new_description
+         |     frontend/src/pages/Reconcile.tsx L368  action 'reject'
+         |       ->  server/main.py L1612 wants 'ignore', else 400
+         |
+         +-- 1 x P1 partly closed: executive Overview banner exists but keys
+         |     on percent_source_counts.no_evidence_floor, not on the server's
+         |     spi_headline_safe (server/evm.py L259). frontend/src/types.ts
+         |     L466 still names it headline_safe / headline_warning and omits
+         |     evidence_coverage and evidenced_subset entirely
+         |
+         +-- 2 x P1 closed by d0bcede (Force Mobile View removed;
+               FieldProfile signOut clears navis.role)
+
+  prompts.md                          the generation input, Prompt 01 first
+  Design/NAVIS_STITCH_PROMPTS.md      superseded, kept for its endpoint notes
+
+  server/qa_agent.py is merged and imported by nothing: it appears in neither
+  server/main.py nor frontend/src/lib/api.ts. GET /agent/llm-status (L3311)
+  is a different module's health probe and does not imply QAAgent is wired.
+```
+
+---
+
+### Previous modification area
+
 **Task:** Two strands landed together. (a) The demo script was realigned to
 the three-role application, and the four defects found while walking it were
 fixed. (b) The optional LLM path's one unvalidated field was closed, model
