@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LANGUAGES, PROJECT, SUPERVISOR } from '../config';
 import { useQuery } from '@tanstack/react-query';
 import { api, errorDetail } from '../lib/api';
-import { useDevice } from '../hooks/useDevice';
+import { useSession } from '../hooks/useSession';
 import { useSpeech } from '../hooks/useSpeech';
 import { Button, PanelHeader } from '../components/ui';
 
@@ -29,7 +29,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export default function FieldProfile() {
   const navigate = useNavigate();
-  const { setOverride } = useDevice();
+  const { signOut } = useSession();
   const speech = useSpeech();
 
   // Project name and data date are the server's, off the same query key the
@@ -110,7 +110,12 @@ export default function FieldProfile() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <Button variant="primary" block onClick={() => setOverride('desktop')}>
+        {/* This said "Return to role selection" and called setOverride
+            ('desktop'), which only swapped the shell — it never cleared the
+            role. For the Field Supervisor the router keeps the mobile lane
+            regardless, so the button did nothing at all. Now it does what it
+            says: clears `navis.role` and shows the picker. */}
+        <Button variant="primary" block onClick={signOut}>
           Return to role selection
         </Button>
         <Button variant="secondary" block onClick={() => navigate('/field')}>

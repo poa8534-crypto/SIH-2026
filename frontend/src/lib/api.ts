@@ -13,6 +13,7 @@ import {
   SourceConflict,
   EvmResponse,
   EvidenceCorpus,
+  RaidCandidate,
   RaidItem,
   ResolveResponse,
   ReviewItem,
@@ -178,6 +179,66 @@ export const api = {
     const q = params.toString();
     return fetchWithHandler(`/raid${q ? `?${q}` : ''}`);
   },
+
+  /**
+   * Entries the system has proposed from evidence it already holds. Nothing
+   * here is in the register: every candidate carries `committed: false` until
+   * a Project Manager accepts it (D-048). Reading this endpoint changes
+   * nothing.
+   */
+  getRaidCandidates: async (): Promise<RaidCandidate[]> => {
+    // Unlike GET /raid, this one answers with an object: the candidates plus
+    // a `note` restating that none of them is in the register. The note is
+    // the endpoint talking to whoever reads it raw; the screen renders that
+    // caveat itself, so only the list is carried through here.
+    const body = (await fetchWithHandler('/raid/candidates')) as {
+      candidates?: RaidCandidate[];
+      note?: string;
+    } | null;
+    return body?.candidates ?? [];
+  },
+
+  /**
+   * Accept an entry into the register. This is the only way a row gets there:
+   * the detector proposes, a planner commits. `exposure` is not sent — the
+   * server computes it from probability and impact.
+   */
+  createRaidItem: (body: {
+    kind: string;
+    title: string;
+    description?: string;
+    category?: string | null;
+    status?: string;
+    owner?: string | null;
+    probability?: number | null;
+    impact_days?: number | null;
+    linked_activity_ids?: string[];
+    source_kind?: string | null;
+    source_id?: string | null;
+    source_note?: string | null;
+  }): Promise<RaidItem> =>
+    fetchWithHandler('/raid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+
+  /** Partial update of a register entry. Absent fields are left unchanged. */
+  updateRaidItem: (
+    itemId: string,
+    body: {
+      status?: string;
+      owner?: string | null;
+      probability?: number | null;
+      impact_days?: number | null;
+      date_closed?: string | null;
+    }
+  ): Promise<RaidItem> =>
+    fetchWithHandler(`/raid/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
 
   /** What the real corpus actually contains, read from its own manifests. */
   getEvidenceCorpus: (): Promise<EvidenceCorpus> =>

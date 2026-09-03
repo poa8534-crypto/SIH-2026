@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Monitor, Smartphone, LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch } from 'lucide-react';
+import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
-import { useDevice } from './hooks/useDevice';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
 import Reconcile from './pages/Reconcile';
@@ -11,6 +10,7 @@ import Schedule from './pages/Schedule';
 import Ingest from './pages/Ingest';
 import Field from './pages/Field';
 import Memory from './pages/Memory';
+import Raid from './pages/Raid';
 import Home from './pages/Home';
 import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
@@ -21,6 +21,7 @@ import Login from './pages/Login';
 import ExecutiveOverview from './pages/executive/Overview';
 import ExecutiveExposure from './pages/executive/Exposure';
 import ExecutiveProvenance from './pages/executive/Provenance';
+import { SessionContext } from './hooks/useSession';
 import {
   ROLE_PROFILES,
   clearRole,
@@ -45,7 +46,6 @@ function DesktopShell({
   roleLabel: string;
   onSignOut: () => void;
 }) {
-  const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
@@ -128,17 +128,15 @@ function DesktopShell({
             {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
           </div>
 
-          <button
-            onClick={() => setOverride('mobile')}
-            className="mt-4 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
-          >
-            <Smartphone size={12} />
-            Force Mobile View
-          </button>
-
+          {/* There was a "Force Mobile View" button here. It set a device
+              override that the router read as "render the field lane", so a
+              Project Manager or Senior Management user who pressed it landed
+              in the Field Supervisor application while `navis.role` still said
+              otherwise. Seeing another role's screens is a role change, and a
+              role change goes through the picker. */}
           <button
             onClick={toggleTheme}
-            className="mt-2 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
+            className="mt-4 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
           >
             {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -169,17 +167,11 @@ function DesktopShell({
             {headerError && (
               <ErrorState error={headerError} mode="bare" className="max-w-[420px]" />
             )}
-            <div className="flex rounded-sm border border-hair overflow-hidden">
-              <span className="px-3 py-2 font-mono text-label font-bold uppercase tracking-[0.05em] bg-accent text-accent-fg">
-                Planner
-              </span>
-              <button
-                onClick={() => setOverride('mobile')}
-                className="px-3 py-2 font-mono text-label font-bold uppercase tracking-[0.05em] text-muted hover:bg-selected hover:text-fg transition-colors"
-              >
-                Field
-              </button>
-            </div>
+            {/* A PLANNER | FIELD toggle used to sit here. It predated roles,
+                it rendered for Senior Management too (who are neither), and
+                pressing Field dropped whoever clicked it into the field
+                application. The signed-in role is named in the sidebar and
+                changed with Switch Role. */}
           </div>
         </header>
 
@@ -192,7 +184,6 @@ function DesktopShell({
 }
 
 function MobileShell({ children }: { children: React.ReactNode }) {
-  const { setOverride } = useDevice();
   const { theme, toggleTheme } = useTheme();
 
   // The same project identity the planner sidebar shows, off the same query
@@ -247,13 +238,6 @@ function MobileShell({ children }: { children: React.ReactNode }) {
           <Button variant="icon" onClick={toggleTheme} title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </Button>
-          <Button
-            variant="icon"
-            onClick={() => setOverride('desktop')}
-            title="Force Desktop View"
-          >
-            <Monitor size={18} />
-          </Button>
         </div>
       </header>
       {/* min-h-0 so the field screen owns its own scrolling rather than
@@ -272,6 +256,11 @@ const PLANNER_NAV: NavItem[] = [
   { path: '/reconcile', label: 'Reconcile', icon: ListTodo },
   { path: '/schedule', label: 'Schedule', icon: CalendarDays },
   { path: '/ingest', label: 'Ingest', icon: Upload },
+  /* `lib/role.ts` has always listed /raid among the planner's routes, but
+     there was no nav entry and no route, so the register the executive
+     Exposure screen reads could never be filled by anyone. The detector
+     proposed; nobody could accept. */
+  { path: '/raid', label: 'Exposure', icon: ShieldAlert },
   { path: '/memory', label: 'Memory', icon: Database },
 ];
 
@@ -285,7 +274,6 @@ const EXECUTIVE_NAV: NavItem[] = [
 ];
 
 export default function App() {
-  const { device } = useDevice();
   const [role, setRole] = useState<Role | null>(() => readRole());
 
   const signIn = (next: Role) => {
@@ -304,10 +292,23 @@ export default function App() {
   }
 
   // The Field Supervisor is a phone-first role, and the mobile shell is the
-  // one built for it. A narrow viewport still forces it for everyone else,
-  // which is what the existing device override is for.
-  if (role === 'field' || device === 'mobile') {
+  // one built for it. The shell follows the ROLE and nothing else.
+  //
+  // It used to be `role === 'field' || device === 'mobile'`, so a narrow
+  // window — or the Force Mobile View button, from any role — rendered the
+  // field lane's routes and header for a Project Manager or for Senior
+  // Management, while `navis.role` was unchanged. That is not a layout
+  // choice; it is showing one person another person's application, with a
+  // header that names them as the Field Supervisor. A viewport width must
+  // never decide which role you are.
+  // Everything the router can reach needs a way to sign out — the field
+  // lane's Profile screen especially, which is nested inside <Routes> where a
+  // prop cannot follow it.
+  const session = { role, signOut };
+
+  if (role === 'field') {
     return (
+      <SessionContext.Provider value={session}>
       <BrowserRouter>
         <MobileShell>
           <Routes>
@@ -319,11 +320,13 @@ export default function App() {
           </Routes>
         </MobileShell>
       </BrowserRouter>
+      </SessionContext.Provider>
     );
   }
 
   if (role === 'executive') {
     return (
+      <SessionContext.Provider value={session}>
       <BrowserRouter>
         <DesktopShell
           navItems={EXECUTIVE_NAV}
@@ -340,10 +343,12 @@ export default function App() {
           </Routes>
         </DesktopShell>
       </BrowserRouter>
+      </SessionContext.Provider>
     );
   }
 
   return (
+    <SessionContext.Provider value={session}>
     <BrowserRouter>
       <DesktopShell
         navItems={PLANNER_NAV}
@@ -355,11 +360,13 @@ export default function App() {
           <Route path="/reconcile" element={<Reconcile />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/ingest" element={<Ingest />} />
+          <Route path="/raid" element={<Raid />} />
           <Route path="/memory" element={<Memory />} />
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </DesktopShell>
     </BrowserRouter>
+    </SessionContext.Provider>
   );
 }

@@ -5756,3 +5756,234 @@ non-auto-applied record "Confirmed by planner", including system-generated
 conflict and withheld-finish rows nobody touched. None of these were fixed
 here — this task was documentation-only — and the first is already tracked
 against `_generate_xer`.
+
+## 2026-09-03 / D-066 — A give-up must be remembered, and a confirm must never vanish
+
+### Status
+Implemented. Server-side only. 12 new tests in `server/test_agent.py`.
+
+### Context
+Walking the demo for D-064 found the field lane wedged. `DEMO.md`'s own opening
+sentence — *"spool erection on the 24 inch header is done, 6 nos"* — produced a
+session that could never be submitted, and **CONFIRM & SUBMIT** appeared to do
+nothing at all.
+
+Three defects, stacked:
+
+**1. The give-up lasted one turn.** `_next_missing` skips a slot it has already
+asked about twice — that is the anti-loop rule. It read the give-up from
+`slots.asked_slot` and `slots.ask_count`, and the branch in `agent_turn` that
+finds nothing left to ask clears **both**. So the very next turn forgot, asked
+again, and the cycle repeated for ever.
+
+**2. A confirm arriving with a pending slot was consumed by the question.**
+`req.confirm` was only ever read inside the `else` branch — the one reached when
+nothing is pending. With a slot pending the turn fell into `elif pending_slot`
+and asked, discarding the confirm without a word. Combined with (1), the
+supervisor pressed submit and watched the same question reappear.
+
+**3. The question could not be answered.** "How many were planned in total?"
+routes the reply through `parse_quantity`, which reports a lone number as the
+*completed* amount — reasonable in isolation. `_merge_quantity` then drops it,
+because `quantity` was already set. So `18`, `18 nos` and `8 nos planned in
+total` all landed nowhere. Only an explicit `6 out of 18` worked, and the
+question does not ask for one.
+
+### Decision
+- `SlotState.abandoned_slots` records a give-up where nothing resets it.
+  `_abandon_exhausted(slots)` writes it *before* `_next_missing` runs, and
+  `_exhausted()` reads both the live counters and that memory.
+- A confirm with a genuinely open slot is **still refused** — filing a record
+  the supervisor never completed would be worse — but it is refused out loud:
+  *"I need one more thing before I can send this. <question>"*.
+- Answering the planned-total question with a bare figure fills
+  `planned_quantity`. Over-planned is flagged, never clamped, as elsewhere.
+
+### Reason
+Each half is small; the combination made the only voice-to-planner path in the
+product unusable, and the rehearsal script demonstrated it. A silent no-op on a
+submit button is the worst available failure: it reads as a broken product and
+leaves nothing to diagnose.
+
+### Alternatives Considered
+- **Honour the confirm anyway and file the incomplete record.** Rejected: the
+  agent asks only for what it genuinely lacks, so "incomplete" means a real
+  hole.
+- **Never clear `asked_slot`.** Rejected: `_fill_slots` reads it to interpret
+  the next message as an answer to that question, so a stale value misroutes
+  free text.
+- **Teach `parse_quantity` that a lone number is a planned total.** Rejected:
+  it is shared with the ingest path, where a lone number is a completed amount.
+  The question being answered is context the parser does not have, so the
+  branch belongs at the call site that knows it.
+
+### Affected Areas
+`server/main.py` (`agent_turn`, `_fill_slots`, `_next_missing`, `_exhausted`,
+`_abandon_exhausted`), `server/schemas.py`, `server/test_agent.py`.
+
+### Trade-offs / Consequences
+`SlotState` grows a field that is serialised into `ConversationTurn.slots_filled`
+— additive, defaulted, and readable on old rows as empty.
+
+---
+
+## 2026-09-03 / D-067 — The role decides the application; a viewport never does
+
+### Status
+Implemented. Frontend only. Supersedes the device-override half of D-060.
+
+### Context
+`App.tsx` routed on `role === 'field' || device === 'mobile'`. The second half
+predates roles entirely, and after D-060 it meant a **viewport width could
+change which person's application you were looking at**: a Project Manager or a
+Senior Management user below 768px — or pressing **Force Mobile View**, which
+sat in every desktop sidebar — got the Field Supervisor's routes, nav and
+header label while `navis.role` was unchanged. Verified live: an executive
+clicking that button landed on `/field` titled "Field Supervisor".
+
+Two more affordances did the same thing: the `PLANNER | FIELD` pill in the
+desktop header (which rendered for Senior Management, who are neither), and a
+button on the field Profile screen labelled **"Return to role selection"** that
+called `setOverride('desktop')` — it never cleared the role, and for the field
+role the router ignored it, so it did nothing whatsoever.
+
+### Decision
+The shell follows the role and only the role. `device` is out of the routing
+decision, and all three override affordances are gone. "Return to role
+selection" now signs out, through a new `SessionContext` — `App` owns the role
+in state, and the field lane's routes sit inside `<Routes>` where a prop cannot
+reach them.
+
+### Reason
+Roles are what the product is *for*: one accountable owner of the plan, a field
+supervisor who cannot approve, an executive with no queue. A layout heuristic
+that swaps between them is not a responsive design, it is a permissions bug
+wearing one. There is no auth here and route guards are not a security boundary
+(`lib/role.ts`), which makes the coherence of these screens the only thing
+keeping the three roles distinct.
+
+### Alternatives Considered
+- **Keep the override but scope it to the field role.** Rejected: the field
+  role already gets the mobile shell, so it would be a no-op control.
+- **Build mobile layouts for planner and executive.** Out of scope, and not
+  needed for a demo presented on a projector. A planner on a narrow window now
+  gets a cramped desktop layout, which is legible and correct.
+- **Delete `useDevice`.** Rejected: it carries tested `localStorage`-safety
+  behaviour (D-055) and a stale `view_override` key must stay harmless.
+
+### Affected Areas
+`frontend/src/App.tsx`, `frontend/src/pages/FieldProfile.tsx`,
+`frontend/src/hooks/useSession.ts` (new), `frontend/src/test/roleRouting.test.tsx`
+(new), `frontend/src/test/field.test.tsx`.
+
+### Trade-offs / Consequences
+A genuine phone user in the planner role gets a cramped desktop layout instead
+of a working-but-wrong field UI. That is the correct trade.
+
+---
+
+## 2026-09-03 / D-068 — `auto_applied` is not a claim about who decided
+
+### Status
+Implemented. Frontend only; no API or schema change — `source` was already
+projected onto both audit response shapes.
+
+### Context
+The audit drawer rendered `auto_applied ? 'Auto' : 'Confirmed by planner'`, and
+Home's Recent Activity rendered `auto_applied ? 'auto' : 'planner'`. False does
+not mean a planner confirmed it. It means *not written automatically*, and the
+system emits plenty of rows like that on its own: `source_conflict`, and
+`actual_finish_withheld` where D-015 declined to write a date no source named.
+
+Measured on a clean `scripts\demo_reset.ps1` state, before any planner has
+touched anything: **275 audit rows, every one `source = "matching"`, and 67 of
+them — 50 source conflicts and 17 withheld finishes — displayed as "Confirmed
+by planner".** `CIV-FNC-1016`, the worked example in `DEMO.md`, showed three.
+
+### Decision
+`lib/audit.ts` derives the actor from `source`, which is the field that answers
+the question: `planner_review` → **Confirmed by planner**; otherwise
+`auto_applied` → **Auto**; otherwise **Recorded, not applied**.
+
+### Reason
+The audit trail is the product's evidence for who decided what — the thing D-004
+makes append-only and D-003 keeps free of model prose. A label that attributes a
+system decision to a human is the single worst defect it can carry, and a judge
+asking "who confirmed that?" would have been told something untrue.
+
+The third state is not a euphemism: a source-conflict row records a
+disagreement the system deliberately did not resolve, and a withheld-finish row
+records a date it deliberately did not write. "Recorded, not applied" is what
+happened.
+
+### Alternatives Considered
+- **Show "System" for everything not planner-confirmed.** Rejected: it loses the
+  distinction between a value that was written and one that was refused, which
+  is the whole of D-015.
+- **Add a server-side `actor` field.** Rejected: `source` already carries it,
+  and a second field could disagree with the first.
+
+### Affected Areas
+`frontend/src/lib/audit.ts` (new), `frontend/src/pages/Schedule.tsx`,
+`frontend/src/pages/Home.tsx`, `frontend/src/test/auditActor.test.ts` (new).
+
+---
+
+## 2026-09-03 / D-069 — The register gets the writer it was missing
+
+### Status
+Implemented. Frontend plus one line of `server/demo.py`. No RAID API change.
+
+### Context
+D-048 built the register on the rule that no candidate commits itself: the
+detector proposes, a Project Manager adjudicates. Only the second half was
+never built. `GET /raid/candidates` proposed four entries from the audit trail,
+each `committed: false`; Senior Management's Exposure screen read `GET /raid`
+and showed an empty register explaining that candidates *"stay proposals until
+a Project Manager adjudicates them"* — and no screen let the planner be that
+person. `lib/role.ts` had listed `/raid` among the planner's routes since
+D-060; the nav entry and the page were simply absent.
+
+So the honest design rule read, in the product, as an empty panel with an
+excuse.
+
+### Decision
+A planner **Exposure** screen at `/raid`: detected candidates with the API's own
+PROPOSAL note, an **Accept into register** action (`POST /raid`), the register
+itself, and closing an entry (`PATCH /raid/{id}`).
+
+Two things the screen deliberately does not do:
+
+- **It never computes exposure.** `probability × impact` is the server's
+  arithmetic and is displayed as returned.
+- **It never invents a probability.** The detector counts what already
+  happened; it does not forecast, and a made-up probability makes a made-up
+  exposure. Every candidate is an `issue`, and `server/raid.py` *refuses*
+  probability and impact on a non-risk rather than dropping them — found the
+  hard way, by a live 400 on the first accept.
+
+### `clear_progress` now clears the register
+`scripts\demo_reset.ps1` left `raid_item` untouched, which did not matter while
+nothing could write to it. It matters now: register rows are adjudications of
+candidates derived from the audit trail, so once that trail is cleared a
+surviving entry cites evidence the database no longer holds. A reset that
+leaves it behind is not the known clean state the demo script promises. The
+candidates recompute from the audit records on every read, so they return by
+themselves.
+
+### Alternatives Considered
+- **Let the executive accept candidates.** Rejected outright: D-060 keeps that
+  role read-only, and an executive who can commit bypasses the single
+  accountable owner of the plan.
+- **Auto-accept high-confidence candidates.** Rejected: it is D-009 again. The
+  system proposing and the system deciding are different products.
+
+### Affected Areas
+`frontend/src/pages/Raid.tsx` (new), `frontend/src/App.tsx`,
+`frontend/src/lib/api.ts`, `frontend/src/types.ts`, `server/demo.py`,
+`frontend/src/test/raid.test.tsx` (new).
+
+### Trade-offs / Consequences
+A rehearsal that accepts a candidate no longer leaves a stray row behind.
+Verified: reset → `raid_item` 0, and the documented state (120 / 135 / 275 /
+266 / 67 / 38) is unchanged.

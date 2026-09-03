@@ -35,7 +35,7 @@ shell entirely.
 
 | Role | Signed-in label | Nav | Lands on |
 |---|---|---|---|
-| `planner` | Project Manager | Home · Reconcile · Schedule · Ingest · Memory | `/home` |
+| `planner` | Project Manager | Home · Reconcile · Schedule · Ingest · Exposure · Memory | `/home` |
 | `executive` | Senior Management | Overview · Exposure · Data | `/executive` |
 | `field` | Field Supervisor | Home · Reports · Clarifications · Profile | `/field` |
 
@@ -390,6 +390,31 @@ not a single line."*
 audit records only because that run had already confirmed a review item.
 `CIV-FNC-1016` has eight on a clean reset, before anyone touches anything.)*
 
+### 5a. Exposure — adjudicate what the evidence proposes
+
+The planner's **Exposure** screen is where a detected candidate becomes a
+register entry. It has two panels.
+
+**Detected candidates** — four on a clean reset, derived from the audit trail:
+*fencing conflict* (2 occurrences, 21d lost, CIV-DWG-1015), *holiday delay*
+(3, 20d, CIV-FLR-1020), *piling rig breakdown* (3, 1d, CIV-PLY-1004) and *rain
+delay* (3, 1d, CIV-PLY-1006). Each carries the API's own sentence — *"This is a
+PROPOSAL: nothing has been written to the register."*
+
+**Register** — empty until you press **Accept into register** on one. Do it
+once on stage: the candidate leaves the proposals list, the register gains a
+row, and the same entry appears on Senior Management's Exposure page (step 7).
+
+The line worth saying: *the system found the pattern in its own audit trail and
+proposed it. It did not enter it. A person did, and the register records which
+person.* That is D-009 for dates applied to governance — and it is the half
+that was missing until now: the detector and the executive's read-only view
+both existed, with nothing in between.
+
+An issue carries no probability and no impact score, and the server refuses
+them rather than dropping them quietly — only a risk is scored, because
+scoring something that has already happened is a category error.
+
 ### 5. Memory — the half nobody else builds
 
 Four sections, all computed from captured execution data, with the standing
@@ -464,23 +489,27 @@ disciplines that look worst are the disciplines nobody has reported on.
 
 ### 7. Exposure — the RAID register and unresolved conflicts
 
-**The RAID register is empty on a clean reset, and the empty state is the
-point.** It reads:
+**The RAID register is empty on a clean reset — and that is now a choice
+somebody can make, not a dead end.** It reads:
 
 > No risks, issues, actions or decisions have been accepted into the register
 > yet. Candidates detected from field reports stay proposals until a Project
 > Manager adjudicates them.
 
-`GET /raid/candidates` currently proposes four items derived from the audit
-trail — the recurring delay causes, with occurrence counts and days lost — and
-every one of them carries `"committed": false` and the note *"This is a
-PROPOSAL: nothing has been written to the register."* Nothing in the UI accepts
-one, so the register stays empty for the whole demo. Do not promise to fill it
-on stage.
+`GET /raid/candidates` proposes four items derived from the audit trail — the
+recurring delay causes, with occurrence counts and days lost — and every one
+carries `"committed": false` and the note *"This is a PROPOSAL: nothing has
+been written to the register."*
 
-Say it as the design: *the system will propose a risk from the evidence; it will
-not enter one into the register on its own authority.* That is the same rule as
-D-009 for dates, applied to governance.
+**The planner adjudicates them on their own Exposure screen** (step 5a). Until
+somebody does, this panel stays empty, and that is the design rather than a
+gap: *the system will propose a risk from the evidence; it will not enter one
+into the register on its own authority.* Same rule as D-009 for dates, applied
+to governance.
+
+If you want the register populated for the demo, accept a candidate as the
+planner first — it appears here immediately. `scripts\demo_reset.ps1` clears
+the register again, so a rehearsal cannot leave a stray entry behind.
 
 Below it, **Source conflicts (18)** — the same detections the planner sees, at
 executive altitude: one row per activity and field, with the stored value. The
@@ -538,13 +567,15 @@ Sector A · Digboi Well #4`, `STATUS Finished`, and the agent asks only for what
 it still lacks — the date, then the quantity. It does not interrogate you for
 what it can already infer.
 
-> **Do not put the quantity in the opening sentence.** *"…is done, 6 nos"* fills
-> the completed quantity but not the planned total, and the agent then asks
-> *"How many were planned in total?"* — a question that a bare number or a
-> phrase like *"8 nos planned in total"* does not satisfy, because the parser
-> wants an *X out of Y* form. Worse, a **CONFIRM & SUBMIT** pressed while that
-> slot is still open is silently swallowed and the question is asked again.
-> Verified on this build. Follow the script above and the beat is clean.
+The script above is the one to rehearse, but you are no longer punished for
+straying from it. Putting the quantity in the opening sentence used to strand
+the session: the agent asked *"How many were planned in total?"*, no plain
+answer satisfied it, and a **CONFIRM & SUBMIT** pressed in that state was
+silently swallowed. All three halves of that are fixed — a bare number now
+answers the planned-total question, a slot the agent has given up on stays
+given up on, and a confirm it genuinely cannot honour says so instead of
+vanishing (*"I need one more thing before I can send this."*). Verified on this
+build.
 
 **The transcript review step is the point**, not an obstacle: ASR mangles tags
 like `24"-P-1001-A1A`, and tag overlap is the matcher's strongest feature. Edit
@@ -685,17 +716,12 @@ part: *the signal is real, it was plumbed into the saturated stage, and if we
 close the loop it belongs in ranking as a prior over activities — not as a
 lookup on exact text.*
 
-**Do not narrow the browser window in the planner or executive role.** The
-shell switches to the Field Supervisor surface below 768px — and **Force Mobile
-View** in the sidebar does the same thing from any role, including Senior
-Management, while `navis.role` still says `executive`. Present at 1280×800 or
-wider and do not touch that button.
-
-**Do not linger on the "Confirmed by planner" label in the audit drawer.** It
-renders for any record that was not auto-applied, which on a clean reset
-includes system-generated source-conflict and withheld-finish rows that no
-planner has touched. The provenance underneath it is correct; the label is not
-a claim to lean on.
+**Present at 1280×800 or wider** — not because anything breaks now, but
+because the planner and executive screens are dense and a projector at a lower
+resolution will cost you the right-hand columns. A narrow window used to drop
+whoever was signed in into the Field Supervisor application; it no longer does,
+and the Force Mobile View button that did the same thing has been removed. The
+role decides the application, and only the picker changes the role.
 
 ---
 
@@ -718,11 +744,13 @@ the uvicorn port (there is no `.env` by default, and the UI assumes :8000).
 **A panel is empty but the rest of the page works.** That is by design; each
 panel fetches independently and one failing endpoint cannot blank the screen.
 
-**The RAID register is empty.** Expected — see step 7. Nothing is broken.
+**The RAID register is empty.** Expected on a clean reset — see step 7. To
+fill it, accept a candidate on the planner's Exposure screen (step 5a).
 
-**The field agent keeps asking the same question.** You answered a quantity
-question in a form it could not parse. Press **CLOSE** on the data-entry
-session and start again with the three-turn script in step 9.
+**The field agent asks something you cannot answer.** It gives up on any one
+slot after two tries and moves on, so keep answering and it will reach the
+card. If a session is genuinely wedged, **CLOSE** the data-entry session and
+start again with the three-turn script in step 9.
 
 **The microphone does nothing.** Expected on a locked-down browser. The screen
 falls back to typing automatically; carry on typing.

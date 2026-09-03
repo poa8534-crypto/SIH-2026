@@ -14,6 +14,7 @@ import {
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
+import { auditActorShort } from '../lib/audit';
 import { Button, EmptyState, ErrorState, Panel, Skeleton, SkeletonRows } from '../components/ui';
 
 /**
@@ -250,7 +251,8 @@ function RecentActivity({
               <span className="font-mono text-fg">
                 {isDate ? shortDate(a.new_value) : a.new_value}
               </span>{' '}
-              · {a.auto_applied ? 'auto' : 'planner'}
+              {/* From `source`, not `auto_applied` — see lib/audit.ts. */}
+              · {auditActorShort(a)}
               {a.confidence !== null && (
                 <>
                   {' · '}

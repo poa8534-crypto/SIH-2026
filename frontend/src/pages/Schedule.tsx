@@ -20,6 +20,7 @@ import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { usePageHeader } from '../hooks/usePageHeader';
+import { auditActor, auditActorLabel } from '../lib/audit';
 import { Button, EmptyState, ErrorState, SectionTitle, Skeleton } from '../components/ui';
 
 /**
@@ -212,14 +213,18 @@ function AuditTrail({ activityId }: { activityId: string }) {
 
                 {/* How it was applied */}
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                  {/* Who decided this, read from `source` rather than from
+                      `auto_applied`. See lib/audit.ts: not-auto-applied is not
+                      the same as planner-confirmed, and on a clean reset 67 of
+                      275 rows claimed a confirmation nobody had made. */}
                   <span
                     className={`px-2 border rounded-full text-label uppercase ${
-                      rec.auto_applied
-                        ? 'border-hair text-muted'
-                        : 'border-accent text-accent'
+                      auditActor(rec) === 'planner'
+                        ? 'border-accent text-accent'
+                        : 'border-hair text-muted'
                     }`}
                   >
-                    {rec.auto_applied ? 'Auto' : 'Confirmed by planner'}
+                    {auditActorLabel(rec)}
                   </span>
                   {rec.confidence !== null && (
                     <span className="text-muted">

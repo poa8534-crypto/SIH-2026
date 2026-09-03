@@ -1256,9 +1256,70 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Measure the alias learning loop (F4) and the auto-link recall
-headroom. Both closed as measured; no behaviour changed.
-**Date:** 2026-09-02 - **Decisions:** D-061, D-062
+**Task:** Fix the four defects found while walking the demo for D-064.
+**Date:** 2026-09-03 - **Decisions:** D-066, D-067, D-068, D-069
+
+```
+1. THE AGENT SLOT LOOP THAT ATE A CONFIRM              (D-066, server)
+
+   POST /agent/turn -> agent_turn()                    server/main.py
+     _abandon_exhausted(slots)   <-- NEW, and it must run FIRST
+         writes slots.abandoned_slots, which nothing resets
+     pending = _next_missing(slots)
+         _exhausted(name) = name in abandoned_slots
+                            OR (asked_slot == name AND ask_count >= 2)
+         ^ the second half alone lasted one turn: the `else` branch below
+           clears asked_slot and ask_count, so the skip was forgotten
+     if pending:
+         ask the question
+         if req.confirm:  say WHY it cannot be sent   <-- NEW
+                          (it used to be dropped in silence)
+     else:
+         asked_slot = None; ask_count = 0
+         _match_slots() ; then commit when req.confirm
+
+   _fill_slots() answering == "planned_quantity":      server/main.py
+     a bare number now fills planned_quantity          <-- NEW
+     (parse_quantity reports a lone figure as *completed*, and
+      _merge_quantity dropped it when quantity was already set, so the
+      question "How many were planned in total?" had no valid answer)
+
+2. THE ROLE DECIDES THE APPLICATION                    (D-067, frontend)
+
+   App()                                               frontend/src/App.tsx
+     was: role === 'field' || device === 'mobile'  ->  MobileShell
+     now: role === 'field'                         ->  MobileShell
+          role === 'executive'                     ->  DesktopShell + EXEC nav
+          otherwise                                ->  DesktopShell + PLANNER nav
+     removed: Force Mobile View, the PLANNER|FIELD pill, Force Desktop View
+     SessionContext { role, signOut }              hooks/useSession.ts (new)
+       -> FieldProfile "Return to role selection" now actually signs out
+
+3. WHO DECIDED AN AUDIT RECORD                         (D-068, frontend)
+
+   auditActor(record)                                  frontend/src/lib/audit.ts
+     source === 'planner_review'  -> 'planner'  "Confirmed by planner"
+     auto_applied                 -> 'auto'     "Auto"
+     otherwise                    -> 'recorded' "Recorded, not applied"
+     read by Schedule.tsx (audit drawer) and Home.tsx (recent activity)
+     ^ auto_applied === false was rendered as a planner confirmation; on a
+       clean reset that was 67 of 275 rows, every one source = "matching"
+
+4. THE REGISTER GETS ITS WRITER                        (D-069, frontend)
+
+   /raid  ->  Raid.tsx                                 frontend/src/pages/Raid.tsx
+     GET  /raid/candidates  -> proposals  (envelope: {candidates, note})
+     POST /raid             -> accept one into the register
+     PATCH /raid/{id}       -> close an entry
+     exposure is NEVER computed in the browser; probability is never invented;
+     impact_days is sent only for kind === 'risk' (server/raid.py refuses it
+     on an issue rather than dropping it)
+     -> the accepted row shows on Senior Management's Exposure page
+
+   clear_progress()                                    server/demo.py
+     now deletes RaidItem too, so a rehearsal cannot leave an entry citing
+     audit evidence the reset has just removed
+```
 
 ```
 THE ALIAS LOOP — write path exists, read path deliberately NOT wired

@@ -519,4 +519,27 @@ export interface RaidItem {
   exposure: number | null;
   linked_activity_ids: string[];
   created_at: string;
+  source_kind?: string | null;
+  source_id?: string | null;
+  source_note?: string | null;
+}
+
+/**
+ * A register entry the system has *proposed* from the evidence it already
+ * holds — a recurring delay cause in the audit trail, say. It is not in the
+ * register: `committed` is false until a Project Manager accepts it, which is
+ * the same rule D-009 applies to dates. The system proposes; a person decides.
+ */
+export interface RaidCandidate {
+  kind: RaidKind;
+  title: string;
+  description: string;
+  category: string | null;
+  linked_activity_ids: string[];
+  occurrences: number | null;
+  days_lost: number | null;
+  source_kind: string | null;
+  source_id: string | null;
+  source_note: string | null;
+  committed: boolean;
 }

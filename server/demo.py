@@ -60,11 +60,26 @@ def clear_progress(db: Session) -> None:
     reference data, so re-loading it every time would be wasted work and would
     churn rows a planner may be looking at.
     """
-    from server.db import Activity, AuditRecord, Job, LinkedEvent, ReviewQueueItem
+    from server.db import (
+        Activity,
+        AuditRecord,
+        Job,
+        LinkedEvent,
+        RaidItem,
+        ReviewQueueItem,
+    )
 
     # Children before parents: audit records and review items both reference
     # linked events, which reference jobs.
-    for model in (ReviewQueueItem, AuditRecord, LinkedEvent, Job):
+    #
+    # RaidItem is here because a planner can now write to it. Its rows are
+    # adjudications of candidates derived from the audit trail, so once that
+    # trail is cleared a surviving register entry cites evidence the database
+    # no longer holds — and a reset that leaves it behind is not the "known
+    # clean state" the demo script promises. The candidates themselves are
+    # recomputed from the audit records on every read, so they come back on
+    # their own.
+    for model in (ReviewQueueItem, AuditRecord, LinkedEvent, Job, RaidItem):
         db.query(model).delete()
     db.query(Activity).update({
         Activity.actual_start: None,

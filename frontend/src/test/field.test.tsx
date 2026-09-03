@@ -8,6 +8,7 @@ import Field from '../pages/Field';
 import FieldReports from '../pages/FieldReports';
 import FieldClarifications from '../pages/FieldClarifications';
 import FieldProfile from '../pages/FieldProfile';
+import { SessionContext } from '../hooks/useSession';
 import { FieldNav } from '../components/FieldNav';
 import { api } from '../lib/api';
 
@@ -17,13 +18,20 @@ import { api } from '../lib/api';
  * the screen.
  */
 
+// Signing out has to go back through App, which owns the role in state, so
+// the field lane reads it from context. The wrapper mirrors the real tree.
+let lastSignOut = vi.fn();
+
 function wrap(ui: React.ReactNode, path = '/field') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  lastSignOut = vi.fn();
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+      <SessionContext.Provider value={{ role: 'field', signOut: lastSignOut }}>
+        <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+      </SessionContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -287,9 +295,15 @@ describe('profile', () => {
     expect(screen.getByText('2026-10-01')).toBeInTheDocument();
   });
 
-  it('offers a way back to role selection', () => {
+  it('offers a way back to role selection, and it actually signs out', () => {
+    // The button said "Return to role selection" and called setOverride
+    // ('desktop'), which only swapped the shell. For the field role the router
+    // keeps the mobile lane regardless, so it did nothing whatsoever.
     wrap(<FieldProfile />);
-    expect(screen.getByText(/return to role selection/i)).toBeInTheDocument();
+    const button = screen.getByText(/return to role selection/i);
+    expect(button).toBeInTheDocument();
+    fireEvent.click(button);
+    expect(lastSignOut).toHaveBeenCalledTimes(1);
   });
 });
 
