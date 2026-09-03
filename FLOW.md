@@ -388,6 +388,20 @@ server/main.py :: agent_turn()                                     [line 2213]
     │      parse discipline · location · status · date · quantity ("6 out of 18")
     │      ↓  [optional] server/agent_llm.py  — bounded by NAVIS_LLM_TIMEOUT_SECONDS,
     │         one try, no retry; every value re-validated by the same parsers
+    │         interpret() → _validate(outputs, message)            [agent_llm.py]
+    │           · >1 event for 1 span      → whole payload refused, rules only
+    │           · discipline               → must be in DISCIPLINE_VALUES
+    │           · status                   → re-parsed by parse_status()
+    │           · tags                     → re-derived by parse_tags()  (D-006)
+    │           · activity_description     → _validate_description(cand, message)
+    │               1 collapse whitespace; reject control/format chars
+    │               2 reject markup, JSON punctuation, instruction-shaped text
+    │               3 reject if ACTIVITY_ID_RE matches            (D-006)
+    │               4 truncate to 160 chars on a word boundary
+    │               5 reject unless >=75% of tokenize(desc) appear in
+    │                 tokenize(message)                            (D-065)
+    │         a suggestion only fills a slot the parsers left empty; each one it
+    │         fills is named in slots.llm_suggested_fields
     ├─ _merge_quantity(slots, parsed)                              [line 2466]
     ├─ _next_missing(slots)   →  ask for one slot at a time        [line 2527]
     │      (after 2 failed attempts on a slot, move on and leave it for the planner)
@@ -395,7 +409,12 @@ server/main.py :: agent_turn()                                     [line 2213]
     └─ when all required slots are filled:
            _match_slots(slots, session_id)                         [line 2563]
                ↓  runs the REAL matching engine (section 2) on the composed sentence
+               ↓  the engine reads slots.description / tags / date / quantity /
+               ↓  discipline / status — NEVER slots.activity_description
                ↓  returns proposal — activity, confidence, outcome — WITHOUT writing
+               ↓  overwrites activity_description with the matched activity's own
+               ↓  text, and drops "activity_description" from llm_suggested_fields
+               ↓  because the value is now the baseline's, not the model's
            ↓
        supervisor reviews the structured card
            ↓  second call with confirm: true
@@ -1256,9 +1275,53 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Measure the alias learning loop (F4) and the auto-link recall
-headroom. Both closed as measured; no behaviour changed.
-**Date:** 2026-09-02 - **Decisions:** D-061, D-062
+**Task:** Close the `activity_description` validation hole on the agent's
+optional LLM path, carry model provenance through to the audit trail, and make
+the path connectable and checkable from outside the process.
+**Date:** 2026-09-03 - **Decisions:** D-065
+
+```
+THE ONE LLM FIELD THAT WAS NOT RE-VALIDATED — now closed
+
+  POST /agent/turn
+    └─ _fill_slots()                             server/main.py
+         └─ agent_llm.interpret(message, backend)
+              └─ _validate(outputs, message)     server/agent_llm.py
+                   discipline  -> DISCIPLINE_VALUES membership     (was checked)
+                   status      -> parse_status()                   (was checked)
+                   tags        -> parse_tags()          (D-006)    (was checked)
+                   description -> .strip()[:500]        <<< WAS THE HOLE
+                                  now _validate_description(cand, message):
+                                    grounding >= 0.75 of tokenize(desc)
+                                    no ACTIVITY_ID_RE match        (D-006)
+                                    no control chars / markup / instructions
+                                    <= 160 chars, cut on a word boundary
+
+  PROVENANCE, carried the way date_basis already is
+
+    LLMSuggestion.suggested_fields                 server/agent_llm.py
+      -> SlotState.llm_suggested_fields            server/schemas.py
+      -> AgentTurnResponse.llm_suggested_fields    (API only; no UI reads it)
+      -> LinkedEvent.llm_assisted_fields           server/db.py  (new column)
+      -> AuditRecord.llm_assisted_fields           server/db.py  (new column)
+           written by _write_audit(), reached from
+           _apply_confirmed_event_to_schedule() and _apply_rollup_to_schedule()
+           when POST /review/{id}/resolve commits the event
+      NULL, never "[]", on rules-only work.
+
+  WHAT STILL CANNOT COME FROM A MODEL (D-006, regression-tested)
+
+    activity_id   <- MatchingEngine.match_event() only
+    confidence    <- MatchingEngine.match_event() only
+    tags          <- parse_tags() / regex prepass only
+    dates         <- parse_date() only
+    schedule      <- POST /review/{id}/resolve only
+
+  GET /agent/llm-status                            server/main.py
+    └─ agent_llm.probe()  — bounded like interpret(); reports enabled,
+       provider, reachable (null when off), detail, timeout_seconds.
+       Never a key, never a base URL.
+```
 
 ```
 THE ALIAS LOOP — write path exists, read path deliberately NOT wired

@@ -716,6 +716,36 @@ class SlotState(BaseModel):
     # to stop asking a third time when parsing keeps failing.
     asked_slot: Optional[str] = None
     ask_count: int = 0
+    # Which of the slots above were proposed by the optional LLM rather than
+    # parsed from the supervisor's own words. Same purpose as `actual_*_basis`
+    # on an activity: the value is usable, and the reader is told where it came
+    # from instead of having to assume. Empty on every rules-only turn, which
+    # is the default. `activity_id` and `confidence` can never appear here —
+    # the matching engine sets both and the model is not consulted (D-006).
+    llm_suggested_fields: list[str] = []
+
+
+class LLMStatusResponse(BaseModel):
+    """Read-only health of the optional LLM path.
+
+    Deliberately carries no API key, no base URL and no model credentials: a
+    base URL can hold userinfo, and this route is reachable by anyone who can
+    reach the API.
+    """
+
+    enabled: bool
+    provider: str
+    # None when the path is off and nothing was attempted — "we did not look"
+    # must never read as "it works".
+    reachable: Optional[bool] = None
+    detail: str = ""
+    timeout_seconds: float = 0.0
+    # What the LLM is permitted to influence even when it is on, stated in the
+    # response so the guarantee is checkable from outside the process.
+    advisory_only: bool = True
+    never_supplied_by_llm: list[str] = [
+        "activity_id", "confidence", "tags", "dates", "schedule writes",
+    ]
 
 
 class AgentTurnResponse(BaseModel):
@@ -740,3 +770,7 @@ class AgentTurnResponse(BaseModel):
     status_label: Optional[str] = None
     # Closed-set options to show under a question, when it has them.
     choices: Optional[str] = None
+    # Slots on this turn that came from the model rather than from the
+    # supervisor's words. Surfaced so a client *can* mark them; no frontend
+    # reads it yet. Always empty when the LLM is off, which is the default.
+    llm_suggested_fields: list[str] = []

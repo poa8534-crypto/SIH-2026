@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.textio import read_text
 from server import agent_llm
 from server.agent_slots import (
+    ACTIVITY_ID_RE,
     AgentContext,
     DISCIPLINE_VALUES,
     InvalidDate,
@@ -153,6 +154,7 @@ from .schemas import (
     ExportResponse,
     IngestResponse,
     JobResponse,
+    LLMStatusResponse,
     LinkedEventResponse,
     MemoryQueryRequest,
     MemoryQueryResponse,
@@ -497,6 +499,7 @@ def _write_audit(
     model_version: str = "prepass-v1",
     contributing_sources: Optional[list[str]] = None,
     conflict: bool = False,
+    llm_assisted_fields: Optional[str] = None,
 ) -> AuditRecord:
     """Create an immutable audit record. Called on EVERY actual-date write.
 
@@ -504,6 +507,12 @@ def _write_audit(
     field. It is recorded whenever more than one source contributed, so the
     audit trail shows the disagreement and which source the written value
     came from instead of one silently overwriting the other.
+
+    `llm_assisted_fields` is a JSON list, copied verbatim from the LinkedEvent,
+    naming the slots an optional LLM proposed on the field report behind this
+    write. NULL for everything the model never touched, which is every write
+    on a default install. It records how a value was *read*, never who chose
+    it: no model picks an activity or a date (D-006).
     """
     record = AuditRecord(
         id=_uuid(),
@@ -525,6 +534,7 @@ def _write_audit(
             json.dumps(contributing_sources) if contributing_sources else None
         ),
         conflict=conflict,
+        llm_assisted_fields=llm_assisted_fields,
     )
     db.add(record)
     return record
@@ -680,6 +690,7 @@ def _cross_file_conflict(prior, new_value: str, new_file) -> bool:
 def _apply_rollup_to_schedule(db: Session, results,
     prov_index: Optional[EventIndex] = None,
     default_source_file: Optional[str] = None,
+    llm_assisted_fields: Optional[str] = None,
 ) -> int:
     """Write rolled-up actual progress onto the schedule.
 
@@ -696,6 +707,10 @@ def _apply_rollup_to_schedule(db: Session, results,
 
     Every field change gets an immutable AuditRecord
     (source="matching", auto_applied=True).
+
+    `llm_assisted_fields` is provenance carried from the LinkedEvent, naming
+    the slots an optional LLM helped read on the field report behind this
+    write. None on the ingest path, which has no LLM slot-filling at all.
     """
     audits = 0
     touched: set[str] = set()
@@ -754,6 +769,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                 confidence=None,
                 auto_applied=False,
                 model_version=MATCHING_MODEL_VERSION,
+                llm_assisted_fields=llm_assisted_fields,
                 contributing_sources=start_sources + finish_sources,
                 conflict=True,
             )
@@ -792,6 +808,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                     confidence=1.0,
                     auto_applied=True,
                     model_version=MATCHING_MODEL_VERSION,
+                    llm_assisted_fields=llm_assisted_fields,
                     contributing_sources=sides or None,
                     conflict=crossed or len({a.value for a in r.start_assertions}) > 1,
                 )
@@ -823,6 +840,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                     confidence=None,
                     auto_applied=False,
                     model_version=MATCHING_MODEL_VERSION,
+                    llm_assisted_fields=llm_assisted_fields,
                     contributing_sources=[
                         _describe_side(prior.new_value, prior.source_file,
                                        prior.source_line, prior.source_row),
@@ -852,6 +870,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                 confidence=1.0,
                 auto_applied=True,
                 model_version=MATCHING_MODEL_VERSION,
+                llm_assisted_fields=llm_assisted_fields,
                 contributing_sources=all_sources,
             )
             act.actual_qty = new_qty
@@ -885,6 +904,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                 confidence=None,
                 auto_applied=False,
                 model_version=MATCHING_MODEL_VERSION,
+                llm_assisted_fields=llm_assisted_fields,
                 contributing_sources=[
                     a.describe() for a in r.withheld_finish_assertions
                 ] or None,
@@ -926,6 +946,7 @@ def _apply_rollup_to_schedule(db: Session, results,
                         confidence=1.0,
                         auto_applied=True,
                         model_version=MATCHING_MODEL_VERSION,
+                        llm_assisted_fields=llm_assisted_fields,
                         contributing_sources=sides or None,
                         conflict=crossed or len({a.value for a in r.finish_assertions}) > 1,
                     )
@@ -1468,6 +1489,7 @@ def resolve_review_item(
             source_row=le.source_row,
             source_span=le.source_span,
             confidence=le.confidence,
+            llm_assisted_fields=le.llm_assisted_fields,
         )
         audit_count += 1
 
@@ -1760,6 +1782,9 @@ def _apply_confirmed_event_to_schedule(
         accumulator.results(),
         _build_event_index([(event, le.id)]),
         default_source_file=le.source_file,
+        # Carry which slots a model helped read onto every audit row this
+        # write produces, so the trail says so without a join.
+        llm_assisted_fields=le.llm_assisted_fields,
     )
     return audits
 
@@ -3290,6 +3315,29 @@ def _compute_suggested_duration(
     )
 
 
+# ── GET /agent/llm-status ────────────────────────────────────────────────────
+
+@app.get("/agent/llm-status", response_model=LLMStatusResponse)
+def agent_llm_status() -> LLMStatusResponse:
+    """Is the optional LLM path on, and does the backend actually answer?
+
+    Read-only and safe to call from anywhere: it writes nothing, and it never
+    returns an API key, a base URL (which can carry credentials in its
+    userinfo) or a model secret — only the provider name, a reachability
+    verdict and the timeout in force.
+
+    A dead endpoint is reported as `reachable: false` with a reason, never as
+    a 500: an Ollama that is not running is a configuration fact about the
+    venue, not a NAVIS fault, and the deterministic path is unaffected either
+    way. `reachable` is null when the path is off, so "we did not look" cannot
+    be misread as "it works".
+
+    The probe is bounded by the same mechanism `agent_llm.interpret` uses, so
+    a hung model costs one timeout rather than the request.
+    """
+    return LLMStatusResponse(**agent_llm.probe())
+
+
 # ── POST /agent/turn ─────────────────────────────────────────────────────────
 
 @app.post("/agent/turn", response_model=AgentTurnResponse)
@@ -3470,6 +3518,10 @@ def agent_turn(
         discipline_label=discipline_label(slots.discipline),
         status_label=STATUS_LABELS.get(slots.status) if slots.status else None,
         choices=choices,
+        # Which slots came from the model rather than the supervisor's words.
+        # Empty on every rules-only turn. Offered so a client can mark them;
+        # no frontend reads it yet.
+        llm_suggested_fields=list(slots.llm_suggested_fields),
     )
 
 
@@ -3545,16 +3597,32 @@ def _fill_slots(
             slots.location = text[:120]
 
     # ── optional LLM interpretation, then general extraction ──
+    # Advisory only. A suggestion fills a slot the deterministic parsers left
+    # empty and never overwrites one they filled, so the supervisor's own words
+    # always win. Whatever it does fill is recorded in `llm_suggested_fields`
+    # so the value can be attributed later, the same way a date carries its
+    # basis. `activity_id` and `confidence` are absent by construction — the
+    # matching engine sets both, after this function has returned (D-006).
     suggestion = agent_llm.interpret(message, backend=llm_backend)
     if suggestion is not None:
+        from_model: list[str] = []
         if slots.discipline is None and suggestion.discipline:
             slots.discipline = suggestion.discipline
+            from_model.append("discipline")
         if slots.status is None and suggestion.status:
             slots.status = suggestion.status
+            from_model.append("status")
         if not slots.tags and suggestion.tags:
             slots.tags = suggestion.tags
+            from_model.append("tags")
         if suggestion.activity_description and not slots.activity_description:
             slots.activity_description = suggestion.activity_description
+            from_model.append("activity_description")
+        # Accumulated across the session: a slot filled by the model on turn
+        # one is still model-supplied on turn three.
+        for name in from_model:
+            if name not in slots.llm_suggested_fields:
+                slots.llm_suggested_fields = slots.llm_suggested_fields + [name]
 
     if slots.discipline is None:
         slots.discipline = parse_discipline(message)
@@ -3579,7 +3647,7 @@ def _fill_slots(
     # An activity code typed by the supervisor is not a picker; it is a hint.
     # The matcher still decides.
     if slots.activity_id is None:
-        m = re.search(r"\b([A-Z]{2,3}-[A-Z]{2,4}-\d{3,4})\b", message)
+        m = ACTIVITY_ID_RE.search(message)
         if m:
             slots.activity_id = m.group(1)
 
@@ -3807,6 +3875,16 @@ def _match_slots(slots: SlotState, session_id: str) -> None:
         slots.activity_id = None
         slots.activity_description = None
 
+    # Whatever the model may have proposed as a description, the value now held
+    # is the matched activity's own text off the baseline. Leaving
+    # "activity_description" in the provenance list would attribute the
+    # schedule's wording to the model, and that attribution travels to the
+    # audit record — so it is dropped at the moment it stops being true.
+    if "activity_description" in slots.llm_suggested_fields:
+        slots.llm_suggested_fields = [
+            f for f in slots.llm_suggested_fields if f != "activity_description"
+        ]
+
 
 def _create_event_from_slots(
     slots: SlotState, session_id: str, db: Session
@@ -3859,6 +3937,14 @@ def _create_event_from_slots(
         confidence=confidence,
         match_method="agent_turn",
         alternatives=json.dumps(slots.alternatives or []),
+        # Provenance, not content: which of the supervisor's fields the
+        # optional LLM helped read. NULL on a rules-only turn so the column
+        # means "a model touched this" rather than "[]".
+        llm_assisted_fields=(
+            json.dumps(slots.llm_suggested_fields)
+            if slots.llm_suggested_fields
+            else None
+        ),
         reviewed=False,
     )
     db.add(le)

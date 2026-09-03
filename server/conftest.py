@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server.db import Activity, Base
+from server.db import Activity, Base, add_missing_columns
 from server.main import app, get_db
 
 TEST_DB_URL = "sqlite:///dataset/test_epc_progress.db"
@@ -73,6 +73,10 @@ def _seed_activities(db) -> None:
 def db_session():
     """A session on the test database, with the baseline loaded."""
     Base.metadata.create_all(bind=_engine)
+    # create_all cannot alter a table that already exists, and the test
+    # database is a real file that outlives a run. Without this, a column
+    # added since the file was created makes every query naming it fail.
+    add_missing_columns(_engine)
     db = _Session()
     try:
         _seed_activities(db)

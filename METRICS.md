@@ -6,6 +6,8 @@ stale. If this file disagrees with the code, the code is right and this file is
 the bug.
 
 Last reconciled: **2026-09-01**, against commit `1a644eb`.
+§3.1 and §3.2 re-run and confirmed unchanged on **2026-09-03**; §4.1 (the
+optional LLM path) and the §6 test counts were added that day.
 Reproduce everything here with the commands in §6.
 
 ---
@@ -260,6 +262,42 @@ sha256 guard.** To make §3.4 live, the server must be pointed at
 `baseline_schedule_v2.json` *and* the v2 evaluation corpus re-labelled for the
 demo — neither has been done. Until then, the live demo is §3.1.
 
+### 4.1 The optional LLM path — what it may and may not supply
+
+Off by default (`EXTRACTION_PROVIDER=rules`, D-005). Every number in §3 comes
+from the deterministic path with the LLM off, and turning it on does not change
+any of them — it is not in the ranking loop at all.
+
+| Field | Where it comes from when the LLM is ON | Guard |
+|---|---|---|
+| `activity_id` | **MatchingEngine only.** Never the model. | D-006; regression-tested in `server/test_agent_llm.py::TestD006EndToEnd` |
+| `confidence` | **MatchingEngine only.** | same |
+| `tags` | Regex pre-pass only | D-006 |
+| dates | Deterministic date parser only | D-015 |
+| schedule writes | Planner confirmation only | D-009 |
+| `discipline` | Model may propose; membership-tested against a closed vocabulary | D-065 |
+| `status` | Model may propose; re-parsed by our own parser | D-065 |
+| `activity_description` | Model may propose; must be ≥75% grounded in the supervisor's own words, carry no activity id, no markup, ≤160 chars | **D-065** |
+
+**Measured equality, 2026-09-03, live `qwen3:8b`.** The same three-turn field
+report run with `EXTRACTION_PROVIDER=rules` and with `=ollama` produced the
+**same activity id (`PIP-INS-1045`) at the same confidence (0.692)**, with the
+model demonstrably participating in the second run. This is a single scripted
+conversation, not a benchmark: it demonstrates that the model is an interpreter
+rather than a decision-maker; it does not measure how often the two paths agree.
+
+**Safe sentence:** *"The LLM is optional, off by default, and advisory only —
+it can help read a report, it cannot choose what the report links to. We
+checked: same input, model on and off, same activity."*
+
+**Unsafe sentences:**
+- ❌ "Our LLM matches activities." It does not; the matcher does.
+- ❌ "The LLM improves accuracy." Unmeasured, and §3 is computed with it off.
+- ❌ Quoting the rules-vs-ollama equality as an agreement *rate* — it is n=1.
+
+`GET /agent/llm-status` reports which of the above is live at any moment, with
+no key and no base URL in the response.
+
 ---
 
 ## 5. The alias lexicon — STORED SIGNAL ONLY, loop NOT closed
@@ -298,7 +336,7 @@ not, yet.
 ## 6. How to reproduce every number above
 
 ```bash
-python -m pytest -q                         # 580 passed
+python -m pytest -q                         # 868 passed
 cd frontend && npx vitest run                # 55 passed  (635 total)
 python eval.py                               # §3.1
 python eval.py --cv                          # §3.1 (identical)
@@ -313,7 +351,9 @@ python research/bench/ablation.py --quick    # the full ablation
 python research/bench/profile_latency.py     # latency
 ```
 
-Test counts as of this reconciliation: **580 pytest + 55 vitest = 635**.
+Test counts as of this reconciliation: **868 pytest + 55 vitest = 923**
+(2026-09-03, commit on `fix/llm-grounding-and-status`). The 580 figure was
+correct on 2026-09-01 and the suite has grown since; see §7.
 Earlier documents claiming 264, 319, 400 or 435 are historical.
 
 ---
@@ -330,7 +370,7 @@ moved and why.
 | audit records 274 / 259 | `DEMO.md` / `SETUP.md`, `ARCHITECTURE.md` | **275** | Two documents captured different runs |
 | source conflicts 75 | `DEMO.md` | **68** conflict-flagged audit rows | Row counter, and it moved |
 | "25 conflict cases, 21 spreadsheet-vs-DPR" | `DEMO.md` | **18 rows across 17 activities, all 18 spreadsheet-vs-DPR** | `/schedule/conflicts` deduplicates |
-| 435 / 400 / 319 / 264 tests | `README.md`, `Basics.md`, `Audit-1.md`, `SETUP.md` | **580 pytest, 55 vitest** | Suite grew |
+| 435 / 400 / 319 / 264 / 580 tests | `README.md`, `Basics.md`, `Audit-1.md`, `SETUP.md`, this file | **868 pytest, 55 vitest** | Suite grew; 580 was accurate on 2026-09-01 |
 | 700 v2 mentions | `FINDINGS.md` | **814** | Corpus regenerated with near-misses (D-024) |
 | Top-1 99.2% on v2 | superseded by D-024 | **71.4%** held-out | The old corpus contained almost no ambiguous text |
 | "alias lexicon written but never read" | `ROADMAP.md`, `FINDINGS.md` F4 | read path **exists**, still **not wired** | Partly fixed; see §5 |
