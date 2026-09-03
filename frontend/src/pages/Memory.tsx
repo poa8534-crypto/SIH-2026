@@ -208,7 +208,7 @@ function SlipByDiscipline({ rows }: { rows: ProductivityMetric[] }) {
   );
 }
 
-// ── 3. Recurring delay causes ───────────────────────────────────────────────
+// ── 3. Delay causes ─────────────────────────────────────────────────────────
 
 function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
   if (rows.length === 0) {
@@ -226,7 +226,11 @@ function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
         <thead>
           <tr className="border-b border-hair">
             <Th>Cause</Th>
-            <Th right>Occurrences</Th>
+            {/* One occurrence is one field report naming this cause for one
+                activity — not one audit row. A single spreadsheet row writes
+                two or three audit records, and counting those reported one
+                observation as three. See server/raid.py:delay_evidence. */}
+            <Th right>Reports</Th>
             <Th right>Days lost</Th>
             <Th>Affected</Th>
           </tr>
@@ -442,7 +446,7 @@ export default function Memory() {
             <SlipByDiscipline rows={productivity} />
           </Panel>
 
-          <Panel title="Recurring delay causes" span="col-span-6">
+          <Panel title="Delay causes" span="col-span-6">
             <DelayCauses rows={delays} />
           </Panel>
         </div>

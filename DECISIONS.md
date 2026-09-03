@@ -6214,3 +6214,109 @@ pinned by a test.
 `_ADDED_COLUMNS` entries are now also checked against the models, so an entry
 naming a column no model declares — which a fresh database would never get —
 fails a test rather than waiting to be discovered on somebody's older file.
+
+---
+
+## 2026-09-03 / D-071 — A delay cause is counted once per report, not once per audit row
+
+### Status
+Implemented. `server/raid.py` gains the shared counter; `server/main.py` and
+`propose_candidates` both call it. 8 new tests.
+
+### Context
+Walking the demo for the D-064 re-verification found the Memory screen and the
+planner's Exposure screen reporting different numbers for the same four delay
+causes — same phrases, same activities, same days lost, different counts:
+
+```
+                        /memory/query    /raid/candidates
+fencing conflict              2                 2
+holiday delay                 2                 3
+piling rig breakdown          2                 3
+rain delay                    2                 3
+```
+
+D-048 had kept `DELAY_KEYWORDS` as one shared list precisely so the two screens
+"can never name different things". They named the same things and counted them
+differently, because only the *vocabulary* was shared: `_compute_delay_reasons`
+filtered audit rows to `actual_start`/`actual_finish`, and `propose_candidates`
+applied no field filter at all.
+
+**Both were wrong, and the disagreement was the smaller problem.** Each of the
+four causes is named in exactly ONE row of `civil_progress.xlsx`, against one
+activity:
+
+```
+CIV-PLY-1004  actual_start   "Bored Piling — Pipe Rack P1-P12 — 1 day over, piling rig breakdown"
+CIV-PLY-1004  actual_finish  (same row, same sentence)
+CIV-PLY-1004  actual_qty     (same row, same sentence)
+```
+
+One observation. Three audit records, because the roll-up wrote three fields
+from it. So the number both screens displayed was a fact about storage — it
+moved with how many columns the roll-up happened to touch — presented under a
+heading that read "Recurring delay causes". Nothing recurred. A single field
+report was being shown to a judge as two or three occurrences of a recurring
+problem.
+
+### Decision
+`server.raid.delay_evidence(db)` is the one counter. **One occurrence is one
+piece of evidence about one activity**, keyed on
+`(activity_id, source_file, source_span)`. Both callers use it, and it returns
+occurrences, activity ids, the underlying records and days lost together, so
+the two screens cannot disagree about any of them.
+
+The wording followed the number: the RAID title is "Delay cause: X" rather than
+"Recurring delay cause: X", the description says "appears in N field reports"
+rather than "N audit records", and the Memory panel is headed "Delay causes"
+with the column labelled **Reports**.
+
+### Why the key excludes line and row
+The first attempt keyed on
+`(activity, file, line, row, span)` and still returned 2 for three of the four
+causes. The reason is worth recording: **the roll-up records `source_row` on
+the two date writes and leaves it `None` on the quantity write**, from the same
+spreadsheet row. Keying on the locator therefore split one observation back
+into two and re-introduced exactly the storage artefact the function exists to
+remove. The span is the evidence; line and row are provenance for display and
+are not populated consistently enough to identify anything.
+
+That inconsistency is a separate defect in the audit trail — a write that could
+cite its spreadsheet row and does not — and is left open rather than fixed
+here, because changing what provenance an audit row carries is a change to the
+append-only record (D-004) and deserves its own pass.
+
+### Reason
+Two screens disagreeing is a credibility problem; both being wrong in the same
+direction is a correctness one. This system's entire argument is that its
+numbers are traceable to evidence, so a count that is really a count of
+database writes is the worst kind of number to put on a governance screen.
+
+### Alternatives Considered
+- **Adopt the Memory definition (filter to date fields).** Rejected: it still
+  reports 2 for one report that wrote both a start and a finish.
+- **Adopt the RAID definition (all audit rows).** Rejected for the same reason,
+  more so.
+- **Count distinct affected activities.** Rejected: that is a different and
+  already-reported figure (`affected_activities`), and it would report 1 for a
+  cause that hit the same activity in five separate reports.
+- **Leave both and document the discrepancy.** That is what `DEMO.md` said
+  before this entry. It is not a fix, and the honest reading of the evidence is
+  available for the cost of one shared function.
+
+### Affected Areas
+`server/raid.py` (`delay_evidence`, `propose_candidates`), `server/main.py`
+(`_compute_delay_reasons`), `frontend/src/pages/Memory.tsx` (panel title and
+column header), `server/test_delay_evidence.py` (new), `DEMO.md` steps 4a and 5.
+
+### Trade-offs / Consequences
+Every delay figure on the demo drops to **1 report** per cause. That is a
+smaller-sounding number and a truthful one, and it removes a question a judge
+would have been right to ask. Genuine recurrence still counts: two different
+report lines naming the same cause are two occurrences, and the same cause on
+two activities is two — both pinned by tests.
+
+The new tests clear `AuditRecord` and `RaidItem` around each case. Without
+that they passed alone and failed in sequence, counting rows an earlier test
+had left behind — the same mistake as counting audit rows, made in the test
+suite.

@@ -1280,7 +1280,24 @@ the three-role application, and the four defects found while walking it were
 fixed. (b) The optional LLM path's one unvalidated field was closed, model
 provenance now reaches the audit trail, and the path became checkable from
 outside the process.
-**Date:** 2026-09-03 - **Decisions:** D-064, D-065, D-066, D-067, D-068, D-069
+**Date:** 2026-09-03 - **Decisions:** D-064 .. D-071
+
+```
+DELAY CAUSES — ONE COUNTER, TWO SCREENS            (D-071)
+
+  server/raid.py  delay_evidence(db)
+    one occurrence = one (activity_id, source_file, source_span)
+    NOT one audit row: a single spreadsheet row writes actual_start,
+    actual_finish and actual_qty from the same sentence
+    NOT keyed on line/row: the quantity write records source_row=None
+    while the date writes record 23, so the locator splits one
+    observation back into two
+         |
+         +-- server/main.py  _compute_delay_reasons()  -> GET /memory/query
+         +-- server/raid.py  propose_candidates()      -> GET /raid/candidates
+    they reported 2 and 3 for the same evidence before this; both now
+    report 1, and the copy says "report" rather than "occurrence"
+```
 
 ```
 1. THE AGENT SLOT LOOP THAT ATE A CONFIRM              (D-066, server)

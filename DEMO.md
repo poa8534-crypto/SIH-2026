@@ -405,10 +405,18 @@ The planner's **Exposure** screen is where a detected candidate becomes a
 register entry. It has two panels.
 
 **Detected candidates** — four on a clean reset, derived from the audit trail:
-*fencing conflict* (2 occurrences, 21d lost, CIV-DWG-1015), *holiday delay*
-(3, 20d, CIV-FLR-1020), *piling rig breakdown* (3, 1d, CIV-PLY-1004) and *rain
-delay* (3, 1d, CIV-PLY-1006). Each carries the API's own sentence — *"This is a
+*fencing conflict* (1 report, 21d lost, CIV-DWG-1015), *holiday delay*
+(1, 20d, CIV-FLR-1020), *piling rig breakdown* (1, 1d, CIV-PLY-1004) and *rain
+delay* (1, 1d, CIV-PLY-1006). Each carries the API's own sentence — *"This is a
 PROPOSAL: nothing has been written to the register."*
+
+**One report, not one database row.** Each of these four causes is named in
+exactly one line of `civil_progress.xlsx`, against one activity. That single
+line writes two or three audit records (start, finish, sometimes quantity), and
+both screens used to count those — so one observation was reported as two or
+three. It is counted once now, by one shared function, and the screens say
+"report" rather than "occurrence". If a judge asks whether anything recurs on
+this dataset: nothing does, and the screen no longer implies otherwise.
 
 **Register** — empty until you press **Accept into register** on one. Do it
 once on stage: the candidate leaves the proposals list, the register gains a
@@ -439,17 +447,16 @@ execution data, not from the baseline plan.
   (17/30)** are the only two with completed work; the other four — Static
   Equipment, Electrical, Instrumentation, HSE — say *"no completed activities
   yet"* in words rather than drawing an empty bar.
-- **Recurring delay causes**: Fencing Conflict (2 occurrences, 21d), Holiday
-  Delay (2, 20d), Piling Rig Breakdown (2, 1d), Rain Delay (2, 1d). The panel
-  notes that an activity recording more than one cause is counted against each,
-  so the days-lost column is an upper bound.
+- **Delay causes**: Fencing Conflict (1 report, 21d), Holiday Delay (1, 20d),
+  Piling Rig Breakdown (1, 1d), Rain Delay (1, 1d) — the same four, with the
+  same numbers, as the planner's Exposure screen in step 4a. The panel notes
+  that an activity recording more than one cause is counted against each, so
+  the days-lost column is an upper bound.
 
-  > **Known inconsistency — do not show both panels side by side.** The RAID
-  > candidates on step 4a name the same four causes with the same activities and
-  > the same days lost, but count three of them as **3 occurrences** rather than
-  > 2: `GET /memory/query` and `GET /raid/candidates` count the underlying audit
-  > rows differently. Neither number is wrong on its own screen and nothing
-  > downstream depends on it, but a judge who sees both will ask.
+  The column is headed **Reports**, not Occurrences, and it means one field
+  report naming that cause for one activity. Show this panel and step 4a in the
+  same breath if you like — they agree by construction now, because they call
+  the same counter.
 - **Suggested duration** — pick an activity type and get what the actuals say
   the next project should plan for, against the baseline figure. It opens on
   **`PIP-HYT` — 3 of 5 completed**: baseline planned **5d**, suggested **6d**,

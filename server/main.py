@@ -3211,52 +3211,31 @@ def _compute_productivity(
 def _compute_delay_reasons(
     activities: list[Activity], db: Session
 ) -> list[DelayReason]:
-    """Extract delay reasons from audit records and review notes."""
-    # Look at audit records for activities that were delayed
-    reasons: dict[str, list[str]] = defaultdict(list)
+    """Delay causes recorded in the field evidence, worst first.
 
-    # Check audit records mentioning delays
-    audit_records = db.query(AuditRecord).all()
-    for ar in audit_records:
-        if ar.field_changed in ("actual_start", "actual_finish") and ar.source_span:
-            # Extract delay reasons from source spans
-            text = ar.source_span.lower()
-            for reason_kw in [
-                "crane breakdown", "rain delay", "piling rig breakdown",
-                "fencing conflict", "holiday delay", "crane issue",
-                "material delay", "labour shortage", "design change",
-                "weather", "monsoon", "flooding",
-            ]:
-                if reason_kw in text:
-                    reasons[reason_kw].append(ar.activity_id)
+    Counting is delegated to `server.raid.delay_evidence`, which both this
+    screen and the RAID candidates now share. They used to count for
+    themselves and disagreed: this filtered audit rows to
+    actual_start/actual_finish and reported 2, while the candidate detector
+    applied no field filter and reported 3 — for the same single spreadsheet
+    row. One observation was being reported as two or three because the
+    roll-up wrote two or three columns from it.
 
-    # Also check review resolution notes
-    review_items = db.query(ReviewQueueItem).filter(
-        ReviewQueueItem.resolution_note.isnot(None)
-    ).all()
-    for item in review_items:
-        if item.resolution_note:
-            text = item.resolution_note.lower()
-            for reason_kw in reasons.keys():
-                if reason_kw in text:
-                    reasons[reason_kw].append(item.resolved_activity_id or "")
+    `activities` is accepted for the existing call signature; the slip figures
+    come from the same query the shared counter runs, so the two can never
+    disagree about days lost either.
+    """
+    from server.raid import delay_evidence
 
-    # Finish slip per activity, so a cause can report the days behind it.
-    slip_by_activity = {
-        a.activity_id: a.finish_variance_days
-        for a in activities
-        if a.finish_variance_days and a.finish_variance_days > 0
-    }
-
-    results = []
-    for reason, act_ids in sorted(reasons.items(), key=lambda x: -len(x[1])):
-        affected = {a for a in act_ids if a}
-        results.append(DelayReason(
-            reason=reason,
-            frequency=len(act_ids),
-            affected_activities=sorted(affected)[:10],
-            days_lost=sum(slip_by_activity.get(a, 0) for a in affected),
-        ))
+    results = [
+        DelayReason(
+            reason=phrase,
+            frequency=found["occurrences"],
+            affected_activities=found["activity_ids"][:10],
+            days_lost=found["days_lost"],
+        )
+        for phrase, found in delay_evidence(db).items()
+    ]
 
     # Frequency first, then the days behind it — a cause that recurs often but
     # costs nothing ranks below one that recurs less and costs weeks.

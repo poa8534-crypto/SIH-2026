@@ -337,8 +337,8 @@ not, yet.
 ## 6. How to reproduce every number above
 
 ```bash
-python -m pytest -q                         # 904 passed
-cd frontend && npx vitest run                # 101 passed (1005 total)
+python -m pytest -q                         # 912 passed
+cd frontend && npx vitest run                # 101 passed (1013 total)
 python eval.py                               # §3.1
 python eval.py --cv                          # §3.1 (identical)
 python eval.py --schedule dataset/baseline_schedule_v2.json \
@@ -352,7 +352,7 @@ python research/bench/ablation.py --quick    # the full ablation
 python research/bench/profile_latency.py     # latency
 ```
 
-Test counts as of this reconciliation: **904 pytest + 101 vitest = 1005**
+Test counts as of this reconciliation: **912 pytest + 101 vitest = 1013**
 (2026-09-03, commit on `fix/llm-grounding-and-status`). The 580 figure was
 correct on 2026-09-01 and the suite has grown since; see §7.
 Earlier documents claiming 264, 319, 400 or 435 are historical.
@@ -371,7 +371,7 @@ moved and why.
 | audit records 274 / 259 | `DEMO.md` / `SETUP.md`, `ARCHITECTURE.md` | **275** | Two documents captured different runs |
 | source conflicts 75 | `DEMO.md` | **68** conflict-flagged audit rows | Row counter, and it moved |
 | "25 conflict cases, 21 spreadsheet-vs-DPR" | `DEMO.md` | **18 rows across 17 activities, all 18 spreadsheet-vs-DPR** | `/schedule/conflicts` deduplicates |
-| 435 / 400 / 319 / 264 / 580 / 881 tests | `README.md`, `Basics.md`, `Audit-1.md`, `SETUP.md`, this file | **904 pytest, 101 vitest** | Suite grew. 580 was right on 2026-09-01; 881/55 was right on the LLM branch before it merged with the demo-fix branch, which added the frontend tests |
+| 435 / 400 / 319 / 264 / 580 / 881 tests | `README.md`, `Basics.md`, `Audit-1.md`, `SETUP.md`, this file | **912 pytest, 101 vitest** | Suite grew. 580 was right on 2026-09-01; 881/55 was right on the LLM branch before it merged with the demo-fix branch, which added the frontend tests |
 | 700 v2 mentions | `FINDINGS.md` | **814** | Corpus regenerated with near-misses (D-024) |
 | Top-1 99.2% on v2 | superseded by D-024 | **71.4%** held-out | The old corpus contained almost no ambiguous text |
 | "alias lexicon written but never read" | `ROADMAP.md`, `FINDINGS.md` F4 | read path **exists**, still **not wired** | Partly fixed; see §5 |

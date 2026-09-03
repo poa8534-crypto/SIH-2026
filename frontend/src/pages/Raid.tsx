@@ -65,8 +65,14 @@ function CandidateRow({
         </div>
         <p className="mt-1 text-body text-muted">{candidate.description}</p>
         <div className="mt-1 flex items-center gap-3 flex-wrap text-label font-mono uppercase text-muted">
+          {/* "report", matching the Memory panel and the API's own wording:
+              one occurrence is one field report naming this cause for one
+              activity, not one audit row. See server/raid.py:delay_evidence. */}
           {candidate.occurrences !== null && (
-            <span>{candidate.occurrences} occurrences</span>
+            <span>
+              {candidate.occurrences} report
+              {candidate.occurrences === 1 ? '' : 's'}
+            </span>
           )}
           {candidate.days_lost !== null && <span>{candidate.days_lost}d lost</span>}
           {candidate.linked_activity_ids.map((id) => (

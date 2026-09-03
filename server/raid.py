@@ -116,6 +116,72 @@ _CATEGORY = {
 }
 
 
+def delay_evidence(db: Session) -> dict[str, dict]:
+    """How often each delay phrase actually appears in the field evidence.
+
+    **One occurrence is one piece of evidence about one activity**, keyed on
+    (activity, source file, line, row, span) - not one audit row. That
+    distinction is the whole point of this function.
+
+    A single spreadsheet row that reads "Bored Piling - 1 day over, piling rig
+    breakdown" writes three audit records: actual_start, actual_finish and
+    actual_qty. Counting audit rows therefore reports one observation as three,
+    and the number moves when the roll-up happens to touch a different set of
+    fields - which is a fact about storage, not about the project.
+
+    Both callers used to count for themselves and disagreed in exactly that
+    way: the Memory screen filtered to actual_start/actual_finish and reported
+    2, while the RAID candidates applied no field filter and reported 3, for
+    the same one spreadsheet row. Neither was measuring recurrence. On the demo
+    corpus every one of the four phrases occurs exactly ONCE, in one row of
+    civil_progress.xlsx, against one activity.
+
+    Returns, per phrase: `occurrences`, the `activity_ids` touched, the
+    `records` behind it, and `days_lost` - finish slip summed over the distinct
+    affected activities. `days_lost` is attributed, not measured: an activity's
+    whole overrun is credited to every cause recorded against it, so it is an
+    upper bound per cause.
+    """
+    seen: dict[str, set[tuple]] = defaultdict(set)
+    records: dict[str, list[AuditRecord]] = defaultdict(list)
+    activities: dict[str, set[str]] = defaultdict(set)
+
+    for record in db.query(AuditRecord).filter(AuditRecord.source_span.isnot(None)):
+        text = (record.source_span or "").lower()
+        for phrase in DELAY_KEYWORDS:
+            if phrase not in text:
+                continue
+            # Activity + file + the sentence itself. Deliberately NOT the
+            # line or row: the roll-up records those inconsistently — on this
+            # corpus the actual_qty write carries source_row=None while the
+            # two date writes from the same spreadsheet row carry row=23 —
+            # so keying on them splits one observation back into two and
+            # re-introduces the storage artefact this function exists to
+            # remove. The span is the evidence; the locators are provenance
+            # for display.
+            key = (record.activity_id, record.source_file, record.source_span)
+            records[phrase].append(record)
+            if record.activity_id:
+                activities[phrase].add(record.activity_id)
+            seen[phrase].add(key)
+
+    slip = {
+        a.activity_id: a.finish_variance_days
+        for a in db.query(Activity)
+        if a.finish_variance_days and a.finish_variance_days > 0
+    }
+
+    return {
+        phrase: {
+            "occurrences": len(keys),
+            "activity_ids": sorted(activities[phrase]),
+            "records": records[phrase],
+            "days_lost": sum(slip.get(a, 0) for a in activities[phrase]),
+        }
+        for phrase, keys in seen.items()
+    }
+
+
 def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
     """RAID items the evidence suggests. **Writes nothing.**
 
@@ -131,21 +197,12 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
     be exactly the fabrication this module exists to avoid. A planner who wants
     a forward-looking risk raises one and scores it themselves.
     """
-    occurrences: dict[str, list[AuditRecord]] = defaultdict(list)
-    for record in db.query(AuditRecord).filter(AuditRecord.source_span.isnot(None)):
-        text = (record.source_span or "").lower()
-        for phrase in DELAY_KEYWORDS:
-            if phrase in text:
-                occurrences[phrase].append(record)
-
-    if not occurrences:
+    # One shared counter, so this and the Memory screen cannot disagree about
+    # the same evidence again. See delay_evidence().
+    evidence = delay_evidence(db)
+    if not evidence:
         return []
 
-    slip = {
-        a.activity_id: a.finish_variance_days
-        for a in db.query(Activity)
-        if a.finish_variance_days and a.finish_variance_days > 0
-    }
     # Ids already on the register, so the same cause is not proposed twice.
     existing_sources = {
         item.source_id
@@ -154,25 +211,29 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
     }
 
     proposals: list[dict] = []
-    for phrase, records in occurrences.items():
+    for phrase, found in evidence.items():
         if phrase in existing_sources:
             continue
-        activity_ids = sorted({r.activity_id for r in records if r.activity_id})
-        days_lost = sum(slip.get(a, 0) for a in activity_ids)
+        activity_ids = found["activity_ids"]
+        days_lost = found["days_lost"]
+        occurrences = found["occurrences"]
         proposals.append(
             {
                 "kind": "issue",
-                "title": f"Recurring delay cause: {phrase}",
+                # Not "Recurring": on this corpus every phrase occurs exactly
+                # once, and calling a single observation a recurrence is the
+                # overclaim the count itself used to make.
+                "title": f"Delay cause: {phrase}",
                 "description": (
-                    f"'{phrase}' appears in {len(records)} audit record"
-                    f"{'' if len(records) == 1 else 's'} across "
+                    f"'{phrase}' appears in {occurrences} field report"
+                    f"{'' if occurrences == 1 else 's'} across "
                     f"{len(activity_ids)} activit"
                     f"{'y' if len(activity_ids) == 1 else 'ies'}, accounting for "
                     f"{days_lost} day{'' if days_lost == 1 else 's'} of finish slip."
                 ),
                 "category": _CATEGORY.get(phrase, "other"),
                 "linked_activity_ids": activity_ids,
-                "occurrences": len(records),
+                "occurrences": occurrences,
                 "days_lost": days_lost,
                 "source_kind": "delay_analysis",
                 "source_id": phrase,
