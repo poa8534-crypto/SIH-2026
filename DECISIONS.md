@@ -5693,3 +5693,66 @@ ablation and enabling it for the v1 demo would ship seven wrong dates.
 fitting**, and fitting on v1 would contaminate the 254-mention corpus that
 `METRICS.md` publishes the headline from. That is a methodology problem, not a
 tuning one, and it is left open rather than papered over.
+
+## 2026-09-03 / D-064 — DEMO.md realigned to the three-role application
+
+### Status
+Implemented. Documentation only; no application code, schema or matcher
+touched. `scripts/demo_reset.ps1` was inspected and left unchanged.
+
+### Context
+`DEMO.md` was last accurate on 2026-09-01. Since then the product gained
+bundled fonts, a reordered Home, a role picker with a login screen, and an
+entire Senior Management lane (D-060). The rehearsal script therefore described
+a different application: it opened on a dashboard that no longer appears first,
+routed the presenter to the field role with `?view=field` — which no longer
+sets a role at all — claimed a Home tile showing auto-link precision that has
+since been deliberately removed, and had no coverage whatsoever of the third
+persona. A demo script that is one whole role behind the product is worse than
+no script, for the same reason stale documentation is worse than none: it is
+trusted on stage.
+
+### Decision
+Rewrite the runbook around the three roles, in presentation order — planner,
+Senior Management, field — with every figure re-derived from a live run rather
+than carried forward. Every number in the file was reproduced on 2026-09-03
+against commit `18d7075`: the known-good state from `scripts\demo_reset.ps1`
+plus direct table counts, the matcher figures from `python eval.py` on both the
+v1 and v2 corpora, and every screen loaded at 1280×800 in all three roles.
+
+The known-good state table survived verification unchanged (120 / 13 / 266 /
+148 / 135 / 67 / 38 / 275 / 68 / 18-across-17), so `demo_reset.ps1`'s
+`$Expected` assertion is still correct and was not edited.
+
+Three figures did not survive and were replaced with what the application now
+produces: Home's fourth tile is **Completed (38)**, not auto-link precision;
+Memory's Suggested Duration opens on **PIP-HYT**, not PIP-SPL; and the audit
+drawer worked example moved from `PIP-SPL-1028`, which has zero audit records
+on a clean reset, to **`CIV-FNC-1016`**, which has eight and demonstrates
+source conflict, withheld finish and three kinds of provenance in one drawer.
+
+Recall@3 is now quoted as the headline retrieval figure (88.1% overall, 67.6%
+on near-misses) and Recall@20 = 100% is listed among the sentences that must
+not be said, matching `METRICS.md` §8.
+
+### The gotcha this file now leads with
+**`demo_reset.ps1` resets server state; the role is browser state.** A reset
+does not return the browser to the role picker, and a presenter who reloads
+stays in whichever role they last chose. This is the thing most likely to break
+a rehearsal — it looks like a broken reset and is not one — so the routing
+section states it explicitly, gives both recovery paths (Switch Role in the
+sidebar, or clearing `navis.role` in the console), and the on-stage
+troubleshooting list repeats it as its first entry.
+
+### Consequences
+`DEMO.md` now also carries a "do not do this on stage" section covering the
+four traps found while walking the demo: XER export is offered in the dropdown
+and does not emit valid XER; the field agent stalls if the opening sentence
+carries a quantity, because the planned total is then never satisfiable and a
+CONFIRM & SUBMIT pressed in that state is silently discarded; **Force Mobile
+View** drops any role — including Senior Management — into the Field Supervisor
+surface while `navis.role` is unchanged; and the audit drawer labels every
+non-auto-applied record "Confirmed by planner", including system-generated
+conflict and withheld-finish rows nobody touched. None of these were fixed
+here — this task was documentation-only — and the first is already tracked
+against `_generate_xer`.
