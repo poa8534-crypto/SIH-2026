@@ -264,6 +264,13 @@ class LinkedEvent(Base):
     # Matching (matching/ MatchingEngine decision)
     confidence = Column(Float, nullable=False, default=0.0)
     match_method = Column(String, nullable=False, default="prepass")  # prepass/llm/manual
+    # JSON list of slot names the optional LLM proposed on the agent turn that
+    # produced this event, e.g. ["discipline","activity_description"]. NULL on
+    # every rules-only event, which is the default. Carried onto the audit
+    # record when a planner commits the event, so a reviewer can tell which
+    # fields a model touched. Never contains activity_id or confidence: the
+    # matching engine sets both and the model is not consulted (D-006).
+    llm_assisted_fields = Column(Text, nullable=True)
     alternatives = Column(Text, nullable=False, default="")  # JSON list
     decision = Column(String, nullable=False, default="NEW_ACTIVITY")  # AUTO_LINK/REVIEW/NEW_ACTIVITY/REJECTED
     margin = Column(Float, nullable=False, default=0.0)  # top-1 minus top-2 score
@@ -382,6 +389,12 @@ class AuditRecord(Base):
     # Provenance
     model_version = Column(String, nullable=False, default="prepass-v1")
     auto_applied = Column(Boolean, nullable=False, default=False)
+    # JSON list of slot names an LLM proposed on the field report behind this
+    # write, copied from LinkedEvent.llm_assisted_fields when the planner
+    # committed it. NULL for every write that no model touched. This is
+    # provenance, not a value: nothing here was chosen by a model, it records
+    # which of the supervisor's fields a model helped read.
+    llm_assisted_fields = Column(Text, nullable=True)
 
     # Every source that contributed a value for this field, as JSON. Populated
     # when more than one source asserted the field so that a planner can see
@@ -624,16 +637,26 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("linked_events", "reported_date_basis", "VARCHAR"),
     ("linked_events", "asserted_start_basis", "VARCHAR"),
     ("linked_events", "asserted_finish_basis", "VARCHAR"),
+    ("linked_events", "llm_assisted_fields", "TEXT"),
+    ("audit_records", "llm_assisted_fields", "TEXT"),
 )
 
 
-def _add_missing_columns() -> None:
-    """Bring an existing SQLite file up to the current schema."""
+def add_missing_columns(target=None) -> None:
+    """Bring an existing SQLite file up to the current schema.
+
+    `target` defaults to the application engine. It is a parameter because the
+    test database is a real file too: `create_all` cannot add a column to a
+    table that already exists, so a test run against a database created before
+    the newest column failed on every query naming it. The fixtures call this
+    for the same reason production does.
+    """
     from sqlalchemy import inspect, text
 
-    inspector = inspect(engine)
+    target = target if target is not None else engine
+    inspector = inspect(target)
     tables = set(inspector.get_table_names())
-    with engine.begin() as conn:
+    with target.begin() as conn:
         for table, column, sqltype in _ADDED_COLUMNS:
             if table not in tables:
                 continue
@@ -643,10 +666,14 @@ def _add_missing_columns() -> None:
             conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {sqltype}"))
 
 
+# Kept as the historical private name; `add_missing_columns` is the one to call.
+_add_missing_columns = add_missing_columns
+
+
 def init_db() -> None:
     """Create all tables."""
     Base.metadata.create_all(bind=engine)
-    _add_missing_columns()
+    add_missing_columns()
 
 
 def get_db():

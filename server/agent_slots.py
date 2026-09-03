@@ -36,6 +36,14 @@ DISCIPLINE_LABELS: dict[str, str] = {
 DISCIPLINE_VALUES = tuple(DISCIPLINE_LABELS)
 
 
+# The shape of a schedule activity id: PIP-ERC-1034, CIV-FNC-1016, INS-LOOP-1090.
+# Two callers need it and they must agree, so it lives here rather than being
+# written twice: `server.main` reads an id a supervisor typed as a *hint* to the
+# matcher, and `server.agent_llm` rejects any model-supplied description that
+# names one at all (D-006 — the model does not choose activities).
+ACTIVITY_ID_RE = re.compile(r"\b([A-Z]{2,3}-[A-Z]{2,4}-\d{3,4})\b")
+
+
 def discipline_label(value: Optional[str]) -> Optional[str]:
     """Human label for a stored discipline value.
 

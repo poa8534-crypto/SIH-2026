@@ -313,6 +313,73 @@ deliberately messy `dpr_day_11_messy.txt` it produces **identical linking
 results**. See ARCHITECTURE.md §7C. It is wired up and guarded, but it is
 not the default for a reason.
 
+### Connecting a provider
+
+Two providers are supported. `.env.example` documents every variable; the
+short version:
+
+**Ollama — the offline-safe option, and the one to use at a venue.** It runs
+on the presenting machine and needs no internet at all.
+
+```powershell
+ollama serve
+ollama pull qwen3:8b
+```
+
+Then in `.env`: `EXTRACTION_PROVIDER=ollama`.
+
+**OpenAI-compatible** — OpenAI itself, a gateway, or anything speaking
+`/v1/chat/completions`. In `.env`: `EXTRACTION_PROVIDER=openai` and
+`OPENAI_API_KEY=...`, optionally `OPENAI_BASE_URL` for a non-OpenAI endpoint.
+
+> ⚠ **The venue may have no internet.** The OpenAI path needs outbound
+> network, and conference Wi-Fi blocks it often enough to plan around. A demo
+> that depends on it can fail for reasons that have nothing to do with the
+> product. Use Ollama locally, or leave the provider on `rules`. Whichever you
+> choose, rehearse with `EXTRACTION_PROVIDER` unset at least once and confirm
+> the demo is unchanged — it will be.
+
+**Never commit a key.** `.env` is gitignored and must stay that way;
+`.env.example` carries placeholders only.
+
+### Checking what is actually live
+
+`GET /agent/llm-status` answers it from outside the process:
+
+```powershell
+curl.exe http://127.0.0.1:8000/agent/llm-status
+```
+
+With the default configuration:
+
+```json
+{"enabled": false, "provider": "rules", "reachable": null,
+ "detail": "The LLM path is off. EXTRACTION_PROVIDER is 'rules', so every turn is handled by the deterministic parsers. This is the default.",
+ "timeout_seconds": 5.0, "advisory_only": true,
+ "never_supplied_by_llm": ["activity_id", "confidence", "tags", "dates", "schedule writes"]}
+```
+
+`reachable` is `null` when the path is off and nothing was attempted, `true`
+when the backend answered a probe, and `false` with a reason when it did not.
+An unreachable Ollama is reported, never raised — it is a fact about the
+venue, not a NAVIS fault. The route returns no API key and no base URL; a base
+URL can carry credentials in its userinfo, so it is withheld deliberately.
+
+### What turning it on does and does not change
+
+The model is an interpreter. It may propose a discipline, a status and a
+one-line description, each re-validated deterministically before use — the
+description must be grounded in the supervisor's own words (D-065). It can
+never pick an activity id, produce a confidence, supply a tag (D-006) or a
+date, or write to the schedule.
+
+Verified on 2026-09-03 against a live `qwen3:8b`: the same three-turn field
+report run with `EXTRACTION_PROVIDER=rules` and with `=ollama` matched the
+**same activity id, `PIP-INS-1045`, at the same confidence, 0.692** — with the
+model demonstrably participating in the second run (it supplied `status` and a
+description). That equality is the point: the model changes how the text is
+read, never what it links to.
+
 ---
 
 ## Layout

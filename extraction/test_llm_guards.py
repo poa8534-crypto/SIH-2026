@@ -276,3 +276,73 @@ def test_forecast_guard_still_beats_llm_completion():
         event = _extract_one(span, StubBackend(status="completed"))
         assert event.asserted_start is None, span
         assert event.asserted_finish is None, span
+
+
+# ── The shared activity-id pattern (D-065) ──────────────────────────────────
+#
+# One regex, two callers with opposite intents: server.main reads an id a
+# supervisor typed as a hint to the matcher, and server.agent_llm rejects any
+# model-supplied description that names one. They must agree about what an id
+# looks like, so the pattern is defined once and asserted here.
+
+from server.agent_slots import ACTIVITY_ID_RE  # noqa: E402
+
+
+@pytest.mark.parametrize("text", [
+    "PIP-ERC-1034",
+    "CIV-FNC-1016",
+    "INS-LOOP-1090",
+    "spool erection PIP-ERC-1034 complete",
+])
+def test_activity_id_pattern_matches_schedule_ids(text):
+    assert ACTIVITY_ID_RE.search(text) is not None
+
+
+@pytest.mark.parametrize("text", [
+    '24"-P-1001-A1A',            # a line tag, not a schedule id
+    "EF-1",                      # an equipment tag
+    "PSV-03",
+    "TS-04",
+    "pip-erc-1034",              # lowercase is not the schedule's shape
+    "spool erection is complete",
+])
+def test_activity_id_pattern_does_not_match_tags_or_prose(text):
+    assert ACTIVITY_ID_RE.search(text) is None
+
+
+def test_every_baseline_activity_id_matches_the_pattern():
+    """If the schedule's id shape ever changes, both callers must be revisited."""
+    import json
+    raw = json.load(open(SCHEDULE, encoding="utf-8"))
+    activities = raw if isinstance(raw, list) else raw.get("activities", [])
+    assert activities
+    for act in activities:
+        aid = act["activity_id"]
+        assert ACTIVITY_ID_RE.fullmatch(aid), aid
+
+
+# ── The ingest path does not persist the model's description ────────────────
+
+def test_llm_description_on_the_ingest_path_reaches_no_persisted_field():
+    """The grounding rule is agent-path-only, and this records why.
+
+    On ingest, `activity_description` is set on the in-memory ExtractedEvent
+    and read by nothing: it is not a LinkedEvent column, matching/ never
+    references it, and it is never shown to a supervisor for confirmation. If
+    that ever changes, this test fails and the description must be grounded
+    here too — the same way `server.agent_llm._validate_description` does it.
+    """
+    from server.db import LinkedEvent
+
+    ev = _extract_one(
+        "Spool erection on the 24 inch header is complete.",
+        StubBackend(
+            activity_description="Zone B hydrotest also finished at 1.5x pressure",
+            discipline="piping",
+            status="completed",
+        ),
+    )
+    # The model's sentence is carried on the event object...
+    assert ev.activity_description == "Zone B hydrotest also finished at 1.5x pressure"
+    # ...and there is nowhere for it to land.
+    assert not hasattr(LinkedEvent, "activity_description")

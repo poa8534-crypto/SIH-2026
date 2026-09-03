@@ -5757,6 +5757,175 @@ conflict and withheld-finish rows nobody touched. None of these were fixed
 here — this task was documentation-only — and the first is already tracked
 against `_generate_xer`.
 
+## 2026-09-03 / D-065 — An LLM-suggested description must be the supervisor's own words
+
+### Status
+Implemented. Server-side only; no frontend file touched, no matcher change,
+no threshold or feature weight altered. `python eval.py` is bit-identical
+before and after (87.2% top-1, 100.0% auto-link precision, 50.4% coverage).
+
+### Context
+`server/agent_llm._validate()` re-checks every field a model returns, except
+one. `discipline` is membership-tested against a closed vocabulary. `status` is
+re-parsed by our own parser rather than trusted. `tags` are re-derived from the
+regex pre-pass and never taken from the model at all (D-006).
+`activity_description` got `.strip()[:500]` and nothing else.
+
+That was the only LLM-supplied value reaching `SlotState` without deterministic
+re-validation, and it is not inert. It is returned to the client on every turn
+that still has a slot pending, it is persisted in `ConversationTurn.slots_filled`,
+and it feeds `_quantity_relevant()` — so an invented word like "spools" changes
+which questions the supervisor is asked. An unfaithful model could put words in
+a supervisor's mouth and have them recorded as their report.
+
+Two things narrow the blast radius, and both were verified rather than assumed:
+
+* By the time the **confirmation card** is rendered, `_match_slots()` has
+  already overwritten `activity_description` with the matched activity's own
+  text off the baseline. So the card shows the schedule's wording, not the
+  model's. The exposure is the pending-slot turns, the conversation record and
+  the question flow — real, but narrower than "the supervisor confirms the
+  model's sentence".
+* On the **ingest** path the same field is set on the in-memory
+  `ExtractedEvent` and read by nothing: it is not a `LinkedEvent` column,
+  `matching/` never references it, and it is never persisted. The hole was
+  agent-path-only. `extraction/test_llm_guards.py` now pins that boundary so a
+  future change that persists it fails a test.
+
+### Decision
+`_validate_description(candidate, source_message)` gates the field. Five rules,
+each rejecting to `None`, logging which one fired, and letting the
+deterministic path continue:
+
+1. **Grounding.** Containment, not similarity: at least **75%** of the
+   description's content tokens must appear in the supervisor's own message.
+2. **No activity id.** Rejected on sight — naming an activity is choosing one,
+   which is what D-006 forbids.
+3. **No structure.** Whitespace is collapsed (folding away layout tabs and
+   newlines); surviving control or format characters, markdown, table pipes,
+   JSON punctuation and anything reading as an instruction are rejected.
+4. **Length 160, not 500**, truncated on a word boundary.
+5. **Multi-output is refused, not truncated.**
+
+### The grounding threshold: 0.75, and why
+Measured, not guessed. `matching.textutils.tokenize` is reused rather than
+reimplemented, so the check sees the same normalisation the matcher does —
+stopwords dropped, field abbreviations expanded (`erected` → `erection`, so a
+tense change stays faithful), tag-like tokens (`24-inch`, `p-1001`) kept whole.
+
+On a hand-built set of 21 pairs — 12 faithful restatements of real DPR lines,
+9 that add a location, quantity, scope or judgement the message never carried —
+the classes separate cleanly:
+
+```
+lowest faithful    0.833
+highest unfaithful 0.556
+separating band    (0.556, 0.833]
+```
+
+Any cut in [0.60, 0.80] gives zero errors on that set. **0.75** is taken
+because it sits inside the band with margin on both sides and states a rule
+that can be defended out loud: three in four of the description's content words
+must be the supervisor's own.
+
+The bias toward rejecting is deliberate and asymmetric on purpose. A false
+reject costs nothing — the deterministic path then supplies the supervisor's
+own sentence, which is what should have been shown anyway. A false accept is
+words put in their mouth. **The calibration set is small (n=21) and
+hand-built: it bounds the rule's behaviour on realistic input, it does not
+establish an error rate, and it must not be quoted as one.**
+
+### Multi-output: refused rather than truncated
+`interpret()` sends one message as one span, so the contract is one event back.
+`_validate` previously read `outputs[0]` and dropped the rest silently. Picking
+one arbitrarily is silent truncation of model output — the bug class this
+repository has been closing everywhere else — and merging would fuse two
+different readings of one sentence into a record the supervisor never gave. The
+whole payload is refused and the rules path continues, which is the same
+posture as every other LLM failure here.
+
+### Provenance (the second half of this change)
+The project already carries `date_basis` end to end so a planner can tell an
+asserted date from an inferred one. Slot values now carry the same distinction.
+
+`LLMSuggestion.suggested_fields` → `SlotState.llm_suggested_fields` →
+`AgentTurnResponse.llm_suggested_fields` (available to the UI; **no frontend
+file was changed and nothing renders it yet**) → `LinkedEvent.llm_assisted_fields`
+→ `AuditRecord.llm_assisted_fields` when a planner commits the event. NULL
+rather than `[]` on rules-only work, so the column means "a model touched this"
+instead of "we checked".
+
+One correction fell out of building it. `_match_slots()` replaces
+`activity_description` with the baseline activity's own text, so continuing to
+list that field as model-supplied would attribute the *schedule's* wording to
+the model — and that attribution travels to the audit record. The claim is now
+dropped at the moment it stops being true.
+
+### Connectability
+`GET /agent/llm-status` reports whether the path is on, which provider is
+configured, whether the backend answered a bounded probe, and the timeout in
+force. It never returns an API key or a base URL — a base URL can carry
+credentials in its userinfo — and a dead endpoint is reported as
+`reachable: false` with a reason rather than a 500. `reachable` is three-valued:
+`null` when the path is off and nothing was attempted, so "we did not look"
+cannot be misread as "it works". An opted-in provider that fell back to
+`NullBackend` is reported as unreachable, not healthy.
+
+### Verified, not asserted
+With a live `qwen3:8b`, the same three-turn field report was run with
+`EXTRACTION_PROVIDER=rules` and with `=ollama`. Both matched **`PIP-INS-1045`
+at confidence 0.692**, and the model demonstrably participated in the second
+run (`llm_suggested_fields: ["status", "activity_description"]`, probe
+`reachable: true`). Identical linking with the model in the loop is the
+demonstration that it is an interpreter and not a decision-maker.
+
+### Alternatives Considered
+- **Embedding similarity instead of token containment.** Rejected: it would
+  need the encoder on the interactive path, it scores paraphrase rather than
+  faithfulness, and a fluent invention scores well against its own subject.
+- **Sanitising rather than rejecting** (strip the ungrounded clause). Rejected:
+  editing a sentence and then showing it to the person who supposedly said it
+  is worse than not showing it.
+- **Dropping `activity_description` from the LLM contract entirely.** Tempting,
+  and it would close the hole absolutely. Rejected because the field is the
+  one thing the model is actually good at — reading intent out of informal
+  prose — and it is already displaced by `_match_slots` before anything is
+  committed. Grounding keeps the benefit and removes the risk.
+- **A tighter threshold (0.90).** Rejected: it rejects ordinary rephrasings for
+  no gain, since the measured unfaithful ceiling is 0.556.
+
+### Affected Areas
+`server/agent_llm.py` (validation, provenance, `probe`), `server/agent_slots.py`
+(`ACTIVITY_ID_RE`, extracted so the two callers cannot disagree),
+`server/main.py` (merge point, `_match_slots`, `_create_event_from_slots`,
+`_apply_rollup_to_schedule`, `_write_audit`, the new route),
+`server/schemas.py`, `server/db.py` (two additive nullable columns),
+`server/conftest.py`, `.env.example`, `SETUP.md`.
+
+### Trade-offs / Consequences
+Easier: trusting what a supervisor is shown, and auditing which fields a model
+read. Harder: a legitimate but heavily reworded description is now dropped —
+accepted, because the fallback is the supervisor's own sentence.
+
+`server/db.add_missing_columns` is now parameterised by engine and the test
+fixture calls it. `create_all` cannot add a column to an existing table, and
+the test database is a real file that outlives a run, so every additive column
+used to break the suite on a stale local file. That is fixed once, here.
+
+One test premise changed, and it was the premise that was wrong, not the
+product: `test_valid_output_is_accepted` asserted a description naming "the 24
+inch header" against a message that only said "spool erection is done". The
+ungrounded variant is now asserted as a rejection.
+
+### Future Notes
+If the ingest path ever persists or displays `activity_description`, it must be
+grounded the same way; `extraction/test_llm_guards.py` fails if it starts
+reaching a persisted field. If the frontend renders `llm_suggested_fields`, it
+should read as attribution ("read by the assistant"), never as a warning — the
+value was still re-validated deterministically.
+
+---
+
 ## 2026-09-03 / D-066 — A give-up must be remembered, and a confirm must never vanish
 
 ### Status
