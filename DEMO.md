@@ -1,8 +1,9 @@
 # Running the demo
 
-> **Every number in this file was reproduced on 2026-09-03 against commit
-> `18d7075`**, from a clean `scripts\demo_reset.ps1` run on a live server, with
-> every screen loaded at 1280×800 in all three roles. Demo-database counts are
+> **Every number in this file was re-walked end to end on 2026-09-03 against
+> commit `f9336bf`**, from a clean `scripts\demo_reset.ps1` run on a live server,
+> with every screen loaded at 1280×800 in all three roles and every quoted
+> string read back off the running application. Demo-database counts are
 > for the **120-activity demo schedule** (`dataset/baseline_schedule.json`) —
 > they are not evaluation-corpus figures and not research-corpus figures.
 > `METRICS.md` §1 explains the difference and is the authority for any
@@ -247,7 +248,7 @@ above. It costs one sentence and it removes the question from the Q&A.
 
 ### 1. Home — the state of the project
 
-The page is four rows deep and the order matters; walk it top to bottom.
+The page is three rows deep and the order matters; walk it top to bottom.
 
 **Four tiles:** **120** activities in baseline, **67** with actual dates,
 **135** awaiting your review, **38** completed.
@@ -309,6 +310,14 @@ confidence, and its outcome. Auto-linked rows link through to the activity.
 
 Drop the same file again to show the duplicate guard: it is refused by content
 hash with an explanation, not an error.
+
+> **This step does not leave you back at the known-good state.** Re-ingesting
+> `dpr_day_03.txt` last rather than in sequence produces **272** audit records,
+> not 275 — on a source conflict the stored value is whichever source arrived
+> last, so order changes what gets recorded. Activities, events, the review
+> queue and the actual dates all come back to 120 / 266 / 135 / 67 / 38. If you
+> are going to quote the audit count later, run `scripts\demo_reset.ps1` again
+> first.
 
 ### 3. Reconcile — resolve one
 
@@ -390,7 +399,7 @@ not a single line."*
 audit records only because that run had already confirmed a review item.
 `CIV-FNC-1016` has eight on a clean reset, before anyone touches anything.)*
 
-### 5a. Exposure — adjudicate what the evidence proposes
+### 4a. Exposure — adjudicate what the evidence proposes
 
 The planner's **Exposure** screen is where a detected candidate becomes a
 register entry. It has two panels.
@@ -434,6 +443,13 @@ execution data, not from the baseline plan.
   Delay (2, 20d), Piling Rig Breakdown (2, 1d), Rain Delay (2, 1d). The panel
   notes that an activity recording more than one cause is counted against each,
   so the days-lost column is an upper bound.
+
+  > **Known inconsistency — do not show both panels side by side.** The RAID
+  > candidates on step 4a name the same four causes with the same activities and
+  > the same days lost, but count three of them as **3 occurrences** rather than
+  > 2: `GET /memory/query` and `GET /raid/candidates` count the underlying audit
+  > rows differently. Neither number is wrong on its own screen and nothing
+  > downstream depends on it, but a judge who sees both will ask.
 - **Suggested duration** — pick an activity type and get what the actuals say
   the next project should plan for, against the baseline figure. It opens on
   **`PIP-HYT` — 3 of 5 completed**: baseline planned **5d**, suggested **6d**,
@@ -501,7 +517,7 @@ recurring delay causes, with occurrence counts and days lost — and every one
 carries `"committed": false` and the note *"This is a PROPOSAL: nothing has
 been written to the register."*
 
-**The planner adjudicates them on their own Exposure screen** (step 5a). Until
+**The planner adjudicates them on their own Exposure screen** (step 4a). Until
 somebody does, this panel stays empty, and that is the design rather than a
 gap: *the system will propose a risk from the evidence; it will not enter one
 into the register on its own authority.* Same rule as D-009 for dates, applied
@@ -648,7 +664,7 @@ Baseline v2, thresholds calibrated on dev, reported on a held-out test split of
 
 ### Recall@3 — the one to quote, and the one that replaces Recall@20
 
-The review queue shows a planner **three** candidates (`server/main.py:443`;
+The review queue shows a planner **three** candidates (`server/main.py:491`;
 the `candidates` useMemo in `Reconcile.tsx`), so k=3 is the number that
 describes the product.
 
@@ -733,9 +749,11 @@ is browser state and survives every reset. Sign in from the picker, or use
 the key did not write — check that the browser is not blocking site data, and
 fall back to `localStorage.setItem('navis.role','planner')` in the console.
 
-**You are stuck in the field UI on a desktop.** Something set the mobile
-override. Click the monitor icon in the field header (Force Desktop View), or
-clear it: `localStorage.removeItem('view_override'); location.reload()`.
+**You are looking at the field UI and did not mean to be.** Then the signed-in
+role is Field Supervisor — nothing else can put you there any more. Use *Return
+to role selection* on the Profile tab, or clear the key:
+`localStorage.removeItem('navis.role'); location.reload()`. A stale
+`view_override` from an older build is inert and can be ignored.
 
 **The UI shows an error banner.** It is the server's own message. The API is
 probably not running, or is on a different port — check `frontend/.env` against
@@ -745,7 +763,7 @@ the uvicorn port (there is no `.env` by default, and the UI assumes :8000).
 panel fetches independently and one failing endpoint cannot blank the screen.
 
 **The RAID register is empty.** Expected on a clean reset — see step 7. To
-fill it, accept a candidate on the planner's Exposure screen (step 5a).
+fill it, accept a candidate on the planner's Exposure screen (step 4a).
 
 **The field agent asks something you cannot answer.** It gives up on any one
 slot after two tries and moves on, so keep answering and it will reach the

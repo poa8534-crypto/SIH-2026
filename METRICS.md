@@ -42,7 +42,7 @@ easy to overstate by accident.
 |---|---|
 | **Top-1** | When forced to rank one candidate first, how often is the correct activity ranked #1? |
 | **Recall@20** | How often is the correct activity anywhere inside the top 20 retrieved candidates? |
-| **Recall@k** | How often is the correct activity anywhere inside the top *k* ranked candidates. **k=3 is the one that describes the product**: review items store `decision.candidates[:3]` (`server/main.py:443`) and the Reconcile screen de-duplicates the suggested id against the first alternative (the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`), so a planner is shown exactly **three** activities. k=20 is the retrieval ceiling (`top_k`, `matching/config.py:34`) and nobody ever sees it. |
+| **Recall@k** | How often is the correct activity anywhere inside the top *k* ranked candidates. **k=3 is the one that describes the product**: review items store `decision.candidates[:3]` (`server/main.py:491`) and the Reconcile screen de-duplicates the suggested id against the first alternative (the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`), so a planner is shown exactly **three** activities. k=20 is the retrieval ceiling (`top_k`, `matching/config.py:34`) and nobody ever sees it. |
 | **Auto-link precision** | When NAVIS is confident enough to auto-link without human review, how often is that auto-link correct? |
 | **Coverage** | What percentage of cases NAVIS handles automatically at the selected precision requirement. |
 | **Near-miss** | Deliberately ambiguous mentions where several sibling activities are plausible because the discriminating token was **removed**. |
@@ -406,7 +406,7 @@ moved and why.
   unplanned scope sets them on that new row.
 - ❌ Quoting **Recall@20 = 100%** to mean "the planner can always fix it from
   the queue". The queue shows **three** candidates, not twenty
-  (`server/main.py:443`; the `candidates` useMemo in `Reconcile.tsx`). The honest figure is
+  (`server/main.py:491`; the `candidates` useMemo in `Reconcile.tsx`). The honest figure is
   **Recall@3 = 88.1%** overall and **67.6% on near-misses** (§3.2): on roughly
   a third of near-miss items the correct activity is **not in front of the
   planner at all**, and resolving it needs the search/reassign path rather
