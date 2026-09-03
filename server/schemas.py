@@ -716,6 +716,12 @@ class SlotState(BaseModel):
     # to stop asking a third time when parsing keeps failing.
     asked_slot: Optional[str] = None
     ask_count: int = 0
+    # Slots the agent has given up on. `asked_slot` and `ask_count` are both
+    # cleared the moment a turn finds nothing left to ask, so on their own they
+    # cannot remember a decision to stop asking: the slot came back one turn
+    # later and the session looped forever. Abandonment is recorded here
+    # instead, where nothing resets it.
+    abandoned_slots: list[str] = []
 
 
 class AgentTurnResponse(BaseModel):

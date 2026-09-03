@@ -459,3 +459,111 @@ class TestUnreportableInputIsRefused:
         assert turn.user_message == "I love kenny boy"
         assert turn.extracted_intent == "not_a_progress_report"
         assert turn.event_created is False
+
+
+# ── The slot loop that swallowed a confirm (D-066) ──────────────────────────
+
+class TestTheAgentNeverAsksTheSameSlotForever:
+    """`_next_missing` skips a slot it has asked about twice. That decision
+    used to survive exactly one turn, because the branch that finds nothing
+    left to ask clears `asked_slot` and `ask_count` — the two fields the skip
+    was read from. The slot came back, and a CONFIRM & SUBMIT arriving in that
+    state was consumed by the re-ask instead of submitting."""
+
+    def test_the_conversation_from_the_old_demo_script_completes(self, client):
+        """DEMO.md's own opener carried a quantity, which is what triggered it."""
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 6 nos")
+        _turn(client, sid, "Today")
+        _turn(client, sid, "6")
+        _turn(client, sid, "8 nos planned in total")
+        done = _turn(client, sid, "", confirm=True)
+        assert done["event_created"] is True
+        assert done["review_item_id"]
+
+    def test_a_slot_given_up_on_is_not_asked_again(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 6 nos")
+        _turn(client, sid, "Today")
+        asked = _turn(client, sid, "no idea")["agent_message"]
+        assert "planned" in asked.lower()
+        # Second unusable answer: this is the last time it may be asked.
+        _turn(client, sid, "still no idea")
+        after = _turn(client, sid, "still no idea")
+        assert "planned" not in after["agent_message"].lower()
+        assert after["awaiting_confirmation"] is True
+
+    def test_the_give_up_survives_the_next_turn(self, client):
+        """The regression itself: abandoned, then asked again one turn later."""
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 6 nos")
+        _turn(client, sid, "Today")
+        _turn(client, sid, "no idea")
+        _turn(client, sid, "no idea")
+        ready = _turn(client, sid, "no idea")
+        assert ready["awaiting_confirmation"] is True
+        assert "planned_quantity" in ready["slots"]["abandoned_slots"]
+        # ...and still abandoned on the turn after that, which is where it
+        # used to reappear and eat the confirm.
+        again = _turn(client, sid, "")
+        assert again["pending_slots"] == []
+        assert "planned_quantity" in again["slots"]["abandoned_slots"]
+
+
+class TestAConfirmIsNeverSilentlySwallowed:
+    def test_a_confirm_with_an_open_slot_says_why(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done")
+        reply = _turn(client, sid, "", confirm=True)
+        # Not submitted — the date is genuinely missing and filing it would
+        # record something the supervisor never completed.
+        assert reply["event_created"] is False
+        # But not silent either.
+        assert "before I can send" in reply["agent_message"]
+        assert "date" in reply["agent_message"].lower()
+
+    def test_a_confirm_with_everything_filled_still_submits(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done")
+        _turn(client, sid, "yesterday")
+        _turn(client, sid, "6 out of 18")
+        done = _turn(client, sid, "", confirm=True)
+        assert done["event_created"] is True
+
+
+class TestThePlannedTotalQuestionCanBeAnswered:
+    """"How many were planned in total?" accepted no plain answer at all."""
+
+    def test_a_bare_number_fills_the_planned_total(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 6 nos")
+        asked = _turn(client, sid, "Today")
+        assert "planned in total" in asked["agent_message"]
+        answered = _turn(client, sid, "18")
+        assert answered["slots"]["planned_quantity"] == 18
+        assert answered["slots"]["quantity"] == 6
+        assert answered["awaiting_confirmation"] is True
+
+    def test_a_number_with_a_unit_also_works(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 6 nos")
+        _turn(client, sid, "Today")
+        answered = _turn(client, sid, "18 nos")
+        assert answered["slots"]["planned_quantity"] == 18
+
+    def test_an_over_planned_report_is_flagged_not_clamped(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done, 20 nos")
+        _turn(client, sid, "Today")
+        answered = _turn(client, sid, "18")
+        assert answered["slots"]["quantity"] == 20
+        assert answered["slots"]["planned_quantity"] == 18
+        assert answered["slots"]["quantity_over_planned"] is True
+
+    def test_the_explicit_x_out_of_y_form_is_unchanged(self, client):
+        sid = str(uuid.uuid4())
+        _turn(client, sid, "spool erection on the 24 inch header is done")
+        _turn(client, sid, "yesterday")
+        answered = _turn(client, sid, "6 out of 18")
+        assert answered["slots"]["quantity"] == 6
+        assert answered["slots"]["planned_quantity"] == 18

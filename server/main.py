@@ -3383,6 +3383,15 @@ def agent_turn(
     confidence = 0.0
     choices = None
 
+    # Record a give-up before asking what is still missing. `_next_missing`
+    # skips a slot it has already asked about twice, but it reads that from
+    # `asked_slot`/`ask_count`, and the branch below clears both the moment a
+    # turn finds nothing left to ask. The skip therefore lasted exactly one
+    # turn: the slot came back on the next one, the session re-asked forever,
+    # and a `confirm` arriving in that state was consumed by the re-ask.
+    # Writing it to `abandoned_slots` first makes the decision durable.
+    _abandon_exhausted(slots)
+
     pending_slot = _next_missing(slots)
     pending = [pending_slot] if pending_slot else []
 
@@ -3395,6 +3404,14 @@ def agent_turn(
         choices = choices_for(pending_slot) if pending_slot else None
     elif pending_slot:
         agent_msg = question_for(pending_slot, countable_noun=_countable_noun(slots))
+        if req.confirm:
+            # A confirm cannot be honoured while a slot is genuinely open —
+            # submitting would file a record the supervisor never completed.
+            # But it must not vanish either: silently answering a confirm with
+            # a question makes the button look broken. Say why.
+            agent_msg = (
+                "I need one more thing before I can send this. " + agent_msg
+            )
         slots.ask_count = slots.ask_count + 1 if slots.asked_slot == pending_slot else 1
         slots.asked_slot = pending_slot
         choices = choices_for(pending_slot)
@@ -3535,6 +3552,30 @@ def _fill_slots(
                 "I did not catch the numbers. How many are done, and how many "
                 "were planned in total?"
             )
+        elif (
+            answering == "planned_quantity"
+            and slots.planned_quantity is None
+            and parsed.planned is None
+            and parsed.completed is not None
+        ):
+            # "How many were planned in total?" answered with a bare figure.
+            # `parse_quantity` reports a lone number as the *completed* amount,
+            # because in isolation that is what one usually is — but against
+            # this question it is the planned total. Without this branch the
+            # answer landed nowhere: `_merge_quantity` drops a completed
+            # figure when `quantity` is already set, `planned_quantity` stayed
+            # None, and the agent asked the same question again. Any reply
+            # short of an explicit "6 out of 18" was unanswerable.
+            slots.planned_quantity = parsed.completed
+            if parsed.uom and not slots.uom:
+                slots.uom = parsed.uom
+            if (
+                slots.quantity is not None
+                and slots.quantity > slots.planned_quantity
+            ):
+                # Kept as reported and surfaced, never clamped — same rule as
+                # _merge_quantity.
+                slots.quantity_over_planned = True
         else:
             _merge_quantity(slots, parsed)
     elif answering == "location" and slots.location is None:
@@ -3728,6 +3769,32 @@ def _countable_noun(slots: SlotState) -> str:
     return "units"
 
 
+def _exhausted(slots: SlotState, name: str) -> bool:
+    """True when the agent has stopped asking about `name`.
+
+    Either it asked twice on this slot without getting a value, or a previous
+    turn already recorded the give-up. Both halves are needed: `ask_count` is
+    the live signal, `abandoned_slots` is the memory of it, because the turn
+    that finds nothing left to ask clears `asked_slot` and `ask_count` before
+    the next turn runs.
+    """
+    return name in slots.abandoned_slots or (
+        slots.asked_slot == name and slots.ask_count >= 2
+    )
+
+
+def _abandon_exhausted(slots: SlotState) -> None:
+    """Record a give-up permanently, before the counters that imply it are cleared."""
+    name = slots.asked_slot
+    if (
+        name
+        and slots.ask_count >= 2
+        and name not in slots.abandoned_slots
+        and getattr(slots, name, None) is None
+    ):
+        slots.abandoned_slots = slots.abandoned_slots + [name]
+
+
 def _next_missing(slots: SlotState) -> Optional[str]:
     """The one slot to ask about next, or None when the update is complete.
 
@@ -3738,15 +3805,15 @@ def _next_missing(slots: SlotState) -> Optional[str]:
     order = ["discipline", "location", "status", "date"]
     for name in order:
         if getattr(slots, name) is None:
-            if slots.asked_slot == name and slots.ask_count >= 2:
+            if _exhausted(slots, name):
                 continue
             return name
     if _quantity_relevant(slots):
         if slots.quantity is None:
-            if not (slots.asked_slot == "quantity" and slots.ask_count >= 2):
+            if not _exhausted(slots, "quantity"):
                 return "quantity"
         elif slots.planned_quantity is None:
-            if not (slots.asked_slot == "planned_quantity" and slots.ask_count >= 2):
+            if not _exhausted(slots, "planned_quantity"):
                 return "planned_quantity"
     return None
 
