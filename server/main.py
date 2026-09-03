@@ -117,6 +117,7 @@ from .db import (
     AliasLexicon,
     AuditRecord,
     Base,
+    init_db,
     BaselineVersion,
     ConversationTurn,
     IntegrityError,
@@ -229,8 +230,19 @@ DATA_DATE = date(2026, 9, 15)  # Latest date in our dataset
 
 @app.on_event("startup")
 def startup():
-    """Initialize DB and seed baseline schedule."""
-    Base.metadata.create_all(bind=engine)
+    """Initialize DB and seed baseline schedule.
+
+    `init_db()` rather than a bare `create_all`: SQLite cannot add a column to
+    a table that already exists, so `create_all` alone silently leaves an
+    older database one column short and every query naming that column fails
+    at read time. This ran `create_all` directly, which meant the additive
+    migration in `db._ADDED_COLUMNS` only ever executed when someone happened
+    to run the seed or reset scripts — the server itself never applied it.
+    The `llm_assisted_fields` columns (D-065) made that visible: a demo
+    database that had not been re-seeded answered GET /raid/candidates with a
+    500.
+    """
+    init_db()
     db = next(get_db())
     try:
         _seed_schedule_if_empty(db)

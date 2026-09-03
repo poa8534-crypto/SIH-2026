@@ -6156,3 +6156,61 @@ themselves.
 A rehearsal that accepts a candidate no longer leaves a stray row behind.
 Verified: reset → `raid_item` 0, and the documented state (120 / 135 / 275 /
 266 / 67 / 38) is unchanged.
+
+---
+
+## 2026-09-03 / D-070 — The server migrates its own database, or the migration does not exist
+
+### Status
+Implemented. Found by merging D-065 into D-064..D-069 and starting the API
+against a demo database that had not been re-seeded.
+
+### Context
+`server/db.py` has carried an additive migration since the `*_basis` columns:
+`_ADDED_COLUMNS` plus `add_missing_columns()`, called from `init_db()`. SQLite
+cannot add a column to a table that already exists, so `create_all` alone
+leaves an older file one column short and every query naming that column fails
+at read time — which is exactly what that helper is for.
+
+The API's startup hook called `Base.metadata.create_all(bind=engine)`
+**directly**. It never called `init_db()`. So the migration only ran when
+somebody happened to execute `scripts/seed.py` or `scripts/reset_demo.py`,
+which do call it. For four columns that was invisible: anyone adding one also
+reset their demo data, and the reset applied it on the way past.
+
+D-065 added `llm_assisted_fields` to `linked_events` and `audit_records`. Its
+own tests passed — `server/conftest.py` calls `add_missing_columns` on the test
+engine — and `GET /agent/llm-status` does not touch those tables, so the branch
+looked healthy. Starting the merged server against the real
+`dataset/epc_progress.db` gave `GET /raid/candidates` a 500:
+`no such column: audit_records.llm_assisted_fields`.
+
+### Decision
+Startup calls `init_db()`. One line, and the migration now runs in the process
+that actually serves requests.
+
+### Reason
+A migration that only executes on a code path a developer might not take is not
+a migration, it is a convention. The three places that create a database —
+the server, the seed script, the test fixtures — must all reach it, and the
+server is the one that matters at a demo, where nobody is going to re-seed
+first.
+
+The near miss is the part worth keeping: a green suite and a working health
+endpoint said nothing about this, because the fixtures migrated and the health
+endpoint reads no table. Only starting the real server against a real database
+showed it.
+
+### Affected Areas
+`server/main.py` (`startup`), `server/test_startup_migration.py` (new, 14
+tests). The regression test was confirmed to fail against the old one-line
+version before being kept.
+
+### Trade-offs / Consequences
+Startup does slightly more work: one `inspect()` per table in `_ADDED_COLUMNS`,
+and an `ALTER TABLE` only where a column is genuinely absent. Idempotent, and
+pinned by a test.
+
+`_ADDED_COLUMNS` entries are now also checked against the models, so an entry
+naming a column no model declares — which a fresh database would never get —
+fails a test rather than waiting to be discovered on somebody's older file.
