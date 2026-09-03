@@ -3728,6 +3728,32 @@ def _countable_noun(slots: SlotState) -> str:
     return "units"
 
 
+def _exhausted(slots: SlotState, name: str) -> bool:
+    """True when the agent has stopped asking about `name`.
+
+    Either it asked twice on this slot without getting a value, or a previous
+    turn already recorded the give-up. Both halves are needed: `ask_count` is
+    the live signal, `abandoned_slots` is the memory of it, because the turn
+    that finds nothing left to ask clears `asked_slot` and `ask_count` before
+    the next turn runs.
+    """
+    return name in slots.abandoned_slots or (
+        slots.asked_slot == name and slots.ask_count >= 2
+    )
+
+
+def _abandon_exhausted(slots: SlotState) -> None:
+    """Record a give-up permanently, before the counters that imply it are cleared."""
+    name = slots.asked_slot
+    if (
+        name
+        and slots.ask_count >= 2
+        and name not in slots.abandoned_slots
+        and getattr(slots, name, None) is None
+    ):
+        slots.abandoned_slots = slots.abandoned_slots + [name]
+
+
 def _next_missing(slots: SlotState) -> Optional[str]:
     """The one slot to ask about next, or None when the update is complete.
 
@@ -3738,15 +3764,15 @@ def _next_missing(slots: SlotState) -> Optional[str]:
     order = ["discipline", "location", "status", "date"]
     for name in order:
         if getattr(slots, name) is None:
-            if slots.asked_slot == name and slots.ask_count >= 2:
+            if _exhausted(slots, name):
                 continue
             return name
     if _quantity_relevant(slots):
         if slots.quantity is None:
-            if not (slots.asked_slot == "quantity" and slots.ask_count >= 2):
+            if not _exhausted(slots, "quantity"):
                 return "quantity"
         elif slots.planned_quantity is None:
-            if not (slots.asked_slot == "planned_quantity" and slots.ask_count >= 2):
+            if not _exhausted(slots, "planned_quantity"):
                 return "planned_quantity"
     return None
 
