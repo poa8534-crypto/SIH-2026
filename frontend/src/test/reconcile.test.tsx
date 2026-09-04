@@ -39,6 +39,7 @@ const ITEM: ReviewItem = {
   raw_text: 'spool erection on the 24 inch header is done',
   confidence: 0.61,
   tags: [],
+  discipline: 'piping',
   suggested_activity_id: 'PIP-ERC-1034',
   alternatives: ['PIP-ERC-1035'],
   created_at: '2026-09-15T09:00:00',
@@ -149,5 +150,100 @@ describe('planner clarify action', () => {
     for (const label of [/Confirm Match/, /Mark New/, /Reject/]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+  });
+});
+
+/**
+ * The bodies the three closing actions put on POST /review/{id}/resolve.
+ *
+ * `ResolveRequest` accepts exactly confirm / reassign / create / ignore, and
+ * 'confirm' commits `item.activity_id` regardless of any activity_id in the
+ * body. All three actions were sending something the server could not act on
+ * correctly, so these assert the payload rather than the rendering.
+ */
+describe('planner resolve actions', () => {
+  const RESOLVED = {
+    review_item_id: 'rq-7742',
+    resolution: 'confirm',
+    activity_id: 'PIP-ERC-1034',
+    alias_entries_created: 1,
+    audit_records_created: 1,
+    message: 'Review item resolved',
+  };
+
+  it('confirms the matcher proposal without an activity_id', async () => {
+    const resolve = vi.spyOn(api, 'resolveReview').mockResolvedValue(RESOLVED as never);
+    await ready();
+
+    fireEvent.click(screen.getByText(/Confirm Match/));
+
+    await waitFor(() => expect(resolve).toHaveBeenCalledTimes(1));
+    // 'confirm' commits item.activity_id; sending one would be ignored.
+    expect(resolve).toHaveBeenCalledWith('rq-7742', { action: 'confirm' });
+  });
+
+  it('reassigns when the planner picks a different candidate', async () => {
+    const resolve = vi.spyOn(api, 'resolveReview').mockResolvedValue(RESOLVED as never);
+    await ready();
+
+    // '2' selects the second ranked candidate — PIP-ERC-1035, not the
+    // suggestion. Confirming that as 'confirm' would have linked the event to
+    // PIP-ERC-1034, the activity the planner just passed over.
+    fireEvent.keyDown(window, { key: '2' });
+    fireEvent.click(screen.getByText(/Confirm Match/));
+
+    await waitFor(() => expect(resolve).toHaveBeenCalledTimes(1));
+    expect(resolve).toHaveBeenCalledWith('rq-7742', {
+      action: 'reassign',
+      activity_id: 'PIP-ERC-1035',
+    });
+  });
+
+  it('creates a new activity with both an id and a description', async () => {
+    const resolve = vi.spyOn(api, 'resolveReview').mockResolvedValue(RESOLVED as never);
+    await ready();
+
+    fireEvent.click(screen.getByText(/Mark New/));
+    fireEvent.change(await screen.findByPlaceholderText(/short description/i), {
+      target: { value: '  Tie-in spool at the north header  ' },
+    });
+    fireEvent.click(screen.getByText('Save Activity'));
+
+    await waitFor(() => expect(resolve).toHaveBeenCalledTimes(1));
+    // The id is derived from the item, not the clock, so it is stable across
+    // a retry and cannot collide with a second planner in the same second.
+    expect(resolve).toHaveBeenCalledWith('rq-7742', {
+      action: 'create',
+      new_activity_id: 'NEW-PIP-RQ7742',
+      new_description: 'Tie-in spool at the north header',
+    });
+  });
+
+  it('rejects as ignore, and only on the second press', async () => {
+    const resolve = vi.spyOn(api, 'resolveReview').mockResolvedValue(RESOLVED as never);
+    await ready();
+
+    fireEvent.click(screen.getByText(/Reject/));
+    expect(resolve).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText(/Press again to reject/));
+
+    await waitFor(() => expect(resolve).toHaveBeenCalledTimes(1));
+    expect(resolve).toHaveBeenCalledWith('rq-7742', { action: 'ignore' });
+  });
+
+  it('confirms a withheld finish date rather than reassigning it', async () => {
+    // The server accepts only confirm and ignore on this reason, so a
+    // differing candidate must not turn Confirm into a reassign.
+    vi.spyOn(api, 'getReviewQueue').mockResolvedValue([
+      { ...ITEM, reason: 'defaulted_finish_date' },
+    ]);
+    const resolve = vi.spyOn(api, 'resolveReview').mockResolvedValue(RESOLVED as never);
+    await ready();
+
+    fireEvent.keyDown(window, { key: '2' });
+    fireEvent.click(screen.getByText(/Confirm Match/));
+
+    await waitFor(() => expect(resolve).toHaveBeenCalledTimes(1));
+    expect(resolve).toHaveBeenCalledWith('rq-7742', { action: 'confirm' });
   });
 });

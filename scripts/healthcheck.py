@@ -134,8 +134,13 @@ def check_embedder() -> None:
 def check_endpoints(base: str) -> None:
     status, docs = request(base, "GET", "/openapi.json", timeout=30)
     n_endpoints = sum(len(v) for v in docs["paths"].values()) if status == 200 else 0
-    record("GET  /openapi.json (/docs)", status == 200 and n_endpoints == 8,
-           f"{n_endpoints} endpoints exposed")
+    # The expected count is pinned, not a floor: an operation appearing or
+    # disappearing without anyone noticing is exactly what this check is for.
+    # It read 8 long after the surface had grown to 30 (D-072 counted them),
+    # so the check had been failing on every run regardless of server health.
+    expected_endpoints = 30
+    record("GET  /openapi.json (/docs)", status == 200 and n_endpoints == expected_endpoints,
+           f"{n_endpoints} endpoints exposed, expected {expected_endpoints}")
 
     # 1. GET /schedule
     status, body = request(base, "GET", "/schedule")

@@ -6400,3 +6400,139 @@ an untracked file records nothing.
 The audit is now dated to a commit, which means it goes stale on the next merge
 that touches a cited line. That is the intended cost: a document with a basis
 commit can be re-checked mechanically, and one without cannot be checked at all.
+
+
+---
+
+## 2026-09-04 / D-073 — The Reconcile screen speaks the server's resolve vocabulary
+
+### Context
+`POST /review/{item_id}/resolve` is the only route in NAVIS that commits an
+actual date onto the schedule (D-009). `ResolveRequest` accepts exactly four
+actions — `confirm`, `reassign`, `create`, `ignore` — and the Reconcile screen
+sent three bodies, none of which the server could act on as the planner
+intended:
+
+1. `handleConfirm` sent `{action: 'confirm', activity_id: <chosen candidate>}`.
+   The server's confirm branch commits `item.activity_id` and never reads
+   `req.activity_id`, so a planner who rejected the matcher's proposal, picked
+   candidate 2 and pressed Confirm linked the event to candidate 1 — with a
+   success toast, an audit row and an alias-lexicon entry all recording the
+   activity the planner had just passed over. This is the serious one: it is a
+   silent wrong write into an append-only trail, not a visible failure.
+2. `handleNew` sent `{action: 'new_activity', new_description}`. There is no
+   such action, and `create` additionally requires `new_activity_id`. Every
+   press returned 400; the button had never worked.
+3. `handleReject` sent `{action: 'reject'}`, which only
+   `_resolve_defaulted_finish` accepts (it normalises it to `ignore`). On every
+   other queue item it fell through to `Unknown action: reject`.
+
+The whole 912-test suite passed throughout, because no test asserted a frontend
+request body against the set of actions the backend accepts. `FLOW.md` §13.1
+had carried this as a LIVE BUG and `Design/NAVIS_BACKEND_UI_AUDIT.md` as three
+open P0s (D-072).
+
+### Decision
+Correct the client to the server's vocabulary rather than widen the server's.
+The server's four actions are each audited differently — a reassignment writes
+an `event_reassigned` row carrying the activity it moved away from, a creation
+writes `activity_created` — so collapsing them client-side would have cost the
+audit trail the distinction that makes it readable.
+
+1. **Confirm versus reassign is decided by the chosen candidate.**
+   `suggested_activity_id` is projected straight from `item.activity_id`
+   (`get_review_queue`), so a selected candidate that differs from
+   `item.activity_id` is exactly the case the server calls `reassign`.
+   `confirm` is now sent with no `activity_id` at all, which is honest about
+   the fact that the field is not read.
+2. **A withheld finish date always confirms.** For
+   `reason == 'defaulted_finish_date'` the link is already committed and
+   `_resolve_defaulted_finish` 400s on anything but confirm/ignore, so the
+   candidate list must not be allowed to turn Confirm into a reassign. The
+   frontend now mirrors that reason as a named constant.
+3. **The new-activity id is derived from the review item, not the clock.** The
+   id is `NEW-<first three letters of discipline>-<first six of item.id>`. A
+   timestamp suffix — the obvious alternative — collides between two planners
+   acting in the same second, and a retry after a failed POST would mint a
+   second activity for one event. Deriving it from `item.id` makes the same
+   item always name the same activity, so a duplicate surfaces as the server's
+   own 409 rather than as a silent second row in the schedule.
+4. **`discipline` is projected onto `ReviewQueueItemResponse`.** It is already
+   on the `LinkedEvent` the endpoint reads; without it the generated id could
+   not name the trade it belongs to.
+5. **The composer is cleared in `onSuccess`, never eagerly.** Clearing
+   `newMode`/`newDesc` at mutate time closed the form and discarded the typed
+   description whenever the POST failed, leaving the planner nothing to retry
+   with.
+
+### Alternatives Considered
+- **Teach the server to accept `new_activity` and `reject`.** Rejected. The
+  vocabulary is the audited one and is already exercised by `test_server.py`;
+  adding aliases would double the surface every future reader has to check, to
+  spare one screen a one-word change.
+- **Have `confirm` honour `req.activity_id`.** Rejected: it would erase the
+  distinction between `linked_event_confirmed` and `event_reassigned` in the
+  audit trail, which is precisely the evidence a planner needs to see later.
+- **Collect `new_activity_id` from the planner in a second input.** Deferred,
+  not rejected. It is the better long-run answer, but it is a UI change to a
+  screen whose mockups are the spec; a derived id makes the action work now
+  without inventing a control the design does not have.
+
+### Verification
+- `frontend/src/test/reconcile.test.tsx` gained five tests that assert the
+  request body itself: confirm without an `activity_id`, reassign after picking
+  candidate 2, create with both fields and the derived id, reject as `ignore`
+  and only on the second press, and a `defaulted_finish_date` item confirming
+  rather than reassigning. These are the tests whose absence let the defect
+  live through 912 passing ones.
+- `npx vitest run` — 106 passed. `npx tsc --noEmit` — clean.
+- `python -m pytest -q` — 912 passed. `matching/` and `extraction/` are
+  untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`frontend/src/pages/Reconcile.tsx`, `frontend/src/lib/api.ts`,
+`frontend/src/types.ts`, `frontend/src/test/reconcile.test.tsx`,
+`server/schemas.py`, `server/main.py` (`get_review_queue` projection only).
+
+### Trade-offs / Consequences
+The generated activity id is not a planner's own naming. It is unique, stable
+and legible about its origin (`NEW-PIP-…`), but it will not match a WBS code
+anyone outside NAVIS would recognise; the created activity also carries the
+placeholder `wbs_path` `1.99.99.1` the server has always assigned. That is the
+cost of making the action work without adding a control the design spec does
+not contain, and it is the thing to revisit when the screen next gains a field.
+
+---
+
+## 2026-09-04 / D-074 — The health check's endpoint count is pinned to the real surface
+
+### Context
+`scripts/healthcheck.py` asserted `n_endpoints == 8` against `/openapi.json`.
+The API has 30 operations (D-072 counted them independently), so the check had
+been reporting `[FAIL] GET /openapi.json (/docs)` on every run against a
+perfectly healthy server, for as long as the surface has been larger than 8.
+
+### Decision
+Pin the expected count to 30 and say so in the output
+(`30 endpoints exposed, expected 30`). Deliberately a pinned equality, not a
+`>=` floor: the value of the check is that an operation appearing or
+disappearing unnoticed trips it. A floor would have silently tolerated exactly
+the drift the check exists to catch, and would also have hidden the removal of
+an endpoint.
+
+The cost is that adding an endpoint now requires updating one number. That is
+the intended friction — it is the moment to ask whether the new operation
+belongs in `FLOW.md` too.
+
+### Alternatives Considered
+- **Drop the assertion and only check status 200.** Rejected: that reduces the
+  check to "the server answers", which the other 29 checks already establish.
+- **Change it to `>= 8`.** Rejected for the reason above.
+
+### Verification
+`python scripts/healthcheck.py` against a locally running
+`uvicorn server.main:app` — 31 passed, 0 failed. It had been 30 passed,
+1 failed before the change.
+
+### Affected Areas
+`scripts/healthcheck.py`.

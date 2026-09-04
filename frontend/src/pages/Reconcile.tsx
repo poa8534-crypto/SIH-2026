@@ -34,6 +34,13 @@ import {
  * confidence figure, and a timestamp already in the queue row. See D-031.
  */
 
+/**
+ * `ReviewQueueItem.reason` for a finish date the roll-up refused to write.
+ * Mirrors DEFAULTED_FINISH_REASON in server/main.py. The link on such an item
+ * is already committed, so the server accepts only confirm and ignore for it.
+ */
+const DEFAULTED_FINISH_REASON = 'defaulted_finish_date';
+
 const PRIORITY_WEIGHT: Record<string, number> = {
   high: 3,
   medium: 2,
@@ -324,15 +331,52 @@ export default function Reconcile() {
     clarifyMutation.mutate({ id: selectedItem.id, question: question.trim() });
   };
 
+  /**
+   * Commit the planner's choice of activity.
+   *
+   * The server's 'confirm' ignores any activity_id in the body and commits
+   * `item.activity_id` — the matcher's own proposal. Picking a different
+   * candidate and pressing Confirm therefore used to link the event to the
+   * activity the planner had just rejected, silently and with a success
+   * toast. Choosing a different activity is 'reassign', which is the only
+   * action that reads `activity_id`.
+   *
+   * `suggested_activity_id` is projected straight from `item.activity_id`
+   * (`get_review_queue` in server/main.py), so comparing against
+   * `item.activity_id` is comparing against what 'confirm' would commit.
+   *
+   * A withheld finish date is the exception: the link is already committed
+   * and not in question there, and `_resolve_defaulted_finish` rejects
+   * anything but confirm/ignore. Those items always confirm.
+   */
   const handleConfirm = () => {
     if (!selectedItem || !selectedCandidate) return;
+    const isReassign =
+      selectedItem.reason !== DEFAULTED_FINISH_REASON &&
+      selectedCandidate !== selectedItem.activity_id;
     resolveMutation.mutate({
       id: selectedItem.id,
-      body: { action: 'confirm', activity_id: selectedCandidate },
-      activityId: selectedCandidate,
+      body: isReassign
+        ? { action: 'reassign', activity_id: selectedCandidate }
+        : { action: 'confirm' },
+      activityId: isReassign ? selectedCandidate : selectedItem.activity_id,
     });
   };
 
+  /**
+   * Create a new activity for work the baseline never planned.
+   *
+   * The action is 'create' and the server requires BOTH `new_activity_id` and
+   * `new_description`; the old call sent 'new_activity' — not one of the four
+   * actions — with no id, so every attempt came back 400 and the button had
+   * never worked.
+   *
+   * The id is derived from the review item, not from a clock. A timestamp
+   * suffix collides between two planners working the same second, and a retry
+   * after a failed POST would mint a second activity for one event; deriving
+   * it from `item.id` makes the same item always name the same activity, so a
+   * duplicate is a 409 the planner can see rather than a silent second row.
+   */
   const handleNew = () => {
     if (!selectedItem) return;
     if (!newMode) {
@@ -343,11 +387,22 @@ export default function Reconcile() {
       setActionError('Description is required for new activity.');
       return;
     }
+    const disc =
+      (selectedItem.discipline || '').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'GEN';
+    const suffix = selectedItem.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase();
+    const newActivityId = `NEW-${disc}-${suffix}`;
     resolveMutation.mutate({
       id: selectedItem.id,
-      body: { action: 'new_activity', new_description: newDesc },
-      activityId: null,
+      body: {
+        action: 'create',
+        new_activity_id: newActivityId,
+        new_description: newDesc.trim(),
+      },
+      activityId: newActivityId,
     });
+    // newMode and newDesc are cleared in onSuccess, never here: clearing them
+    // now would close the composer and discard the typed description if the
+    // POST fails, leaving the planner nothing to retry with.
   };
 
   /**
@@ -363,9 +418,13 @@ export default function Reconcile() {
       return;
     }
     setRejectArmed(false);
+    // The server's four actions are confirm/reassign/create/ignore. 'reject'
+    // is accepted only on the withheld-finish path, where it is normalised to
+    // 'ignore'; on every other item it was a 400. Send 'ignore', which both
+    // paths accept and which means the same thing.
     resolveMutation.mutate({
       id: selectedItem.id,
-      body: { action: 'reject' },
+      body: { action: 'ignore' },
       activityId: null,
     });
   };

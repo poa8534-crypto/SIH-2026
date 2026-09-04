@@ -101,10 +101,19 @@ export const api = {
     return fetchWithHandler(`/review-queue?status=${encodeURIComponent(status)}`);
   },
 
+  /**
+   * Close a review item. POST /review/{item_id}/resolve.
+   *
+   * The four actions are the server's own (`ResolveRequest` in
+   * server/schemas.py): 'confirm' commits the matcher's proposal and ignores
+   * any activity_id sent with it, 'reassign' commits `activity_id` instead,
+   * 'create' needs both `new_activity_id` and `new_description`, and 'ignore'
+   * closes the item without writing anything. Anything else is a 400.
+   */
   resolveReview: (
     itemId: string,
     body: {
-      action: 'confirm' | 'new_activity' | 'reject';
+      action: 'confirm' | 'reassign' | 'create' | 'ignore';
       activity_id?: string;
       new_activity_id?: string;
       new_description?: string;
@@ -126,7 +135,7 @@ export const api = {
    *
    * It deliberately does not resolve the item — the server sets the question
    * and clears any previous answer, and leaves the queue entry pending. Use
-   * resolveReview for the three actions that close an item.
+   * resolveReview for the actions that close an item.
    *
    * `asked_by` is optional and left unset by this app: ClarificationAskRequest
    * defaults it server-side, and there is no authentication here, so there is

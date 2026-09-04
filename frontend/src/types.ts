@@ -22,6 +22,9 @@ export interface ReviewItem {
   raw_text: string;
   confidence: number;
   tags: string[];
+  /** The linked event's discipline, projected by GET /review-queue. Optional
+   *  because an older server does not send it. */
+  discipline?: string | null;
   suggested_activity_id: string | null;
   /**
    * Every ranked candidate, each carrying its own score and rationale.

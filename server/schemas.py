@@ -112,6 +112,9 @@ class ReviewQueueItemResponse(BaseModel):
     raw_text: str
     confidence: float
     tags: list[str] = []
+    # The linked event's discipline. Projected so the Reconcile screen can name
+    # it in an activity id when a planner creates a new activity from an item.
+    discipline: Optional[str] = None
     suggested_activity_id: Optional[str] = None
     alternatives: list[ReviewCandidate] = []
     created_at: datetime

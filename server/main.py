@@ -1408,6 +1408,7 @@ def get_review_queue(
                 raw_text=le.raw_text if le else "",
                 confidence=le.confidence if le else 0.0,
                 tags=le.tag_list() if le else [],
+                discipline=le.discipline if le else None,
                 suggested_activity_id=item.activity_id,
                 # Each candidate carries its OWN score and rationale. A row
                 # written before candidate scores were serialised yields

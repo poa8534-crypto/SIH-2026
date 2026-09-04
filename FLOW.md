@@ -333,6 +333,14 @@ frontend/src/pages/Reconcile.tsx
 server/main.py :: get_review_queue()                               [line 1089]
     ↓
 planner chooses confirm | reassign | create | ignore
+    │  Reconcile.tsx maps three buttons onto those four actions (D-073):
+    │    Confirm Match  → 'confirm'  when the selected candidate is
+    │                     item.activity_id (which is what confirm commits),
+    │                     'reassign' + activity_id when it differs, and always
+    │                     'confirm' on a 'defaulted_finish_date' item
+    │    Mark New       → 'create' + new_activity_id (NEW-<DISC>-<item.id[0:6]>)
+    │                     + new_description
+    │    Reject         → 'ignore', on the second armed press
     ↓  api.resolveReview(itemId, body)    POST /review/{item_id}/resolve
 server/main.py :: resolve_review_item()                            [line 1131]
     │
@@ -816,8 +824,9 @@ State              TanStack Query cache only. localStorage holds exactly two UI
 Failure behaviour  A failed field submit preserves the supervisor's text and claims
                    nothing (H-024). Speech unavailable →
                    typed fallback, an explicit designed state.
-Known mismatch     src/lib/api.ts :: resolveReview sends action names the server does
-                   not accept. See §13, item 1 — this is a LIVE BUG.
+Resolve vocabulary src/lib/api.ts :: resolveReview is typed to the server's four
+                   actions: confirm / reassign / create / ignore (D-073).
+                   Reconcile.tsx picks between them; see §13, item 1.
 ```
 
 ```
@@ -978,36 +987,42 @@ weight or hard-coded assumptions.
 `Audit-1.md` carries eleven findings (F-01 … F-11) and is not repeated here. These are
 **additional** and none of them appear there.
 
-### 1. LIVE BUG — two of the four planner resolve actions cannot succeed
+### 1. CLOSED (D-073) — the planner resolve actions now speak the server's vocabulary
 
-The frontend and the server disagree on the action vocabulary of
-`POST /review/{item_id}/resolve`.
+The frontend and the server used to disagree on the action vocabulary of
+`POST /review/{item_id}/resolve`. Two actions 400'd on every press, and a third
+wrote the wrong link silently. The mapping the screen sends today:
 
 | Server accepts (`server/main.py`, `ResolveRequest`) | Frontend sends (`frontend/src/pages/Reconcile.tsx`) |
 |---|---|
-| `confirm` | `confirm` ✅ |
-| `reassign` | — |
-| `create` (requires `new_activity_id` **and** `new_description`) | `new_activity` (sends only `new_description`) ❌ |
-| `ignore` | `reject` ❌ |
+| `confirm` | `handleConfirm`, when the chosen candidate **is** `item.activity_id` — body carries no `activity_id`, because confirm never reads one |
+| `reassign` | `handleConfirm`, when the chosen candidate **differs** — `{action: 'reassign', activity_id}` |
+| `create` (requires `new_activity_id` **and** `new_description`) | `handleNew` — id derived as `NEW-<DISC>-<item.id[0:6]>`, description trimmed |
+| `ignore` | `handleReject`, on the second (armed) press |
 
 ```
-Reconcile.tsx :: handleNew()     → { action: 'new_activity', new_description }
-Reconcile.tsx :: handleReject()  → { action: 'reject' }
+Reconcile.tsx :: handleConfirm()  → candidate === item.activity_id
+                                      ? { action: 'confirm' }
+                                      : { action: 'reassign', activity_id }
+                                    reason 'defaulted_finish_date' always confirms
+Reconcile.tsx :: handleNew()      → { action: 'create', new_activity_id, new_description }
+Reconcile.tsx :: handleReject()   → { action: 'ignore' }
         ↓ api.ts :: resolveReview — passes the body through verbatim
         ↓ POST /review/{id}/resolve
-        ↓ resolve_review_item()
-        └─ falls through every elif → raise HTTPException(400, f"Unknown action: {req.action}")
+        ↓ resolve_review_item()  → the matching branch, never the 400 fall-through
 ```
 
-Even after renaming `new_activity` → `create`, the request would still 400 because the
-UI never collects a `new_activity_id`. The frontend's own TypeScript signature bakes
-the wrong vocabulary in:
-`action: 'confirm' | 'new_activity' | 'reject'` (`frontend/src/lib/api.ts`).
+The worst of the three was `confirm`: the server's confirm branch commits
+`item.activity_id` and ignores `req.activity_id`, so picking candidate 2 and
+pressing Confirm linked the event to candidate 1 and wrote an audit row and an
+alias entry naming it. A visible 400 is recoverable; that was not.
 
-**Why it survived:** no test covers either path. `server/test_server.py` exercises
-`confirm`, `reassign`, `create` and `ignore` against the API directly;
-`frontend/src/test/reconcile.test.tsx` covers only the clarification flow. Nothing
-tests the two together.
+**Why it survived:** no test covered a frontend request body against the server's
+action set. `server/test_server.py` exercises `confirm`, `reassign`, `create` and
+`ignore` against the API directly; `frontend/src/test/reconcile.test.tsx` covered
+only the clarification flow. It now also asserts all four bodies, plus the
+`defaulted_finish_date` case where a differing candidate must NOT become a
+reassign.
 
 **Effect on the demo:** the "New activity" and "Reject" buttons on the reconciliation
 screen fail. Only "Confirm" works. `reassign`, which the server supports and which is
@@ -1226,9 +1241,10 @@ authentication or project isolation (`Audit-1.md` F-11).
 - Two calibrated operating points instead of one (H-014).
 
 ### Planned next step (recommended order)
-1. **Fix §13.1.** One line in `Reconcile.tsx`/`api.ts` plus a UI field for
-   `new_activity_id`, and a test that exercises the frontend body against the server
-   route. It is a demo-blocking bug with a five-minute fix.
+1. ~~**Fix §13.1.**~~ Done in D-073: `Reconcile.tsx`/`api.ts` now send the
+   server's four actions and five tests exercise the request bodies against them.
+   What remains is optional — a UI field so the planner names the new activity
+   instead of accepting the derived `NEW-<DISC>-<item.id[0:6]>` id.
 2. **Resolve H-014 consciously.** Either align `MATCHING_THRESHOLDS` with the
    calibrated point and re-run `eval.py`, or document the two points everywhere a
    number is quoted. Do not leave it implicit.
@@ -1275,6 +1291,49 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The Reconcile screen's three resolve actions were corrected to the
+server's action vocabulary, closing the three P0s that D-072 recorded as open.
+`scripts/healthcheck.py` had its stale 8-endpoint assertion pinned to the real
+30 (D-074).
+**Date:** 2026-09-04 · **Decisions:** D-073, D-074
+
+```
+RECONCILE RESOLVE — CLIENT BODY -> SERVER BRANCH                  (D-073)
+
+  frontend/src/pages/Reconcile.tsx
+    handleConfirm()
+      selectedCandidate === selectedItem.activity_id
+        |                     (suggested_activity_id is projected FROM
+        |                      item.activity_id in get_review_queue)
+        +-- yes -> { action: 'confirm' }
+        |            server/main.py resolve_review_item confirm branch
+        |            commits item.activity_id, writes linked_event_confirmed
+        +-- no  -> { action: 'reassign', activity_id: selectedCandidate }
+                     writes event_reassigned carrying the OLD activity_id
+      reason === 'defaulted_finish_date' -> always 'confirm'
+                     _resolve_defaulted_finish 400s on anything else
+
+    handleNew()   -> { action: 'create',
+                       new_activity_id: NEW-<DISC>-<item.id[0:6]>,
+                       new_description: trimmed }
+                     id derived from the item, never Date.now(): stable across a
+                     retry, so a duplicate is a visible 409 not a second row
+                     newMode/newDesc cleared in onSuccess only
+
+    handleReject() -> { action: 'ignore' }  on the second armed press
+
+  server/schemas.py ReviewQueueItemResponse gained `discipline`
+  server/main.py    get_review_queue projects le.discipline
+  frontend/src/types.ts ReviewItem gained `discipline?: string | null`
+
+  frontend/src/test/reconcile.test.tsx  +5 tests asserting the request BODY —
+  the assertion class whose absence let this pass 912 backend tests
+```
+
+---
+
+### Previous modification area (D-072)
+
 **Task:** The three untracked design documents were refreshed against the
 current HEAD and committed. Documentation only — no application code changed.
 **Date:** 2026-09-03 · **Decision:** D-072
@@ -1314,7 +1373,7 @@ DESIGN BRIEF → THE CONTRACT THE FRONTEND DOES NOT YET HONOUR      (D-072)
 
 ---
 
-### Previous modification area
+### Previous modification area (D-064 .. D-071)
 
 **Task:** Two strands landed together. (a) The demo script was realigned to
 the three-role application, and the four defects found while walking it were
