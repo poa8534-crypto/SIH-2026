@@ -30,6 +30,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date, timedelta
 from enum import Enum
+from itertools import combinations
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -309,6 +310,166 @@ def adjudicate(
     return previous
 
 
+class ConcurrencyKind(str, Enum):
+    """How two delays came to be concurrent.
+
+      SAME_ACTIVITY       two causes recorded against one slipped activity.
+                          Definitional rather than temporal: they share the
+                          same overrun by construction, and nothing in the
+                          evidence apportions it between them.
+      OVERLAPPING_WINDOW  two delays on different activities whose overrun
+                          periods overlap in time.
+    """
+
+    SAME_ACTIVITY = "SAME_ACTIVITY"
+    OVERLAPPING_WINDOW = "OVERLAPPING_WINDOW"
+
+
+class ConcurrencyStatus(str, Enum):
+    """What the overlap means for liability, as things currently stand.
+
+      CONFLICT    both sides are attributed, and to different outcomes. This
+                  is concurrent delay in the sense an arbitration argues
+                  about: two parties, one period, and no basis in the evidence
+                  for splitting it.
+      UNRESOLVED  at least one side is still CONTESTED. It may become a
+                  conflict the moment a planner rules, which is exactly why it
+                  is surfaced BEFORE the ruling rather than after.
+      ALIGNED     both sides carry the same attribution, so the overlap
+                  changes nothing. Reported anyway, because "we looked and it
+                  is fine" is a different statement from silence.
+    """
+
+    CONFLICT = "CONFLICT"
+    UNRESOLVED = "UNRESOLVED"
+    ALIGNED = "ALIGNED"
+
+
+#: How many overlapping pairs the response carries. The pairing is O(n^2) in
+#: the number of delays, so the count is always exact and the LIST is capped -
+#: a report that silently truncated its own total would be worse than one that
+#: printed a thousand rows.
+MAX_CONCURRENCY_PAIRS = 50
+
+
+def _overrun_window(activity: Optional[Activity]) -> Optional[tuple[date, date]]:
+    """The period an activity ran late: planned finish to actual finish.
+
+    This is the only window the data supports. A delay does not carry its own
+    start and end - a daily report says a cause, not a duration - so the
+    activity's own overrun is used as the period the cause was in effect.
+    Returns None when the activity finished on or before plan, which is the
+    right answer: there is no overrun to be concurrent with.
+    """
+    if activity is None or not activity.planned_finish or not activity.actual_finish:
+        return None
+    if activity.actual_finish <= activity.planned_finish:
+        return None
+    return activity.planned_finish, activity.actual_finish
+
+
+def _concurrency_status(left: str, right: str) -> str:
+    if left == Liability.CONTESTED.value or right == Liability.CONTESTED.value:
+        return ConcurrencyStatus.UNRESOLVED.value
+    if left != right:
+        return ConcurrencyStatus.CONFLICT.value
+    return ConcurrencyStatus.ALIGNED.value
+
+
+def concurrency(db: Session, rows: list) -> dict:
+    """Delays that were running at the same time, and what that costs.
+
+    THE POINT OF THIS FUNCTION IS THAT IT REFUSES TO ALLOCATE.
+    Concurrent delay is the crux of most Liquidated Damages arbitrations: when
+    an owner-side cause and a contractor-side cause are open over the same
+    period, neither party's letter settles it. NAVIS names the overlap, cites
+    both sides, and stops. A system that confidently apportioned concurrent
+    delay would be a system no scheduler would believe.
+
+    TWO KINDS, AND ONLY ONE OF THEM IS DECISIVE.
+    `SAME_ACTIVITY` is definitional: two causes against one slipped activity
+    share its overrun and nothing in the evidence divides it. That IS the
+    dispute. `OVERLAPPING_WINDOW` is temporal only - two delays on different
+    activities ran at the same time, but whether BOTH pushed the completion
+    date needs a critical-path analysis this system does not yet perform. The
+    distinction is carried on every pair so a reader never has to guess which
+    kind of claim is being made.
+
+    `impact_days` is deliberately not summed across a pair. Each side already
+    carries its activity's whole slip as an upper bound, so adding them would
+    compound one overstatement with another.
+    """
+    activities = {
+        a.activity_id: a
+        for a in db.query(Activity).filter(
+            Activity.activity_id.in_({r.activity_id for r in rows if r.activity_id})
+        )
+    } if rows else {}
+
+    windowed = []
+    for row in rows:
+        window = _overrun_window(activities.get(row.activity_id))
+        if window is not None:
+            windowed.append((row, window))
+
+    pairs = []
+    for (left, (l_start, l_end)), (right, (r_start, r_end)) in combinations(windowed, 2):
+        start = max(l_start, r_start)
+        end = min(l_end, r_end)
+        if start > end:
+            continue
+        left_liability = effective_liability(left)
+        right_liability = effective_liability(right)
+        pairs.append({
+            "kind": (
+                ConcurrencyKind.SAME_ACTIVITY.value
+                if left.activity_id == right.activity_id
+                else ConcurrencyKind.OVERLAPPING_WINDOW.value
+            ),
+            "status": _concurrency_status(left_liability, right_liability),
+            "overlap_start": start,
+            "overlap_end": end,
+            # Inclusive: a delay open on both the 12th and the 13th was
+            # concurrent for two days, not one.
+            "overlap_days": (end - start).days + 1,
+            "left_delay_event_id": left.id,
+            "left_activity_id": left.activity_id,
+            "left_phrase": left.phrase,
+            "left_category": left.category,
+            "left_liability": left_liability,
+            "left_adjudicated": is_adjudicated(left),
+            "right_delay_event_id": right.id,
+            "right_activity_id": right.activity_id,
+            "right_phrase": right.phrase,
+            "right_category": right.category,
+            "right_liability": right_liability,
+            "right_adjudicated": is_adjudicated(right),
+        })
+
+    # Longest overlap first: the biggest exposure is the one to look at.
+    pairs.sort(key=lambda p: (-p["overlap_days"], p["left_activity_id"] or "",
+                              p["right_activity_id"] or ""))
+
+    counts = {status.value: 0 for status in ConcurrencyStatus}
+    for pair in pairs:
+        counts[pair["status"]] += 1
+
+    return {
+        "pairs": pairs[:MAX_CONCURRENCY_PAIRS],
+        "total_pairs": len(pairs),
+        "pairs_listed": min(len(pairs), MAX_CONCURRENCY_PAIRS),
+        "counts": counts,
+        "note": (
+            "A SAME_ACTIVITY overlap is definitional: two causes share one "
+            "activity's overrun and the evidence does not divide it. An "
+            "OVERLAPPING_WINDOW overlap is temporal only - whether both "
+            "delays moved the completion date needs a critical-path analysis "
+            "this system does not perform. Days are not summed across a pair; "
+            "each side already carries its activity's whole slip."
+        ),
+    }
+
+
 def attribution(
     db: Session,
     discipline: Optional[str] = None,
@@ -366,6 +527,7 @@ def attribution(
         "notice_counts": notice_counts,
         "notice_lapsed_days": lapsed_days,
         "notice_as_of": as_of,
+        "concurrency": concurrency(db, rows),
         # Said in the payload, not only in the docs, so a client cannot present
         # an upper bound as a measured figure.
         "impact_days_basis": (
@@ -389,6 +551,9 @@ def attribution(
 __all__ = [
     "sync_delay_events",
     "adjudicate",
+    "concurrency",
+    "ConcurrencyKind",
+    "ConcurrencyStatus",
     "record_notice",
     "notice_status",
     "days_to_notice",

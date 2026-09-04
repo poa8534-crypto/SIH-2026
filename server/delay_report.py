@@ -43,6 +43,8 @@ from sqlalchemy.orm import Session
 from server.db import Activity, BaselineVersion
 from server.delay_events import (
     NOTICE_WINDOW_DAYS,
+    ConcurrencyKind,
+    ConcurrencyStatus,
     NoticeStatus,
     attribution,
     days_to_notice,
@@ -102,6 +104,15 @@ CAVEATS = (
         "notice register of its own.",
     ),
     (
+        "Concurrent delay is named, never apportioned",
+        "Where two delays were open over the same period this report says so "
+        "and cites both, and stops there. Splitting concurrent delay between "
+        "parties is a matter for the contract and the parties, not for "
+        "software. An overlap between two DIFFERENT activities is temporal "
+        "only: whether both moved the completion date needs a critical-path "
+        "analysis, which this system does not perform.",
+    ),
+    (
         "Rulings are not authenticated",
         "This system has no user authentication. The name recorded against a "
         "ruling is whatever the client supplied and nothing verifies it.",
@@ -158,6 +169,7 @@ def report_context(
         "notice_window_days": data["notice_window_days"],
         "notice_counts": data["notice_counts"],
         "notice_lapsed_days": data["notice_lapsed_days"],
+        "concurrency": data["concurrency"],
         "discipline": discipline,
         "data_date": data_date,
         "baseline_name": baseline.name if baseline else None,
@@ -378,6 +390,56 @@ def to_html(context: dict) -> str:
           f"that has already closed. Entitlement to an extension of time may "
           f"be barred on those, unless notice was in fact given and is simply "
           f"not recorded here.</p>")
+
+    # ── Concurrent delay ──
+    conc = context["concurrency"]
+    w("<h2>Concurrent delay</h2>")
+    if not conc["total_pairs"]:
+        w("<p class='empty'>No two delays in this scope were open over the "
+          "same period.</p>")
+    else:
+        w(f"<p class='sub'>{conc['total_pairs']} overlapping "
+          f"pair{'' if conc['total_pairs'] == 1 else 's'}: "
+          f"{conc['counts'].get(ConcurrencyStatus.CONFLICT.value, 0)} where the "
+          f"two sides are attributed to different outcomes, "
+          f"{conc['counts'].get(ConcurrencyStatus.UNRESOLVED.value, 0)} with at "
+          f"least one side still unruled, "
+          f"{conc['counts'].get(ConcurrencyStatus.ALIGNED.value, 0)} carrying "
+          f"the same attribution.</p>")
+        w("<table><thead><tr><th>Period</th><th style='text-align:right'>Days"
+          "</th><th>One delay</th><th>The other</th><th>Reading</th></tr>"
+          "</thead><tbody>")
+        for pair in conc["pairs"]:
+            if pair["status"] == ConcurrencyStatus.CONFLICT.value:
+                reading = ("<span class='n-lapsed'>Both attributed, and to "
+                           "different outcomes. Nothing in the evidence "
+                           "apportions this period.</span>")
+            elif pair["status"] == ConcurrencyStatus.UNRESOLVED.value:
+                reading = ("At least one side is unruled. Ruling them "
+                           "separately without reading this row is how a "
+                           "concurrency gets missed.")
+            else:
+                reading = "Both carry the same attribution; the overlap changes nothing."
+            if pair["kind"] == ConcurrencyKind.SAME_ACTIVITY.value:
+                reading += ("<div class='cite'>Same activity — the two causes "
+                            "share one overrun by construction.</div>")
+            else:
+                reading += ("<div class='cite'>Different activities — temporal "
+                            "overlap only; criticality not established.</div>")
+            w(f"<tr><td class='mono'>{pair['overlap_start'].isoformat()}"
+              f"<div class='cite'>to {pair['overlap_end'].isoformat()}</div></td>"
+              f"<td class='num'>{pair['overlap_days']}</td>"
+              f"<td class='mono'>{escape(pair['left_activity_id'] or '—')}"
+              f"<div class='cite'>{escape(pair['left_phrase'])}</div>"
+              f"<div class='cite'>{escape(pair['left_liability'])}</div></td>"
+              f"<td class='mono'>{escape(pair['right_activity_id'] or '—')}"
+              f"<div class='cite'>{escape(pair['right_phrase'])}</div>"
+              f"<div class='cite'>{escape(pair['right_liability'])}</div></td>"
+              f"<td>{reading}</td></tr>")
+        w("</tbody></table>")
+        if conc["pairs_listed"] < conc["total_pairs"]:
+            w(f"<p class='caption'>Showing the {conc['pairs_listed']} longest "
+              f"of {conc['total_pairs']} overlapping pairs.</p>")
 
     if context["days_by_month"]:
         w("<h2>Days by month</h2>")

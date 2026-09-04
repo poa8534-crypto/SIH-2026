@@ -757,6 +757,56 @@ class DelayNoticeResponse(BaseModel):
     message: str
 
 
+class ConcurrentDelayPair(BaseModel):
+    """Two delays that were running at the same time.
+
+    `kind` is the part that decides how much the pair proves.
+    `SAME_ACTIVITY` is definitional - two causes share one activity's overrun
+    and the evidence does not divide it. `OVERLAPPING_WINDOW` is temporal
+    only: whether both delays moved the completion date needs a critical-path
+    analysis this system does not perform.
+
+    Days are not summed across a pair. Each side already carries its
+    activity's whole slip as an upper bound.
+    """
+
+    kind: str
+    status: str  # CONFLICT / UNRESOLVED / ALIGNED
+    overlap_start: date_t
+    overlap_end: date_t
+    overlap_days: int
+
+    left_delay_event_id: str
+    left_activity_id: Optional[str] = None
+    left_phrase: str
+    left_category: str
+    left_liability: str
+    left_adjudicated: bool = False
+
+    right_delay_event_id: str
+    right_activity_id: Optional[str] = None
+    right_phrase: str
+    right_category: str
+    right_liability: str
+    right_adjudicated: bool = False
+
+
+class DelayConcurrency(BaseModel):
+    """Concurrent delay: named, cited, and deliberately not apportioned.
+
+    `pairs` is capped; `total_pairs` is always the true count, because a
+    report that silently truncated its own total would be worse than one that
+    printed everything.
+    """
+
+    pairs: list[ConcurrentDelayPair] = []
+    total_pairs: int = 0
+    pairs_listed: int = 0
+    # Count per status: CONFLICT / UNRESOLVED / ALIGNED.
+    counts: dict[str, int] = {}
+    note: str
+
+
 class DelayAttributionResponse(BaseModel):
     """The delay attribution matrix.
 
@@ -782,6 +832,9 @@ class DelayAttributionResponse(BaseModel):
     # The date the windows were judged against. Null means every status is
     # UNKNOWN, which is the honest answer rather than silently using today.
     notice_as_of: Optional[date_t] = None
+    # Delays that were open over the same period. Present even when empty:
+    # "we looked and found none" is a different statement from silence.
+    concurrency: DelayConcurrency
     # Carried in the payload so a client cannot render an upper bound as a
     # measured figure.
     impact_days_basis: str

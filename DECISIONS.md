@@ -7151,3 +7151,125 @@ notice has been recorded here" and not "no notice was given". The report says
 that in its caveats and the alarm line repeats it. On a project where notices
 live in a correspondence system, this column is a prompt to go and check, never
 a finding on its own.
+
+---
+
+## 2026-09-04 / D-081 — Concurrent delay is named, cited, and never apportioned
+
+### Context
+Phase 5. Concurrent delay is the crux of most Liquidated Damages arbitrations:
+when an owner-side cause and a contractor-side cause are open over the same
+period, neither party's letter settles it, and a planner who rules on the two
+separately without noticing the overlap has produced two findings that
+contradict each other.
+
+### Decision
+`delay_events.concurrency(db, rows)`, folded into the `GET /delay/attribution`
+response and printed as its own section of the report. No new endpoint: this is
+part of the matrix, not a separate question.
+
+**It refuses to allocate.** NAVIS names the overlap, cites both sides, states
+what the overlap means for liability, and stops. Splitting concurrent delay
+between parties is a matter for the contract and the parties. A system that
+confidently apportioned it would be a system no scheduler would believe, and
+the refusal is the part worth demonstrating.
+
+**Two kinds, and only one of them is decisive.** `SAME_ACTIVITY` is
+definitional: two causes recorded against one slipped activity share its
+overrun by construction and nothing in the evidence divides it. That IS the
+dispute. `OVERLAPPING_WINDOW` is temporal only - two delays on different
+activities ran at the same time, but whether BOTH moved the completion date
+needs the critical-path pass Phase 6 would add. The kind is carried on every
+pair and printed on every row, so a reader never has to guess which kind of
+claim is being made. Presenting a temporal overlap as a finding about the
+completion date would be exactly the overclaim this project's rules exist to
+prevent.
+
+**Three statuses, including one that is not a problem.** `CONFLICT` is two
+attributed sides with different outcomes. `UNRESOLVED` is at least one side
+still `CONTESTED` - surfaced BEFORE the ruling, because that is when it is
+useful. `ALIGNED` is the same attribution on both sides, reported anyway,
+because "we looked and it is fine" is a different statement from silence.
+
+**A delay's period is its activity's overrun.** Planned finish to actual
+finish. This is the only window the data supports: a daily report states a
+cause, never a duration. An activity that finished on or before plan has no
+window at all, so finishing early cannot manufacture an overlap.
+
+**Days are not summed across a pair.** Each side already carries its
+activity's whole slip as an upper bound (D-077); adding them would compound one
+overstatement with another. Overlap days are counted inclusively - a delay open
+on both the 12th and the 13th was concurrent for two days.
+
+**The list is capped, the count is not.** Pairing is O(n²) in the number of
+delays. `total_pairs` is always exact and `pairs` carries the fifty longest. A
+report that silently truncated its own total would be worse than one that
+printed a thousand rows.
+
+### Demonstrated end to end
+On the demo corpus there is exactly one overlap, and it changes meaning as the
+planner works:
+
+```
+before any ruling
+  OVERLAPPING_WINDOW  UNRESOLVED  2026-08-12 .. 2026-08-23  (12 days)
+    CIV-DWG-1015  fencing conflict  [CONTESTED]
+    CIV-FLR-1020  holiday delay     [CONTESTED]
+
+after CIV-DWG-1015 ruled COMPENSABLE
+  UNRESOLVED still - the other side is unruled
+
+after CIV-FLR-1020 ruled NON_COMPENSABLE
+  CONFLICT  CIV-DWG-1015 [COMPENSABLE] vs CIV-FLR-1020 [NON_COMPENSABLE]
+            12 days in which the owner is liable on one activity and the
+            contractor on another, simultaneously
+```
+
+Two rulings that each look sound in isolation produce a twelve-day period
+neither party can claim cleanly. Nothing before this phase would have shown
+that.
+
+### Alternatives Considered
+- **Apportion concurrent delay, even crudely.** Rejected. There is no
+  defensible split rule that does not depend on the contract, and offering one
+  would discredit every other number in the report.
+- **Only detect same-activity concurrency.** Rejected as too narrow: it would
+  have found nothing on this corpus and, more importantly, a scheduler looks at
+  the calendar first. The temporal kind is included and labelled as the weaker
+  claim it is.
+- **Treat any overlap as a conflict.** Rejected: two delays both attributed to
+  weather are not a dispute, and crying conflict over them would train a reader
+  to ignore the section.
+- **A separate `GET /delay/concurrency`.** Rejected: it is one more endpoint
+  answering a question the matrix should already answer, and a client that
+  fetched one without the other could render a matrix that hid its own
+  contradictions.
+
+### Verification
+`python -m pytest -q` — 1020 passed, up from 1010. The 10 new tests cover the
+same-activity kind and its inclusive day count, the overlapping-window kind and
+its labelling, non-meeting windows, an early finish producing no window,
+conflict and aligned classification, the UNRESOLVED-to-CONFLICT transition
+across two rulings, the empty case still being present in the payload, and both
+the report's overlap section and its no-overlap statement.
+
+`scripts/healthcheck.py` against a running server — 34 endpoints exposed,
+expected 34 (no new endpoint), 31 checks passed. The rendered report was
+reviewed in a browser. `matching/` and `extraction/` untouched, so `eval.py` is
+not implicated.
+
+### Affected Areas
+`server/delay_events.py` (`concurrency`, `ConcurrencyKind`,
+`ConcurrencyStatus`, `_overrun_window`), `server/schemas.py`
+(`ConcurrentDelayPair`, `DelayConcurrency`), `server/main.py` (projection),
+`server/delay_report.py` (section and a sixth caveat),
+`server/test_delay_attribution.py`.
+
+### Trade-offs / Consequences
+Using the activity's overrun as the delay's period is a simplification, and a
+real one: two causes recorded against the same activity are treated as running
+for its whole slip even if one was resolved on day two. The data does not
+support anything finer - a daily report names a cause, not a window - and the
+report says the overlap is a period of exposure rather than a measurement.
+Making it finer needs per-cause start and end dates that no source in this
+system currently produces.

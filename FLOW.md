@@ -1291,6 +1291,61 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 5 — concurrent delay. Delays open over the same period are
+paired, classified and cited in `GET /delay/attribution` and in the report,
+and deliberately not apportioned.
+**Date:** 2026-09-04 · **Decision:** D-081
+
+```
+CONCURRENT DELAY — NAMED, NEVER APPORTIONED                       (D-081)
+
+  delay_events.concurrency(db, rows)      called from attribution(), no
+                                          endpoint of its own
+      |
+      +-- _overrun_window(activity)   planned_finish -> actual_finish
+      |     None when the activity did not overrun, so finishing early
+      |     cannot manufacture an overlap. This is the only window the data
+      |     supports: a daily report names a cause, never a duration.
+      |
+      +-- combinations(windowed, 2), keep pairs whose windows intersect
+      |
+      +-- kind
+      |     SAME_ACTIVITY       two causes on one slipped activity. They
+      |                         share its overrun by construction and the
+      |                         evidence does not divide it. THE dispute.
+      |     OVERLAPPING_WINDOW  different activities, overlapping in time.
+      |                         Temporal only - whether both moved the
+      |                         completion date needs a critical-path pass
+      |                         this system does not perform (Phase 6).
+      |
+      +-- status  from the two EFFECTIVE liabilities
+      |     either CONTESTED -> UNRESOLVED   (surfaced BEFORE the ruling)
+      |     differ            -> CONFLICT
+      |     equal             -> ALIGNED     (reported anyway)
+      |
+      +-- overlap_days INCLUSIVE; days are NOT summed across a pair, because
+            each side already carries its activity's whole slip (D-077)
+
+  pairs[] capped at MAX_CONCURRENCY_PAIRS (50), longest first;
+  total_pairs is always the true count.
+
+  Surfaced in:
+    GET /delay/attribution   concurrency{pairs,total_pairs,counts,note}
+    GET /delay/report        "Concurrent delay" section, or an explicit
+                             "No two delays ... open over the same period",
+                             plus a sixth caveat: named, never apportioned
+
+  Demo corpus, one overlap, meaning changes as the planner rules:
+    both CONTESTED                          -> UNRESOLVED
+    CIV-DWG-1015 ruled COMPENSABLE          -> UNRESOLVED (other side unruled)
+    CIV-FLR-1020 ruled NON_COMPENSABLE      -> CONFLICT, 12 days 2026-08-12..23
+  Pinned by server/test_delay_attribution.py TestConcurrentDelay (10 tests).
+```
+
+---
+
+### Previous modification area (D-080)
+
 **Task:** Phase 4 — the contractual notice clock. Each delay gains the date it
 was evidenced, how that date was established, and the date notice falls due;
 `POST /delay/{id}/notice` records a notice given, and the report raises a

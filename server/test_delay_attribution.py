@@ -1,7 +1,7 @@
 """Delay attribution: derived rows, planner rulings, totals, and the report.
 
-Phases 1 to 4 of the Contractor Dispute Shield (D-077 to D-080). These assert
-the six properties the feature stands or falls on:
+Phases 1 to 5 of the Contractor Dispute Shield (D-077 to D-081). These assert
+the seven properties the feature stands or falls on:
 
   1. A `DelayEvent` is derived from the audit trail and re-derives cleanly.
      Running the sync twice must not double the rows, because it runs on every
@@ -18,6 +18,9 @@ the six properties the feature stands or falls on:
   6. The notice clock starts from a date a source asserted, and says which
      kind of date that was. A lapsed claim asserted on a guessed date is a
      false accusation.
+  7. Concurrent delay is named and never apportioned, and a temporal overlap
+     between two activities is never presented as a finding about the
+     completion date.
 """
 
 from __future__ import annotations
@@ -39,9 +42,12 @@ from server.db import (
 from server import delay_report
 from server.delay_events import (
     NOTICE_WINDOW_DAYS,
+    ConcurrencyKind,
+    ConcurrencyStatus,
     NoticeBasis,
     NoticeStatus,
     attribution,
+    concurrency,
     notice_status,
     sync_delay_events,
 )
@@ -624,6 +630,193 @@ class TestTheNoticeClock:
         assert event["notice_status"] == NoticeStatus.LAPSED.value
         assert event["notice_days_remaining"] < 0
         assert event["evidenced_basis"] == NoticeBasis.REPORTED.value
+
+
+class TestConcurrentDelay:
+    """Concurrent delay (D-081).
+
+    The crux of most Liquidated Damages arbitrations: when two causes are open
+    over the same period, neither party's letter settles it. These assert that
+    NAVIS names the overlap, cites both sides, distinguishes the two kinds of
+    overlap, and stops.
+    """
+
+    def _delay_on(self, db, activity_id, span, *, planned, actual):
+        act = db.query(Activity).filter(
+            Activity.activity_id == activity_id).first()
+        act.planned_finish = planned
+        act.actual_finish = actual
+        act.finish_variance_days = (actual - planned).days
+        _audit(db, activity_id=activity_id, field="actual_finish", span=span)
+        return act
+
+    def _two_activities(self, db):
+        ids = [a.activity_id for a in db.query(Activity).limit(2)]
+        return ids[0], ids[1]
+
+    def test_two_causes_on_one_activity_are_a_definitional_overlap(
+            self, db_session):
+        """They share the activity's overrun by construction, and nothing in
+        the evidence divides it. That IS the dispute."""
+        act, _ = self._two_activities(db_session)
+        self._delay_on(db_session, act, RIG,
+                       planned=date(2026, 8, 1), actual=date(2026, 8, 21))
+        _audit(db_session, activity_id=act, field="actual_start", span=RAIN)
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        rows = db_session.query(DelayEvent).all()
+        found = concurrency(db_session, rows)
+
+        assert found["total_pairs"] == 1
+        pair = found["pairs"][0]
+        assert pair["kind"] == ConcurrencyKind.SAME_ACTIVITY.value
+        assert pair["overlap_days"] == 21  # 1 Aug to 21 Aug, inclusive
+        assert {pair["left_phrase"], pair["right_phrase"]} == {
+            "piling rig breakdown", "rain delay"}
+
+    def test_overlapping_windows_on_different_activities_are_temporal_only(
+            self, db_session):
+        """Whether both delays moved the completion date needs criticality,
+        which this system does not compute. The kind says so."""
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, FENCE,
+                       planned=date(2026, 8, 12), actual=date(2026, 9, 2))
+        self._delay_on(db_session, second, RIG,
+                       planned=date(2026, 8, 3), actual=date(2026, 8, 23))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        found = concurrency(db_session, db_session.query(DelayEvent).all())
+
+        assert found["total_pairs"] == 1
+        pair = found["pairs"][0]
+        assert pair["kind"] == ConcurrencyKind.OVERLAPPING_WINDOW.value
+        assert pair["overlap_start"] == date(2026, 8, 12)
+        assert pair["overlap_end"] == date(2026, 8, 23)
+        assert pair["overlap_days"] == 12
+        assert "critical-path" in found["note"]
+
+    def test_windows_that_do_not_meet_are_not_a_pair(self, db_session):
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, FENCE,
+                       planned=date(2026, 7, 1), actual=date(2026, 7, 10))
+        self._delay_on(db_session, second, RIG,
+                       planned=date(2026, 8, 1), actual=date(2026, 8, 10))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        assert concurrency(
+            db_session, db_session.query(DelayEvent).all())["total_pairs"] == 0
+
+    def test_an_activity_that_did_not_overrun_has_no_window(self, db_session):
+        """There is no overrun to be concurrent with. Finishing early must not
+        manufacture an overlap."""
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, FENCE,
+                       planned=date(2026, 8, 20), actual=date(2026, 8, 12))
+        self._delay_on(db_session, second, RIG,
+                       planned=date(2026, 8, 3), actual=date(2026, 8, 23))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        assert concurrency(
+            db_session, db_session.query(DelayEvent).all())["total_pairs"] == 0
+
+    def test_two_different_attributions_are_a_conflict(self, client, db_session):
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, RIG,
+                       planned=date(2026, 8, 1), actual=date(2026, 8, 21))
+        self._delay_on(db_session, second, RAIN,
+                       planned=date(2026, 8, 5), actual=date(2026, 8, 25))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        # EQUIPMENT is NON_COMPENSABLE, WEATHER is EXCUSABLE.
+        found = concurrency(db_session, db_session.query(DelayEvent).all())
+        assert found["counts"][ConcurrencyStatus.CONFLICT.value] == 1
+
+    def test_an_unruled_side_reads_as_unresolved_until_it_is_ruled(
+            self, client, db_session):
+        """Surfaced BEFORE the ruling, because ruling the two separately
+        without reading this row is how a concurrency gets missed."""
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, FENCE,
+                       planned=date(2026, 8, 12), actual=date(2026, 9, 2))
+        self._delay_on(db_session, second, RIG,
+                       planned=date(2026, 8, 3), actual=date(2026, 8, 23))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        body = client.get("/delay/attribution").json()["concurrency"]
+        assert body["counts"][ConcurrencyStatus.UNRESOLVED.value] == 1
+
+        fence = db_session.query(DelayEvent).filter(
+            DelayEvent.phrase == "fencing conflict").one()
+        client.post(f"/delay/{fence.id}/classify",
+                    json={"liability": "COMPENSABLE"})
+
+        body = client.get("/delay/attribution").json()["concurrency"]
+        assert body["counts"][ConcurrencyStatus.CONFLICT.value] == 1
+        pair = body["pairs"][0]
+        assert {pair["left_liability"], pair["right_liability"]} == {
+            Liability.COMPENSABLE.value, Liability.NON_COMPENSABLE.value}
+
+    def test_the_same_attribution_on_both_sides_is_aligned(self, db_session):
+        """Reported anyway: "we looked and it is fine" is a different
+        statement from silence."""
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, RIG,
+                       planned=date(2026, 8, 1), actual=date(2026, 8, 21))
+        self._delay_on(db_session, second, "crane breakdown on the north pad",
+                       planned=date(2026, 8, 5), actual=date(2026, 8, 25))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        found = concurrency(db_session, db_session.query(DelayEvent).all())
+        assert found["counts"][ConcurrencyStatus.ALIGNED.value] == 1
+
+    def test_the_matrix_carries_it_even_when_empty(self, client, db_session):
+        """Present with an empty list rather than absent: a client must not
+        have to guess whether nothing was found or nothing was looked for."""
+        body = client.get("/delay/attribution").json()["concurrency"]
+        assert body["total_pairs"] == 0
+        assert body["pairs"] == []
+        # The note explains both kinds even when neither occurred.
+        assert "SAME_ACTIVITY" in body["note"]
+        assert "OVERLAPPING_WINDOW" in body["note"]
+
+    def test_the_report_names_the_overlap_and_refuses_to_split_it(
+            self, client, db_session):
+        first, second = self._two_activities(db_session)
+        self._delay_on(db_session, first, FENCE,
+                       planned=date(2026, 8, 12), actual=date(2026, 9, 2))
+        self._delay_on(db_session, second, RIG,
+                       planned=date(2026, 8, 3), actual=date(2026, 8, 23))
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        body = client.get("/delay/report").text
+
+        assert "Concurrent delay" in body
+        assert "2026-08-12" in body and "2026-08-23" in body
+        assert "Different activities" in body
+        assert "criticality not established" in body
+        # The refusal, printed rather than implied.
+        assert "never apportioned" in body
+
+    def test_the_report_says_so_when_there_is_no_overlap(
+            self, client, db_session):
+        body = client.get("/delay/report").text
+        assert "No two delays in this scope were open over the same period." in body
 
 
 class TestTheReport:
