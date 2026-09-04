@@ -628,12 +628,72 @@ class ProductivityMetric(BaseModel):
 
 class DelayReason(BaseModel):
     reason: str
+    # ARCHITECTURE.md 2.7 category and the party who carries it by default,
+    # both from the deterministic table in server/delay_taxonomy.py. Optional
+    # only so a client written against the older shape keeps parsing; the
+    # endpoint always sends them.
+    category: Optional[str] = None
+    liability: Optional[str] = None
     frequency: int = 0
     affected_activities: list[str] = []
     # Finish slip summed over the affected activities. Attributed, not
     # measured: an activity's whole overrun is credited to every cause
     # recorded against it, so treat it as an upper bound per cause.
     days_lost: int = 0
+
+
+class DelayEventOut(BaseModel):
+    """One classified delay, with the sentence it was read from.
+
+    `liability_effective` is the ruling if a planner has made one and the
+    proposal otherwise, and `adjudicated` says which of the two it is. Both are
+    sent because a client that showed only the effective value would present a
+    machine proposal as a finding.
+    """
+
+    id: str
+    activity_id: Optional[str] = None
+    phrase: str
+    category: str
+    liability_proposed: str
+    liability_final: Optional[str] = None
+    liability_effective: str
+    adjudicated: bool = False
+    adjudication_note: Optional[str] = None
+    inferred_by: str = "rules"
+    confidence: Optional[float] = None
+    discipline: Optional[str] = None
+    month: Optional[str] = None
+    impact_days: int = 0
+    # Provenance. The citation a claim is argued from.
+    audit_record_id: Optional[str] = None
+    source_file: Optional[str] = None
+    source_line: Optional[int] = None
+    source_row: Optional[int] = None
+    source_span: Optional[str] = None
+
+
+class DelayAttributionResponse(BaseModel):
+    """The delay attribution matrix.
+
+    Two sets of totals, on purpose. `adjudicated_days` counts only rows a
+    planner has ruled on; `proposed_days` counts every row at its current
+    effective liability. Reporting only the second would present proposals as
+    findings; reporting only the first would hide work waiting for a planner.
+    """
+
+    events: list[DelayEventOut] = []
+    total_events: int = 0
+    adjudicated_events: int = 0
+    adjudicated_days: dict[str, int] = {}
+    proposed_days: dict[str, int] = {}
+    days_by_month: dict[str, int] = {}
+    categories_present: list[str] = []
+    # Carried in the payload so a client cannot render an upper bound as a
+    # measured figure.
+    impact_days_basis: str
+    unadjudicated_note: str
+    computed_at: datetime
 
 
 class SuggestedDuration(BaseModel):

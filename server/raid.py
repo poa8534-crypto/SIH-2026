@@ -106,12 +106,19 @@ def validate(kind: str, status: str, probability, impact_days) -> None:
 DELAY_KEYWORDS = delay_taxonomy.DELAY_KEYWORDS
 
 
-def delay_evidence(db: Session) -> dict[str, dict]:
-    """How often each delay phrase actually appears in the field evidence.
+#: One delay observation: a phrase, the activity it was said about, and the
+#: exact place it was said. This tuple IS the identity of a delay event - the
+#: attribution layer keys its persisted rows on it (D-077), and
+#: `delay_evidence` counts distinct values of it.
+ObservationKey = tuple
 
-    **One occurrence is one piece of evidence about one activity**, keyed on
-    (activity, source file, line, row, span) - not one audit row. That
-    distinction is the whole point of this function.
+
+def delay_observations(db: Session) -> dict[ObservationKey, list[AuditRecord]]:
+    """Every distinct delay observation in the audit trail, with its evidence.
+
+    **One observation is one piece of evidence about one activity**, keyed on
+    (phrase, activity, source file, span) - not one audit row. That distinction
+    is the whole point of this function and of everything built on it.
 
     A single spreadsheet row that reads "Bored Piling - 1 day over, piling rig
     breakdown" writes three audit records: actual_start, actual_finish and
@@ -119,11 +126,50 @@ def delay_evidence(db: Session) -> dict[str, dict]:
     and the number moves when the roll-up happens to touch a different set of
     fields - which is a fact about storage, not about the project.
 
-    Both callers used to count for themselves and disagreed in exactly that
-    way: the Memory screen filtered to actual_start/actual_finish and reported
-    2, while the RAID candidates applied no field filter and reported 3, for
-    the same one spreadsheet row. Neither was measuring recurrence. On the demo
-    corpus every one of the four phrases occurs exactly ONCE, in one row of
+    The key deliberately excludes the line and row numbers: the roll-up records
+    those inconsistently - on this corpus the actual_qty write carries
+    source_row=None while the two date writes from the same spreadsheet row
+    carry row=23 - so keying on them splits one observation back into two and
+    re-introduces the storage artefact this function exists to remove. The span
+    is the evidence; the locators are provenance for display.
+
+    This is the single scan of the audit trail for delay text. `delay_evidence`
+    aggregates it for the Memory screen and the RAID candidates, and
+    `server/delay_events.py` materialises it into attributable rows. None of
+    them re-scan, so none of them can disagree - the reason the vocabulary was
+    made a single list in the first place (D-048).
+    """
+    found: dict[ObservationKey, list[AuditRecord]] = defaultdict(list)
+
+    for record in db.query(AuditRecord).filter(AuditRecord.source_span.isnot(None)):
+        text = (record.source_span or "").lower()
+        for phrase in DELAY_KEYWORDS:
+            if phrase not in text:
+                continue
+            key = (phrase, record.activity_id, record.source_file, record.source_span)
+            found[key].append(record)
+
+    return dict(found)
+
+
+def finish_slip_by_activity(db: Session) -> dict:
+    """Positive finish variance per activity, in days. Shared, not re-derived."""
+    return {
+        a.activity_id: a.finish_variance_days
+        for a in db.query(Activity)
+        if a.finish_variance_days and a.finish_variance_days > 0
+    }
+
+
+def delay_evidence(db: Session) -> dict[str, dict]:
+    """How often each delay phrase actually appears in the field evidence.
+
+    Aggregates `delay_observations` per phrase. Both callers used to count for
+    themselves and disagreed: the Memory screen filtered audit rows to
+    actual_start/actual_finish and reported 2, while the RAID candidate
+    detector applied no field filter and reported 3, for the same one
+    spreadsheet row. Neither was measuring recurrence. On the demo corpus every
+    one of the four phrases occurs exactly ONCE, in one row of
     civil_progress.xlsx, against one activity.
 
     Returns, per phrase: `occurrences`, the `activity_ids` touched, the
@@ -132,43 +178,26 @@ def delay_evidence(db: Session) -> dict[str, dict]:
     whole overrun is credited to every cause recorded against it, so it is an
     upper bound per cause.
     """
-    seen: dict[str, set[tuple]] = defaultdict(set)
+    occurrences: dict[str, int] = defaultdict(int)
     records: dict[str, list[AuditRecord]] = defaultdict(list)
-    activities: dict[str, set[str]] = defaultdict(set)
+    activities: dict[str, set] = defaultdict(set)
 
-    for record in db.query(AuditRecord).filter(AuditRecord.source_span.isnot(None)):
-        text = (record.source_span or "").lower()
-        for phrase in DELAY_KEYWORDS:
-            if phrase not in text:
-                continue
-            # Activity + file + the sentence itself. Deliberately NOT the
-            # line or row: the roll-up records those inconsistently — on this
-            # corpus the actual_qty write carries source_row=None while the
-            # two date writes from the same spreadsheet row carry row=23 —
-            # so keying on them splits one observation back into two and
-            # re-introduces the storage artefact this function exists to
-            # remove. The span is the evidence; the locators are provenance
-            # for display.
-            key = (record.activity_id, record.source_file, record.source_span)
-            records[phrase].append(record)
-            if record.activity_id:
-                activities[phrase].add(record.activity_id)
-            seen[phrase].add(key)
+    for (phrase, activity_id, _file, _span), rows in delay_observations(db).items():
+        occurrences[phrase] += 1
+        records[phrase].extend(rows)
+        if activity_id:
+            activities[phrase].add(activity_id)
 
-    slip = {
-        a.activity_id: a.finish_variance_days
-        for a in db.query(Activity)
-        if a.finish_variance_days and a.finish_variance_days > 0
-    }
+    slip = finish_slip_by_activity(db)
 
     return {
         phrase: {
-            "occurrences": len(keys),
+            "occurrences": count,
             "activity_ids": sorted(activities[phrase]),
             "records": records[phrase],
             "days_lost": sum(slip.get(a, 0) for a in activities[phrase]),
         }
-        for phrase, keys in seen.items()
+        for phrase, count in occurrences.items()
     }
 
 

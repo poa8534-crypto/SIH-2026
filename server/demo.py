@@ -63,6 +63,7 @@ def clear_progress(db: Session) -> None:
     from server.db import (
         Activity,
         AuditRecord,
+        DelayEvent,
         Job,
         LinkedEvent,
         RaidItem,
@@ -79,7 +80,11 @@ def clear_progress(db: Session) -> None:
     # clean state" the demo script promises. The candidates themselves are
     # recomputed from the audit records on every read, so they come back on
     # their own.
-    for model in (ReviewQueueItem, AuditRecord, LinkedEvent, Job, RaidItem):
+    # DelayEvent is derived entirely from AuditRecord text and cites an audit
+    # row by id, so a surviving row would cite evidence the database no longer
+    # holds. It is cleared before the records it points at, and comes back on
+    # the next ingest.
+    for model in (DelayEvent, ReviewQueueItem, AuditRecord, LinkedEvent, Job, RaidItem):
         db.query(model).delete()
     db.query(Activity).update({
         Activity.actual_start: None,

@@ -6704,3 +6704,126 @@ by `register_category_for_phrase`), `eval_real.py` (a stale pointer to
 `server.raid.DELAY_KEYWORDS` is now a re-export rather than the definition. It
 is kept because several modules and tests import it from there, and the test
 suite asserts the two are the same object so the list cannot fork.
+
+---
+
+## 2026-09-04 / D-077 — A delay becomes a row, so a planner has something to overrule
+
+### Context
+Phase 1 of the delay-attribution layer. D-076 built the taxonomy; the delay
+text itself was still only ever counted at read time, by
+`server.raid.delay_evidence`, for the Memory screen and the RAID candidates.
+
+A count cannot carry a decision. The whole point of the Contractor Dispute
+Shield is that a planner can overrule the proposed liability on a specific
+delay, and an overruled delay needs an identity for the ruling to attach to.
+Recompute a count and the decision has nowhere to live.
+
+### Decision
+A `DelayEvent` table, materialised from the audit trail by
+`server/delay_events.py :: sync_delay_events`, plus a read-only
+`GET /delay/attribution`.
+
+**One scan, not two.** `raid.delay_evidence` used to scan `AuditRecord` text
+itself. It was split into `delay_observations()` — the scan, returning one
+entry per (phrase, activity, source file, span) with the audit rows behind it —
+and `delay_evidence()`, which aggregates that per phrase and keeps its previous
+return shape exactly. The attribution layer materialises the same
+observations. Nothing re-implements the match, which is the mistake D-048 was
+written about, and the two can no longer disagree.
+
+**The Memory screen keeps computing at read time.** It gained `category` and
+`liability` from the pure taxonomy lookups, not from `DelayEvent` rows. A
+frequency needs no identity, and a read-time count must not silently depend on
+whether a sync has run.
+
+**The sync is idempotent and never touches a ruling.** It is keyed on the
+observation identity and re-runs on every ingest and every resolution, updating
+the derived columns — `category`, `impact_days`, `month`, the citation — in
+place. `liability_final` and the adjudication columns are deliberately absent
+from what it writes: a re-classification that silently reset a planner's
+decision on the next file upload would be exactly the audit failure this
+feature exists to prevent. Asserted by
+`test_a_ruling_survives_a_re_sync`.
+
+**`GET /delay/attribution` writes nothing.** Materialising on read would hide
+when the work happened and make two identical requests do different amounts of
+writing. The write points are the two places that can create a delay or move a
+variance: the ingest roll-up, and `POST /review/{id}/resolve` including the
+withheld-finish path. A database that has not ingested since this landed
+returns an empty matrix, which `scripts/reset_demo.py` fixes by re-ingesting —
+the project's standing preference for a reset over a migration.
+
+**Two totals, always both.** `proposed_days` counts every row at its effective
+liability; `adjudicated_days` counts only rows a planner has ruled on. Sending
+only the first would dress machine proposals up as findings; only the second
+would hide the queue. The upper-bound caveat on `impact_days` and the meaning
+of an unadjudicated row travel in the response body, not only in these docs, so
+a client cannot render either without them.
+
+### On `month`
+`ARCHITECTURE.md §2.7` said `month` "enables seasonality / historical-delay
+queries" and it was never built — `Audit-1.md` F-04 named its absence as the
+reason the system could not answer what monsoon costs on civil work. It is the
+month the affected activity concluded: actual finish when there is one,
+planned finish otherwise, and NULL for work still in progress rather than the
+month the report happened to be read. A multi-month activity is credited to the
+month it ended, a simplification the report states rather than hides.
+
+### Measured on the demo corpus
+After `scripts/reset_demo.py`, four delay events across 275 audit records:
+
+```
+CIV-DWG-1015  fencing conflict      OTHER      CONTESTED        21d  2026-09
+CIV-FLR-1020  holiday delay         OTHER      CONTESTED        20d  2026-08
+CIV-PLY-1004  piling rig breakdown  EQUIPMENT  NON_COMPENSABLE   1d  2026-07
+CIV-PLY-1006  rain delay            WEATHER    EXCUSABLE         1d  2026-07
+
+proposed_days   COMPENSABLE 0 · NON_COMPENSABLE 1 · EXCUSABLE 1 · CONTESTED 41
+days_by_month   2026-07: 2 · 2026-08: 20 · 2026-09: 21
+```
+
+41 of 43 days are contested, which is the honest reading of this evidence and
+follows directly from D-076's refusal to read "fencing conflict" as an
+owner-withheld work front. The compensable bucket stays empty until the corpus
+carries a genuine owner-side delay.
+
+### Alternatives Considered
+- **Compute the matrix at read time like the RAID candidates.** Rejected: a
+  planner's ruling would have nowhere to live, which is the entire feature.
+- **Sync inside the GET.** Rejected as above; it also makes the endpoint's cost
+  depend on how stale the caller is.
+- **Have the Memory screen read `DelayEvent` rows too.** Rejected: it would
+  make a working screen depend on a sync having run, for a number that does not
+  need identity.
+- **Key rows on the audit record id.** Rejected. One spreadsheet row writes
+  actual_start, actual_finish and actual_qty, so that keying reports one delay
+  three times — the exact bug D-071 fixed in the counter.
+
+### Verification
+`python -m pytest -q` — 974 passed, up from 959. The 15 new tests are
+`server/test_delay_attribution.py`: idempotent sync, one observation to one
+row, two causes on one activity as two rows, earliest-record citation,
+`impact_days` tracking a variance change, `month` derivation, rulings excluded
+from and included in the right totals, a ruling surviving a re-sync, the
+endpoint's caveats present in its payload, discipline filtering, and that the
+GET writes nothing.
+
+`scripts/reset_demo.py` then `scripts/healthcheck.py` against a running server
+— 31 passed, 0 failed. `matching/` and `extraction/` untouched, so `eval.py` is
+not implicated.
+
+### Affected Areas
+`server/db.py` (`DelayEvent`), `server/delay_events.py` (new),
+`server/test_delay_attribution.py` (new), `server/raid.py`
+(`delay_observations` / `finish_slip_by_activity` split out),
+`server/main.py` (endpoint, two sync call sites, `_compute_delay_reasons`),
+`server/schemas.py`, `server/demo.py` (`clear_progress`),
+`scripts/healthcheck.py` (endpoint count 30 → 31, per D-074's pinning rule).
+
+### Trade-offs / Consequences
+`impact_days` remains an upper bound: an activity's whole finish slip is
+credited to every cause recorded against it, so the figures do not sum to a
+project total. Making it exact needs float consumption, which nothing here
+computes yet. The response says so in its own body rather than leaving a reader
+to assume otherwise.

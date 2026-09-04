@@ -762,9 +762,9 @@
     "semantic_hash": ""
   },
   "scripts/healthcheck.py": {
-    "mtime": 1788531027.6466932,
-    "seen": 1788531109.9312983,
-    "ast_hash": "1041e05679074a1884c5dffdcf25763c",
+    "mtime": 1788535512.478878,
+    "seen": 1788535836.655797,
+    "ast_hash": "acf71db00eb2f28d55826162f1f6610d",
     "semantic_hash": ""
   },
   "scripts/reset_demo.py": {
@@ -804,27 +804,27 @@
     "semantic_hash": ""
   },
   "server/db.py": {
-    "mtime": 1788427928.2231226,
-    "seen": 1788531109.9312983,
-    "ast_hash": "294e116370f072be7f1798d9483b413f",
+    "mtime": 1788535430.529781,
+    "seen": 1788535836.655797,
+    "ast_hash": "3607f26d809ed246499606371ba1e7bc",
     "semantic_hash": ""
   },
   "server/demo.py": {
-    "mtime": 1788427917.7938318,
-    "seen": 1788531109.9312983,
-    "ast_hash": "0063c26f4e9df4ed9b93e9951f74cba9",
+    "mtime": 1788535512.478878,
+    "seen": 1788535836.655797,
+    "ast_hash": "170b11cc4b1eadaed7e8d4a7f58803bb",
     "semantic_hash": ""
   },
   "server/main.py": {
-    "mtime": 1788530647.110912,
-    "seen": 1788531109.9312983,
-    "ast_hash": "38c2c1b722e4a25aeb6d75fe9db10ab0",
+    "mtime": 1788535546.89178,
+    "seen": 1788535836.655797,
+    "ast_hash": "1c0cdd9294b04daa53c3fad021d76b86",
     "semantic_hash": ""
   },
   "server/schemas.py": {
-    "mtime": 1788530647.1104107,
-    "seen": 1788531109.9312983,
-    "ast_hash": "fcf43219eefb53c5d74f61706a74db72",
+    "mtime": 1788535512.4768782,
+    "seen": 1788535836.655797,
+    "ast_hash": "dfa9788893a9b0b0a5296c1e003215f6",
     "semantic_hash": ""
   },
   "server/test_agent.py": {
@@ -1254,9 +1254,9 @@
     "semantic_hash": ""
   },
   "DECISIONS.md": {
-    "mtime": 1788535117.7620683,
-    "seen": 1788535161.3743417,
-    "ast_hash": "7cebbba01fcc440210ee5985db28b79a",
+    "mtime": 1788535826.4349065,
+    "seen": 1788535836.655797,
+    "ast_hash": "b59d755a8baa8d80dbac833e72039a42",
     "semantic_hash": ""
   },
   "DEMO.md": {
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "FLOW.md": {
-    "mtime": 1788535135.7172446,
-    "seen": 1788535161.3743417,
-    "ast_hash": "b868fe59d9a1ec98b58d30a44d6f91ef",
+    "mtime": 1788535826.4354227,
+    "seen": 1788535836.655797,
+    "ast_hash": "f9e5836852191f29640653ca5ff9b295",
     "semantic_hash": ""
   },
   "GEMINI.md": {
@@ -2442,9 +2442,9 @@
     "semantic_hash": ""
   },
   "server/raid.py": {
-    "mtime": 1788534983.1066878,
-    "seen": 1788535161.3743417,
-    "ast_hash": "5c4c0bf43f7483d384567658fca3d89e",
+    "mtime": 1788535393.0213368,
+    "seen": 1788535836.655797,
+    "ast_hash": "9727d0320fd5ca150dc77cfca7d1f732",
     "semantic_hash": ""
   },
   "server/test_delay_evidence.py": {
@@ -2787,6 +2787,18 @@
     "mtime": 1788535017.013322,
     "seen": 1788535161.3743417,
     "ast_hash": "10e1c45f1ea1951b59b42db71ddcd658",
+    "semantic_hash": ""
+  },
+  "server/delay_events.py": {
+    "mtime": 1788535464.5343256,
+    "seen": 1788535836.655797,
+    "ast_hash": "c691b909ea3d32adb308c199188ae88f",
+    "semantic_hash": ""
+  },
+  "server/test_delay_attribution.py": {
+    "mtime": 1788535653.2592971,
+    "seen": 1788535836.655797,
+    "ast_hash": "e4e8bd958fc3daf7fc9256d418aa62e7",
     "semantic_hash": ""
   }
 }

@@ -7,6 +7,7 @@ Endpoints:
   POST /review/{id}/resolve planner confirms/reassigns/creates activity
   GET  /schedule            planned vs actual, variance in days
   POST /schedule/export     emit PMXML (XER as stretch)
+  GET  /delay/attribution   delay attribution matrix (category, liability, citation)
   GET  /memory/query        institutional memory analytics
   POST /agent/turn          slot-filling conversational logging turn
 
@@ -47,6 +48,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from extraction.textio import read_text
 from server import agent_llm
+from server.delay_events import (
+    attribution as delay_attribution,
+    effective_liability,
+    is_adjudicated,
+    sync_delay_events,
+)
+from server.delay_taxonomy import category_for_phrase, liability_for_phrase
 from server.agent_slots import (
     ACTIVITY_ID_RE,
     AgentContext,
@@ -139,6 +147,8 @@ from .schemas import (
     AgentTurnResponse,
     BaselineImportResponse,
     BaselineVersionResponse,
+    DelayAttributionResponse,
+    DelayEventOut,
     DelayReason,
     DurationDistribution,
     AuditFeedItem,
@@ -1215,6 +1225,11 @@ async def ingest_file(
                 default_source_file=file.filename,
             )
 
+        # Classify the delay text this ingest just wrote into the audit trail.
+        # Idempotent and keyed on the observation identity, so re-ingesting the
+        # same file updates rows rather than duplicating them (D-077).
+        sync_delay_events(db)
+
         # Update job
         job.status = "completed"
         job.event_count = event_count
@@ -1622,6 +1637,10 @@ def resolve_review_item(
     else:
         raise HTTPException(400, f"Unknown action: {req.action}")
 
+    # A resolution can move an activity's finish variance, which is what
+    # DelayEvent.impact_days is derived from.
+    sync_delay_events(db)
+
     db.commit()
 
     return ResolveResponse(
@@ -1726,7 +1745,7 @@ def _resolve_defaulted_finish(
     item.resolution = "confirm"
     item.resolved_activity_id = activity_id
     item.resolution_note = req.note
-    item.resolved_at = _now()
+    sync_delay_events(db)
     db.commit()
 
     return ResolveResponse(
@@ -3087,6 +3106,72 @@ def get_evidence_corpus():
         raise HTTPException(404, str(e))
 
 
+# ── GET /delay/attribution ───────────────────────────────────────────────────
+
+@app.get("/delay/attribution", response_model=DelayAttributionResponse)
+def get_delay_attribution(
+    discipline: Optional[str] = Query(None, description="Filter by discipline"),
+    db: Session = Depends(get_db),
+):
+    """Delay attribution: what delayed the work, and whose problem it is.
+
+    The read side of the Contractor Dispute Shield. Every row carries its
+    ARCHITECTURE 2.7 category, the party the deterministic table in
+    `server/delay_taxonomy.py` proposes, whatever a planner has since ruled,
+    and the file, row and sentence the classification was read from.
+
+    DELIBERATELY READ-ONLY. The rows are written by `sync_delay_events` at the
+    points that can create them - ingest roll-up and planner resolution - not
+    here. A GET that materialises its own answer hides when the work happened
+    and makes two identical requests do different amounts of writing.
+    A database that has never ingested since this feature landed returns an
+    empty matrix, which `scripts/reset_demo.py` fixes by re-ingesting.
+
+    Two totals are returned. `adjudicated_days` counts only what a planner has
+    ruled on; `proposed_days` counts every row at its effective liability.
+    Presenting the second alone would dress machine proposals up as findings.
+    """
+    data = delay_attribution(db, discipline=discipline)
+
+    events = [
+        DelayEventOut(
+            id=row.id,
+            activity_id=row.activity_id,
+            phrase=row.phrase,
+            category=row.category,
+            liability_proposed=row.liability_proposed,
+            liability_final=row.liability_final,
+            liability_effective=effective_liability(row),
+            adjudicated=is_adjudicated(row),
+            adjudication_note=row.adjudication_note,
+            inferred_by=row.inferred_by,
+            confidence=row.confidence,
+            discipline=row.discipline,
+            month=row.month,
+            impact_days=row.impact_days or 0,
+            audit_record_id=row.audit_record_id,
+            source_file=row.source_file,
+            source_line=row.source_line,
+            source_row=row.source_row,
+            source_span=row.source_span,
+        )
+        for row in data["events"]
+    ]
+
+    return DelayAttributionResponse(
+        events=events,
+        total_events=data["total_events"],
+        adjudicated_events=data["adjudicated_events"],
+        adjudicated_days=data["adjudicated_days"],
+        proposed_days=data["proposed_days"],
+        days_by_month=data["days_by_month"],
+        categories_present=data["categories_present"],
+        impact_days_basis=data["impact_days_basis"],
+        unadjudicated_note=data["unadjudicated_note"],
+        computed_at=_now(),
+    )
+
+
 # ── GET /memory/query ────────────────────────────────────────────────────────
 
 @app.get("/memory/query", response_model=MemoryQueryResponse)
@@ -3231,6 +3316,12 @@ def _compute_delay_reasons(
     results = [
         DelayReason(
             reason=phrase,
+            # The ARCHITECTURE 2.7 classification of the same phrase. Pure
+            # lookups over server/delay_taxonomy.py - this screen reads no
+            # DelayEvent rows, because a frequency needs no identity and a
+            # read-time count must not depend on a sync having run.
+            category=category_for_phrase(phrase).value,
+            liability=liability_for_phrase(phrase).value,
             frequency=found["occurrences"],
             affected_activities=found["activity_ids"][:10],
             days_lost=found["days_lost"],

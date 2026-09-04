@@ -559,6 +559,95 @@ class AliasLexicon(Base):
     updated_at = Column(DateTime, default=_now, onupdate=_now)
 
 
+# ── DelayEvent (delay attribution) ──────────────────────────────────────────
+
+class DelayEvent(Base):
+    """One delay, classified, with the sentence it was read from.
+
+    ARCHITECTURE.md §2.7 specified this record and it was never built. It is
+    the unit the Contractor Dispute Shield is assembled from: a Liquidated
+    Damages argument is won or lost on whether each delay can be tied to a
+    party AND to the document that evidences it, and this row carries both.
+
+    DERIVED, NOT AUTHORED.
+    Every row is materialised from `AuditRecord` text by
+    `server/delay_events.py :: sync_delay_events`, keyed on the observation
+    identity `server/raid.py :: delay_observations` already uses - the phrase,
+    the activity, the source file and the exact span. Re-running the sync
+    updates rows in place and never duplicates them, so it is safe to call on
+    every ingest. Delete the audit trail and these rows are meaningless, which
+    is why `server/demo.py :: clear_progress` clears them with it.
+
+    LIABILITY IS A PROPOSAL UNTIL A PLANNER RULES.
+    `liability_proposed` comes from the deterministic table in
+    `server/delay_taxonomy.py`. `liability_final` stays NULL until a planner
+    adjudicates the row, and the adjudication writes an append-only
+    `AuditRecord` of its own rather than only setting this column - the same
+    rule that keeps a proposed actual date out of the schedule until
+    `POST /review/{id}/resolve` commits it (D-009). A report must count a row
+    with no `liability_final` as unadjudicated, never as a finding.
+
+    `impact_days` IS AN UPPER BOUND.
+    It is the affected activity's whole finish slip, credited to this cause.
+    An activity delayed by two causes reports the same slip against both, so
+    the figures do not sum to a project total. Making it exact needs float
+    consumption, which nothing in this codebase computes yet.
+
+    See D-077.
+    """
+
+    __tablename__ = "delay_events"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    activity_id = Column(String, ForeignKey("activities.activity_id"), nullable=True, index=True)
+
+    # The audit row this classification cites. The EARLIEST row carrying the
+    # span, so the citation is the first time the project recorded the claim,
+    # not whichever write happened to land last.
+    audit_record_id = Column(String, ForeignKey("audit_records.id"), nullable=True)
+
+    # The matched vocabulary phrase. Part of the row's identity, and the reason
+    # the same activity can carry two delay events from two different causes.
+    phrase = Column(String, nullable=False)
+
+    # ARCHITECTURE §2.7. Values come from `delay_taxonomy.DelayCategory`.
+    category = Column(String, nullable=False, default="OTHER")
+
+    # Deterministic proposal, and the planner's ruling. Values come from
+    # `delay_taxonomy.Liability`.
+    liability_proposed = Column(String, nullable=False, default="CONTESTED")
+    liability_final = Column(String, nullable=True)
+    adjudicated_by = Column(String, nullable=True)
+    adjudicated_at = Column(DateTime, nullable=True)
+    adjudication_note = Column(Text, nullable=True)
+
+    # How the category was reached: "rules" for the phrase table. An LLM
+    # classifier would write its own name here, and would still never touch
+    # liability.
+    inferred_by = Column(String, nullable=False, default="rules")
+    confidence = Column(Float, nullable=True)
+
+    discipline = Column(String, nullable=True)
+    # Calendar month the affected activity concluded, "YYYY-MM". This is the
+    # field §2.7 said "enables seasonality / historical-delay queries", and its
+    # absence is why the system could not answer what monsoon costs on civil
+    # work. A multi-month activity is credited to the month it ended, which is
+    # a simplification the report states rather than hides.
+    month = Column(String, nullable=True, index=True)
+    impact_days = Column(Integer, nullable=False, default=0)
+
+    # Provenance, copied from the citing audit row so a report can name the
+    # exact line of the exact document without a join.
+    raw_text = Column(Text, nullable=True)
+    source_file = Column(String, nullable=True)
+    source_line = Column(Integer, nullable=True)
+    source_row = Column(Integer, nullable=True)
+    source_span = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+
 # ── ConversationTurn (agent/turn) ───────────────────────────────────────────
 
 class ConversationTurn(Base):

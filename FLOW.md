@@ -1291,6 +1291,57 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 1 of the delay-attribution layer — delay text in the audit
+trail becomes persisted, classified `DelayEvent` rows, exposed by a read-only
+`GET /delay/attribution`. One scan of the audit trail now feeds three readers.
+**Date:** 2026-09-04 · **Decision:** D-077
+
+```
+DELAY ATTRIBUTION — ONE SCAN, THREE READERS                       (D-077)
+
+  server/raid.py  delay_observations(db)          THE SINGLE SCAN
+    key = (phrase, activity_id, source_file, source_span)
+    value = every AuditRecord carrying that span
+         |
+         +--> raid.delay_evidence()               aggregate per phrase
+         |      |                                 (return shape unchanged)
+         |      +--> main.py _compute_delay_reasons()   GET /memory/query
+         |      |        + category / liability from delay_taxonomy lookups
+         |      |          (pure - reads NO DelayEvent rows)
+         |      +--> raid.propose_candidates()           GET /raid/candidates
+         |
+         +--> delay_events.sync_delay_events(db)   MATERIALISE
+                one observation -> one DelayEvent row, upserted on the key
+                derived every run:  category, liability_proposed, month,
+                                    impact_days, citation, discipline
+                NEVER written here: liability_final, adjudicated_by/at, note
+                                    (a planner's ruling survives every re-sync)
+                    |
+                    +--> delay_events.attribution(db)
+                             GET /delay/attribution   READ-ONLY, writes nothing
+                             adjudicated_days   rulings only
+                             proposed_days      every row, effective liability
+                             days_by_month      the seasonality §2.7 promised
+
+  WRITE POINTS (the only places sync runs)
+    main.py ingest_file()            after _apply_rollup_to_schedule
+    main.py resolve_review_item()    before its commit
+    main.py _resolve_defaulted_finish()  before its commit
+                                     — a resolution moves finish variance,
+                                       which impact_days is derived from
+
+  server/demo.py clear_progress()  deletes DelayEvent first: the rows cite
+                                   AuditRecord ids and are meaningless without
+                                   them. They return on the next ingest.
+
+  Demo corpus after reset_demo.py: 4 events, 43 days, 41 of them CONTESTED.
+  Pinned by server/test_delay_attribution.py (15 tests).
+```
+
+---
+
+### Previous modification area (D-076)
+
 **Task:** Phase 0 of the delay-attribution layer — the ARCHITECTURE §2.7 delay
 taxonomy and its liability map, built as pure data beside the existing delay
 vocabulary. No behaviour change: the RAID register's categories are unmoved.
