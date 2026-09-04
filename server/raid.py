@@ -32,6 +32,7 @@ from typing import Iterable, Optional
 
 from sqlalchemy.orm import Session
 
+from server import delay_taxonomy
 from server.db import Activity, AuditRecord, LinkedEvent, RaidItem
 
 #: The four kinds one register holds.
@@ -97,23 +98,12 @@ def validate(kind: str, status: str, probability, impact_days) -> None:
 #: Delay vocabulary, shared with `_compute_delay_reasons` in server/main.py.
 #: Kept as one list so the Memory screen's causes and the RAID candidates can
 #: never name different things.
-DELAY_KEYWORDS = (
-    "crane breakdown", "rain delay", "piling rig breakdown",
-    "fencing conflict", "holiday delay", "crane issue",
-    "material delay", "labour shortage", "design change",
-    "weather", "monsoon", "flooding",
-)
-
-#: Maps a delay phrase onto a register category. Anything unlisted is "other" -
-#: an honest bucket rather than a guessed one.
-_CATEGORY = {
-    "crane breakdown": "equipment", "crane issue": "equipment",
-    "piling rig breakdown": "equipment",
-    "rain delay": "weather", "weather": "weather",
-    "monsoon": "weather", "flooding": "weather", "holiday delay": "calendar",
-    "material delay": "supply", "labour shortage": "resource",
-    "design change": "design", "fencing conflict": "interface",
-}
+#:
+#: It now lives in `server/delay_taxonomy.py` alongside the §2.7 category and
+#: liability mappings built on top of it, and is re-exported here so the many
+#: existing importers of `server.raid.DELAY_KEYWORDS` keep working. The list
+#: itself is unchanged.
+DELAY_KEYWORDS = delay_taxonomy.DELAY_KEYWORDS
 
 
 def delay_evidence(db: Session) -> dict[str, dict]:
@@ -231,7 +221,11 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
                     f"{'y' if len(activity_ids) == 1 else 'ies'}, accounting for "
                     f"{days_lost} day{'' if days_lost == 1 else 's'} of finish slip."
                 ),
-                "category": _CATEGORY.get(phrase, "other"),
+                # The REGISTER category ("equipment", "supply"), which is a
+                # governance grouping and deliberately not the contractual
+                # DelayCategory the attribution layer assigns to the same
+                # phrase. See server/delay_taxonomy.py.
+                "category": delay_taxonomy.register_category_for_phrase(phrase),
                 "linked_activity_ids": activity_ids,
                 "occurrences": occurrences,
                 "days_lost": days_lost,

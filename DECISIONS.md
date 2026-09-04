@@ -6604,3 +6604,103 @@ also dropped it — that the engine is the same object across two calls.
 
 ### Affected Areas
 `server/test_server.py` (new test class only). No application code changed.
+
+---
+
+## 2026-09-04 / D-076 — The delay taxonomy is built, and liability is a lookup a human can audit
+
+### Context
+`ARCHITECTURE.md §2.7` specified a ten-category delay taxonomy — `MATERIAL`,
+`MANPOWER`, `DRAWING_RFI`, `PERMIT_HSE`, `WEATHER`, `EQUIPMENT`, `CLIENT_HOLD`,
+`REWORK_NCR`, `FRONT_NOT_AVAILABLE`, `OTHER` — and it was never built.
+`Audit-1.md` F-04 verified that a grep for `DRAWING_RFI` returned nothing.
+What shipped instead was a twelve-phrase substring list in `server/raid.py`
+feeding a register `category` string and a frequency count.
+
+This is Phase 0 of the delay-attribution layer ("Contractor Dispute Shield"):
+the taxonomy and the liability map, with no behaviour change. The layer exists
+because a PSU project's real pain is not the schedule slipping, it is the
+multi-crore Liquidated Damages argument afterwards, and NAVIS already holds the
+one thing that argument needs — an append-only audit trail where every write
+cites the file, row and sentence behind it.
+
+### Decision
+A new `server/delay_taxonomy.py` holding three mappings, kept separate:
+
+1. **`PHRASE_CATEGORY`** — delay phrase to `DelayCategory`.
+2. **`LIABILITY`** — `DelayCategory` to `Liability`
+   (`COMPENSABLE` / `NON_COMPENSABLE` / `EXCUSABLE` / `CONTESTED`).
+3. **`REGISTER_CATEGORY`** — the pre-existing RAID `category` string, moved
+   byte-for-byte.
+
+The third exists so the move changes nothing: `propose_candidates()` still puts
+"equipment" on a crane breakdown. A register category groups an issue for a
+governance board; a `DelayCategory` is a contractual classification. They
+disagree on purpose and are asserted to disagree.
+
+**Liability is a table in source, never a model output.** This is D-006's rule
+one level up. An LLM may later be asked to suggest a *category* for text the
+phrase list does not recognise — classification is what a model is good at —
+but category to liability is a lookup, reviewable in a diff and identical on
+every run. A hallucinated tag corrupts a link; a hallucinated liability
+corrupts a contractual position.
+
+**Three categories have no default, by design.** `MATERIAL` is owner-supplied
+on some packages and contractor-procured on others; `PERMIT_HSE` may sit with
+either party depending on the contract; `OTHER` is the admission that the
+taxonomy did not classify the text. All three resolve to `CONTESTED`, which a
+planner adjudicates in Phase 2. Defaulting them would produce a number that
+looks like a finding and is not one.
+
+### Two classification calls worth defending
+- **`"fencing conflict"` maps to `OTHER`, not `FRONT_NOT_AVAILABLE`.** This is
+  the interesting one, because `FRONT_NOT_AVAILABLE` is compensable and the
+  demo corpus's largest single slip is `CIV-DWG-1015`, 21 days, evidenced only
+  as "Delayed by fencing conflict". Reading that as an owner-withheld work
+  front would manufacture a 21-day claim against the client out of a sentence
+  that never named a responsible party — and on this very corpus the blocking
+  work, `CIV-FNC-1016` Fence & Gate, is itself a scheduled activity, so the
+  clash is as likely internal as owner-caused. It routes to a planner.
+- **`"holiday delay"` is `CONTESTED`, not `EXCUSABLE`.** A public holiday is
+  usually already in the contract calendar, in which case it is not a delay at
+  all. `EXCUSABLE` would grant an extension of time on no evidence.
+
+### Consequence for the demo, stated rather than discovered
+With these two calls the compensable bucket is **empty on the current corpus**.
+That is the correct output for this evidence: no field report in
+`dataset/` describes an owner-caused delay. The fix belongs in the corpus, not
+in the mapping — one DPR line describing a genuine drawing hold (`ARCHITECTURE`
+uses "hold due to rfi pending on isometric rev 2" as its own example) would
+populate the bucket honestly. Weakening the mapping to fill it would be exactly
+the overclaim this project's rules exist to prevent.
+
+### Alternatives Considered
+- **Merge the register category and the taxonomy into one map.** Rejected: it
+  would silently change every RAID candidate's `category`, and the two answer
+  different questions.
+- **Let the LLM assign liability directly.** Rejected under D-006's reasoning.
+  The classifier's place is widening RECOGNITION of unrecognised phrases,
+  guarded by `EXTRACTION_PROVIDER` as extraction already is (D-005).
+- **Map `"fencing conflict"` to `FRONT_NOT_AVAILABLE` for a better demo.**
+  Rejected. It is the single most attackable claim the feature could make, and
+  an Oil India scheduler is exactly the reader who would ask who owned the
+  fence.
+
+### Verification
+`python -m pytest -q` — 959 passed, up from 915. The 44 new tests are
+`server/test_delay_taxonomy.py`, which asserts the table itself: every category
+has a liability, the three unknowable ones stay `CONTESTED`, unknown input
+fails safe to `CONTESTED`, every keyword is classified, and all twelve register
+categories are unchanged by the move. `matching/` and `extraction/` are
+untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/delay_taxonomy.py` (new), `server/test_delay_taxonomy.py` (new),
+`server/raid.py` (vocabulary moved and re-exported; `_CATEGORY` lookup replaced
+by `register_category_for_phrase`), `eval_real.py` (a stale pointer to
+`_compute_delay_reasons` corrected, and its deliberate copy explained).
+
+### Trade-offs / Consequences
+`server.raid.DELAY_KEYWORDS` is now a re-export rather than the definition. It
+is kept because several modules and tests import it from there, and the test
+suite asserts the two are the same object so the list cannot fork.

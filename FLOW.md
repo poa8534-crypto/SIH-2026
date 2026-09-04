@@ -1291,6 +1291,48 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 0 of the delay-attribution layer — the ARCHITECTURE §2.7 delay
+taxonomy and its liability map, built as pure data beside the existing delay
+vocabulary. No behaviour change: the RAID register's categories are unmoved.
+**Date:** 2026-09-04 · **Decision:** D-076
+
+```
+DELAY TAXONOMY — THREE MAPS, KEPT SEPARATE                        (D-076)
+
+  server/delay_taxonomy.py           pure data, no DB, no I/O
+
+    DELAY_KEYWORDS  12 phrases, moved verbatim from server/raid.py
+         |          re-exported as server.raid.DELAY_KEYWORDS (same object)
+         |
+         +-- PHRASE_CATEGORY      phrase -> DelayCategory (the §2.7 ten)
+         |        |
+         |        +-- LIABILITY   DelayCategory -> Liability
+         |                          COMPENSABLE      DRAWING_RFI, CLIENT_HOLD,
+         |                                           FRONT_NOT_AVAILABLE
+         |                          NON_COMPENSABLE  EQUIPMENT, MANPOWER,
+         |                                           REWORK_NCR
+         |                          EXCUSABLE        WEATHER
+         |                          CONTESTED        MATERIAL, PERMIT_HSE,
+         |                                           OTHER   <- no default,
+         |                                           a planner rules (Phase 2)
+         |
+         +-- REGISTER_CATEGORY    phrase -> RAID category string, UNCHANGED
+                  read by server/raid.py propose_candidates()
+                  "fencing conflict" -> "interface" here
+                                     -> OTHER/CONTESTED in the taxonomy
+                  They disagree on purpose and are asserted to disagree.
+
+  Liability is a lookup in source, never a model output — D-006 one level up.
+  An LLM may later widen RECOGNITION of unknown phrases; it never assigns
+  liability.
+
+  Pinned by server/test_delay_taxonomy.py (44 tests).
+```
+
+---
+
+### Previous modification area (D-073 .. D-075)
+
 **Task:** The Reconcile screen's three resolve actions were corrected to the
 server's action vocabulary, closing the three P0s that D-072 recorded as open.
 `scripts/healthcheck.py` had its stale 8-endpoint assertion pinned to the real

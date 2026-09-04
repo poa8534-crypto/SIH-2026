@@ -657,8 +657,10 @@ def paimana():
 # ══════════════════════════════════════════════════════════════════════════════
 
 #: The delay vocabulary NAVIS actually has, lifted verbatim from
-#: `_compute_delay_reasons` in server/main.py. It is a substring list, not a
-#: taxonomy, and naming it accurately is part of the finding.
+#: `server/delay_taxonomy.py :: DELAY_KEYWORDS`. It is a substring list, not a
+#: taxonomy, and naming it accurately is part of the finding. Copied rather
+#: than imported on purpose: this measures RECOGNITION at the time the finding
+#: was written, so it must not silently track a later change to the list.
 NAVIS_DELAY_KEYWORDS = [
     "crane breakdown", "rain delay", "piling rig breakdown", "fencing conflict",
     "holiday delay", "crane issue", "material delay", "labour shortage",
