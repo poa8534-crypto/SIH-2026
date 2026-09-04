@@ -1291,6 +1291,58 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 4 — the contractual notice clock. Each delay gains the date it
+was evidenced, how that date was established, and the date notice falls due;
+`POST /delay/{id}/notice` records a notice given, and the report raises a
+closed window on its face.
+**Date:** 2026-09-04 · **Decision:** D-080
+
+```
+NOTICE CLOCK — WHICH DATE DOES IT START FROM?                     (D-080)
+
+  delay_events._evidenced_on(db, audit_record, activity)
+      |
+      +-- AuditRecord.linked_event_id -> LinkedEvent.reported_date
+      |        basis REPORTED       the only date a SOURCE asserted
+      +-- else Activity.actual_finish
+      |        basis ACTUAL_FINISH  inference: cannot have learned later
+      +-- else AuditRecord.timestamp.date()
+      |        basis RECORDED       measures the loader, not the project
+      +-- else (None, None)         -> NoticeStatus.UNKNOWN
+
+  notice_due_on = evidenced_on + NOTICE_WINDOW_DAYS (28, FIDIC 1999 20.1)
+  written by sync_delay_events on every ingest, alongside category/impact
+
+  notice_status(row, as_of)      as_of is DATA_DATE, passed explicitly
+      notice_served_on set   -> SERVED
+      no due date or no as_of -> UNKNOWN   (never "today")
+      as_of > due             -> LAPSED
+      otherwise               -> OPEN
+
+  POST /delay/{delay_event_id}/notice   { served_on, reference?, recorded_by? }
+      delay_events.record_notice()  sets notice_served_on / notice_reference
+      main.py _write_audit()  field_changed "delay_notice",
+                              source planner_review, auto_applied False,
+                              old_value = previous served date
+      a date AFTER the deadline is accepted and returned served_late=true
+      NOT cleared by a re-sync - same rule as liability_final
+
+  Surfaced in:
+    GET /delay/attribution   notice_counts / notice_lapsed_days /
+                             notice_as_of / notice_note, per-event status
+    GET /delay/report        a "Contractual notice" table, a red alarm line
+                             when any window has closed, a per-row notice line,
+                             and a fifth caveat naming FIDIC as the default
+
+  Demo corpus: basis REPORTED on all four; 2 LAPSED (-47d, -36d), 2 OPEN
+  (+15d, +5d). None of this was visible before this phase.
+  Pinned by server/test_delay_attribution.py TestTheNoticeClock (10 tests).
+```
+
+---
+
+### Previous modification area (D-079)
+
 **Task:** Phase 3 — the Delay Attribution Report. `GET /delay/report` renders
 the classified delays as a printable HTML document and as CSV, stamped with the
 data date and baseline sha256 and carrying its own caveats. This completes the

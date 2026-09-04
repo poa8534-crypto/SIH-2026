@@ -28,19 +28,144 @@ the sync writes only the derived columns and never `liability_final`.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
+from enum import Enum
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from server import raid
-from server.db import Activity, DelayEvent
+from server.db import Activity, AuditRecord, DelayEvent, LinkedEvent
 from server.delay_taxonomy import (
     DelayCategory,
     Liability,
     category_for_phrase,
     liability_for,
 )
+
+
+#: The contractual window for giving notice of a delay event, in days.
+#:
+#: 28 days is FIDIC 1999 Sub-Clause 20.1, which requires notice "not later than
+#: 28 days after the Contractor became aware, or should have become aware, of
+#: the event". It is a DEFAULT and not a fact about any particular contract:
+#: Indian PSU general conditions commonly shorten it, and a real deployment
+#: must set this from the contract it is administering. It is a module constant
+#: rather than an inference for exactly that reason - the number has to be
+#: something a person chose and can point at.
+NOTICE_WINDOW_DAYS = 28
+
+
+class NoticeBasis(str, Enum):
+    """How `DelayEvent.evidenced_on` was arrived at.
+
+    The same distinction `extraction.models.DateBasis` draws for actual dates,
+    for the same reason: a notice clock started from the wrong date is worse
+    than no clock, so the report has to be able to say which kind of date it
+    started from.
+
+      REPORTED       the date the field report itself carried. The day the
+                     project was actually told. This is the only one that is
+                     an assertion by a source.
+      ACTUAL_FINISH  the day the delayed work concluded. An inference: the
+                     project cannot have learned of the delay later than this,
+                     but it may well have learned earlier.
+      RECORDED       the day NAVIS wrote the audit row. The weakest basis -
+                     it measures ingestion, not the project - and is used only
+                     when nothing better exists.
+    """
+
+    REPORTED = "REPORTED"
+    ACTUAL_FINISH = "ACTUAL_FINISH"
+    RECORDED = "RECORDED"
+
+
+class NoticeStatus(str, Enum):
+    """Where one delay stands against its notice window.
+
+      SERVED   a notice has been recorded against this delay.
+      OPEN     the window has not closed yet as at the data date.
+      LAPSED   the window closed and no notice is recorded.
+      UNKNOWN  no evidenced date could be established, so no window exists.
+               Reported as unknown rather than defaulted, because a lapsed
+               claim asserted on a guessed date is a false accusation.
+    """
+
+    SERVED = "SERVED"
+    OPEN = "OPEN"
+    LAPSED = "LAPSED"
+    UNKNOWN = "UNKNOWN"
+
+
+def _evidenced_on(
+    db: Session,
+    record: Optional[AuditRecord],
+    activity: Optional[Activity],
+) -> tuple[Optional[date], Optional[str]]:
+    """The date the project was told about a delay, and how that was decided.
+
+    Best source first. `LinkedEvent.reported_date` is the date the field report
+    carried and is the only candidate that a source actually asserted; the
+    audit row's own timestamp records when NAVIS ingested the file, which on a
+    corpus loaded in one batch is the same day for every delay in the project
+    and would make every clock start together.
+    """
+    if record is not None and record.linked_event_id:
+        event = (
+            db.query(LinkedEvent)
+            .filter(LinkedEvent.id == record.linked_event_id)
+            .first()
+        )
+        if event is not None and event.reported_date:
+            return event.reported_date, NoticeBasis.REPORTED.value
+
+    if activity is not None and activity.actual_finish:
+        return activity.actual_finish, NoticeBasis.ACTUAL_FINISH.value
+
+    if record is not None and record.timestamp:
+        return record.timestamp.date(), NoticeBasis.RECORDED.value
+
+    return None, None
+
+
+def notice_status(row: DelayEvent, as_of: Optional[date]) -> str:
+    """Where this delay stands against its notice window, as at `as_of`."""
+    if row.notice_served_on is not None:
+        return NoticeStatus.SERVED.value
+    if row.notice_due_on is None or as_of is None:
+        return NoticeStatus.UNKNOWN.value
+    return (
+        NoticeStatus.LAPSED.value
+        if as_of > row.notice_due_on
+        else NoticeStatus.OPEN.value
+    )
+
+
+def days_to_notice(row: DelayEvent, as_of: Optional[date]) -> Optional[int]:
+    """Days remaining in the window; negative once it has closed."""
+    if row.notice_due_on is None or as_of is None:
+        return None
+    return (row.notice_due_on - as_of).days
+
+
+def record_notice(
+    row: DelayEvent,
+    served_on: date,
+    *,
+    reference: Optional[str] = None,
+) -> Optional[date]:
+    """Record that contractual notice was given. Returns the previous date.
+
+    Sets only the two planner-supplied columns. The audit record is written by
+    the caller, for the same reason `adjudicate` leaves it to the caller:
+    `_write_audit` lives with the rest of the audit trail and there is one of
+    it. Re-recording is allowed and appends, because a corrected notice date is
+    exactly the kind of late correction a register has to survive.
+    """
+    previous = row.notice_served_on
+    row.notice_served_on = served_on
+    row.notice_reference = reference
+    return previous
 
 
 def _month_of(activity: Optional[Activity]) -> Optional[str]:
@@ -123,6 +248,16 @@ def sync_delay_events(db: Session) -> int:
         row.raw_text = source_span
         row.source_line = record.source_line if record is not None else None
         row.source_row = record.source_row if record is not None else None
+
+        # Notice clock. Derived, like category and impact - and like them,
+        # `notice_served_on` and `notice_reference` are NOT touched here: a
+        # notice a planner recorded must survive the next file upload.
+        evidenced, basis = _evidenced_on(db, record, activity)
+        row.evidenced_on = evidenced
+        row.evidenced_basis = basis
+        row.notice_due_on = (
+            evidenced + timedelta(days=NOTICE_WINDOW_DAYS) if evidenced else None
+        )
         touched += 1
 
     return touched
@@ -174,7 +309,11 @@ def adjudicate(
     return previous
 
 
-def attribution(db: Session, discipline: Optional[str] = None) -> dict:
+def attribution(
+    db: Session,
+    discipline: Optional[str] = None,
+    as_of: Optional[date] = None,
+) -> dict:
     """The delay attribution matrix.
 
     Returns the classified rows plus two sets of totals: `adjudicated_days`,
@@ -182,6 +321,10 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
     counts every row at its current effective liability. Both are reported,
     because reporting only the second would present proposals as findings and
     reporting only the first would hide work waiting for a planner.
+
+    `as_of` is the date the notice windows are judged against - the project's
+    data date. Without it every notice status is UNKNOWN, which is the honest
+    answer rather than silently using today.
     """
     query = db.query(DelayEvent)
     if discipline:
@@ -191,6 +334,8 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
     adjudicated_days: dict[str, int] = defaultdict(int)
     proposed_days: dict[str, int] = defaultdict(int)
     by_month: dict[str, int] = defaultdict(int)
+    notice_counts: dict[str, int] = {status.value: 0 for status in NoticeStatus}
+    lapsed_days = 0
 
     for row in rows:
         liability = effective_liability(row)
@@ -199,6 +344,10 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
             adjudicated_days[liability] += row.impact_days or 0
         if row.month:
             by_month[row.month] += row.impact_days or 0
+        status = notice_status(row, as_of)
+        notice_counts[status] += 1
+        if status == NoticeStatus.LAPSED.value:
+            lapsed_days += row.impact_days or 0
 
     # Worst first, then by how recently the project heard about it.
     rows.sort(key=lambda r: (-(r.impact_days or 0), r.phrase))
@@ -213,6 +362,10 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
                           for liability in Liability},
         "days_by_month": dict(sorted(by_month.items())),
         "categories_present": sorted({r.category for r in rows}),
+        "notice_window_days": NOTICE_WINDOW_DAYS,
+        "notice_counts": notice_counts,
+        "notice_lapsed_days": lapsed_days,
+        "notice_as_of": as_of,
         # Said in the payload, not only in the docs, so a client cannot present
         # an upper bound as a measured figure.
         "impact_days_basis": (
@@ -224,15 +377,27 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
             "Rows without a planner ruling are proposals. They are excluded "
             "from adjudicated_days."
         ),
+        "notice_note": (
+            f"Notice windows are {NOTICE_WINDOW_DAYS} days from the date the "
+            "delay was evidenced, a default taken from FIDIC 1999 Sub-Clause "
+            "20.1. The governing contract may say otherwise, and LAPSED means "
+            "only that no notice has been recorded here."
+        ),
     }
 
 
 __all__ = [
     "sync_delay_events",
     "adjudicate",
+    "record_notice",
+    "notice_status",
+    "days_to_notice",
     "attribution",
     "effective_liability",
     "is_adjudicated",
     "DelayCategory",
     "Liability",
+    "NoticeBasis",
+    "NoticeStatus",
+    "NOTICE_WINDOW_DAYS",
 ]

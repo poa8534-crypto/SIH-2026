@@ -9,6 +9,7 @@ Endpoints:
   POST /schedule/export     emit PMXML (XER as stretch)
   GET  /delay/attribution   delay attribution matrix (category, liability, citation)
   POST /delay/{id}/classify planner rules on who carries one delay
+  POST /delay/{id}/notice   planner records contractual notice for one delay
   GET  /delay/report        delay attribution report (printable html / csv)
   GET  /memory/query        institutional memory analytics
   POST /agent/turn          slot-filling conversational logging turn
@@ -54,8 +55,11 @@ from server import delay_report
 from server.delay_events import (
     adjudicate as adjudicate_delay,
     attribution as delay_attribution,
+    days_to_notice,
     effective_liability,
     is_adjudicated,
+    notice_status,
+    record_notice as record_delay_notice_fields,
     sync_delay_events,
 )
 from server.delay_taxonomy import (
@@ -160,6 +164,8 @@ from .schemas import (
     DelayClassifyRequest,
     DelayClassifyResponse,
     DelayEventOut,
+    DelayNoticeRequest,
+    DelayNoticeResponse,
     DelayReason,
     DurationDistribution,
     AuditFeedItem,
@@ -3142,7 +3148,10 @@ def get_delay_attribution(
     ruled on; `proposed_days` counts every row at its effective liability.
     Presenting the second alone would dress machine proposals up as findings.
     """
-    data = delay_attribution(db, discipline=discipline)
+    # DATA_DATE is what the notice windows are judged against. Passing it
+    # explicitly rather than letting the helper reach for today keeps the
+    # answer a fact about the project rather than about when it was asked.
+    data = delay_attribution(db, discipline=discipline, as_of=DATA_DATE)
 
     events = [
         DelayEventOut(
@@ -3160,6 +3169,13 @@ def get_delay_attribution(
             discipline=row.discipline,
             month=row.month,
             impact_days=row.impact_days or 0,
+            evidenced_on=row.evidenced_on,
+            evidenced_basis=row.evidenced_basis,
+            notice_due_on=row.notice_due_on,
+            notice_status=notice_status(row, DATA_DATE),
+            notice_days_remaining=days_to_notice(row, DATA_DATE),
+            notice_served_on=row.notice_served_on,
+            notice_reference=row.notice_reference,
             audit_record_id=row.audit_record_id,
             source_file=row.source_file,
             source_line=row.source_line,
@@ -3177,8 +3193,13 @@ def get_delay_attribution(
         proposed_days=data["proposed_days"],
         days_by_month=data["days_by_month"],
         categories_present=data["categories_present"],
+        notice_window_days=data["notice_window_days"],
+        notice_counts=data["notice_counts"],
+        notice_lapsed_days=data["notice_lapsed_days"],
+        notice_as_of=data["notice_as_of"],
         impact_days_basis=data["impact_days_basis"],
         unadjudicated_note=data["unadjudicated_note"],
+        notice_note=data["notice_note"],
         computed_at=_now(),
     )
 
@@ -3274,6 +3295,82 @@ def classify_delay_event(
             f"Delay on {row.activity_id} ruled {liability.value}, "
             + (f"overriding the proposed {row.liability_proposed}"
                if overrides else "confirming the proposal")
+        ),
+    )
+
+
+# ── POST /delay/{delay_event_id}/notice ──────────────────────────────────────
+
+@app.post("/delay/{delay_event_id}/notice", response_model=DelayNoticeResponse)
+def record_delay_notice(
+    delay_event_id: str,
+    req: DelayNoticeRequest,
+    db: Session = Depends(get_db),
+):
+    """Record that contractual notice was given for one delay.
+
+    Without this the notice clock could only ever accuse: NAVIS has no notice
+    register, so every delay would read as un-noticed forever. `served_on` is
+    the date notice was GIVEN, not the date somebody typed it here, and it is
+    accepted even when it falls after the window closed - a late notice is a
+    fact about the project and hiding it would be the opposite of the point.
+    `served_late` says so in the response.
+
+    Audited like every other planner decision: an `AuditRecord` with
+    `field_changed="delay_notice"`, `source="planner_review"` and
+    `auto_applied=False`. Re-recording appends, carrying the previous date in
+    `old_value`, because a corrected notice date is exactly the late
+    correction a register has to survive.
+    """
+    row = db.query(DelayEvent).filter(DelayEvent.id == delay_event_id).first()
+    if not row:
+        raise HTTPException(404, f"Delay event {delay_event_id} not found")
+    if not row.activity_id:
+        raise HTTPException(
+            400,
+            f"Delay event {delay_event_id} names no activity, so a notice on "
+            "it cannot be written to the audit trail",
+        )
+
+    previous = record_delay_notice_fields(row, req.served_on,
+                                          reference=req.reference)
+
+    _write_audit(
+        db, row.activity_id,
+        field="delay_notice",
+        old_value=previous.isoformat() if previous else None,
+        new_value=req.served_on.isoformat(),
+        source="planner_review",
+        source_file=row.source_file,
+        source_line=row.source_line,
+        source_row=row.source_row,
+        source_span=row.source_span,
+        auto_applied=False,
+        contributing_sources=[
+            f"delay evidenced {row.evidenced_on.isoformat()} "
+            f"({row.evidenced_basis}); notice due "
+            f"{row.notice_due_on.isoformat()}"
+        ] if row.evidenced_on and row.notice_due_on else None,
+    )
+
+    db.commit()
+
+    late = bool(row.notice_due_on and req.served_on > row.notice_due_on)
+    return DelayNoticeResponse(
+        delay_event_id=row.id,
+        activity_id=row.activity_id,
+        evidenced_on=row.evidenced_on,
+        notice_due_on=row.notice_due_on,
+        notice_served_on=row.notice_served_on,
+        notice_reference=row.notice_reference,
+        previous_served_on=previous,
+        served_late=late,
+        audit_records_created=1,
+        message=(
+            f"Notice for {row.activity_id} recorded as given "
+            f"{req.served_on.isoformat()}"
+            + (f", after the {row.notice_due_on.isoformat()} deadline"
+               if late else "")
         ),
     )
 

@@ -644,6 +644,22 @@ class DelayEvent(Base):
     source_row = Column(Integer, nullable=True)
     source_span = Column(Text, nullable=True)
 
+    # ── Contractual notice (D-080) ──
+    # The date the project was TOLD about this delay, and how that date was
+    # arrived at. `evidenced_basis` exists for the same reason `DateBasis`
+    # does on an activity: a date read from a field report and a date inferred
+    # from when the row happened to be written are not the same claim, and a
+    # notice clock started from the wrong one is worse than no clock.
+    evidenced_on = Column(Date, nullable=True, index=True)
+    evidenced_basis = Column(String, nullable=True)  # REPORTED|ACTUAL_FINISH|RECORDED
+    # evidenced_on + the contractual notice window. Derived on every sync.
+    notice_due_on = Column(Date, nullable=True)
+
+    # Facts a planner supplies, never derived and never cleared by a re-sync -
+    # the same rule that protects `liability_final`.
+    notice_served_on = Column(Date, nullable=True)
+    notice_reference = Column(String, nullable=True)
+
     created_at = Column(DateTime, default=_now)
     updated_at = Column(DateTime, default=_now, onupdate=_now)
 
@@ -728,6 +744,11 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("linked_events", "asserted_finish_basis", "VARCHAR"),
     ("linked_events", "llm_assisted_fields", "TEXT"),
     ("audit_records", "llm_assisted_fields", "TEXT"),
+    ("delay_events", "evidenced_on", "DATE"),
+    ("delay_events", "evidenced_basis", "VARCHAR"),
+    ("delay_events", "notice_due_on", "DATE"),
+    ("delay_events", "notice_served_on", "DATE"),
+    ("delay_events", "notice_reference", "VARCHAR"),
 )
 
 

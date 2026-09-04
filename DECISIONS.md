@@ -7039,3 +7039,115 @@ NAVIS does not know the project's contract references or the parties' legal
 names. Adding placeholders for them would make the document look more official
 than its contents justify, which is the opposite of what every other decision
 here is for. It is an evidence appendix, and it should read as one.
+
+---
+
+## 2026-09-04 / D-080 — The notice clock starts from a date a source asserted, and says which
+
+### Context
+Phase 4. A delay only entitles anyone to anything if notice was given inside
+the contractual window; a claim served late is commonly barred outright,
+whatever the merits. NAVIS knows when each delay was evidenced, so it can say
+which windows have already closed - and that is the cheapest high-value thing
+left in the plan.
+
+The whole feature turns on one question: **which date does the clock start
+from?** Get it wrong and the report accuses a contractor of missing a deadline
+that never ran.
+
+### Decision
+Four columns on `DelayEvent` - `evidenced_on`, `evidenced_basis`,
+`notice_due_on`, plus the planner-supplied `notice_served_on` /
+`notice_reference` - a `NOTICE_WINDOW_DAYS` constant, a `notice_status`
+function, and `POST /delay/{id}/notice`.
+
+**The clock starts from the date the field report carried.**
+`LinkedEvent.reported_date` is the only candidate a source actually asserted.
+The obvious alternative, `AuditRecord.timestamp`, records when NAVIS ingested
+the file: on the demo corpus every delay was ingested on 2026-09-04, so every
+clock would have started on the same day and the whole feature would have been
+an artefact of when someone ran the loader.
+
+**`evidenced_basis` says which kind of date it was.** `REPORTED` is an
+assertion by a source. `ACTUAL_FINISH` is an inference - the project cannot
+have learned of the delay later than the day the work ended, but it may well
+have learned earlier. `RECORDED` is the ingestion date and the weakest of the
+three. This is `DateBasis` (D-010, ARCHITECTURE §2.3) applied to a different
+kind of date, for the same reason: a reader has to be able to see how firm the
+ground under a number is.
+
+**No `as_of` date means `UNKNOWN`, never today.** `attribution()` takes the
+date the windows are judged against and the endpoint passes `DATA_DATE`
+explicitly. Reaching for `date.today()` would make a lapsed claim an artefact
+of when the report was opened.
+
+**28 days, from FIDIC 1999 Sub-Clause 20.1, as a stated default.** The clause
+requires notice "not later than 28 days after the Contractor became aware, or
+should have become aware, of the event". Indian PSU general conditions commonly
+shorten it. It is a module constant so that the number is something a person
+chose and can point at, and both the API payload and the printed report name
+the source and say the governing contract may differ.
+
+**`POST /delay/{id}/notice` exists so the clock can stop.** Without it every
+delay would read as un-noticed forever and the feature could only accuse. A
+notice dated after the window closed is accepted and flagged `served_late`
+rather than refused - a late notice is a fact about the project, and refusing
+to record it would push the correction somewhere nobody can audit. Audited like
+every other planner decision: `field_changed="delay_notice"`,
+`source="planner_review"`, `auto_applied=False`, re-recording appends with the
+previous date in `old_value`.
+
+**`notice_served_on` and `notice_reference` survive a re-sync**, alongside
+`liability_final`. Same rule, same reason.
+
+### Measured on the demo corpus
+```
+window 28 days · judged as at 2026-09-15 · basis REPORTED on all four
+
+CIV-DWG-1015  fencing conflict      evidenced 2026-09-02  due 2026-09-30  OPEN    +15d
+CIV-FLR-1020  holiday delay         evidenced 2026-08-23  due 2026-09-20  OPEN     +5d
+CIV-PLY-1004  piling rig breakdown  evidenced 2026-07-02  due 2026-07-30  LAPSED  -47d
+CIV-PLY-1006  rain delay            evidenced 2026-07-13  due 2026-08-10  LAPSED  -36d
+```
+Two windows are already closed and one of the open two has five days left. None
+of that was visible anywhere in the system before this phase.
+
+### Alternatives Considered
+- **Start the clock from `AuditRecord.timestamp`.** Rejected — see above. It is
+  the easiest date to reach and the only one that measures the loader rather
+  than the project.
+- **Start it from the activity's planned finish.** Rejected: that is the date
+  the delay began to accrue, not the date anyone knew about it, and notice runs
+  from awareness.
+- **Default `evidenced_on` to the data date when nothing better exists.**
+  Rejected outright. Every row would then have a window, and some of those
+  windows would be fiction. `UNKNOWN` is the honest output.
+- **Refuse a notice dated after the deadline.** Rejected — see above.
+- **Ship the clock without a way to record a notice.** Rejected: a clock that
+  cannot be stopped is an accusation generator, not a report.
+
+### Verification
+`python -m pytest -q` — 1010 passed, up from 993. The 12 new tests cover the
+REPORTED basis winning, the ACTUAL_FINISH fallback being labelled, lapsed and
+open windows, `UNKNOWN` with no `as_of`, a notice recorded and audited, a late
+notice accepted and flagged, re-recording appending with the previous date, a
+notice surviving a re-sync, the matrix totalling lapsed days, and both
+renderings of the report carrying the clock.
+
+`scripts/reset_demo.py` then `scripts/healthcheck.py` against a running server
+— 34 endpoints exposed, expected 34; 31 checks passed, 0 failed. The rendered
+report was reviewed in a browser. `matching/` and `extraction/` untouched, so
+`eval.py` is not implicated.
+
+### Affected Areas
+`server/db.py` (five columns plus their `_ADDED_COLUMNS` entries, so an
+existing database migrates itself per D-070), `server/delay_events.py`,
+`server/delay_report.py`, `server/main.py`, `server/schemas.py`,
+`server/test_delay_attribution.py`, `scripts/healthcheck.py` (33 → 34).
+
+### Trade-offs / Consequences
+NAVIS holds no notice register of its own, so `LAPSED` means precisely "no
+notice has been recorded here" and not "no notice was given". The report says
+that in its caveats and the alarm line repeats it. On a project where notices
+live in a correspondence system, this column is a prompt to go and check, never
+a finding on its own.

@@ -41,7 +41,15 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from server.db import Activity, BaselineVersion
-from server.delay_events import attribution, effective_liability, is_adjudicated
+from server.delay_events import (
+    NOTICE_WINDOW_DAYS,
+    NoticeStatus,
+    attribution,
+    days_to_notice,
+    effective_liability,
+    is_adjudicated,
+    notice_status,
+)
 from server.delay_taxonomy import Liability
 
 #: Report order. Owner-side first, because that is the column a contractor's
@@ -86,6 +94,14 @@ CAVEATS = (
         "list is not classified and does not appear here at all.",
     ),
     (
+        "Notice windows are a default, not a contract term",
+        f"A window of {NOTICE_WINDOW_DAYS} days from the date a delay was "
+        "evidenced is applied, taken from FIDIC 1999 Sub-Clause 20.1. The "
+        "governing contract may say otherwise. A delay marked as lapsed means "
+        "only that no notice has been recorded in this system, which holds no "
+        "notice register of its own.",
+    ),
+    (
         "Rulings are not authenticated",
         "This system has no user authentication. The name recorded against a "
         "ruling is whatever the client supplied and nothing verifies it.",
@@ -102,8 +118,13 @@ def report_context(
 
     Deliberately one function feeding both formats: a CSV and an HTML document
     that disagreed about a total would be worse than either alone.
+
+    The data date doubles as the date the notice windows are judged against.
+    Without one every window reads UNKNOWN, which is the honest answer - a
+    lapsed claim asserted against today's date on an undated report would be a
+    false accusation.
     """
-    data = attribution(db, discipline=discipline)
+    data = attribution(db, discipline=discipline, as_of=data_date)
 
     baseline = (
         db.query(BaselineVersion)
@@ -134,6 +155,9 @@ def report_context(
         "adjudicated_days": data["adjudicated_days"],
         "proposed_days": data["proposed_days"],
         "days_by_month": data["days_by_month"],
+        "notice_window_days": data["notice_window_days"],
+        "notice_counts": data["notice_counts"],
+        "notice_lapsed_days": data["notice_lapsed_days"],
         "discipline": discipline,
         "data_date": data_date,
         "baseline_name": baseline.name if baseline else None,
@@ -157,6 +181,8 @@ CSV_COLUMNS = (
     "liability_effective", "adjudicated", "liability_proposed", "liability_ruled",
     "activity_id", "discipline", "category", "phrase", "impact_days", "month",
     "source_file", "source_row", "source_line", "source_span",
+    "evidenced_on", "evidenced_basis", "notice_due_on", "notice_status",
+    "notice_days_remaining", "notice_served_on", "notice_reference",
     "adjudicated_by", "adjudicated_at", "adjudication_note",
     "delay_event_id", "audit_record_id",
     # Repeated on every row on purpose - see the module docstring.
@@ -191,6 +217,14 @@ def to_csv(context: dict) -> str:
                 row.source_row if row.source_row is not None else "",
                 row.source_line if row.source_line is not None else "",
                 (row.source_span or "").replace("\n", " ").strip(),
+                row.evidenced_on.isoformat() if row.evidenced_on else "",
+                row.evidenced_basis or "",
+                row.notice_due_on.isoformat() if row.notice_due_on else "",
+                notice_status(row, context["data_date"]),
+                (lambda d: "" if d is None else d)(
+                    days_to_notice(row, context["data_date"])),
+                row.notice_served_on.isoformat() if row.notice_served_on else "",
+                row.notice_reference or "",
                 row.adjudicated_by or "",
                 row.adjudicated_at.isoformat(timespec="seconds") if row.adjudicated_at else "",
                 row.adjudication_note or "",
@@ -240,6 +274,13 @@ _STYLE = """
   .g-contested { --band: #4a3f70; }
   .empty { font-size: 9.5pt; color: #666; font-style: italic; padding: 6px 8px; }
   .proposal { font-size: 8pt; color: #8a1f19; font-family: Arial, sans-serif; }
+  .notice { font-size: 8pt; font-family: Arial, sans-serif; margin-top: 3px; }
+  .n-lapsed { color: #8a1f19; font-weight: bold; }
+  .n-open { color: #1a4f8a; }
+  .n-served { color: #1f6b3a; }
+  .n-unknown { color: #666; }
+  .alarm { border: 1.5px solid #8a1f19; padding: 10px 12px; margin: 10px 0 0;
+           font-size: 9.5pt; font-family: Arial, sans-serif; color: #8a1f19; }
   tfoot td { font-weight: bold; border-top: 1.5px solid #1a1a1a;
              border-bottom: none; }
   .caveat { margin-bottom: 12px; page-break-inside: avoid; }
@@ -314,6 +355,30 @@ def to_html(context: dict) -> str:
       f"<td class='num'>{proposed_total}</td>"
       f"<td class='num'>{context['total_events']}</td></tr></tfoot></table>")
 
+    # ── Notice ──
+    counts = context["notice_counts"]
+    w("<h2>Contractual notice</h2>")
+    w(f"<p class='sub'>Windows of {context['notice_window_days']} days from the "
+      f"date each delay was evidenced, judged as at {escape(stamp)}.</p>")
+    w("<table><thead><tr><th>Status</th><th style='text-align:right'>Delays</th>"
+      "</tr></thead><tbody>")
+    for status, label in (
+        (NoticeStatus.LAPSED, "Lapsed — window closed, no notice recorded"),
+        (NoticeStatus.OPEN, "Open — window has not closed"),
+        (NoticeStatus.SERVED, "Served — notice recorded"),
+        (NoticeStatus.UNKNOWN, "Unknown — no evidenced date established"),
+    ):
+        w(f"<tr><td>{escape(label)}</td>"
+          f"<td class='num'>{counts.get(status.value, 0)}</td></tr>")
+    w("</tbody></table>")
+    if counts.get(NoticeStatus.LAPSED.value, 0):
+        w(f"<p class='alarm'>{counts[NoticeStatus.LAPSED.value]} delay"
+          f"{'' if counts[NoticeStatus.LAPSED.value] == 1 else 's'} carrying "
+          f"{context['notice_lapsed_days']} days sit behind a notice window "
+          f"that has already closed. Entitlement to an extension of time may "
+          f"be barred on those, unless notice was in fact given and is simply "
+          f"not recorded here.</p>")
+
     if context["days_by_month"]:
         w("<h2>Days by month</h2>")
         w("<table><thead><tr><th>Month</th><th style='text-align:right'>Days</th>"
@@ -357,6 +422,31 @@ def to_html(context: dict) -> str:
             else:
                 ruling = ("<div class='proposal'>Proposal — no planner ruling "
                           "recorded</div>")
+
+            status = notice_status(row, context["data_date"])
+            remaining = days_to_notice(row, context["data_date"])
+            css = {
+                NoticeStatus.LAPSED.value: "n-lapsed",
+                NoticeStatus.OPEN.value: "n-open",
+                NoticeStatus.SERVED.value: "n-served",
+            }.get(status, "n-unknown")
+            if status == NoticeStatus.SERVED.value:
+                text = (f"Notice served "
+                        f"{row.notice_served_on.isoformat()}")
+                if row.notice_reference:
+                    text += f" ({escape(row.notice_reference)})"
+            elif status == NoticeStatus.LAPSED.value:
+                text = (f"Notice LAPSED — evidenced "
+                        f"{row.evidenced_on.isoformat()} "
+                        f"({escape(row.evidenced_basis or '')}), due "
+                        f"{row.notice_due_on.isoformat()}, "
+                        f"{abs(remaining)} days ago")
+            elif status == NoticeStatus.OPEN.value:
+                text = (f"Notice due {row.notice_due_on.isoformat()} — "
+                        f"{remaining} days remaining")
+            else:
+                text = "Notice window not established — no evidenced date"
+            ruling += f"<div class='notice {css}'>{text}</div>"
             w(f"<tr><td class='mono'>{escape(row.activity_id or '—')}"
               f"<div class='cite'>{escape(row.discipline or '')}</div></td>"
               f"<td class='mono'>{escape(row.category)}"

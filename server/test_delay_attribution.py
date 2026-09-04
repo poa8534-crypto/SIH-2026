@@ -1,7 +1,7 @@
 """Delay attribution: derived rows, planner rulings, totals, and the report.
 
-Phases 1 to 3 of the Contractor Dispute Shield (D-077, D-078, D-079). These
-assert the five properties the feature stands or falls on:
+Phases 1 to 4 of the Contractor Dispute Shield (D-077 to D-080). These assert
+the six properties the feature stands or falls on:
 
   1. A `DelayEvent` is derived from the audit trail and re-derives cleanly.
      Running the sync twice must not double the rows, because it runs on every
@@ -15,6 +15,9 @@ assert the five properties the feature stands or falls on:
   5. The exported report carries its provenance and its own caveats. A
      document that cannot name the schedule it was computed against, or that
      presents a proposal as a finding, is worse than no document.
+  6. The notice clock starts from a date a source asserted, and says which
+     kind of date that was. A lapsed claim asserted on a guessed date is a
+     false accusation.
 """
 
 from __future__ import annotations
@@ -23,16 +26,25 @@ import csv
 import io
 import sys
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server.db import Activity, AuditRecord, BaselineVersion, DelayEvent
+from server.db import (
+    Activity, AuditRecord, BaselineVersion, DelayEvent, Job, LinkedEvent,
+)
 from server import delay_report
-from server.delay_events import attribution, sync_delay_events
+from server.delay_events import (
+    NOTICE_WINDOW_DAYS,
+    NoticeBasis,
+    NoticeStatus,
+    attribution,
+    notice_status,
+    sync_delay_events,
+)
 from server.delay_taxonomy import DelayCategory, Liability
 from server.main import DATA_DATE
 
@@ -47,10 +59,14 @@ def _clean(db_session):
     """
     db_session.query(DelayEvent).delete()
     db_session.query(AuditRecord).delete()
+    db_session.query(LinkedEvent).delete()
+    db_session.query(Job).delete()
     db_session.commit()
     yield
     db_session.query(DelayEvent).delete()
     db_session.query(AuditRecord).delete()
+    db_session.query(LinkedEvent).delete()
+    db_session.query(Job).delete()
     db_session.commit()
 
 
@@ -74,6 +90,32 @@ def _audit(db, *, activity_id, field, span, file="civil_progress.xlsx",
     )
     db.add(rec)
     return rec
+
+
+def _reported(db, *, activity_id, reported_date):
+    """A LinkedEvent carrying the date the field report itself was for.
+
+    The notice clock reads this in preference to anything else, because it is
+    the only candidate date a source actually asserted.
+    """
+    job = Job(
+        id=str(uuid.uuid4()),
+        filename="civil_progress.xlsx",
+        file_type="xlsx",
+        status="completed",
+    )
+    db.add(job)
+    event = LinkedEvent(
+        id=str(uuid.uuid4()),
+        job_id=job.id,
+        activity_id=activity_id,
+        source_file="civil_progress.xlsx",
+        raw_text="test",
+        reported_date=reported_date,
+        confidence=0.9,
+    )
+    db.add(event)
+    return event
 
 
 def _slip(db, activity_id, days, finish=date(2026, 8, 20)):
@@ -445,6 +487,145 @@ class TestAdjudication:
         assert response.status_code == 404
 
 
+class TestTheNoticeClock:
+    """The contractual notice window (D-080).
+
+    A delay only entitles anyone to anything if notice was given inside the
+    window. NAVIS knows when each delay was evidenced, so it can say which
+    windows have closed - and it has to be careful about which date it starts
+    from, because a lapsed claim asserted on a guessed date is a false
+    accusation.
+    """
+
+    def _delay(self, db, *, reported=None, finish=date(2026, 8, 20), days=5):
+        act = db.query(Activity).first().activity_id
+        _slip(db, act, days, finish=finish)
+        record = _audit(db, activity_id=act, field="actual_finish", span=RIG)
+        if reported is not None:
+            event = _reported(db, activity_id=act, reported_date=reported)
+            db.flush()
+            record.linked_event_id = event.id
+        db.commit()
+        sync_delay_events(db)
+        db.commit()
+        return db.query(DelayEvent).one()
+
+    def test_the_clock_starts_from_the_date_the_report_carried(self, db_session):
+        """The audit row's own timestamp records when NAVIS ingested the file.
+        On a corpus loaded in one batch that is the same day for every delay in
+        the project, so every clock would start together."""
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        assert row.evidenced_on == date(2026, 7, 2)
+        assert row.evidenced_basis == NoticeBasis.REPORTED.value
+        assert row.notice_due_on == date(2026, 7, 2) + timedelta(
+            days=NOTICE_WINDOW_DAYS)
+
+    def test_it_falls_back_to_the_actual_finish_and_says_so(self, db_session):
+        """An inference, and labelled as one. The project cannot have learned
+        of the delay later than the day the work ended, but it may well have
+        learned earlier."""
+        row = self._delay(db_session, reported=None, finish=date(2026, 7, 20))
+
+        assert row.evidenced_on == date(2026, 7, 20)
+        assert row.evidenced_basis == NoticeBasis.ACTUAL_FINISH.value
+
+    def test_a_closed_window_reads_as_lapsed(self, db_session):
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        # DATA_DATE is 2026-09-15; the window closed 2026-07-30.
+        assert notice_status(row, DATA_DATE) == NoticeStatus.LAPSED.value
+
+    def test_an_open_window_reads_as_open(self, db_session):
+        row = self._delay(db_session, reported=date(2026, 9, 2))
+
+        assert notice_status(row, DATA_DATE) == NoticeStatus.OPEN.value
+
+    def test_no_as_of_date_means_unknown_not_today(self, db_session):
+        """A lapsed claim asserted against today's date on an undated report
+        would be a false accusation."""
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        assert notice_status(row, None) == NoticeStatus.UNKNOWN.value
+
+    def test_recording_a_notice_stops_the_clock_and_is_audited(
+            self, client, db_session):
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        body = client.post(f"/delay/{row.id}/notice", json={
+            "served_on": "2026-07-20",
+            "reference": "NAVIS/NOT/2026-014",
+        }).json()
+
+        assert body["served_late"] is False
+        assert body["audit_records_created"] == 1
+        audit = (db_session.query(AuditRecord)
+                 .filter(AuditRecord.field_changed == "delay_notice").one())
+        assert audit.new_value == "2026-07-20"
+        assert audit.source == "planner_review"
+        assert audit.auto_applied is False
+
+        db_session.expire_all()
+        assert notice_status(db_session.query(DelayEvent).one(),
+                             DATA_DATE) == NoticeStatus.SERVED.value
+
+    def test_a_late_notice_is_accepted_and_flagged(self, client, db_session):
+        """A late notice is a fact about the project. Refusing to record it
+        would push the correction somewhere nobody can audit."""
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        body = client.post(f"/delay/{row.id}/notice",
+                           json={"served_on": "2026-08-15"}).json()
+
+        assert body["served_late"] is True
+        assert "after the 2026-07-30 deadline" in body["message"]
+
+    def test_re_recording_appends_and_names_the_previous_date(
+            self, client, db_session):
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+
+        client.post(f"/delay/{row.id}/notice", json={"served_on": "2026-07-20"})
+        body = client.post(f"/delay/{row.id}/notice",
+                           json={"served_on": "2026-07-18"}).json()
+
+        assert body["previous_served_on"] == "2026-07-20"
+        audits = (db_session.query(AuditRecord)
+                  .filter(AuditRecord.field_changed == "delay_notice").all())
+        assert len(audits) == 2
+        assert {(a.old_value, a.new_value) for a in audits} == {
+            (None, "2026-07-20"), ("2026-07-20", "2026-07-18"),
+        }
+
+    def test_a_notice_survives_a_re_sync(self, db_session):
+        """The sync re-derives the window on every ingest. A notice a planner
+        recorded must not evaporate because someone uploaded a file."""
+        row = self._delay(db_session, reported=date(2026, 7, 2))
+        row.notice_served_on = date(2026, 7, 20)
+        row.notice_reference = "NAVIS/NOT/2026-014"
+        db_session.commit()
+
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        row = db_session.query(DelayEvent).one()
+        assert row.notice_served_on == date(2026, 7, 20)
+        assert row.notice_reference == "NAVIS/NOT/2026-014"
+
+    def test_the_matrix_totals_the_lapsed_days(self, client, db_session):
+        self._delay(db_session, reported=date(2026, 7, 2), days=21)
+
+        body = client.get("/delay/attribution").json()
+        assert body["notice_window_days"] == NOTICE_WINDOW_DAYS
+        assert body["notice_counts"][NoticeStatus.LAPSED.value] == 1
+        assert body["notice_lapsed_days"] == 21
+        assert body["notice_as_of"] == str(DATA_DATE)
+        assert "FIDIC" in body["notice_note"]
+        event = body["events"][0]
+        assert event["notice_status"] == NoticeStatus.LAPSED.value
+        assert event["notice_days_remaining"] < 0
+        assert event["evidenced_basis"] == NoticeBasis.REPORTED.value
+
+
 class TestTheReport:
     """GET /delay/report — the document that leaves the application.
 
@@ -625,6 +806,54 @@ class TestTheReport:
             client.get("/delay/report?format=csv&discipline=piping").text)))
         assert len(rows) == 1
         assert rows[0]["discipline"] == "piping"
+
+    def test_the_report_raises_a_lapsed_notice_on_its_face(
+            self, client, db_session):
+        """The clock is worth nothing if a reader has to compute it. A closed
+        window is the reason a claim gets refused."""
+        civil = db_session.query(Activity).filter(
+            Activity.discipline == "civil").first().activity_id
+        _slip(db_session, civil, 21, finish=date(2026, 7, 2))
+        record = _audit(db_session, activity_id=civil, field="actual_finish",
+                        span=FENCE, row=18)
+        event = _reported(db_session, activity_id=civil,
+                          reported_date=date(2026, 7, 2))
+        db_session.flush()
+        record.linked_event_id = event.id
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        body = client.get("/delay/report").text
+
+        assert "Contractual notice" in body
+        assert "Notice LAPSED" in body
+        assert "notice window" in body and "already closed" in body
+        # The window is named as a default, not asserted as a contract term.
+        assert "FIDIC 1999 Sub-Clause 20.1" in body
+
+    def test_the_csv_carries_the_notice_columns(self, client, db_session):
+        civil = db_session.query(Activity).filter(
+            Activity.discipline == "civil").first().activity_id
+        _slip(db_session, civil, 21, finish=date(2026, 7, 2))
+        record = _audit(db_session, activity_id=civil, field="actual_finish",
+                        span=FENCE, row=18)
+        event = _reported(db_session, activity_id=civil,
+                          reported_date=date(2026, 7, 2))
+        db_session.flush()
+        record.linked_event_id = event.id
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        row = list(csv.DictReader(io.StringIO(
+            client.get("/delay/report?format=csv").text)))[0]
+
+        assert row["evidenced_on"] == "2026-07-02"
+        assert row["evidenced_basis"] == NoticeBasis.REPORTED.value
+        assert row["notice_due_on"] == "2026-07-30"
+        assert row["notice_status"] == NoticeStatus.LAPSED.value
+        assert int(row["notice_days_remaining"]) < 0
 
     def test_an_unsupported_format_is_refused(self, client, db_session):
         response = client.get("/delay/report?format=pdf")

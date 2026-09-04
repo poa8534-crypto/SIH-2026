@@ -665,6 +665,18 @@ class DelayEventOut(BaseModel):
     discipline: Optional[str] = None
     month: Optional[str] = None
     impact_days: int = 0
+    # ── Contractual notice ──
+    # `evidenced_basis` says how `evidenced_on` was arrived at: REPORTED is the
+    # date a field report carried, the others are inferences. A notice clock
+    # started from the wrong kind of date is worse than no clock.
+    evidenced_on: Optional[date_t] = None
+    evidenced_basis: Optional[str] = None
+    notice_due_on: Optional[date_t] = None
+    notice_status: str = "UNKNOWN"
+    # Days left in the window; negative once it has closed.
+    notice_days_remaining: Optional[int] = None
+    notice_served_on: Optional[date_t] = None
+    notice_reference: Optional[str] = None
     # Provenance. The citation a claim is argued from.
     audit_record_id: Optional[str] = None
     source_file: Optional[str] = None
@@ -711,6 +723,40 @@ class DelayClassifyResponse(BaseModel):
     message: str
 
 
+class DelayNoticeRequest(BaseModel):
+    """A planner records that contractual notice was given for one delay.
+
+    NAVIS has no notice register of its own, so without this the clock could
+    only ever accuse. `served_on` is required and is the date notice was
+    GIVEN, not the date it was entered here.
+    """
+
+    served_on: date_t = Field(..., description="Date notice was given")
+    reference: Optional[str] = Field(
+        None,
+        description="Letter or transmittal reference, e.g. NAVIS/NOT/2026-014",
+    )
+    recorded_by: Optional[str] = Field(
+        None,
+        description="Who recorded it. Optional: this app has no authentication.",
+    )
+
+
+class DelayNoticeResponse(BaseModel):
+    delay_event_id: str
+    activity_id: Optional[str] = None
+    evidenced_on: Optional[date_t] = None
+    notice_due_on: Optional[date_t] = None
+    notice_served_on: date_t
+    notice_reference: Optional[str] = None
+    previous_served_on: Optional[date_t] = None
+    # True when the recorded notice date falls after the window closed. Stated
+    # rather than left to be derived: it is the fact the record exists for.
+    served_late: bool = False
+    audit_records_created: int = 0
+    message: str
+
+
 class DelayAttributionResponse(BaseModel):
     """The delay attribution matrix.
 
@@ -727,10 +773,20 @@ class DelayAttributionResponse(BaseModel):
     proposed_days: dict[str, int] = {}
     days_by_month: dict[str, int] = {}
     categories_present: list[str] = []
+    # ── Contractual notice ──
+    notice_window_days: int = 0
+    # Count per NoticeStatus: SERVED / OPEN / LAPSED / UNKNOWN.
+    notice_counts: dict[str, int] = {}
+    # Days of delay sitting behind a window that has already closed.
+    notice_lapsed_days: int = 0
+    # The date the windows were judged against. Null means every status is
+    # UNKNOWN, which is the honest answer rather than silently using today.
+    notice_as_of: Optional[date_t] = None
     # Carried in the payload so a client cannot render an upper bound as a
     # measured figure.
     impact_days_basis: str
     unadjudicated_note: str
+    notice_note: str
     computed_at: datetime
 
 
