@@ -959,6 +959,49 @@ class TestIntegrityRules:
 # TEST GROUP 11: Linking engine
 # ═══════════════════════════════════════════════════════════════════════════════
 
+class TestServedEngineKeepsTheAliasChannelOff:
+    """D-061, enforced on the engine the SERVER actually builds.
+
+    `matching/test_config_floor.py::TestAliasChannelStaysOff` pins the library
+    DEFAULTS. It cannot see `server/main.py`, so a change that reads
+    `alias_lexicon` out of the database and turns `w_alias` up inside
+    `get_matching_engine()` would leave that file's assertions passing while
+    switching on a channel D-061 measured at +0.00 across every metric. That
+    change has now been proposed twice, which is what this test is for.
+
+    D-061's own diagnosis stands: corrections belong in RANKING, as a prior
+    over activities that generalises across mentions. The alias channel is a
+    RETRIEVAL channel and fusion recall@20 is already 100% (D-027), so there
+    is nothing left for it to retrieve.
+    """
+
+    def test_the_served_config_has_no_alias_lexicon(self):
+        from server.main import get_matching_engine
+
+        engine = get_matching_engine()
+        assert engine.config.alias_lexicon is None
+        assert engine.retriever.alias_lexicon == {}
+
+    def test_the_served_config_leaves_w_alias_at_zero(self):
+        from server.main import get_matching_engine
+
+        engine = get_matching_engine()
+        assert engine.config.retrieval.w_alias == 0.0
+        assert engine.config.retrieval.use_alias is False
+
+    def test_the_engine_is_built_once_per_process(self):
+        """The singleton is load-bearing, not an optimisation detail.
+
+        Every proposal to feed the database into `get_matching_engine()` has
+        also dropped the `_MATCHING_ENGINE` cache, because a per-request
+        lexicon cannot be cached. That rebuilds `ScheduleIndex.from_json` on
+        every ingest batch and every roll-up.
+        """
+        from server.main import get_matching_engine
+
+        assert get_matching_engine() is get_matching_engine()
+
+
 class TestLinkingEngine:
     """Test the event-to-activity linking logic."""
 

@@ -6536,3 +6536,71 @@ belongs in `FLOW.md` too.
 
 ### Affected Areas
 `scripts/healthcheck.py`.
+
+---
+
+## 2026-09-04 / D-075 — D-061 is re-affirmed, and now pinned on the served engine
+
+### Context
+A change to `server/main.py :: get_matching_engine()` was proposed: take a
+`Session`, read every `AliasLexicon` row into a `{alias_key: [activity_id]}`
+dict, and pass it to `production()` with `w_alias=1.0`. This is the alias
+learning loop D-061 measured and closed as CLOSED-AS-MEASURED. It has now been
+proposed twice.
+
+The proposal also could not have run. Recorded here because the next reader
+deserves the specifics rather than a verdict:
+
+- `AliasLexicon` has no `raw_text` or `target_activity_id`; the columns are
+  `source_text` and `mapped_activity_id`.
+- `production()` takes one argument, `baseline_sha256`. It has no
+  `alias_lexicon` or `w_alias` parameter.
+- `w_alias` is not on `EngineConfig` at all — it is on
+  `EngineConfig.retrieval` (`RetrievalConfig`).
+- The lexicon value shape is `[(activity_id, weight), ...]`;
+  `HybridRetriever.alias_channel` unpacks each hit as a pair. A list of bare
+  id strings raises at retrieval time, not at construction.
+- `MatchingEngine(config=...)` omits the required positional `schedule_path`,
+  and drops both `thresholds=MATCHING_THRESHOLDS` and the prebuilt `index`.
+- It declared `global _matching_engine` — the singleton is `_MATCHING_ENGINE` —
+  and never assigned it, so every one of the six call sites would rebuild
+  `ScheduleIndex.from_json` per call.
+- `DEFAULT_BASELINE_SHA256` does not exist. The current code takes the sha off
+  the loaded index precisely because the active baseline is swappable at
+  runtime (`server/test_baseline.py`); a module constant would go stale.
+
+### Decision
+No change to `get_matching_engine()`. D-061 stands: `w_alias` remains 0.0, the
+read path stays unwired, and `alias_lexicon` rows remain what that entry says
+they are — the audit record of planner decisions and the training data any
+ranking-stage version would be fitted on.
+
+What is new is enforcement. `matching/test_config_floor.py` pins the library
+DEFAULTS, and it cannot see `server/main.py`. Every version of this proposal
+would have left those assertions green while switching the channel on inside
+the server. `server/test_server.py::TestServedEngineKeepsTheAliasChannelOff`
+now asserts against the engine `get_matching_engine()` actually returns:
+`config.alias_lexicon is None`, `retriever.alias_lexicon == {}`,
+`retrieval.w_alias == 0.0`, and — because every version of the proposal has
+also dropped it — that the engine is the same object across two calls.
+
+### Alternatives Considered
+- **Fix the six defects and wire it anyway, to show the +0.00 in-repo.**
+  Rejected. D-061 measured it three independent ways, including one that is
+  architectural rather than empirical: the alias channel is a RETRIEVAL
+  channel and fusion recall@20 is already 100% (D-027), so the gold activity
+  is always in the pool and no retrieval channel has anything left to add.
+  Re-deriving that costs a slower startup and a `w_alias` that would then be
+  live in a config a later reader might trust.
+- **Close the loop in ranking now.** Deferred, not rejected — it remains the
+  right shape, per D-061's own diagnosis: a correction-derived feature in
+  `matching/features.py` expressing a prior over *activities*, generalising
+  across mentions rather than keying on exact text. It needs `eval.py` and the
+  100% auto-link precision floor has to hold, so it is its own task.
+
+### Verification
+`python -m pytest server/test_server.py -k "AliasChannelOff or LinkingEngine"`
+— 6 passed. No production code changed, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/test_server.py` (new test class only). No application code changed.

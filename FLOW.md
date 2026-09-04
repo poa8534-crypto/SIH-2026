@@ -1294,8 +1294,9 @@ python eval.py | head -20             expect the line:
 **Task:** The Reconcile screen's three resolve actions were corrected to the
 server's action vocabulary, closing the three P0s that D-072 recorded as open.
 `scripts/healthcheck.py` had its stale 8-endpoint assertion pinned to the real
-30 (D-074).
-**Date:** 2026-09-04 · **Decisions:** D-073, D-074
+30 (D-074). A re-proposal of the alias-lexicon read path was refused and D-061
+pinned on the served engine (D-075) — no execution path changed by that entry.
+**Date:** 2026-09-04 · **Decisions:** D-073, D-074, D-075
 
 ```
 RECONCILE RESOLVE — CLIENT BODY -> SERVER BRANCH                  (D-073)
@@ -1328,6 +1329,27 @@ RECONCILE RESOLVE — CLIENT BODY -> SERVER BRANCH                  (D-073)
 
   frontend/src/test/reconcile.test.tsx  +5 tests asserting the request BODY —
   the assertion class whose absence let this pass 912 backend tests
+```
+
+```
+ALIAS CHANNEL — WHY get_matching_engine() TAKES NO Session           (D-075)
+
+  server/main.py  get_matching_engine()      no db parameter, by decision
+    _MATCHING_ENGINE singleton, built once per process
+    config = production(index.baseline.sha256)   -> alias_lexicon None
+                                                    retrieval.w_alias 0.0
+         |
+         +-- HybridRetriever.alias_channel() exists and is correct, but
+         |   cfg.use_alias is False so it is never in the channel dict
+         |
+         +-- server/main.py _upsert_alias() still WRITES every resolve
+             AliasLexicon rows = audit record + future training data (D-061)
+
+  Pinned twice, at two levels:
+    matching/test_config_floor.py TestAliasChannelStaysOff  library DEFAULTS
+    server/test_server.py TestServedEngineKeepsTheAliasChannelOff
+                                                       the SERVED engine,
+                                                       incl. the singleton
 ```
 
 ---
