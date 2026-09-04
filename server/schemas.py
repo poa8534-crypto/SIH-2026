@@ -673,6 +673,44 @@ class DelayEventOut(BaseModel):
     source_span: Optional[str] = None
 
 
+class DelayClassifyRequest(BaseModel):
+    """A planner's ruling on who carries one delay.
+
+    `liability` is required and validated against the four values in
+    `server/delay_taxonomy.py`. There is no "accept the proposal" shortcut: a
+    planner confirming the machine's reading types the same value it proposed,
+    and the audit trail then shows a human agreed rather than a default that
+    was never read.
+    """
+
+    liability: str = Field(
+        ...,
+        description="COMPENSABLE / NON_COMPENSABLE / EXCUSABLE / CONTESTED",
+    )
+    note: Optional[str] = Field(
+        None,
+        description="Why. Recorded on the delay event and in the audit trail.",
+    )
+    adjudicated_by: Optional[str] = Field(
+        None,
+        description="Who ruled. Optional: this app has no authentication.",
+    )
+
+
+class DelayClassifyResponse(BaseModel):
+    delay_event_id: str
+    activity_id: Optional[str] = None
+    liability_proposed: str
+    liability_previous: Optional[str] = None
+    liability_final: str
+    # True when the planner ruled against the deterministic proposal. Surfaced
+    # rather than left to be derived, because an override is the row a claim
+    # will be argued over.
+    overrides_proposal: bool = False
+    audit_records_created: int = 0
+    message: str
+
+
 class DelayAttributionResponse(BaseModel):
     """The delay attribution matrix.
 

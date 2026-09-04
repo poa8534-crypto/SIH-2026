@@ -6827,3 +6827,104 @@ credited to every cause recorded against it, so the figures do not sum to a
 project total. Making it exact needs float consumption, which nothing here
 computes yet. The response says so in its own body rather than leaving a reader
 to assume otherwise.
+
+---
+
+## 2026-09-04 / D-078 — A liability becomes a finding only when a planner rules, and the ruling is audited
+
+### Context
+Phase 2 of the delay-attribution layer. D-076 built the taxonomy and D-077 made
+each delay a row carrying a proposed liability. Nothing so far turns a proposal
+into a finding, and a report that totalled the proposals would be presenting
+machine output as a contractual position.
+
+### Decision
+`POST /delay/{delay_event_id}/classify`. A planner names the liability; NAVIS
+records it and appends an `AuditRecord`.
+
+**The ruling is audited, not merely stored.** Every call writes a record with
+`field_changed="delay_liability"`, `source="planner_review"` and
+`auto_applied=False`, carrying the previous answer in `old_value`, the new one
+in `new_value`, and the delay's own citation - source file, line, row and span.
+Setting the column alone would leave the register saying WHAT was decided and
+never who decided it, when, or against what. `contributing_sources` carries the
+category, the phrase it was classified from, the proposal being ruled on, and
+the planner's note, so the reasoning is legible without a join.
+
+**There is no "accept the proposal" shortcut.** A planner who agrees with the
+machine sends the same value it proposed, and the response says
+`overrides_proposal: false`. The alternative - a one-click accept that writes
+nothing - would leave the trail unable to distinguish a decision a human made
+from a default nobody ever read. That distinction is the entire evidential
+value of the feature.
+
+**Re-ruling is allowed and appends.** Evidence arrives late on a real project.
+A second call writes a second record whose `old_value` is the first ruling, so
+an overturned decision reads as an overturned decision rather than as a value
+that quietly changed (D-004). Refusing a second ruling would push the
+correction into a spreadsheet nobody can audit, which is worse.
+
+**An unrecognised liability is a 400, not a coercion.** `parse_liability`
+accepts the four enum values case-insensitively and nothing else. This is the
+one value in the system a human types directly, and silently turning an
+unknown string into `CONTESTED` would record a decision nobody made - the same
+reasoning that keeps `MATERIAL` and `PERMIT_HSE` undefaulted in D-076.
+
+### Demonstrated end to end
+Against the demo corpus, on the row D-076 deliberately refused to claim:
+
+```
+BEFORE  adjudicated 0/4   adjudicated_days  all zero
+POST /delay/{id}/classify  COMPENSABLE
+  note "Fence handover was an owner obligation on this package; front withheld."
+  -> "Delay on CIV-DWG-1015 ruled COMPENSABLE, overriding the proposed CONTESTED"
+AFTER   adjudicated 1/4   adjudicated_days  COMPENSABLE 21
+        proposed_days     COMPENSABLE 21 · NON_COMPENSABLE 1 · EXCUSABLE 1 · CONTESTED 20
+
+audit  delay_liability: CONTESTED -> COMPENSABLE
+       source=planner_review  auto_applied=False
+       cites civil_progress.xlsx row 18, "Delayed by fencing conflict"
+```
+
+This is the whole argument in one exchange. The machine declined to claim 21
+days against the client because the sentence named no responsible party; a
+planner supplied the contractual fact the sentence could not, and the trail now
+records the claim, the reason, the person and the source line.
+
+### Alternatives Considered
+- **A boolean `accept` flag alongside an `override` action.** Rejected: two
+  code paths for one decision, and the accept path would have been the one
+  nobody audited.
+- **Store the ruling on `DelayEvent` alone.** Rejected. The column says what is
+  true now; the audit row says how it got that way, which is what a claim is
+  argued from.
+- **Refuse a second ruling once adjudicated.** Rejected as above.
+- **Let the sync clear a ruling when a re-classification changes the category.**
+  Rejected outright - already asserted against in D-077. A planner's decision
+  must not evaporate because someone uploaded a file.
+
+### Verification
+`python -m pytest -q` — 981 passed, up from 974. The 7 new tests cover: the
+ruling recorded and audited, the audit row naming what it replaced and carrying
+the citation, confirming-is-still-a-ruling, a second ruling appending with the
+first as its `old_value`, the totals moving, an unknown liability refused with
+no audit row written, and an unknown delay event returning 404.
+
+`scripts/healthcheck.py` against a running server — 31 checks passed, 0 failed,
+with the pinned endpoint count moved 31 → 32 per D-074.
+
+`matching/` and `extraction/` untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/main.py` (endpoint), `server/delay_events.py` (`adjudicate`),
+`server/delay_taxonomy.py` (`parse_liability`), `server/schemas.py`
+(`DelayClassifyRequest` / `DelayClassifyResponse`),
+`server/test_delay_attribution.py`, `scripts/healthcheck.py`.
+
+### Trade-offs / Consequences
+`adjudicated_by` is optional and unauthenticated, because this application has
+no authentication - the same honest gap as `asked_by` on the clarification
+endpoint. The audit row records whatever name the client supplies and nothing
+verifies it. On a system that carried real contractual weight this field would
+have to come from an identity provider, and that is worth saying out loud
+rather than implying the name is proof of anything.

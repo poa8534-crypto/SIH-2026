@@ -143,6 +143,37 @@ def is_adjudicated(row: DelayEvent) -> bool:
     return row.liability_final is not None
 
 
+def adjudicate(
+    row: DelayEvent,
+    liability: Liability,
+    *,
+    note: Optional[str] = None,
+    by: Optional[str] = None,
+    at=None,
+) -> Optional[str]:
+    """Record a planner's ruling on one delay. Returns the previous ruling.
+
+    Sets only the adjudication columns. The audit record that makes the ruling
+    permanent is written by the caller, because `_write_audit` lives with the
+    rest of the audit trail in `server/main.py` and there is exactly one of it.
+
+    The previous value is returned rather than discarded so the caller can put
+    it in the audit row's `old_value`: a planner overturning an earlier ruling
+    is the single most contestable thing that happens in this feature, and the
+    trail has to show both sides of it.
+
+    Re-adjudication is allowed. Evidence arrives late, and a register that
+    refused a second ruling would push the correction into a spreadsheet
+    nobody can audit. Each one appends its own record; nothing is overwritten.
+    """
+    previous = row.liability_final
+    row.liability_final = liability.value
+    row.adjudication_note = note
+    row.adjudicated_by = by
+    row.adjudicated_at = at
+    return previous
+
+
 def attribution(db: Session, discipline: Optional[str] = None) -> dict:
     """The delay attribution matrix.
 
@@ -198,6 +229,7 @@ def attribution(db: Session, discipline: Optional[str] = None) -> dict:
 
 __all__ = [
     "sync_delay_events",
+    "adjudicate",
     "attribution",
     "effective_liability",
     "is_adjudicated",

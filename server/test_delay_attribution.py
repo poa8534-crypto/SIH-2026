@@ -1,7 +1,7 @@
-"""Delay attribution: derived rows, and the totals built on them.
+"""Delay attribution: derived rows, planner rulings, and the totals over both.
 
-Phase 1 of the Contractor Dispute Shield (D-077). These assert the three
-properties the feature stands or falls on:
+Phases 1 and 2 of the Contractor Dispute Shield (D-077, D-078). These assert
+the four properties the feature stands or falls on:
 
   1. A `DelayEvent` is derived from the audit trail and re-derives cleanly.
      Running the sync twice must not double the rows, because it runs on every
@@ -10,6 +10,8 @@ properties the feature stands or falls on:
      variance moves.
   3. Proposals and findings are never mixed. A row nobody has ruled on stays
      out of `adjudicated_days`.
+  4. A ruling is audited, not merely stored, and a second ruling appends
+     rather than overwrites - an overturned decision has to read as one.
 """
 
 from __future__ import annotations
@@ -300,6 +302,128 @@ class TestTheEndpoint:
 
         assert client.get("/delay/attribution").json()["total_events"] == 0
         assert db_session.query(DelayEvent).count() == 0
+
+
+class TestAdjudication:
+    """POST /delay/{id}/classify — the step that turns a proposal into a finding.
+
+    D-009 applied to liability instead of dates: nothing the machine proposes
+    counts until a planner rules, and the ruling is audited rather than merely
+    stored.
+    """
+
+    def _one_event(self, db, span=RIG, days=21):
+        act = db.query(Activity).first().activity_id
+        _slip(db, act, days)
+        _audit(db, activity_id=act, field="actual_finish", span=span)
+        db.commit()
+        sync_delay_events(db)
+        db.commit()
+        return db.query(DelayEvent).one()
+
+    def test_a_ruling_is_recorded_and_audited(self, client, db_session):
+        row = self._one_event(db_session)
+        before = db_session.query(AuditRecord).count()
+
+        body = client.post(
+            f"/delay/{row.id}/classify",
+            json={
+                "liability": "COMPENSABLE",
+                "note": "Rig was owner-supplied under this package.",
+                "adjudicated_by": "Priya Das",
+            },
+        ).json()
+
+        assert body["liability_final"] == Liability.COMPENSABLE.value
+        assert body["liability_proposed"] == Liability.NON_COMPENSABLE.value
+        assert body["overrides_proposal"] is True
+        assert body["audit_records_created"] == 1
+        assert db_session.query(AuditRecord).count() == before + 1
+
+    def test_the_audit_row_says_what_it_replaced(self, client, db_session):
+        """Setting the column alone would leave the register saying WHAT was
+        decided and never who, when, or against what."""
+        row = self._one_event(db_session)
+
+        client.post(f"/delay/{row.id}/classify",
+                    json={"liability": "EXCUSABLE", "adjudicated_by": "Priya Das"})
+
+        audit = (db_session.query(AuditRecord)
+                 .filter(AuditRecord.field_changed == "delay_liability").one())
+        assert audit.old_value == Liability.NON_COMPENSABLE.value
+        assert audit.new_value == Liability.EXCUSABLE.value
+        assert audit.source == "planner_review"
+        assert audit.auto_applied is False
+        # The citation travels onto the ruling, so the decision and the
+        # sentence it was made about never come apart.
+        assert audit.source_file == "civil_progress.xlsx"
+        assert audit.source_span == RIG
+
+    def test_confirming_the_proposal_is_still_a_ruling(self, client, db_session):
+        """There is no "accept" shortcut. A planner who agrees types the same
+        value, and the trail then shows a human agreed rather than a default
+        nobody read."""
+        row = self._one_event(db_session)
+
+        body = client.post(f"/delay/{row.id}/classify",
+                           json={"liability": "NON_COMPENSABLE"}).json()
+
+        assert body["overrides_proposal"] is False
+        assert "confirming the proposal" in body["message"]
+        db_session.expire_all()
+        assert db_session.query(DelayEvent).one().liability_final == (
+            Liability.NON_COMPENSABLE.value)
+
+    def test_a_second_ruling_appends_rather_than_overwrites(self, client, db_session):
+        """Evidence arrives late. An overturned decision must read as an
+        overturned decision, not as a value that quietly changed (D-004)."""
+        row = self._one_event(db_session)
+
+        client.post(f"/delay/{row.id}/classify", json={"liability": "EXCUSABLE"})
+        body = client.post(f"/delay/{row.id}/classify",
+                           json={"liability": "COMPENSABLE"}).json()
+
+        assert body["liability_previous"] == Liability.EXCUSABLE.value
+        audits = (db_session.query(AuditRecord)
+                  .filter(AuditRecord.field_changed == "delay_liability").all())
+        assert len(audits) == 2
+        # The second names the first as what it replaced, not the proposal.
+        pairs = {(a.old_value, a.new_value) for a in audits}
+        assert (Liability.NON_COMPENSABLE.value, Liability.EXCUSABLE.value) in pairs
+        assert (Liability.EXCUSABLE.value, Liability.COMPENSABLE.value) in pairs
+
+    def test_the_ruling_moves_the_totals(self, client, db_session):
+        row = self._one_event(db_session)
+
+        client.post(f"/delay/{row.id}/classify", json={"liability": "COMPENSABLE"})
+
+        body = client.get("/delay/attribution").json()
+        assert body["adjudicated_events"] == 1
+        assert body["adjudicated_days"][Liability.COMPENSABLE.value] == 21
+        assert body["adjudicated_days"][Liability.NON_COMPENSABLE.value] == 0
+        assert body["events"][0]["adjudicated"] is True
+        # The proposal stays visible beside the ruling, so an override reads as
+        # an override for as long as the row exists.
+        assert body["events"][0]["liability_proposed"] == (
+            Liability.NON_COMPENSABLE.value)
+
+    def test_an_unknown_liability_is_refused(self, client, db_session):
+        """A planner's ruling is the one value in this system a human types
+        directly. Coercing an unrecognised string to CONTESTED would record a
+        decision nobody made."""
+        row = self._one_event(db_session)
+
+        response = client.post(f"/delay/{row.id}/classify",
+                               json={"liability": "PROBABLY_THEIRS"})
+        assert response.status_code == 400
+        assert "not a liability" in response.json()["detail"]
+        assert db_session.query(AuditRecord).filter(
+            AuditRecord.field_changed == "delay_liability").count() == 0
+
+    def test_an_unknown_delay_event_is_404(self, client, db_session):
+        response = client.post("/delay/no-such-id/classify",
+                               json={"liability": "EXCUSABLE"})
+        assert response.status_code == 404
 
 
 class TestMemoryQueryCarriesTheClassification:

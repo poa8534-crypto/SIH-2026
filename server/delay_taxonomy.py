@@ -200,6 +200,23 @@ def liability_for(category: DelayCategory | str) -> Liability:
     return LIABILITY.get(category, Liability.CONTESTED)
 
 
+def parse_liability(value: str) -> Liability:
+    """A liability named by a client, or `ValueError`.
+
+    Accepts the enum's own values case-insensitively and nothing else. A
+    planner's ruling is the one value in this system that a human types
+    directly, so it is validated rather than coerced: silently turning an
+    unrecognised string into CONTESTED would record a decision nobody made.
+    """
+    try:
+        return Liability(str(value).strip().upper())
+    except ValueError:
+        raise ValueError(
+            f"'{value}' is not a liability. "
+            f"Expected one of: {', '.join(l.value for l in Liability)}"
+        ) from None
+
+
 def register_category_for_phrase(phrase: str) -> str:
     """The RAID register `category` string for a delay phrase.
 

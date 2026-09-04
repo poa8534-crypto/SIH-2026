@@ -1291,6 +1291,55 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 2 of the delay-attribution layer — a planner rules on who
+carries a delay through `POST /delay/{id}/classify`, and the ruling appends an
+`AuditRecord` rather than only setting a column.
+**Date:** 2026-09-04 · **Decision:** D-078
+
+```
+DELAY ADJUDICATION — PROPOSAL BECOMES FINDING                     (D-078)
+
+  POST /delay/{delay_event_id}/classify   { liability, note?, adjudicated_by? }
+      |
+      +-- delay_taxonomy.parse_liability()   4 values, case-insensitive
+      |     anything else -> HTTP 400, and NO audit row is written
+      |
+      +-- 404 when the delay event is unknown
+      +-- 400 when the row names no activity (unreachable on real data:
+      |        every DelayEvent derives from an AuditRecord, which always
+      |        names one) - a ruling that cannot be audited is not written
+      |
+      +-- delay_events.adjudicate(row, liability, note, by, at)
+      |     sets liability_final / adjudicated_by / adjudicated_at / note
+      |     RETURNS the previous ruling, for the audit row's old_value
+      |
+      +-- main.py _write_audit()
+            field_changed  "delay_liability"
+            old_value      previous ruling, else the machine proposal
+            new_value      the planner's ruling
+            source         "planner_review"      auto_applied  False
+            source_file / line / row / span   copied from the delay event
+            contributing_sources  category, phrase, proposal, planner note
+      |
+      +-- response  overrides_proposal = (ruling != liability_proposed)
+
+  NO ACCEPT SHORTCUT. A planner who agrees sends the same value; the trail
+  then shows a human agreed rather than a default nobody read.
+
+  RE-RULING APPENDS. The second record's old_value is the FIRST ruling, not
+  the proposal, so an overturned decision reads as one (D-004).
+
+  Reflected immediately in GET /delay/attribution:
+    adjudicated_events  0/4 -> 1/4
+    adjudicated_days    COMPENSABLE 21   (CIV-DWG-1015, civil_progress row 18)
+
+  Pinned by server/test_delay_attribution.py TestAdjudication (7 tests).
+```
+
+---
+
+### Previous modification area (D-077)
+
 **Task:** Phase 1 of the delay-attribution layer — delay text in the audit
 trail becomes persisted, classified `DelayEvent` rows, exposed by a read-only
 `GET /delay/attribution`. One scan of the audit trail now feeds three readers.

@@ -8,6 +8,7 @@ Endpoints:
   GET  /schedule            planned vs actual, variance in days
   POST /schedule/export     emit PMXML (XER as stretch)
   GET  /delay/attribution   delay attribution matrix (category, liability, citation)
+  POST /delay/{id}/classify planner rules on who carries one delay
   GET  /memory/query        institutional memory analytics
   POST /agent/turn          slot-filling conversational logging turn
 
@@ -49,12 +50,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.textio import read_text
 from server import agent_llm
 from server.delay_events import (
+    adjudicate as adjudicate_delay,
     attribution as delay_attribution,
     effective_liability,
     is_adjudicated,
     sync_delay_events,
 )
-from server.delay_taxonomy import category_for_phrase, liability_for_phrase
+from server.delay_taxonomy import (
+    category_for_phrase,
+    liability_for_phrase,
+    parse_liability,
+)
 from server.agent_slots import (
     ACTIVITY_ID_RE,
     AgentContext,
@@ -128,6 +134,7 @@ from .db import (
     init_db,
     BaselineVersion,
     ConversationTurn,
+    DelayEvent,
     IntegrityError,
     IntegrityWarning,
     Job,
@@ -148,6 +155,8 @@ from .schemas import (
     BaselineImportResponse,
     BaselineVersionResponse,
     DelayAttributionResponse,
+    DelayClassifyRequest,
+    DelayClassifyResponse,
     DelayEventOut,
     DelayReason,
     DurationDistribution,
@@ -3169,6 +3178,101 @@ def get_delay_attribution(
         impact_days_basis=data["impact_days_basis"],
         unadjudicated_note=data["unadjudicated_note"],
         computed_at=_now(),
+    )
+
+
+# ── POST /delay/{delay_event_id}/classify ────────────────────────────────────
+
+@app.post("/delay/{delay_event_id}/classify", response_model=DelayClassifyResponse)
+def classify_delay_event(
+    delay_event_id: str,
+    req: DelayClassifyRequest,
+    db: Session = Depends(get_db),
+):
+    """A planner rules on who carries one delay.
+
+    This is the step that turns a proposal into a finding. NAVIS classifies the
+    delay from the evidence and proposes a liability from the deterministic
+    table in `server/delay_taxonomy.py`; nothing it proposes counts until a
+    human rules here. It is D-009 applied to liability instead of dates: a
+    proposal reaches the record only through an explicit act by a planner.
+
+    THE RULING IS AUDITED, NOT JUST STORED.
+    Every call appends an `AuditRecord` with `field_changed="delay_liability"`
+    and `source="planner_review"`, carrying the previous answer in `old_value`
+    and the citation the delay was read from. Setting the column alone would
+    leave the register saying WHAT was decided and never who decided it, when,
+    or against what. `auto_applied=False`, because a person did this.
+
+    RE-RULING IS ALLOWED AND APPENDS.
+    Evidence arrives late. A second ruling writes a second record whose
+    `old_value` is the first ruling, so an overturned decision is visible as an
+    overturned decision rather than as a value that quietly changed (D-004).
+    """
+    row = db.query(DelayEvent).filter(DelayEvent.id == delay_event_id).first()
+    if not row:
+        raise HTTPException(404, f"Delay event {delay_event_id} not found")
+
+    try:
+        liability = parse_liability(req.liability)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    if not row.activity_id:
+        # Every delay event derives from an audit row, which always names an
+        # activity, so this is unreachable on real data. It is a 400 rather
+        # than a crash because an unattributable delay cannot be audited, and
+        # writing the ruling without a trail is the one thing not on offer.
+        raise HTTPException(
+            400,
+            f"Delay event {delay_event_id} names no activity, so a ruling on "
+            "it cannot be written to the audit trail",
+        )
+
+    previous = adjudicate_delay(
+        row,
+        liability,
+        note=req.note,
+        by=req.adjudicated_by,
+        at=_now(),
+    )
+
+    _write_audit(
+        db, row.activity_id,
+        field="delay_liability",
+        # The answer this ruling replaces: an earlier ruling if there was one,
+        # otherwise the machine proposal it was allowed to stand on until now.
+        old_value=previous or row.liability_proposed,
+        new_value=liability.value,
+        source="planner_review",
+        source_file=row.source_file,
+        source_line=row.source_line,
+        source_row=row.source_row,
+        source_span=row.source_span,
+        confidence=row.confidence,
+        auto_applied=False,
+        contributing_sources=[
+            f"{row.category} classified from '{row.phrase}'; "
+            f"proposed {row.liability_proposed}"
+        ] + ([f"note: {req.note}"] if req.note else []),
+    )
+
+    db.commit()
+
+    overrides = liability.value != row.liability_proposed
+    return DelayClassifyResponse(
+        delay_event_id=row.id,
+        activity_id=row.activity_id,
+        liability_proposed=row.liability_proposed,
+        liability_previous=previous,
+        liability_final=liability.value,
+        overrides_proposal=overrides,
+        audit_records_created=1,
+        message=(
+            f"Delay on {row.activity_id} ruled {liability.value}, "
+            + (f"overriding the proposed {row.liability_proposed}"
+               if overrides else "confirming the proposal")
+        ),
     )
 
 
