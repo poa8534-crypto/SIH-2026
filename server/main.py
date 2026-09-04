@@ -9,6 +9,7 @@ Endpoints:
   POST /schedule/export     emit PMXML (XER as stretch)
   GET  /delay/attribution   delay attribution matrix (category, liability, citation)
   POST /delay/{id}/classify planner rules on who carries one delay
+  GET  /delay/report        delay attribution report (printable html / csv)
   GET  /memory/query        institutional memory analytics
   POST /agent/turn          slot-filling conversational logging turn
 
@@ -39,7 +40,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
@@ -49,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from extraction.textio import read_text
 from server import agent_llm
+from server import delay_report
 from server.delay_events import (
     adjudicate as adjudicate_delay,
     attribution as delay_attribution,
@@ -3273,6 +3275,56 @@ def classify_delay_event(
             + (f"overriding the proposed {row.liability_proposed}"
                if overrides else "confirming the proposal")
         ),
+    )
+
+
+# ── GET /delay/report ────────────────────────────────────────────────────────
+
+@app.get("/delay/report")
+def get_delay_report(
+    format: str = Query("html", description="html or csv"),
+    discipline: Optional[str] = Query(None, description="Filter by discipline"),
+    db: Session = Depends(get_db),
+):
+    """The Delay Attribution Report: the document a claim is argued from.
+
+    Two renderings of one computation. `html` is a printable, self-contained
+    document - no external stylesheet, no script, no font host - because a
+    document attached to a contractual letter has to survive being saved,
+    emailed and printed by someone with no network. `csv` is the same rows for
+    analysis.
+
+    Both are stamped with the data date and the active baseline's sha256. Two
+    baselines ship and they share no activity ids, so a figure quoted without
+    that stamp is unattributable. On the CSV the stamp is repeated as columns
+    on every row rather than written as a preamble, because RFC 4180 has no
+    comment syntax and a row pasted into an email should still name the
+    schedule it was true for.
+
+    Read-only, like `GET /delay/attribution`: it renders the rows the ingest
+    and resolution paths already wrote.
+    """
+    fmt = (format or "html").strip().lower()
+    if fmt not in ("html", "csv"):
+        raise HTTPException(400, f"Unsupported format '{format}'. Use html or csv.")
+
+    context = delay_report.report_context(db, discipline=discipline,
+                                          data_date=DATA_DATE)
+
+    if fmt == "csv":
+        body = delay_report.to_csv(context)
+        filename = delay_report.filename_for(context, "csv")
+        return StreamingResponse(
+            io.StringIO(body),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    # Inline rather than an attachment: the planner is meant to read it, and
+    # the browser's own print dialog is the route to a PDF.
+    return Response(
+        content=delay_report.to_html(context),
+        media_type="text/html; charset=utf-8",
     )
 
 

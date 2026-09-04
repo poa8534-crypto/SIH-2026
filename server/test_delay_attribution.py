@@ -1,7 +1,7 @@
-"""Delay attribution: derived rows, planner rulings, and the totals over both.
+"""Delay attribution: derived rows, planner rulings, totals, and the report.
 
-Phases 1 and 2 of the Contractor Dispute Shield (D-077, D-078). These assert
-the four properties the feature stands or falls on:
+Phases 1 to 3 of the Contractor Dispute Shield (D-077, D-078, D-079). These
+assert the five properties the feature stands or falls on:
 
   1. A `DelayEvent` is derived from the audit trail and re-derives cleanly.
      Running the sync twice must not double the rows, because it runs on every
@@ -12,10 +12,15 @@ the four properties the feature stands or falls on:
      out of `adjudicated_days`.
   4. A ruling is audited, not merely stored, and a second ruling appends
      rather than overwrites - an overturned decision has to read as one.
+  5. The exported report carries its provenance and its own caveats. A
+     document that cannot name the schedule it was computed against, or that
+     presents a proposal as a finding, is worse than no document.
 """
 
 from __future__ import annotations
 
+import csv
+import io
 import sys
 import uuid
 from datetime import date, datetime
@@ -25,9 +30,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server.db import Activity, AuditRecord, DelayEvent
+from server.db import Activity, AuditRecord, BaselineVersion, DelayEvent
+from server import delay_report
 from server.delay_events import attribution, sync_delay_events
 from server.delay_taxonomy import DelayCategory, Liability
+from server.main import DATA_DATE
 
 
 @pytest.fixture(autouse=True)
@@ -75,6 +82,18 @@ def _slip(db, activity_id, days, finish=date(2026, 8, 20)):
     act.actual_finish = finish
     act.finish_variance_days = days
     return act
+
+
+def escape_free(text: str) -> str:
+    """The rendered form of a span in the HTML report.
+
+    The report escapes its content, so a test looking for the raw sentence has
+    to look for the escaped one. Nothing in these spans needs escaping today;
+    this keeps the assertion honest if one ever does.
+    """
+    from html import escape
+
+    return escape(text.strip())
 
 
 RIG = "Bored Piling — Pipe Rack — 1 day over, piling rig breakdown"
@@ -424,6 +443,206 @@ class TestAdjudication:
         response = client.post("/delay/no-such-id/classify",
                                json={"liability": "EXCUSABLE"})
         assert response.status_code == 404
+
+
+class TestTheReport:
+    """GET /delay/report — the document that leaves the application.
+
+    The report is the deliverable; everything before it is machinery. These
+    assert the three things that make it a document rather than a dump: it
+    names the schedule it was computed against, every figure carries its
+    citation, and it states its own limits on its face.
+    """
+
+    def _baseline(self, db, sha="a1b2c3d4e5f60718293a4b5c6d7e8f90"):
+        """Record an active baseline.
+
+        `conftest` seeds activities straight into the table, so a test database
+        has no BaselineVersion row at all. That is realistic for a fixture and
+        wrong for this test: the report's whole provenance claim is that it
+        names the schedule it was computed against, so the row has to exist for
+        the assertion to mean anything.
+        """
+        db.query(BaselineVersion).delete()
+        db.add(BaselineVersion(
+            id=str(uuid.uuid4()),
+            name="OIL Well-Site Duliajan v1",
+            filename="baseline_schedule.json",
+            sha256=sha,
+            activity_count=db.query(Activity).count(),
+            source_format="json",
+            is_active=True,
+            source="seed",
+        ))
+        db.commit()
+        return sha
+
+    def _corpus(self, db):
+        """Two delays: one ruled against the proposal, one left as a proposal."""
+        civil = db.query(Activity).filter(
+            Activity.discipline == "civil").first().activity_id
+        piping = db.query(Activity).filter(
+            Activity.discipline == "piping").first().activity_id
+        _slip(db, civil, 21, finish=date(2026, 9, 2))
+        _slip(db, piping, 4, finish=date(2026, 7, 14))
+        _audit(db, activity_id=civil, field="actual_finish", span=FENCE, row=18)
+        _audit(db, activity_id=piping, field="actual_finish", span=RIG, row=7)
+        db.commit()
+        sync_delay_events(db)
+        db.commit()
+        return civil, piping
+
+    def test_the_html_names_the_schedule_it_was_computed_against(
+            self, client, db_session):
+        """Two baselines ship and they share no activity ids, so a figure
+        quoted without the baseline sha256 and the data date is
+        unattributable."""
+        sha = self._baseline(db_session)
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+
+        assert "Delay Attribution Report" in body
+        assert str(DATA_DATE) in body
+        assert sha in body
+        assert "baseline_schedule.json" in body
+        # Sample size, stated before anyone asks for it.
+        assert "activities carry actual dates" in body
+
+    def test_it_says_so_when_no_baseline_is_recorded(self, client, db_session):
+        """A test database seeds activities with no baseline row, and so could
+        a hand-built one. The report says "not recorded" rather than printing
+        an empty field that reads like a rendering bug."""
+        db_session.query(BaselineVersion).delete()
+        db_session.commit()
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+        assert "not recorded" in body
+
+    def test_every_figure_carries_its_citation(self, client, db_session):
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+
+        assert "civil_progress.xlsx" in body
+        assert "row 18" in body
+        # The sentence itself, not a paraphrase of it.
+        assert escape_free(FENCE) in body
+
+    def test_it_states_its_own_limits(self, client, db_session):
+        """A reader who has to discover the caveats from the source code will
+        not trust anything else on the page either."""
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+
+        assert "attributed, not measured" in body
+        assert "upper bound" in body
+        assert "proposal" in body.lower()
+        assert "no user authentication" in body
+
+    def test_an_unruled_row_is_marked_as_a_proposal(self, client, db_session):
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+
+        assert "no planner ruling" in body.lower()
+
+    def test_a_ruling_appears_with_its_reason_and_who_made_it(
+            self, client, db_session):
+        self._corpus(db_session)
+        fence = db_session.query(DelayEvent).filter(
+            DelayEvent.phrase == "fencing conflict").one()
+
+        client.post(f"/delay/{fence.id}/classify", json={
+            "liability": "COMPENSABLE",
+            "note": "Fence handover was an owner obligation on this package.",
+            "adjudicated_by": "Priya Das",
+        })
+
+        body = client.get("/delay/report").text
+        assert "Ruled by Priya Das" in body
+        assert "overriding the proposed CONTESTED" in body
+        assert "owner obligation on this package" in body
+
+    def test_an_empty_bucket_says_so_rather_than_vanishing(
+            self, client, db_session):
+        """A missing section reads as an oversight. An explicit "none on this
+        evidence" reads as a finding, which is what it is."""
+        self._corpus(db_session)
+
+        body = client.get("/delay/report").text
+
+        assert "Compensable" in body
+        assert "No delays attributed here on this evidence." in body
+
+    def test_the_csv_repeats_the_stamp_on_every_row(self, client, db_session):
+        """RFC 4180 has no comment syntax, so the provenance travels as
+        columns. A row pasted into an email still names its schedule."""
+        sha = self._baseline(db_session)
+        self._corpus(db_session)
+
+        response = client.get("/delay/report?format=csv")
+        assert response.headers["content-type"].startswith("text/csv")
+        assert "navis-delay-attribution" in response.headers["content-disposition"]
+
+        rows = list(csv.DictReader(io.StringIO(response.text)))
+        assert len(rows) == 2
+        for row in rows:
+            assert row["data_date"] == str(DATA_DATE)
+            assert row["baseline_sha256"] == sha
+            assert row["source_file"] == "civil_progress.xlsx"
+
+    def test_the_csv_carries_the_ruling_and_the_proposal_side_by_side(
+            self, client, db_session):
+        """An override has to be readable as an override in the export too,
+        not only in the HTML."""
+        self._corpus(db_session)
+        fence = db_session.query(DelayEvent).filter(
+            DelayEvent.phrase == "fencing conflict").one()
+        client.post(f"/delay/{fence.id}/classify",
+                    json={"liability": "COMPENSABLE", "adjudicated_by": "Priya Das"})
+
+        rows = {r["phrase"]: r for r in csv.DictReader(
+            io.StringIO(client.get("/delay/report?format=csv").text))}
+
+        ruled = rows["fencing conflict"]
+        assert ruled["adjudicated"] == "yes"
+        assert ruled["liability_proposed"] == Liability.CONTESTED.value
+        assert ruled["liability_ruled"] == Liability.COMPENSABLE.value
+        assert ruled["liability_effective"] == Liability.COMPENSABLE.value
+        assert ruled["adjudicated_by"] == "Priya Das"
+
+        unruled = rows["piling rig breakdown"]
+        assert unruled["adjudicated"] == "no"
+        assert unruled["liability_ruled"] == ""
+
+    def test_it_filters_by_discipline(self, client, db_session):
+        self._corpus(db_session)
+
+        rows = list(csv.DictReader(io.StringIO(
+            client.get("/delay/report?format=csv&discipline=piping").text)))
+        assert len(rows) == 1
+        assert rows[0]["discipline"] == "piping"
+
+    def test_an_unsupported_format_is_refused(self, client, db_session):
+        response = client.get("/delay/report?format=pdf")
+        assert response.status_code == 400
+        assert "html or csv" in response.json()["detail"]
+
+    def test_the_two_formats_agree_on_the_totals(self, client, db_session):
+        """One computation, two renderings. A CSV and a document that
+        disagreed about a total would be worse than either alone."""
+        self._corpus(db_session)
+
+        matrix = client.get("/delay/attribution").json()
+        rows = list(csv.DictReader(io.StringIO(
+            client.get("/delay/report?format=csv").text)))
+
+        assert len(rows) == matrix["total_events"]
+        csv_days = sum(int(r["impact_days"]) for r in rows)
+        assert csv_days == sum(matrix["proposed_days"].values())
 
 
 class TestMemoryQueryCarriesTheClassification:

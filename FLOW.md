@@ -1291,6 +1291,48 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 3 — the Delay Attribution Report. `GET /delay/report` renders
+the classified delays as a printable HTML document and as CSV, stamped with the
+data date and baseline sha256 and carrying its own caveats. This completes the
+core delay-attribution layer (Phases 0–3).
+**Date:** 2026-09-04 · **Decision:** D-079
+
+```
+DELAY ATTRIBUTION REPORT — ONE COMPUTATION, TWO RENDERINGS       (D-079)
+
+  GET /delay/report?format=html|csv&discipline=...      READ-ONLY
+      |
+      +-- delay_report.report_context(db, discipline, data_date=DATA_DATE)
+      |     delay_events.attribution()          the rows and the totals
+      |     BaselineVersion is_active           name / filename / sha256
+      |     Activity counts                     "67 of 120 carry actuals"
+      |     grouped by EFFECTIVE liability, in LIABILITY_ORDER
+      |         COMPENSABLE, NON_COMPENSABLE, EXCUSABLE, CONTESTED
+      |
+      +-- to_html(context)   Response(media_type="text/html")   inline
+      |     self-contained: no external CSS, no script, no font host,
+      |     @page A4 - it has to print for someone with no network
+      |     empty bucket prints "No delays attributed here on this evidence."
+      |     a ruled row prints "Ruled by <name>, overriding the proposed <X>"
+      |
+      +-- to_csv(context)    StreamingResponse, Content-Disposition attachment
+            filename  navis-delay-attribution-<data_date>-<sha8>.csv
+            data_date / baseline_sha256 / generated_at repeated PER ROW
+              (RFC 4180 has no comments; a pasted row still names its schedule)
+            liability_proposed and liability_ruled are separate columns
+
+  CAVEATS is one constant read by both renderings, so the document and the
+  export cannot drift into saying different things about the same numbers.
+
+  Demo output: 4 delays, 43 days, 21 ruled COMPENSABLE (CIV-DWG-1015),
+  months 2026-07 2d / 2026-08 20d / 2026-09 21d.
+  Pinned by server/test_delay_attribution.py TestTheReport (12 tests).
+```
+
+---
+
+### Previous modification area (D-078)
+
 **Task:** Phase 2 of the delay-attribution layer — a planner rules on who
 carries a delay through `POST /delay/{id}/classify`, and the ruling appends an
 `AuditRecord` rather than only setting a column.

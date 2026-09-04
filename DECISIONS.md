@@ -6928,3 +6928,114 @@ endpoint. The audit row records whatever name the client supplies and nothing
 verifies it. On a system that carried real contractual weight this field would
 have to come from an identity provider, and that is worth saying out loud
 rather than implying the name is proof of anything.
+
+---
+
+## 2026-09-04 / D-079 — The report states its own provenance and its own limits
+
+### Context
+Phase 3, and the last of the core layer. D-077 made each delay a row, D-078 let
+a planner rule on it. Everything so far lives inside the application; a
+Liquidated Damages argument is had over a document.
+
+### Decision
+`GET /delay/report`, rendering one computation two ways from
+`server/delay_report.py`: a printable HTML document and a CSV of the same rows.
+Read-only, like `GET /delay/attribution` — it renders what the ingest and
+resolution paths already wrote.
+
+Three properties make it a document rather than a dump, and each is a decision:
+
+**1. It names the schedule it was computed against.** Data date, baseline name,
+filename and full sha256, plus the sample size — "67 of 120 activities carry
+actual dates". Two baselines ship and they share no activity ids, so "21 days
+on CIV-DWG-1015" is unattributable without them. `Audit-1.md` recommended
+stating sample size before a judge asks; this does it in the header.
+
+**2. Every figure carries its citation.** Source file, row or line, and the
+verbatim sentence, beside the activity and the category. A delay attributed
+without the document behind it is an assertion; with it, it is evidence.
+
+**3. It states its limits on its face.** Four caveats print on every rendering:
+days are attributed and not measured, an unruled row is a proposal, detection
+recognises a fixed phrase list, and rulings are not authenticated. They live in
+one `CAVEATS` constant rather than in a template, so the two formats cannot
+drift into saying different things about the same numbers.
+
+### On the shapes
+**The CSV repeats the provenance stamp on every row.** RFC 4180 has no comment
+syntax, so a preamble would break parsers; repetition means a single row pasted
+into an email still names the schedule version and data date it was true for.
+It also carries `liability_proposed` and `liability_ruled` as separate columns,
+so an override is readable as an override in the export and not only in the
+document.
+
+**The HTML is self-contained.** No external stylesheet, no script, no font
+host, `@page` sized to A4. A document attached to a contractual letter has to
+survive being saved, emailed and printed by someone with no network. It is
+served inline rather than as an attachment, because the browser's own print
+dialog is the route to a PDF and adding a PDF engine to this project would buy
+nothing the print dialog does not already do.
+
+**An empty bucket prints "No delays attributed here on this evidence."** A
+missing section reads as an oversight; an explicit statement reads as a
+finding, which is what it is. On the demo corpus this matters: the compensable
+bucket was empty until a planner ruled on `CIV-DWG-1015`, and that emptiness
+was the honest output of D-076's refusal to guess.
+
+### What it produces today
+Against the demo corpus, with the one ruling made in D-078:
+
+```
+Data date 2026-09-15 · baseline_schedule.json · sha256 1bfde358dc0e1a12...
+67 of 120 activities carry actual dates · 4 delays, 1 carries a ruling
+
+                                              ruled   incl. proposals  count
+Compensable — owner responsibility               21                21      1
+Non-compensable — contractor responsibility       0                 1      1
+Excusable — neither party                         0                 1      1
+Contested — awaiting a planner's ruling           0                20      1
+Total                                            21                43      4
+
+Days by month  2026-07: 2 · 2026-08: 20 · 2026-09: 21
+```
+
+The compensable row prints the ruling underneath the evidence: *"Ruled by Priya
+Das, overriding the proposed CONTESTED"*, then the planner's own words, then
+`civil_progress.xlsx, row 18`.
+
+### Alternatives Considered
+- **Generate a PDF server-side.** Rejected: a print stylesheet and the
+  browser's dialog produce the same artefact, and a PDF library is a
+  dependency, a font-embedding problem and a rendering surface to maintain.
+- **Write the CSV provenance as a comment preamble.** Rejected — see above.
+- **Reuse the `POST /schedule/export` + `/uploads/{filename}` download flow.**
+  Rejected: that exists because a Primavera export is a generated artefact
+  worth keeping on disk. This report is a view of live rows and should never be
+  stale; streaming it means the document can never disagree with the database.
+- **Omit empty liability sections.** Rejected — see above.
+
+### Verification
+`python -m pytest -q` — 993 passed, up from 981. The 12 new tests assert the
+provenance stamp in both formats, the "not recorded" fallback when no baseline
+row exists, the citation reaching the page, the caveats printing, an unruled
+row marked as a proposal, a ruling printed with its reason and author, the
+empty-bucket statement, the CSV stamp repetition, proposal and ruling as
+separate CSV columns, discipline filtering, an unsupported format refused, and
+that the two formats agree on the totals.
+
+`scripts/healthcheck.py` against a running server — 33 endpoints exposed,
+expected 33, per D-074's pinning rule. The rendered document was reviewed in a
+browser. `matching/` and `extraction/` untouched, so `eval.py` is not
+implicated.
+
+### Affected Areas
+`server/delay_report.py` (new), `server/main.py` (endpoint, `Response` import),
+`server/test_delay_attribution.py`, `scripts/healthcheck.py` (32 → 33).
+
+### Trade-offs / Consequences
+The report has no page numbers, no signature block and no letterhead, because
+NAVIS does not know the project's contract references or the parties' legal
+names. Adding placeholders for them would make the document look more official
+than its contents justify, which is the opposite of what every other decision
+here is for. It is an evidence appendix, and it should read as one.
