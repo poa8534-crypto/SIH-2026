@@ -665,6 +665,14 @@ class DelayEventOut(BaseModel):
     discipline: Optional[str] = None
     month: Optional[str] = None
     impact_days: int = 0
+    # ── Float and project delay ──
+    # `impact_days` above is the whole slip, an upper bound. `beyond_float_days`
+    # is the part that outran the float the baseline gave the activity, and is
+    # the only part that can have moved the completion date.
+    activity_total_float: Optional[int] = None
+    float_consumed_days: int = 0
+    beyond_float_days: int = 0
+    on_critical_path: bool = False
     # ── Contractual notice ──
     # `evidenced_basis` says how `evidenced_on` was arrived at: REPORTED is the
     # date a field report carried, the others are inferences. A notice clock
@@ -782,6 +790,7 @@ class ConcurrentDelayPair(BaseModel):
     left_category: str
     left_liability: str
     left_adjudicated: bool = False
+    left_beyond_float_days: int = 0
 
     right_delay_event_id: str
     right_activity_id: Optional[str] = None
@@ -789,6 +798,11 @@ class ConcurrentDelayPair(BaseModel):
     right_category: str
     right_liability: str
     right_adjudicated: bool = False
+    right_beyond_float_days: int = 0
+    # Each side outran its own float, so each could have moved the completion
+    # date. This is what turns a temporal overlap into a claim about the
+    # finish, and it is false far more often than the overlap itself.
+    both_beyond_float: bool = False
 
 
 class DelayConcurrency(BaseModel):
@@ -804,7 +818,32 @@ class DelayConcurrency(BaseModel):
     pairs_listed: int = 0
     # Count per status: CONFLICT / UNRESOLVED / ALIGNED.
     counts: dict[str, int] = {}
+    # Of those pairs, how many have both sides beyond their float.
+    beyond_float_pairs: int = 0
     note: str
+
+
+class DelayNetworkSummary(BaseModel):
+    """The baseline network the float figures were computed from.
+
+    Two finish dates, and neither is preferred. `project_finish` is what the
+    logic produces; `authored_finish` is the latest planned finish as written.
+    `logic_conflicts` counts the ties the authored dates break - on a schedule
+    dated by hand and tied up afterwards the two halves disagree, and float
+    computed from the logic is advisory until they are reconciled.
+    """
+
+    activities_scheduled: int = 0
+    critical_activities: int = 0
+    project_finish: Optional[date_t] = None
+    authored_finish: Optional[date_t] = None
+    logic_conflicts: int = 0
+    logic_matches_dates: bool = True
+    # Activities excluded from the pass because they sit in a logic cycle.
+    unresolved_activities: list[str] = []
+    # Predecessors named by an activity but absent from the schedule.
+    dangling_predecessors: list[str] = []
+    calendar_basis: str
 
 
 class DelayAttributionResponse(BaseModel):
@@ -832,6 +871,14 @@ class DelayAttributionResponse(BaseModel):
     # The date the windows were judged against. Null means every status is
     # UNKNOWN, which is the honest answer rather than silently using today.
     notice_as_of: Optional[date_t] = None
+    # ── Float and project delay ──
+    # The figure a Liquidated Damages calculation is built from. Reported
+    # beside proposed_days rather than replacing it, so a reader can see how
+    # much of the headline number the schedule absorbed.
+    beyond_float_days: dict[str, int] = {}
+    adjudicated_beyond_float_days: dict[str, int] = {}
+    float_basis: str
+    network: DelayNetworkSummary
     # Delays that were open over the same period. Present even when empty:
     # "we looked and found none" is a different statement from silence.
     concurrency: DelayConcurrency

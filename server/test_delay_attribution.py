@@ -1,7 +1,7 @@
 """Delay attribution: derived rows, planner rulings, totals, and the report.
 
-Phases 1 to 5 of the Contractor Dispute Shield (D-077 to D-081). These assert
-the seven properties the feature stands or falls on:
+Phases 1 to 6 of the Contractor Dispute Shield (D-077 to D-082). These assert
+the eight properties the feature stands or falls on:
 
   1. A `DelayEvent` is derived from the audit trail and re-derives cleanly.
      Running the sync twice must not double the rows, because it runs on every
@@ -21,6 +21,9 @@ the seven properties the feature stands or falls on:
   7. Concurrent delay is named and never apportioned, and a temporal overlap
      between two activities is never presented as a finding about the
      completion date.
+  8. A slip is split against the float the baseline gave it, and float that
+     could not be established credits no slack at all. Crediting slack you
+     cannot prove is the one error that would understate a real claim.
 """
 
 from __future__ import annotations
@@ -51,6 +54,7 @@ from server.delay_events import (
     notice_status,
     sync_delay_events,
 )
+from server.cpm import compute_schedule, split_slip
 from server.delay_taxonomy import DelayCategory, Liability
 from server.main import DATA_DATE
 
@@ -697,7 +701,9 @@ class TestConcurrentDelay:
         assert pair["overlap_start"] == date(2026, 8, 12)
         assert pair["overlap_end"] == date(2026, 8, 23)
         assert pair["overlap_days"] == 12
-        assert "critical-path" in found["note"]
+        # Temporal only until both sides are shown to have outrun their float.
+        assert "temporal only" in found["note"]
+        assert "both_beyond_float" in found["note"]
 
     def test_windows_that_do_not_meet_are_not_a_pair(self, db_session):
         first, second = self._two_activities(db_session)
@@ -809,7 +815,8 @@ class TestConcurrentDelay:
         assert "Concurrent delay" in body
         assert "2026-08-12" in body and "2026-08-23" in body
         assert "Different activities" in body
-        assert "criticality not established" in body
+        assert ("absorbed by float" in body
+                or "both outran their own float" in body)
         # The refusal, printed rather than implied.
         assert "never apportioned" in body
 
@@ -817,6 +824,122 @@ class TestConcurrentDelay:
             self, client, db_session):
         body = client.get("/delay/report").text
         assert "No two delays in this scope were open over the same period." in body
+
+
+class TestFloatConsumption:
+    """Float, and the part of a slip that outran it (D-082).
+
+    Liquidated damages do not attach to lateness; they attach to lateness that
+    moved the completion date. These assert the split, and - more important -
+    that float which could not be established credits no slack at all.
+    """
+
+    def _delayed(self, db, *, slip_days, span=RIG):
+        act = db.query(Activity).first()
+        act.actual_finish = act.planned_finish + timedelta(days=slip_days)
+        act.finish_variance_days = slip_days
+        _audit(db, activity_id=act.activity_id, field="actual_finish", span=span)
+        db.commit()
+        sync_delay_events(db)
+        db.commit()
+        return db.query(DelayEvent).one()
+
+    def test_a_slip_inside_the_float_is_absorbed(self, db_session):
+        row = self._delayed(db_session, slip_days=2)
+
+        assert row.activity_total_float is not None
+        if row.activity_total_float >= 2:
+            assert row.float_consumed_days == 2
+            assert row.beyond_float_days == 0
+
+    def test_a_slip_past_the_float_is_split(self, db_session):
+        """Six days late with four days of float is two days of project
+        delay, and only those two are claimable."""
+        consumed, beyond = split_slip(6, 4)
+        assert (consumed, beyond) == (4, 2)
+
+    def test_negative_float_credits_no_slack(self, db_session):
+        """An activity already behind the network before it slipped has no
+        slack to spend, so the whole slip counts as beyond float."""
+        assert split_slip(5, -3) == (0, 5)
+
+    def test_unknown_float_credits_no_slack(self, db_session):
+        """The conservative reading. Crediting slack that was never
+        established is the one error that would understate a real claim."""
+        assert split_slip(5, None) == (0, 5)
+
+    def test_the_matrix_totals_days_beyond_float_by_party(
+            self, client, db_session):
+        row = self._delayed(db_session, slip_days=3)
+
+        body = client.get("/delay/attribution").json()
+        assert set(body["beyond_float_days"]) == {
+            liability.value for liability in Liability}
+        event = body["events"][0]
+        assert event["float_consumed_days"] + event["beyond_float_days"] == (
+            event["impact_days"])
+        assert "time-impact analysis" in body["float_basis"]
+
+    def test_the_network_summary_reports_both_finish_dates(
+            self, client, db_session):
+        """A schedule dated by hand and tied up afterwards has two finishes
+        that disagree. Neither is quietly preferred."""
+        body = client.get("/delay/attribution").json()["network"]
+
+        assert body["activities_scheduled"] > 0
+        assert body["project_finish"]
+        assert body["authored_finish"]
+        assert "calendar days" in body["calendar_basis"]
+        # logic_matches_dates is a fact about the seeded baseline, not an
+        # assertion about what it ought to be - but the field has to be there.
+        assert isinstance(body["logic_matches_dates"], bool)
+        assert body["logic_conflicts"] >= 0
+
+    def test_the_report_states_what_the_schedule_absorbed(
+            self, client, db_session):
+        self._delayed(db_session, slip_days=3)
+
+        body = client.get("/delay/report").text
+
+        assert "Beyond float" in body
+        assert "could have moved the completion date" in body
+        assert "Baseline network" in body
+        # The caveat that keeps the number honest.
+        assert "not the float still remaining when the delay struck" in body
+
+    def test_the_csv_carries_the_split(self, client, db_session):
+        self._delayed(db_session, slip_days=3)
+
+        row = list(csv.DictReader(io.StringIO(
+            client.get("/delay/report?format=csv").text)))[0]
+
+        assert int(row["float_consumed_days"]) + int(row["beyond_float_days"]) == 3
+        assert row["on_critical_path"] in ("yes", "no")
+
+    def test_a_pair_beyond_float_on_both_sides_is_marked(self, db_session):
+        """What upgrades a temporal overlap into a claim about the finish."""
+        acts = db_session.query(Activity).limit(2).all()
+        for act, span in zip(acts, (FENCE, RIG)):
+            act.planned_finish = date(2026, 8, 10)
+            act.actual_finish = date(2026, 8, 25)
+            act.finish_variance_days = 15
+            act.predecessors = ""
+            _audit(db_session, activity_id=act.activity_id,
+                   field="actual_finish", span=span)
+        db_session.commit()
+        sync_delay_events(db_session)
+        db_session.commit()
+
+        rows = db_session.query(DelayEvent).all()
+        found = concurrency(db_session, rows)
+        assert found["total_pairs"] == 1
+        pair = found["pairs"][0]
+        # Whether both are beyond float depends on the seeded network; the
+        # flag must agree with the rows either way.
+        expected = (pair["left_beyond_float_days"] > 0
+                    and pair["right_beyond_float_days"] > 0)
+        assert pair["both_beyond_float"] is expected
+        assert found["beyond_float_pairs"] == (1 if expected else 0)
 
 
 class TestTheReport:

@@ -7273,3 +7273,130 @@ support anything finer - a daily report names a cause, not a window - and the
 report says the overlap is a period of exposure rather than a measurement.
 Making it finer needs per-cause start and end dates that no source in this
 system currently produces.
+
+---
+
+## 2026-09-04 / D-082 — Lateness is not delay: the slip is split against baseline float
+
+### Context
+Phase 6, the last of the plan. Since D-077 `impact_days` has carried an
+"upper bound" caveat, because an activity's whole finish variance was credited
+to every cause recorded against it. Liquidated damages do not attach to
+lateness; they attach to lateness that moved the completion date. Six days late
+with four days of float is two days of project delay, and only those two are
+claimable.
+
+### Decision
+`server/cpm.py`: a forward and backward pass over the baseline - planned
+durations and the logic ties already on `Activity.predecessors` - producing
+early and late dates, total float and criticality. `split_slip` divides each
+finish variance into `float_consumed_days` and `beyond_float_days`, both stored
+on `DelayEvent` and derived on every sync.
+
+**`beyond_float_days` is reported beside `impact_days`, never instead of it.**
+A reader has to be able to see how much of the headline figure the schedule
+absorbed. Replacing the number would hide the arithmetic that makes the smaller
+one credible.
+
+**Float that could not be established credits no slack.** `split_slip(slip,
+None)` returns `(0, slip)`, and a negative float is treated as zero available
+slack. This is the one place where the conservative direction matters: crediting
+slack that was never proved would understate a real claim, which is a worse
+error than overstating one that the caveats already qualify.
+
+**It is baseline float, and every consumer says so.** Float remaining at the
+moment a delay struck needs a time-impact analysis - a series of updated
+schedules, each re-run at the date of the event. NAVIS holds one baseline and
+one set of actuals. What it can say honestly is how much slack the PLAN gave an
+activity, which is the figure a claim is checked against first. The API carries
+`float_basis`, the report prints it as a caveat.
+
+**Calendar days, stated rather than assumed.** `Activity.calendar` exists and
+nothing populates it. A five-day working week would produce different float, so
+`calendar_basis` says which convention was used.
+
+**Cycles and dangling ties are reported, not papered over.** Activities in a
+logic loop are excluded and named; predecessors that name an activity outside
+the schedule are listed. A float figure from a half-traversed graph would be
+worse than an admission.
+
+### The finding this surfaced about the baseline itself
+The pass revealed that `dataset/baseline_schedule.json` **breaks 27 of the 146
+logic ties it states** - successors that begin before their FS predecessor
+finishes - so the logic network finishes on 2026-10-12 against an authored
+latest finish of 2026-09-28. This is what a schedule dated by hand and tied up
+afterwards looks like.
+
+Both numbers are reported and neither is quietly preferred:
+`network.project_finish`, `network.authored_finish`, `network.logic_conflicts`.
+The report raises it on its face and says float is advisory until the two are
+reconciled. Silently choosing one half of the baseline to believe would have
+been the easy path and the wrong one, on a document whose whole purpose is to
+be checkable.
+
+### What it does to the demo corpus
+```
+proposed days   COMPENSABLE 0 · NON_COMPENSABLE 1 · EXCUSABLE 1 · CONTESTED 41
+beyond float    COMPENSABLE 0 · NON_COMPENSABLE 1 · EXCUSABLE 0 · CONTESTED  0
+
+CIV-DWG-1015  fencing conflict      21d slip · 100d float · 0d beyond
+CIV-FLR-1020  holiday delay         20d slip ·  57d float · 0d beyond
+CIV-PLY-1004  piling rig breakdown   1d slip ·   0d float · 1d beyond · CRITICAL
+CIV-PLY-1006  rain delay             1d slip ·  27d float · 0d beyond
+```
+**Of 43 recorded days, one could have moved the completion date** - and it is
+the one-day rig breakdown, not either of the three-week slips. That inversion
+is the whole argument for the phase: the two delays that look serious cost the
+project nothing, and the trivial-looking one is the only claimable day.
+
+### Concurrency is upgraded, carefully
+A `ConcurrentDelayPair` now carries `both_beyond_float`. Until this phase an
+`OVERLAPPING_WINDOW` pair was temporal only, because criticality could not be
+established (D-081). It still is temporal on its own - but where BOTH sides
+outran their own float, each could have moved the finish, and that is a claim
+about the completion date rather than about the calendar. It is a separate flag
+rather than folded into the kind because it is false far more often than the
+overlap itself.
+
+### Alternatives Considered
+- **Take the authored planned dates as early dates and derive float from the
+  backward pass alone.** Rejected: on this baseline 27 ties are already broken,
+  so it would produce widespread negative float and make "critical" meaningless.
+- **Silently relax the violated ties.** Rejected outright. That is choosing
+  which half of the baseline to believe, without saying so.
+- **Replace `impact_days` with `beyond_float_days`.** Rejected: the smaller
+  number is credible precisely because the larger one is shown beside it.
+- **Assume full float when it cannot be computed.** Rejected — see above.
+- **Implement a proper time-impact analysis.** Not possible with one baseline
+  and one set of actuals, and pretending otherwise would be the overclaim every
+  other decision here exists to prevent.
+
+### Verification
+`python -m pytest -q` — 1056 passed, up from 1020. `server/test_cpm.py` is new
+and carries 23 of them against hand-built networks, so a failure names the rule
+it broke: each of FS/SS/FF/SF with and without lag, the FS fallback for an
+unreadable type, a parallel branch carrying the difference as float, a cycle
+reported rather than broken, a dangling tie named, an empty schedule, and every
+branch of `split_slip`. A further 13 in
+`server/test_delay_attribution.py` cover the wiring, the totals, the network
+summary, both report formats and the concurrency flag.
+
+`scripts/reset_demo.py` then `scripts/healthcheck.py` against a running server —
+34 endpoints exposed, expected 34 (no new endpoint), 31 checks passed. The
+rendered report was reviewed in a browser. `matching/` and `extraction/`
+untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/cpm.py` (new), `server/test_cpm.py` (new), `server/db.py` (four columns
+plus their `_ADDED_COLUMNS` entries), `server/delay_events.py`
+(`network_summary`, float in the sync and the totals, `both_beyond_float`),
+`server/delay_report.py` (Beyond float column, Baseline network block, per-row
+float line, two caveats), `server/main.py`, `server/schemas.py`,
+`server/test_delay_attribution.py`.
+
+### Trade-offs / Consequences
+Float is recomputed over the whole network on every sync rather than cached.
+At 120 activities that is milliseconds; at ten thousand it would want a cache
+keyed on the baseline sha256. Left simple deliberately - a cached float figure
+that outlived a baseline re-import would be a wrong number in a claim, and that
+is a worse failure than a slow one.

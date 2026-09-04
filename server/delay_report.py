@@ -78,10 +78,19 @@ CAVEATS = (
     (
         "Days are attributed, not measured",
         "An activity's whole finish slip is credited to every cause recorded "
-        "against it, so a per-cause figure is an upper bound and the columns "
-        "do not sum to a project delay. Separating float consumption from "
-        "project delay requires a critical-path pass this system does not yet "
-        "perform.",
+        "against it, so the Days column is an upper bound per cause and the "
+        "columns do not sum to a project delay. The Beyond float column is "
+        "the part that outran the slack the baseline gave the activity, and "
+        "is the only part that can have moved the completion date.",
+    ),
+    (
+        "Float is baseline float, in calendar days",
+        "Total float is computed from the baseline network - planned "
+        "durations and the stored logic ties. It is the slack the PLAN gave "
+        "an activity, not the float still remaining when the delay struck; "
+        "establishing that needs a time-impact analysis over a series of "
+        "updated schedules. No working calendar is applied, so a five-day "
+        "week would produce different figures.",
     ),
     (
         "A row without a ruling is a proposal",
@@ -169,6 +178,9 @@ def report_context(
         "notice_window_days": data["notice_window_days"],
         "notice_counts": data["notice_counts"],
         "notice_lapsed_days": data["notice_lapsed_days"],
+        "beyond_float_days": data["beyond_float_days"],
+        "adjudicated_beyond_float_days": data["adjudicated_beyond_float_days"],
+        "network": data["network"],
         "concurrency": data["concurrency"],
         "discipline": discipline,
         "data_date": data_date,
@@ -191,7 +203,9 @@ def filename_for(context: dict, extension: str) -> str:
 
 CSV_COLUMNS = (
     "liability_effective", "adjudicated", "liability_proposed", "liability_ruled",
-    "activity_id", "discipline", "category", "phrase", "impact_days", "month",
+    "activity_id", "discipline", "category", "phrase", "impact_days",
+    "activity_total_float", "float_consumed_days", "beyond_float_days",
+    "on_critical_path", "month",
     "source_file", "source_row", "source_line", "source_span",
     "evidenced_on", "evidenced_basis", "notice_due_on", "notice_status",
     "notice_days_remaining", "notice_served_on", "notice_reference",
@@ -224,6 +238,10 @@ def to_csv(context: dict) -> str:
                 row.category,
                 row.phrase,
                 row.impact_days or 0,
+                "" if row.activity_total_float is None else row.activity_total_float,
+                row.float_consumed_days or 0,
+                row.beyond_float_days or 0,
+                "yes" if row.on_critical_path else "no",
                 row.month or "",
                 row.source_file or "",
                 row.source_row if row.source_row is not None else "",
@@ -352,20 +370,52 @@ def to_html(context: dict) -> str:
     w("<h2>Summary of days by party</h2>")
     w("<table><thead><tr><th>Attribution</th><th style='text-align:right'>Ruled days</th>"
       "<th style='text-align:right'>Including proposals</th>"
+      "<th style='text-align:right'>Beyond float</th>"
       "<th style='text-align:right'>Delays</th></tr></thead><tbody>")
-    ruled_total = proposed_total = 0
+    ruled_total = proposed_total = beyond_total = 0
     for liability in LIABILITY_ORDER:
         ruled = context["adjudicated_days"].get(liability.value, 0)
         proposed = context["proposed_days"].get(liability.value, 0)
+        beyond = context["beyond_float_days"].get(liability.value, 0)
         count = len(context["grouped"].get(liability.value, []))
         ruled_total += ruled
         proposed_total += proposed
+        beyond_total += beyond
         w(f"<tr><td>{escape(LIABILITY_LABEL[liability])}</td>"
           f"<td class='num'>{ruled}</td><td class='num'>{proposed}</td>"
+          f"<td class='num'>{beyond}</td>"
           f"<td class='num'>{count}</td></tr>")
     w(f"</tbody><tfoot><tr><td>Total</td><td class='num'>{ruled_total}</td>"
       f"<td class='num'>{proposed_total}</td>"
+      f"<td class='num'>{beyond_total}</td>"
       f"<td class='num'>{context['total_events']}</td></tr></tfoot></table>")
+    w(f"<p class='caption'><b>Beyond float</b> is the part of each slip that "
+      f"outran the slack the baseline gave the activity. Of "
+      f"{proposed_total} recorded days, {beyond_total} could have moved the "
+      f"completion date; the schedule absorbed the rest.</p>")
+
+    # ── The network the float came from ──
+    net = context["network"]
+    w("<h2>Baseline network</h2>")
+    w("<div class='stamp'>")
+    w(f"<div><b>Activities scheduled</b>{net['activities_scheduled']}, of which "
+      f"{net['critical_activities']} are critical</div>")
+    w(f"<div><b>Finish from logic</b>"
+      f"{escape(str(net['project_finish'] or 'not computed'))}</div>")
+    w(f"<div><b>Finish as authored</b>"
+      f"{escape(str(net['authored_finish'] or 'not stated'))}</div>")
+    w(f"<div><b>Duration basis</b>{escape(net['calendar_basis'])}</div>")
+    w("</div>")
+    if not net["logic_matches_dates"]:
+        w(f"<p class='alarm'>The baseline's own dates break "
+          f"{net['logic_conflicts']} of the logic ties it states — a successor "
+          f"beginning before its predecessor ends. Float below is computed "
+          f"from the logic, so where the dates and the ties disagree these "
+          f"figures are advisory until the baseline is reconciled.</p>")
+    if net["unresolved_activities"]:
+        w(f"<p class='alarm'>{len(net['unresolved_activities'])} activities sit "
+          f"in a logic cycle and could not be scheduled. No float is claimed "
+          f"for them.</p>")
 
     # ── Notice ──
     counts = context["notice_counts"]
@@ -423,9 +473,14 @@ def to_html(context: dict) -> str:
             if pair["kind"] == ConcurrencyKind.SAME_ACTIVITY.value:
                 reading += ("<div class='cite'>Same activity — the two causes "
                             "share one overrun by construction.</div>")
+            elif pair["both_beyond_float"]:
+                reading += ("<div class='cite n-lapsed'>Different activities, "
+                            "and both outran their own float — each could "
+                            "have moved the completion date.</div>")
             else:
-                reading += ("<div class='cite'>Different activities — temporal "
-                            "overlap only; criticality not established.</div>")
+                reading += ("<div class='cite'>Different activities, and at "
+                            "least one was absorbed by float — the overlap "
+                            "did not by itself move the finish.</div>")
             w(f"<tr><td class='mono'>{pair['overlap_start'].isoformat()}"
               f"<div class='cite'>to {pair['overlap_end'].isoformat()}</div></td>"
               f"<td class='num'>{pair['overlap_days']}</td>"
@@ -509,6 +564,17 @@ def to_html(context: dict) -> str:
             else:
                 text = "Notice window not established — no evidenced date"
             ruling += f"<div class='notice {css}'>{text}</div>"
+            if row.activity_total_float is None:
+                float_line = ("<div class='cite n-unknown'>float not "
+                              "established</div>")
+            elif row.beyond_float_days:
+                float_line = (f"<div class='cite n-lapsed'>"
+                              f"{row.beyond_float_days}d beyond float"
+                              f"{' · critical' if row.on_critical_path else ''}"
+                              f"</div>")
+            else:
+                float_line = (f"<div class='cite n-open'>absorbed by "
+                              f"{row.activity_total_float}d float</div>")
             w(f"<tr><td class='mono'>{escape(row.activity_id or '—')}"
               f"<div class='cite'>{escape(row.discipline or '')}</div></td>"
               f"<td class='mono'>{escape(row.category)}"
@@ -517,7 +583,8 @@ def to_html(context: dict) -> str:
               f"{escape((row.source_span or '').strip())}&rdquo;</div>"
               f"<div class='cite'>{citation}</div>{ruling}</td>"
               f"<td class='num'>{row.impact_days or 0}"
-              f"<div class='cite'>{escape(row.month or '')}</div></td></tr>")
+              f"<div class='cite'>{escape(row.month or '')}</div>"
+              f"{float_line}</td></tr>")
         w("</tbody></table></div>")
 
     # ── Caveats ──

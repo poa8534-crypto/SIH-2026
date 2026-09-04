@@ -644,6 +644,21 @@ class DelayEvent(Base):
     source_row = Column(Integer, nullable=True)
     source_span = Column(Text, nullable=True)
 
+    # ── Float and project delay (D-082) ──
+    # Total float on the baseline network, and the slip split against it.
+    # `beyond_float_days` is the only part that can have moved the completion
+    # date, and it is what a Liquidated Damages calculation is built from;
+    # `impact_days` above remains the whole slip, an upper bound.
+    #
+    # Baseline float, not float remaining when the delay struck - that needs a
+    # time-impact analysis over a series of updated schedules, and this system
+    # holds one baseline. NULL float means the activity could not be scheduled
+    # at all, and `split_slip` then credits no slack rather than assuming some.
+    activity_total_float = Column(Integer, nullable=True)
+    float_consumed_days = Column(Integer, nullable=False, default=0)
+    beyond_float_days = Column(Integer, nullable=False, default=0)
+    on_critical_path = Column(Boolean, nullable=False, default=False)
+
     # ── Contractual notice (D-080) ──
     # The date the project was TOLD about this delay, and how that date was
     # arrived at. `evidenced_basis` exists for the same reason `DateBasis`
@@ -749,6 +764,10 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("delay_events", "notice_due_on", "DATE"),
     ("delay_events", "notice_served_on", "DATE"),
     ("delay_events", "notice_reference", "VARCHAR"),
+    ("delay_events", "activity_total_float", "INTEGER"),
+    ("delay_events", "float_consumed_days", "INTEGER"),
+    ("delay_events", "beyond_float_days", "INTEGER"),
+    ("delay_events", "on_critical_path", "BOOLEAN"),
 )
 
 

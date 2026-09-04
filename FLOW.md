@@ -1291,6 +1291,57 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 6 — the critical-path pass. Each slip is split into float
+consumed and delay beyond float, so the report can say which days could have
+moved the completion date. Completes the Contractor Dispute Shield (Phases 0–6).
+**Date:** 2026-09-04 · **Decision:** D-082
+
+```
+FLOAT — LATENESS IS NOT DELAY                                     (D-082)
+
+  server/cpm.py  compute_schedule(activities)      pure; no DB, no I/O
+    reads activity_id, planned_start, planned_finish, predecessor_links()
+      |
+      +-- _topological_order()   Kahn. Cycles are EXCLUDED and named in
+      |                          `unresolved`, never half-traversed.
+      +-- forward pass    ES/EF, inclusive dates, calendar days
+      |     open starts anchored at their authored planned_start
+      |     FS  ES_s >= EF_p + 1 + lag        SS  ES_s >= ES_p + lag
+      |     FF  EF_s >= EF_p + lag            SF  EF_s >= ES_p + lag
+      +-- backward pass   LS/LF from max(EF); total_float = LF - EF
+      +-- logic_conflicts  ties the AUTHORED dates break
+                           27 of 146 on dataset/baseline_schedule.json,
+                           logic finish 2026-10-12 vs authored 2026-09-28
+                           BOTH reported; neither quietly preferred
+
+  server/cpm.py  split_slip(slip, total_float) -> (consumed, beyond)
+      float None  -> (0, slip)    credits NO slack it cannot prove
+      float < 0   -> (0, slip)    already behind the network
+      otherwise   -> (min, rest)
+
+  delay_events.sync_delay_events()   one network pass per sync, not per delay
+      DelayEvent.activity_total_float / float_consumed_days /
+                 beyond_float_days / on_critical_path      all derived
+
+  Surfaced in:
+    GET /delay/attribution   beyond_float_days + adjudicated_beyond_float_days
+                             per liability, float_basis, network{...},
+                             concurrency pairs gain both_beyond_float
+    GET /delay/report        "Beyond float" column and its one-line reading,
+                             a "Baseline network" block, a red line when the
+                             authored dates break their own ties, a per-row
+                             "absorbed by Nd float" / "Nd beyond float",
+                             and two more caveats
+
+  Demo corpus: 43 recorded days, ONE beyond float - the 1-day critical rig
+  breakdown. The 21d and 20d slips were absorbed by 100d and 57d of float.
+  Pinned by server/test_cpm.py (23 tests) and TestFloatConsumption (9).
+```
+
+---
+
+### Previous modification area (D-081)
+
 **Task:** Phase 5 — concurrent delay. Delays open over the same period are
 paired, classified and cited in `GET /delay/attribution` and in the report,
 and deliberately not apportioned.

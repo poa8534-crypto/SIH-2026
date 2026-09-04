@@ -36,6 +36,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from server import raid
+from server.cpm import compute_schedule, split_slip
 from server.db import Activity, AuditRecord, DelayEvent, LinkedEvent
 from server.delay_taxonomy import (
     DelayCategory,
@@ -204,6 +205,9 @@ def sync_delay_events(db: Session) -> int:
     """
     observations = raid.delay_observations(db)
     slip = raid.finish_slip_by_activity(db)
+    # One pass over the whole network per sync, not one per delay. 120
+    # activities is milliseconds; doing it inside the loop would not be.
+    network = compute_schedule(db.query(Activity).all())
 
     activities = {
         a.activity_id: a
@@ -246,6 +250,16 @@ def sync_delay_events(db: Session) -> int:
         row.discipline = activity.discipline if activity is not None else None
         row.month = _month_of(activity)
         row.impact_days = slip.get(activity_id, 0) if activity_id else 0
+
+        # Float, and the part of the slip that outran it. Derived on every
+        # sync like the rest: a baseline re-import changes the network, and a
+        # stale float figure is a wrong number in a claim.
+        total_float = network.float_for(activity_id)
+        consumed, beyond = split_slip(row.impact_days, total_float)
+        row.activity_total_float = total_float
+        row.float_consumed_days = consumed
+        row.beyond_float_days = beyond
+        row.on_critical_path = network.is_critical(activity_id)
         row.raw_text = source_span
         row.source_line = record.source_line if record is not None else None
         row.source_row = record.source_row if record is not None else None
@@ -389,11 +403,13 @@ def concurrency(db: Session, rows: list) -> dict:
     TWO KINDS, AND ONLY ONE OF THEM IS DECISIVE.
     `SAME_ACTIVITY` is definitional: two causes against one slipped activity
     share its overrun and nothing in the evidence divides it. That IS the
-    dispute. `OVERLAPPING_WINDOW` is temporal only - two delays on different
-    activities ran at the same time, but whether BOTH pushed the completion
-    date needs a critical-path analysis this system does not yet perform. The
-    distinction is carried on every pair so a reader never has to guess which
-    kind of claim is being made.
+    dispute. `OVERLAPPING_WINDOW` is temporal only: two delays on different
+    activities ran at the same time, which on its own says nothing about the
+    completion date. `both_beyond_float` is what upgrades such a pair into a
+    claim about the finish - it means each side outran the float its own
+    baseline gave it (D-082), so each could have moved the project. It is
+    false far more often than the overlap itself, which is exactly why it is a
+    separate flag rather than folded into the kind.
 
     `impact_days` is deliberately not summed across a pair. Each side already
     carries its activity's whole slip as an upper bound, so adding them would
@@ -438,12 +454,19 @@ def concurrency(db: Session, rows: list) -> dict:
             "left_category": left.category,
             "left_liability": left_liability,
             "left_adjudicated": is_adjudicated(left),
+            "left_beyond_float_days": left.beyond_float_days or 0,
             "right_delay_event_id": right.id,
             "right_activity_id": right.activity_id,
             "right_phrase": right.phrase,
             "right_category": right.category,
             "right_liability": right_liability,
             "right_adjudicated": is_adjudicated(right),
+            "right_beyond_float_days": right.beyond_float_days or 0,
+            # Both sides outran their float, so both could have moved the
+            # completion date. This is what turns a temporal overlap into a
+            # claim about the finish.
+            "both_beyond_float": bool((left.beyond_float_days or 0) > 0
+                                      and (right.beyond_float_days or 0) > 0),
         })
 
     # Longest overlap first: the biggest exposure is the one to look at.
@@ -459,14 +482,42 @@ def concurrency(db: Session, rows: list) -> dict:
         "total_pairs": len(pairs),
         "pairs_listed": min(len(pairs), MAX_CONCURRENCY_PAIRS),
         "counts": counts,
+        "beyond_float_pairs": sum(1 for p in pairs if p["both_beyond_float"]),
         "note": (
             "A SAME_ACTIVITY overlap is definitional: two causes share one "
             "activity's overrun and the evidence does not divide it. An "
-            "OVERLAPPING_WINDOW overlap is temporal only - whether both "
-            "delays moved the completion date needs a critical-path analysis "
-            "this system does not perform. Days are not summed across a pair; "
-            "each side already carries its activity's whole slip."
+            "OVERLAPPING_WINDOW overlap is temporal only. Days are not summed "
+            "across a pair; each side already carries its activity's whole "
+            "slip. both_beyond_float marks the pairs where each side outran "
+            "the float its baseline gave it and could therefore have moved "
+            "the completion date."
         ),
+    }
+
+
+def network_summary(db: Session) -> dict:
+    """Facts about the baseline network itself, for a report to state.
+
+    Two finish dates are returned and neither is preferred. `project_finish`
+    is what the LOGIC produces; `authored_finish` is the latest planned finish
+    in the baseline as written. On a schedule dated by hand and tied up
+    afterwards the two disagree, and `logic_conflicts` counts the ties the
+    dates break. Float is computed from the logic, so where these disagree
+    every float figure is advisory - and the reader has to be told, rather
+    than left to discover it.
+    """
+    network = compute_schedule(db.query(Activity).all())
+    return {
+        "activities_scheduled": len(network.activities),
+        "critical_activities": sum(
+            1 for a in network.activities.values() if a.critical),
+        "project_finish": network.project_finish,
+        "authored_finish": network.authored_finish,
+        "logic_conflicts": len(network.logic_conflicts),
+        "logic_matches_dates": network.logic_matches_dates,
+        "unresolved_activities": list(network.unresolved),
+        "dangling_predecessors": list(network.dangling),
+        "calendar_basis": "calendar days; no working calendar is applied",
     }
 
 
@@ -497,12 +548,16 @@ def attribution(
     by_month: dict[str, int] = defaultdict(int)
     notice_counts: dict[str, int] = {status.value: 0 for status in NoticeStatus}
     lapsed_days = 0
+    beyond_float: dict[str, int] = defaultdict(int)
+    adjudicated_beyond_float: dict[str, int] = defaultdict(int)
 
     for row in rows:
         liability = effective_liability(row)
         proposed_days[liability] += row.impact_days or 0
+        beyond_float[liability] += row.beyond_float_days or 0
         if is_adjudicated(row):
             adjudicated_days[liability] += row.impact_days or 0
+            adjudicated_beyond_float[liability] += row.beyond_float_days or 0
         if row.month:
             by_month[row.month] += row.impact_days or 0
         status = notice_status(row, as_of)
@@ -527,6 +582,23 @@ def attribution(
         "notice_counts": notice_counts,
         "notice_lapsed_days": lapsed_days,
         "notice_as_of": as_of,
+        # The figure a Liquidated Damages calculation is actually built from:
+        # slip that outran the float the baseline gave it. Reported beside
+        # `proposed_days` rather than replacing it, so a reader can see how
+        # much of the headline number the schedule absorbed.
+        "beyond_float_days": {liability.value: beyond_float.get(liability.value, 0)
+                              for liability in Liability},
+        "adjudicated_beyond_float_days": {
+            liability.value: adjudicated_beyond_float.get(liability.value, 0)
+            for liability in Liability},
+        "float_basis": (
+            "Total float is computed from the baseline network - planned "
+            "durations and the stored logic ties, in calendar days. It is the "
+            "slack the PLAN gave an activity, not the float remaining when "
+            "the delay struck, which would need a time-impact analysis over a "
+            "series of updated schedules."
+        ),
+        "network": network_summary(db),
         "concurrency": concurrency(db, rows),
         # Said in the payload, not only in the docs, so a client cannot present
         # an upper bound as a measured figure.
@@ -550,6 +622,7 @@ def attribution(
 
 __all__ = [
     "sync_delay_events",
+    "network_summary",
     "adjudicate",
     "concurrency",
     "ConcurrencyKind",
