@@ -233,6 +233,9 @@ class ScheduleActivityResponse(BaseModel):
     # planner can see how well-evidenced a date is without opening the drawer.
     # None whenever the activity has no actual dates.
     link_confidence: Optional[float] = None
+    # Baseline total float and critical path status from the CPM network pass.
+    total_float: Optional[int] = None
+    critical: Optional[bool] = None
 
 
 class ScheduleResponse(BaseModel):
@@ -244,6 +247,7 @@ class ScheduleResponse(BaseModel):
     total_activities: int = 0
     activities_with_actuals: int = 0
     activities_completed: int = 0
+    critical_activities: int = 0
     average_start_variance: Optional[float] = None
     average_finish_variance: Optional[float] = None
     integrity_warnings: list[dict] = []
@@ -1076,6 +1080,46 @@ class MemoryQueryResponse(BaseModel):
     productivity: Optional[list[ProductivityMetric]] = None
     delay_reasons: Optional[list[DelayReason]] = None
     suggested_duration: Optional[SuggestedDuration] = None
+    computed_at: datetime
+
+
+# ── Tender Estimator & Institutional Memory v2 ──────────────────────────────
+
+class TenderRiskFactor(BaseModel):
+    risk_type: str
+    probability_pct: int
+    impact_days: int
+    mitigation: str
+    historical_frequency: int
+
+
+class TenderEstimateRequest(BaseModel):
+    discipline: str = Field(..., description="Discipline (civil, piping, electrical, instrumentation, static_equipment, hse)")
+    activity_type: Optional[str] = Field(None, description="Activity type prefix, e.g. PIP-SPL, CIV-FDN")
+    target_quantity: Optional[float] = Field(None, description="Scope quantity to be executed")
+    uom: Optional[str] = Field(None, description="Unit of measurement, e.g. spools, m, m3, joints")
+    site_condition: str = Field("standard", description="standard / monsoon_upper_assam / remote_drill_site")
+
+
+class TenderEstimateResponse(BaseModel):
+    discipline: str
+    activity_type: str
+    site_condition: str
+    target_quantity: Optional[float] = None
+    uom: Optional[str] = None
+    sample_size: int = 0
+    actuals_count: int = 0
+    historical_productivity_rate: Optional[float] = None
+    productivity_uom: Optional[str] = None
+    baseline_days_p50: float = 0
+    calibrated_days_p10: float = 0
+    calibrated_days_p50: float = 0
+    calibrated_days_p90: float = 0
+    weather_risk_factor: float = 1.0
+    total_contingency_days: int = 0
+    recommended_tender_duration: int = 0
+    risk_factors: list[TenderRiskFactor] = []
+    pmxml_snippet: str = ""
     computed_at: datetime
 
 

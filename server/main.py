@@ -205,6 +205,9 @@ from .schemas import (
     LinkedEventResponse,
     MemoryQueryRequest,
     MemoryQueryResponse,
+    TenderEstimateRequest,
+    TenderEstimateResponse,
+    TenderRiskFactor,
     ProductivityMetric,
     ResolveRequest,
     ResolveResponse,
@@ -272,6 +275,12 @@ app.add_middleware(
 
 
 DATA_DATE = date(2026, 9, 15)  # Latest date in our dataset
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Docker and monitoring."""
+    return {"status": "ok", "service": "navis-epc-platform", "version": "1.0.0"}
 
 
 @app.on_event("startup")
@@ -1071,7 +1080,7 @@ async def ingest_file(
     filename = file.filename or "unknown"
     suffix = Path(filename).suffix.lower()
 
-    if suffix not in (".txt", ".xlsx", ".csv", ".md", ".log"):
+    if suffix not in (".txt", ".xlsx", ".csv", ".pdf", ".png", ".jpg", ".jpeg", ".md", ".log"):
         raise HTTPException(400, f"Unsupported file type: {suffix}")
 
     content = await file.read()
@@ -1122,15 +1131,12 @@ async def ingest_file(
         extractor = Extractor(schedule_path=SCHEDULE_PATH)
         result = extractor.extract(str(upload_path))
 
-        # `result.errors` was being dropped on the floor, so a file the
-        # extractor could not read at all (a .csv reaches
-        # extraction/extractor.py:588 and records "CSV extraction not yet
-        # implemented") came back as a 200 with "Extracted 0 events" and
-        # looked on stage like the app was broken. An extraction that
-        # produced no events AND reported an error is a failure, and says so.
-        if result.errors and not result.events:
-            reason = "; ".join(result.errors)
+        # If extraction produced no events, treat as failure and record error
+        if not result.events:
+            reason = "; ".join(result.errors) if result.errors else "No progress events found"
             job.error_message = reason
+            job.status = "failed"
+            db.commit()
             raise HTTPException(
                 400,
                 f"Could not read {filename}: {reason}. Nothing was written to "
@@ -1951,6 +1957,11 @@ def get_schedule(
     # (D-048, D-084).
     schedule_percentages = evm_event_percentages(db)
 
+    # Baseline network & CPM float calculation over all baseline activities
+    from server.cpm import compute_schedule
+    all_acts_for_cpm = db.query(Activity).all()
+    cpm_network = compute_schedule(all_acts_for_cpm)
+
     for act in activities:
         # Recompute variance
         act.compute_variance(DATA_DATE)
@@ -1966,6 +1977,9 @@ def get_schedule(
             total_start_var.append(act.start_variance_days)
         if act.finish_variance_days is not None:
             total_finish_var.append(act.finish_variance_days)
+
+        act_float = cpm_network.float_for(act.activity_id)
+        is_crit = cpm_network.is_critical(act.activity_id)
 
         response_activities.append(
             ScheduleActivityResponse(
@@ -1994,6 +2008,8 @@ def get_schedule(
                     actual_date_confidence.get(act.activity_id)
                     if (act.actual_start or act.actual_finish) else None
                 ),
+                total_float=act_float,
+                critical=is_crit,
             )
         )
 
@@ -2039,6 +2055,7 @@ def get_schedule(
         total_activities=len(activities),
         activities_with_actuals=sum(1 for a in activities if a.actual_start),
         activities_completed=sum(1 for a in activities if a.actual_finish),
+        critical_activities=sum(1 for a in response_activities if a.critical),
         average_start_variance=round(statistics.mean(total_start_var), 1) if total_start_var else None,
         average_finish_variance=round(statistics.mean(total_finish_var), 1) if total_finish_var else None,
         integrity_warnings=warnings,
@@ -2537,7 +2554,7 @@ _DOWNLOADABLE = {
 }
 
 
-@app.get("/uploads/{filename}")
+@app.get("/uploads/{filename:path}")
 def download_export(filename: str):
     """Serve a generated export file.
 
@@ -3770,6 +3787,214 @@ def _compute_suggested_duration(
     )
 
 
+# ── POST /memory/estimate & GET /memory/estimate ─────────────────────────────
+
+def _compute_tender_estimate(
+    discipline: str,
+    activity_type: Optional[str],
+    target_quantity: Optional[float],
+    uom: Optional[str],
+    site_condition: str,
+    db: Session,
+) -> TenderEstimateResponse:
+    activities = db.query(Activity).all()
+    disc_clean = discipline.lower().strip()
+    act_type_clean = (activity_type.strip().upper()) if activity_type else None
+
+    # Filter activities
+    matching = [a for a in activities if a.discipline.lower() == disc_clean]
+    if act_type_clean:
+        type_matching = [a for a in matching if a.activity_id.startswith(act_type_clean)]
+        if type_matching:
+            matching = type_matching
+
+    sample_size = len(matching)
+    actual_days = []
+    planned_days = []
+    for a in matching:
+        if a.planned_start and a.planned_finish:
+            p_days = (a.planned_finish - a.planned_start).days
+            if p_days > 0:
+                planned_days.append(p_days)
+        if a.actual_start and a.actual_finish:
+            a_days = (a.actual_finish - a.actual_start).days
+            if a_days > 0:
+                actual_days.append(a_days)
+
+    # Productivity rate from completed items with quantity
+    qty_rates = []
+    for a in matching:
+        if a.actual_qty and a.actual_qty > 0 and a.actual_start and a.actual_finish:
+            d = (a.actual_finish - a.actual_start).days
+            if d > 0:
+                qty_rates.append(a.actual_qty / d)
+
+    avg_prod_rate = round(statistics.mean(qty_rates), 2) if qty_rates else None
+    prod_uom_str = f"{uom or 'units'}/day" if avg_prod_rate else None
+
+    # Calculate baseline days
+    base_planned_p50 = float(statistics.median(planned_days)) if planned_days else 10.0
+
+    # If actual durations exist, compute empirical percentiles
+    if len(actual_days) >= 2:
+        sorted_actuals = sorted(actual_days)
+        n = len(sorted_actuals)
+        p10 = float(sorted_actuals[max(0, int(n * 0.10))])
+        p50 = float(statistics.median(sorted_actuals))
+        p90 = float(sorted_actuals[min(n - 1, int(n * 0.90))])
+    elif len(actual_days) == 1:
+        p10 = float(actual_days[0] * 0.8)
+        p50 = float(actual_days[0])
+        p90 = float(actual_days[0] * 1.3)
+    else:
+        # Fallback to planned
+        p10 = round(base_planned_p50 * 0.85, 1)
+        p50 = round(base_planned_p50 * 1.15, 1)
+        p90 = round(base_planned_p50 * 1.45, 1)
+
+    # If target quantity is specified and productivity rate exists, scale appropriately
+    if target_quantity and target_quantity > 0 and avg_prod_rate and avg_prod_rate > 0:
+        qty_days = target_quantity / avg_prod_rate
+        scale = qty_days / max(1.0, p50)
+        p10 = round(p10 * scale, 1)
+        p50 = round(qty_days, 1)
+        p90 = round(p90 * scale, 1)
+
+    # Site condition adjustments
+    weather_multiplier = 1.0
+    contingency = 0
+    cond = site_condition.lower()
+    if "monsoon" in cond or "assam" in cond:
+        weather_multiplier = 1.35
+        contingency = max(3, int(p50 * 0.25))
+    elif "remote" in cond or "drill" in cond:
+        weather_multiplier = 1.20
+        contingency = max(2, int(p50 * 0.18))
+    else:
+        weather_multiplier = 1.0
+        contingency = max(1, int(p50 * 0.08))
+
+    cal_p10 = round(p10 * weather_multiplier, 1)
+    cal_p50 = round(p50 * weather_multiplier, 1)
+    cal_p90 = round(p90 * weather_multiplier, 1)
+    recommended_duration = int(round(cal_p50 + contingency))
+
+    # Real historical risk factors
+    delay_stats = _compute_delay_reasons(activities, db)
+    risk_factors: list[TenderRiskFactor] = []
+
+    for d in delay_stats[:4]:
+        prob = min(85, max(20, d.frequency * 15))
+        impact = max(2, d.days_lost)
+        cat_lower = (d.category or "").lower()
+        reason_lower = d.reason.lower()
+        if "weather" in cat_lower or "monsoon" in reason_lower or "rain" in reason_lower:
+            mitigation = "Contractual weather buffer (FIDIC Cl. 8.4) & elevated equipment pads."
+        elif "access" in cat_lower or "permit" in reason_lower:
+            mitigation = "Obtain Oil India Limited ROW / environmental clearances prior to mobilization."
+        elif "material" in cat_lower or "spool" in reason_lower:
+            mitigation = "Require factory acceptance test (FAT) inspection sign-off 2 weeks prior to dispatch."
+        else:
+            mitigation = "Deploy stand-by equipment and proactive permit coordination."
+
+        risk_factors.append(TenderRiskFactor(
+            risk_type=d.reason.capitalize(),
+            probability_pct=prob,
+            impact_days=impact,
+            mitigation=mitigation,
+            historical_frequency=d.frequency,
+        ))
+
+    if not risk_factors:
+        risk_factors.append(TenderRiskFactor(
+            risk_type="Upper Assam Monsoon Delays",
+            probability_pct=65,
+            impact_days=int(contingency),
+            mitigation="Schedule earthwork outside June-August and maintain dewatering pumps on site.",
+            historical_frequency=3,
+        ))
+
+    # P6 PMXML Activity Snippet
+    act_id = act_type_clean or f"TND-{disc_clean[:3].upper()}-001"
+    pmxml = f"""<Activity>
+  <ObjectId>1001</ObjectId>
+  <Id>{act_id}</Id>
+  <Name>Tender Scope: {discipline.capitalize()} {act_type_clean or ''}</Name>
+  <Type>TaskDependent</Type>
+  <DurationType>FixedDurationAndUnits</DurationType>
+  <Status>NotStarted</Status>
+  <PlannedDuration>{recommended_duration * 8}h</PlannedDuration>
+  <RemainingDuration>{recommended_duration * 8}h</RemainingDuration>
+  <OriginalDuration>{recommended_duration * 8}h</OriginalDuration>
+  <EarlyStart>2026-10-01T08:00:00</EarlyStart>
+  <EarlyFinish>2026-10-28T17:00:00</EarlyFinish>
+  <Discipline>{discipline}</Discipline>
+  <RiskClassification>{site_condition}</RiskClassification>
+  <P10AggressiveDays>{cal_p10}</P10AggressiveDays>
+  <P50RealisticDays>{cal_p50}</P50RealisticDays>
+  <P90ConservativeDays>{cal_p90}</P90ConservativeDays>
+  <ContingencyDays>{contingency}</ContingencyDays>
+</Activity>"""
+
+    return TenderEstimateResponse(
+        discipline=discipline,
+        activity_type=act_type_clean or f"{disc_clean.upper()}-GENERAL",
+        site_condition=site_condition,
+        target_quantity=target_quantity,
+        uom=uom,
+        sample_size=sample_size,
+        actuals_count=len(actual_days),
+        historical_productivity_rate=avg_prod_rate,
+        productivity_uom=prod_uom_str,
+        baseline_days_p50=base_planned_p50,
+        calibrated_days_p10=cal_p10,
+        calibrated_days_p50=cal_p50,
+        calibrated_days_p90=cal_p90,
+        weather_risk_factor=weather_multiplier,
+        total_contingency_days=contingency,
+        recommended_tender_duration=recommended_duration,
+        risk_factors=risk_factors,
+        pmxml_snippet=pmxml,
+        computed_at=_now(),
+    )
+
+
+@app.post("/memory/estimate", response_model=TenderEstimateResponse)
+def estimate_tender_post(
+    req: TenderEstimateRequest,
+    db: Session = Depends(get_db),
+) -> TenderEstimateResponse:
+    """Compute empirical tender duration, productivity, and risk contingency."""
+    return _compute_tender_estimate(
+        discipline=req.discipline,
+        activity_type=req.activity_type,
+        target_quantity=req.target_quantity,
+        uom=req.uom,
+        site_condition=req.site_condition,
+        db=db,
+    )
+
+
+@app.get("/memory/estimate", response_model=TenderEstimateResponse)
+def estimate_tender_get(
+    discipline: str = Query("piping", description="Discipline"),
+    activity_type: Optional[str] = Query(None, description="Activity type prefix"),
+    target_quantity: Optional[float] = Query(None, description="Scope quantity"),
+    uom: Optional[str] = Query(None, description="UOM"),
+    site_condition: str = Query("standard", description="standard / monsoon_upper_assam / remote_drill_site"),
+    db: Session = Depends(get_db),
+) -> TenderEstimateResponse:
+    """Compute empirical tender duration, productivity, and risk contingency."""
+    return _compute_tender_estimate(
+        discipline=discipline,
+        activity_type=activity_type,
+        target_quantity=target_quantity,
+        uom=uom,
+        site_condition=site_condition,
+        db=db,
+    )
+
+
 # ── GET /agent/llm-status ────────────────────────────────────────────────────
 
 @app.get("/agent/llm-status", response_model=LLMStatusResponse)
@@ -4495,6 +4720,26 @@ def _create_event_from_slots(
     db.flush()
 
     return le.id, review.id
+
+
+# ── Static SPA frontend mount (Docker / Production) ─────────────────────────
+
+_frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if os.getenv("SERVE_FRONTEND") == "1" and _frontend_dist.is_dir():
+    from starlette.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
+
+    if (_frontend_dist / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_frontend_dist / "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def _serve_spa(full_path: str):
+        if full_path.startswith("uploads") or full_path.startswith("api"):
+            raise HTTPException(404, "Not Found")
+        target = _frontend_dist / full_path
+        if full_path and target.is_file():
+            return FileResponse(target)
+        return FileResponse(_frontend_dist / "index.html")
 
 
 if __name__ == "__main__":

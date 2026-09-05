@@ -9,6 +9,7 @@ import {
   DurationDistribution,
   ProductivityMetric,
 } from '../types';
+import { TenderEstimator } from '../components/TenderEstimator';
 
 /**
  * Institutional memory — the half of the problem statement most teams skip.
@@ -390,6 +391,7 @@ function SuggestedDurationPanel({
 
 export default function Memory() {
   usePageHeader('Memory', 'What past durations say about the ones still planned.', '/memory');
+  const [activeTab, setActiveTab] = useState<'historical' | 'estimator'>('historical');
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['memory', 'all'],
     queryFn: () => api.queryMemory({ query_type: 'all' }),
@@ -422,17 +424,44 @@ export default function Memory() {
   const delays = data?.delay_reasons ?? [];
 
   return (
-    /* The shell's <main> already scrolls; this used to add a second one. */
-    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
-        <div className="mb-1">
-          <p className="text-body text-muted max-w-3xl leading-relaxed">
-            These patterns are computed from actual execution data the system
-            captured from field reports and discipline spreadsheets — not from
-            the baseline plan. The baseline appears only as the figure each
-            actual is measured against.
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5">
+      {/* Navigation View Switcher */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-hair pb-4">
+        <div>
+          <p className="text-body text-muted max-w-2xl leading-relaxed">
+            {activeTab === 'historical'
+              ? 'Execution metrics computed from verified site diaries and field measurements against baseline plans.'
+              : 'Empirical duration forecasts and delay buffer calibration for upcoming project tenders.'}
           </p>
         </div>
+        <div className="inline-flex rounded-lg border border-hair bg-raised p-1 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('historical')}
+            className={`px-3 py-1.5 text-label font-medium rounded-md transition-colors ${
+              activeTab === 'historical'
+                ? 'bg-selected text-fg shadow-xs'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            Historical Benchmarks
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('estimator')}
+            className={`px-3 py-1.5 text-label font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+              activeTab === 'estimator'
+                ? 'bg-selected text-accent font-semibold shadow-xs'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <span>Tender Estimator</span>
+            <span className="px-1.5 py-0.2 rounded text-label bg-accent/20 text-accent font-mono">v2</span>
+          </button>
+        </div>
+      </div>
 
+      {activeTab === 'historical' ? (
         <div className="grid grid-cols-12 gap-4">
           <Panel title="Planned vs actual duration" span="col-span-8">
             <PlannedVsActual rows={durations} />
@@ -450,12 +479,15 @@ export default function Memory() {
             <DelayCauses rows={delays} />
           </Panel>
         </div>
+      ) : (
+        <TenderEstimator durations={durations} />
+      )}
 
-        {data && (
-          <p className="font-mono text-label uppercase tracking-wider text-muted text-right">
-            Computed {new Date(data.computed_at).toLocaleString()}
-          </p>
-        )}
+      {data && (
+        <p className="font-mono text-label uppercase tracking-wider text-muted text-right">
+          Computed {new Date(data.computed_at).toLocaleString()}
+        </p>
+      )}
     </div>
   );
 }

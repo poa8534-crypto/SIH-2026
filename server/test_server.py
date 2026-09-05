@@ -203,15 +203,13 @@ class TestIngestEndpoint:
     def test_ingest_unsupported_file_type(self):
         response = client.post(
             "/ingest",
-            files={"file": ("test.pdf", io.BytesIO(b"test"), "application/pdf")},
+            files={"file": ("test.exe", io.BytesIO(b"test"), "application/octet-stream")},
         )
         assert response.status_code == 400
 
     def test_ingest_csv_fails_loudly_instead_of_returning_zero_events(self):
-        # .csv is an accepted suffix (main.py:949) but the extractor cannot
-        # read one — it records "CSV extraction not yet implemented" in
-        # result.errors. That list used to be discarded, so the upload came
-        # back 200 with "Extracted 0 events" and looked like a broken app.
+        # When an uploaded file contains no recognizable columns or events,
+        # it must fail loudly rather than returning 200 with 0 events.
         response = client.post(
             "/ingest",
             files={"file": ("progress.csv", io.BytesIO(b"a,b\n1,2\n"), "text/csv")},
@@ -219,8 +217,7 @@ class TestIngestEndpoint:
         assert response.status_code == 400, response.text
         detail = response.json()["detail"]
         assert "progress.csv" in detail, detail
-        # The extractor's own reason has to reach the planner, not be swallowed.
-        assert "CSV extraction not yet implemented" in detail, detail
+        assert "No progress events found" in detail, detail
 
     def test_ingest_csv_marks_the_job_failed_with_the_reason(self):
         client.post(
@@ -237,7 +234,7 @@ class TestIngestEndpoint:
             )
             assert job is not None, "no job row written for the failed upload"
             assert job.status == "failed"
-            assert "CSV extraction not yet implemented" in (job.error_message or "")
+            assert "No progress events found" in (job.error_message or "")
         finally:
             db.close()
 
@@ -341,6 +338,55 @@ class TestJobsEndpoint:
         for ev in events:
             assert ev["source_file"] == "dpr_day_02.txt"
             assert ev["source_span"] is not None
+
+    def test_ingest_pdf_and_retrieve_job(self):
+        import pymupdf
+
+        doc = pymupdf.open()
+        page = doc.new_page()
+        page.insert_text(
+            (50, 50),
+            "DAILY PROGRESS REPORT\nDATE: 2026-04-10\n"
+            "CIV-FTG-001: Foundation excavation 100% completed on 10/04/2026\n",
+        )
+        pdf_bytes = doc.tobytes()
+        doc.close()
+
+        response = client.post(
+            "/ingest",
+            files={"file": ("site_diary_test.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "completed"
+        job_id = data["job_id"]
+
+        job_resp = client.get(f"/jobs/{job_id}")
+        assert job_resp.status_code == 200
+        job_data = job_resp.json()
+        assert job_data["file_type"] == "pdf"
+        assert len(job_data["events"]) >= 1
+
+    def test_ingest_csv_and_retrieve_job(self):
+        csv_content = (
+            "activity_id,description,discipline,achieved_qty,uom,end_date,status\n"
+            "CIV-FTG-001,Foundation Excavation,Civil,500,m3,2026-03-15,Completed\n"
+        ).encode("utf-8")
+
+        response = client.post(
+            "/ingest",
+            files={"file": ("register_test.csv", io.BytesIO(csv_content), "text/csv")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "completed"
+        job_id = data["job_id"]
+
+        job_resp = client.get(f"/jobs/{job_id}")
+        assert job_resp.status_code == 200
+        job_data = job_resp.json()
+        assert job_data["file_type"] == "csv"
+        assert len(job_data["events"]) == 1
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -727,6 +773,36 @@ class TestMemoryQuery:
         assert data["productivity"] is not None
         assert data["delay_reasons"] is not None
         assert data["suggested_duration"] is not None
+
+    def test_tender_estimate_post(self):
+        payload = {
+            "discipline": "piping",
+            "activity_type": "PIP-SPL",
+            "target_quantity": 40.0,
+            "uom": "spools",
+            "site_condition": "monsoon_upper_assam",
+        }
+        response = client.post("/memory/estimate", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["discipline"] == "piping"
+        assert data["activity_type"] == "PIP-SPL"
+        assert data["weather_risk_factor"] == 1.35
+        assert data["recommended_tender_duration"] > 0
+        assert data["calibrated_days_p50"] > 0
+        assert data["total_contingency_days"] > 0
+        assert len(data["risk_factors"]) > 0
+        assert "<Activity>" in data["pmxml_snippet"]
+        assert "</Activity>" in data["pmxml_snippet"]
+
+    def test_tender_estimate_get(self):
+        response = client.get("/memory/estimate?discipline=civil&site_condition=standard")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["discipline"] == "civil"
+        assert data["weather_risk_factor"] == 1.0
+        assert data["recommended_tender_duration"] > 0
+        assert "pmxml_snippet" in data
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

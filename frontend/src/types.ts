@@ -400,6 +400,10 @@ export interface ScheduleActivity {
   /** Confidence of the audit write that last set an actual date. Null when
    *  the activity has no actuals. */
   link_confidence: number | null;
+  /** Total float in days computed from CPM network pass. Null if unscheduled. */
+  total_float?: number | null;
+  /** True if activity lies on the critical path (total_float <= 0). */
+  critical?: boolean | null;
 }
 
 /** One entry from GET /schedule. `severity` is 'conflict' when two field
@@ -453,6 +457,7 @@ export interface ScheduleResponse {
   total_activities: number;
   activities_with_actuals: number;
   activities_completed: number;
+  critical_activities?: number;
   average_start_variance: number | null;
   average_finish_variance: number | null;
   integrity_warnings: IntegrityWarning[];
@@ -652,6 +657,44 @@ export interface MemoryQueryResponse {
   productivity: ProductivityMetric[] | null;
   delay_reasons: DelayReasonRow[] | null;
   suggested_duration: SuggestedDuration | null;
+  computed_at: string;
+}
+
+export interface TenderRiskFactor {
+  risk_type: string;
+  probability_pct: number;
+  impact_days: number;
+  mitigation: string;
+  historical_frequency: number;
+}
+
+export interface TenderEstimateRequest {
+  discipline: string;
+  activity_type?: string;
+  target_quantity?: number;
+  uom?: string;
+  site_condition?: string;
+}
+
+export interface TenderEstimateResponse {
+  discipline: string;
+  activity_type: string;
+  site_condition: string;
+  target_quantity: number | null;
+  uom: string | null;
+  sample_size: number;
+  actuals_count: number;
+  historical_productivity_rate: number | null;
+  productivity_uom: string | null;
+  baseline_days_p50: number;
+  calibrated_days_p10: number;
+  calibrated_days_p50: number;
+  calibrated_days_p90: number;
+  weather_risk_factor: number;
+  total_contingency_days: number;
+  recommended_tender_duration: number;
+  risk_factors: TenderRiskFactor[];
+  pmxml_snippet: string;
   computed_at: string;
 }
 

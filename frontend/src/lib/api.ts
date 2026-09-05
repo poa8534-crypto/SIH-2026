@@ -23,7 +23,9 @@ import {
   Liability,
   QuantityLedger,
   ReviewItem,
-  ScheduleResponse
+  ScheduleResponse,
+  TenderEstimateRequest,
+  TenderEstimateResponse
 } from '../types';
 
 export class ApiError extends Error {
@@ -386,6 +388,14 @@ export const api = {
   queryMemory: (params: Record<string, string>): Promise<MemoryQueryResponse> => {
     const searchParams = new URLSearchParams(params);
     return fetchWithHandler(`/memory/query?${searchParams.toString()}`);
+  },
+
+  estimateTender: (body: TenderEstimateRequest): Promise<TenderEstimateResponse> => {
+    return fetchWithHandler('/memory/estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
   },
 
   agentTurn: (body: AgentTurnRequest): Promise<AgentTurnResponse> => {
