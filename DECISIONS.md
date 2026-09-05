@@ -8780,3 +8780,165 @@ coexist, those figures span both projects. `GET /schedule` and the matcher
 were fixed here because they are what the acceptance condition runs through;
 scoping the rest is a mechanical follow-up and should happen before this is
 demonstrated on an imported schedule.
+
+---
+
+## 2026-09-05 / D-093 — The metrics describe the build that ships
+
+### Context
+Three separate things made every accuracy figure in this repository
+unquotable.
+
+**The evaluator tuned on the rows it then scored.** `dataset/ground_truth.csv`
+had no `split` column, so `eval.py` fell into its "calibrated + evaluated on
+the full dataset" branch: a grid search picked the thresholds that maximised
+auto-link precision over 254 mentions, and then reported the precision those
+thresholds achieved over the same 254 mentions. The headline **100% auto-link
+precision** was therefore a property of numbers fitted to the evaluation set.
+`METRICS.md` §3.1 said so in a sentence — "calibrated and reported on the same
+data, and must be labelled as such" — which is honest labelling of a figure
+that should not have been the headline at all.
+
+**The evaluator and the server were different builds.** `eval.py` constructed
+its engine with `config=None` (`DEFAULT`) unless `--production` was passed,
+while the server called `production(sha)`. And the thresholds `eval.py`
+reported at were the ones it had just grid-searched, while the server ran a
+literal `Thresholds(tau_high=0.70, tau_low=0.40, margin_min=0.03)` written into
+`server/main.py` under a comment quoting a third set of figures — 96.6%
+precision, 48% coverage — that no command in the repository reproduced.
+
+**The shipped thresholds had never been measured on held-out data.** They had
+not been, because there was no held-out data.
+
+### Decision
+
+**A split, assigned by source file.** `dataset/ground_truth.csv` gains a
+`split` column: dev 100 mentions from six sources, test 154 from the other six,
+with hard negatives on both sides (3 / 9). Splitting by SOURCE rather than by
+row is the whole point — mentions from one daily report describe one day's work
+in one writer's phrasing, so a row-wise split would put near-duplicates on both
+sides and the held-out score would be measuring memorisation.
+
+**One configuration.** `matching/config.py :: SHIPPED_THRESHOLDS` is the single
+definition. `server/main.py` imports it as `MATCHING_THRESHOLDS`; `eval.py`
+evaluates at it and builds its engine through the same `production(sha)` call
+the server uses. An evaluation of a different engine than the one that ships is
+not an evaluation of anything anyone can run.
+
+**Thresholds chosen on dev, by a stated rule.** Among threshold sets holding
+100% auto-link precision on dev with at least 45% dev coverage, take the
+highest `tau_high`, then the largest margin — the most CONSERVATIVE point
+rather than the highest-coverage one. That yields **0.80 / 0.40 / 0.03**.
+
+The conservatism is doing real work. Measured on the held-out test split:
+
+| thresholds | chosen by | auto-link precision | wrong auto-links | coverage |
+|---|---|---|---|---|
+| 0.75 / 0.30 / 0.02 | dev-optimal (max coverage) | 93.2% | 7 | 66.9% |
+| 0.70 / 0.40 / 0.03 | what the server shipped | 95.2% | 5 | 68.2% |
+| **0.80 / 0.40 / 0.03** | **dev-conservative** | **100.0%** | **0** | **43.5%** |
+
+Both of the first two reach 100% on dev. Only the third survives contact with
+data it was not chosen against.
+
+**Errors are printed as counts.** `print_errors` reports wrong auto-links,
+wrong review rows, mentions with no candidate, and NO_MATCH outcomes as
+integers next to the percentages. "95.2% auto-link precision" and "five
+auto-links onto the wrong activity" are the same fact, and only the second says
+what it costs a planner.
+
+**Calibration became an explicit mode.** `python eval.py` measures the shipped
+build. `python eval.py --calibrate` runs the grid search on dev, prints its
+proposal, and states in its own mode line that it is NOT the shipped build —
+plus a NOTE naming the difference when the proposal and `SHIPPED_THRESHOLDS`
+disagree. The old `--production` flag is gone because production is now the
+default and the only default.
+
+### The shipped figures
+```
+python eval.py
+
+  SHIPPED configuration, measured on HELD-OUT test (154 mentions)
+  thresholds tau_high=0.8 tau_low=0.4 margin_min=0.03
+
+  Top-1 accuracy            86.9%   126/145 gold positives
+  Precision (suggestions)   81.8%   126 correct suggestions
+  Coverage (% auto-linked)  43.5%   67 of 154 mentions
+  Auto-link precision      100.0%   67/67
+  NO_MATCH rejection         0.0%   0/9
+
+  Wrong auto-links (written, no planner)      0  of 67
+  Wrong review rows (queued, not written)    28
+  Gold mentions with no candidate             0  of 145
+  NO_MATCH mentions correctly refused         0  of 9
+```
+
+The NO_MATCH row is the weakest number here and is reported rather than
+buried: none of the nine hard negatives is refused outright. All nine go to
+REVIEW, so none is auto-linked and none corrupts the schedule — the failure is
+that a planner sees nine rows they should not have to look at, not that a wrong
+date is written.
+
+### Alternatives Considered
+- **Keep the 100%/50.4% figures and footnote the leakage.** Rejected. A
+  footnote does not travel with a number into a slide, and this is the number
+  the whole product is argued from.
+- **Ship the dev-optimal thresholds and report 93.2%.** Rejected: the project's
+  stated constraint is that a wrong auto-link writes a wrong date onto a
+  schedule with no planner in the loop. Seven of those is not an operating
+  point this product can defend.
+- **Split by row instead of by source.** Rejected — it leaks. Two mentions of
+  the same pour from the same DPR would sit on opposite sides.
+- **Re-fit the ranker on the new split.** Out of scope here and would confound
+  the change. The artefacts remain fitted against v2 and `production()`
+  continues to refuse them for v1, which is why this measures the hand-set
+  blend.
+
+### Verification
+`python -m pytest -q` — 1186 passed. Two suites changed because the operating
+point moved, and both were made to say what they actually test:
+
+* `server/test_date_basis.py` drives the real ingest endpoint and needs a
+  mention to AUTO_LINK before the roll-up gate it is testing (D-008) is
+  reached. At tau_high=0.80 the undated claims in `dpr_day_10` route to REVIEW
+  on confidence instead, so the gate went uncovered and six tests failed. They
+  now pin `Thresholds(0.70, 0.40, 0.03)` in a fixture, with a comment saying
+  that this is deliberately not the shipped point and that the gate, not the
+  operating point, is what they cover.
+* `test_ground_truth_coverage` asserted `coverage >= 0.25` on a per-ACTIVITY
+  count that is not any metric in `eval.py`. It reads 21.3% at the stricter
+  threshold. The floor is re-set to 0.18 and relabelled a regression floor, with
+  a note not to quote it.
+
+`python eval.py` and `python eval.py --calibrate` both run clean.
+`python scripts/healthcheck.py` — 31 passed. `npx vitest run` — 162 passed,
+`npx tsc --noEmit` clean.
+
+### Affected Areas
+`dataset/ground_truth.csv` (new `split` column), `matching/config.py`
+(`SHIPPED_THRESHOLDS`), `server/main.py` (`MATCHING_THRESHOLDS` now imported),
+`eval.py` (default mode, `--calibrate`, `print_errors`, error counts in
+`evaluate`, the reproduction command in the footer),
+`server/test_date_basis.py`, `server/test_server.py`, `METRICS.md` §3.1,
+`README.md`.
+
+### Trade-offs / Consequences
+Coverage falls from a claimed 50.4% to a measured 43.5%, and about a quarter
+more mentions now reach the review queue. That is the cost of the precision
+constraint, and it is the right trade for this product: a REVIEW row costs a
+planner ten seconds, and a wrong auto-link costs them a wrong date on a
+schedule they then plan against.
+
+**Still open, and stated rather than hidden:**
+
+- `research/` and the dated audit documents (`Audit-1.md`, `FINDINGS.md`,
+  `AUDIT_CODEX.md`, `Latest Update 1-09-26.md`) still quote the withdrawn
+  figures. They are dated records of past runs and were left as written rather
+  than retro-edited; `METRICS.md` remains the file that governs, and it now
+  says §3.1's earlier numbers were withdrawn.
+- `METRICS.md` §3.2 and §3.3 are v2-corpus research figures produced by the
+  same evaluator. Their splits are genuine, but they have not been re-run
+  against `SHIPPED_THRESHOLDS` and should not be quoted as production numbers.
+- NO_MATCH rejection is 0/9. Nothing is corrupted by it, but the hard-negative
+  path is the weakest part of the matcher and the denominator is too small to
+  tune against.

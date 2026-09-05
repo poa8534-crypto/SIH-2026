@@ -5,10 +5,14 @@ another document disagrees with this one, this one is right and the other is
 stale. If this file disagrees with the code, the code is right and this file is
 the bug.
 
-Last reconciled: **2026-09-01**, against commit `1a644eb`.
-§3.1 and §3.2 re-run and confirmed unchanged on **2026-09-03**; §4.1 (the
-optional LLM path) and the §6 test counts were added that day, and the counts
-were re-measured on the merge of D-064..D-069.
+Last reconciled: **2026-09-05**. §3.1 was re-measured that day against the
+shipped configuration on a held-out test split and its previous figures were
+withdrawn — see the note inside §3.1 for what was wrong with them and why.
+§3.2 and §3.3 are v2 research figures on a different corpus and are unchanged.
+
+Earlier: reconciled **2026-09-01** against commit `1a644eb`; §3.1 and §3.2
+re-run **2026-09-03**, when §4.1 (the optional LLM path) and the §6 test counts
+were added and the counts re-measured on the merge of D-064..D-069.
 Reproduce everything here with the commands in §6.
 
 ---
@@ -65,21 +69,53 @@ settings and their numbers are not interchangeable.
 ### 3.1 CURRENT PRODUCTION / DEMO — what the running server actually does
 
 Baseline **v1** (`baseline_schedule.json`, 120 activities, sha256 `1bfde358dc0e`).
-Hand-set feature blend. No learned ranker, no calibrator. Corpus B/v1, 254
-mentions, **no train/dev/test split** — this figure is calibrated and reported
-on the same data, and must be labelled as such.
+Hand-set feature blend. No learned ranker, no calibrator — `production(sha)`
+refuses the fitted artefacts because they were fitted against v2, and `eval.py`
+builds the engine through that same call, so this measures the engine the
+server runs.
+
+Thresholds are `matching/config.py :: SHIPPED_THRESHOLDS`
+(**tau_high 0.80, tau_low 0.40, margin 0.03**), which `server/main.py` imports
+as `MATCHING_THRESHOLDS`. They were chosen on the **dev** split alone and these
+figures are measured on the **held-out test** split — 154 mentions no threshold
+was tuned against.
+
+```bash
+python eval.py
+```
 
 | Metric | Value | Detail |
 |---|---|---|
-| Top-1 | **87.2%** | 211 / 242 gold positives |
-| Auto-link precision | **100.0%** | 128 / 128 — zero wrong auto-links |
-| Coverage | **50.4%** | 128 of 254 mentions |
-| Suggestion precision / recall | 83.1% / 85.5% | |
-| NO_MATCH rejection | **8.3%** | 1 / 12 — weak, and the denominator is only 12 |
-| Latency | **2.09 ms/event** batched | 478 events/s |
+| Top-1 | **86.9%** | 126 / 145 gold positives |
+| Auto-link precision | **100.0%** | 67 / 67 — **zero wrong auto-links** |
+| Coverage | **43.5%** | 67 of 154 mentions auto-linked |
+| Suggestion precision / recall | 81.8% / 86.9% | 126 correct of 154 concrete suggestions |
+| Wrong review rows | **28** | queued for a planner, never written |
+| Gold mentions with no candidate | **0** | of 145 |
+| NO_MATCH rejection | **0.0%** | 0 / 9 — all nine routed to REVIEW, none auto-linked |
 
-`python eval.py --cv` returns the identical figures — with no split column in
-the v1 key, cross-validation selects the same thresholds.
+> **What changed on 2026-09-05, and why the old numbers were wrong.**
+> This row previously read *100% auto-link precision, 50.4% coverage, 87.2%
+> top-1*, over 254 mentions with **no split** — `eval.py` grid-searched
+> thresholds on exactly the rows it then scored, so the 100% was a property of
+> numbers fitted to the evaluation set rather than a measurement.
+>
+> It was also not the server's configuration: the server ran
+> `Thresholds(0.70, 0.40, 0.03)`, which nothing in the evaluator used. Measured
+> honestly, that set scores **95.2%** auto-link precision on held-out test —
+> **five auto-links onto the wrong activity**. The dev-optimal set
+> (0.75/0.30/0.02) is worse still at **93.2%**, seven wrong.
+>
+> `dataset/ground_truth.csv` now carries a `split` column assigned **by source
+> file** (dev 100 / test 154), so near-duplicate mentions from one DPR cannot
+> straddle the split. The shipped thresholds are the most conservative point
+> holding 100% precision on dev, and hold it on test. Coverage falls from a
+> claimed 50.4% to a measured 43.5%; that is the price of the constraint this
+> project actually makes. See D-093.
+
+`python eval.py --calibrate` runs the old grid search on dev and labels its
+output a proposal, not a description of the build. `python eval.py --cv`
+cross-validates.
 
 ### 3.2 HELD-OUT EVALUATION — the honest research number
 

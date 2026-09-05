@@ -117,7 +117,7 @@ from matching.providers import (
     ScheduleProvider,
     validate_activities,
 )
-from matching.config import production
+from matching.config import production, SHIPPED_THRESHOLDS
 from matching.primavera import ScheduleParseError
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
@@ -505,13 +505,21 @@ def _seed_schedule_if_empty(db: Session) -> None:
 
 # ── Linking engine (matching/ MatchingEngine as a service) ──────────────────
 
-# Calibrated for the REAL pipeline (extraction spans → matching) by aligning
-# dataset/ground_truth.csv mentions to extracted events and grid-searching:
-#   auto-link precision 96.6%, coverage 48%, suggestion recall 86.4%,
-#   5/12 NO_MATCH hard negatives rejected, 0 schedule-corrupting FPs at the
-#   stricter point (0.65/0.30/0.08 → 97.9% precision, 38.7% coverage).
-# Precision-first: ambiguous margin → REVIEW, never a wrong auto-link.
-MATCHING_THRESHOLDS = Thresholds(tau_high=0.70, tau_low=0.40, margin_min=0.03)
+# ONE CONFIGURATION, for the server and for the evaluator.
+#
+# These used to be a literal here, with a comment quoting figures (96.6%
+# precision, 48% coverage) that no command reproduced and that described
+# neither this threshold set nor the one `eval.py` reported. The evaluator
+# meanwhile calibrated its own thresholds on the same rows it then scored, so
+# the headline "100% auto-link precision" was a property of numbers fitted to
+# the evaluation set — at these old values the real held-out figure was 95.2%,
+# with five auto-links onto the wrong activity.
+#
+# `matching/config.py :: SHIPPED_THRESHOLDS` is now the single source, chosen
+# on the dev split alone and measured on held-out test. Its docstring carries
+# the selection rule, the figures, and the command that reproduces them.
+# See D-093.
+MATCHING_THRESHOLDS = SHIPPED_THRESHOLDS
 MATCHING_MODEL_VERSION = "matching-v1"
 
 SCHEDULE_PATH = str(DEFAULT_BASELINE_PATH)

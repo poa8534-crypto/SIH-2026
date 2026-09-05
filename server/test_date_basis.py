@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.models import DateBasis
 from server.conftest import _engine as _test_engine
 from server.db import Activity, Base, LinkedEvent, ReviewQueueItem
+from matching.models import Thresholds
 from server.main import DEFAULTED_FINISH_REASON
 
 DATASET = Path(__file__).resolve().parent.parent / "dataset"
@@ -36,6 +37,37 @@ def clean_database():
     Base.metadata.drop_all(bind=_test_engine)
     yield
     Base.metadata.drop_all(bind=_test_engine)
+
+
+#: The operating point these tests run at, which is deliberately NOT the
+#: shipped one.
+#:
+#: What is under test here is the roll-up gate: a completion claim carrying a
+#: DEFAULTED_TO_REPORT_DATE finish must not reach the schedule, and must leave
+#: a review item behind (D-008). Reaching that gate requires the mention to
+#: AUTO_LINK first, and at the shipped thresholds (D-093, tau_high=0.80) the
+#: undated claims in dpr_day_10 route to REVIEW on confidence instead — safe,
+#: but it means the gate is never exercised and these tests would pass while
+#: covering nothing.
+#:
+#: Pinning the threshold here keeps the gate covered and stops these tests
+#: moving every time the operating point is retuned. They are not a claim
+#: about what the server ships; `eval.py` is.
+_GATE_THRESHOLDS = Thresholds(tau_high=0.70, tau_low=0.40, margin_min=0.03)
+
+
+@pytest.fixture(autouse=True)
+def auto_linking_thresholds():
+    """Run ingest at a threshold that auto-links, so the gate is reached."""
+    import server.main as main
+
+    engine = main.get_matching_engine()
+    previous = engine.thresholds
+    engine.thresholds = _GATE_THRESHOLDS
+    try:
+        yield
+    finally:
+        engine.thresholds = previous
 
 
 def _ingest(client, name: str):

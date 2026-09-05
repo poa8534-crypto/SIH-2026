@@ -412,6 +412,15 @@ def evaluate(scored_rows: list[dict], t: Thresholds) -> dict:
         "neg_rejected": neg_rejected,
         "tp_auto": tp_auto,
         "tp_sugg": tp_sugg,
+        # Errors, counted rather than implied by a percentage. A precision of
+        # 95.2% and "five auto-links onto the wrong activity" are the same
+        # fact, and only the second one tells a planner what it costs them.
+        "fp_auto": fp_auto,
+        "fp_sugg": fp_sugg,
+        "wrong_auto_links": fp_auto,
+        "wrong_review_rows": fp_review,
+        "missed_no_candidate": no_cand_pos,
+        "no_match_linked": neg_auto,
     }
 
 
@@ -497,6 +506,39 @@ def print_headline(m: dict, t: Thresholds, mode: str):
              f"{m['neg_rejected']}/{m['n_neg']} correctly refused"],
         ],
     )
+
+
+def print_errors(m: dict):
+    """Errors as counts, next to the percentages that hide them.
+
+    "95.2% auto-link precision" and "five auto-links onto the wrong activity"
+    are the same fact. Only the second one says what it costs: five wrong
+    dates written to a schedule with no planner in the loop. This block exists
+    so a reader cannot take the percentage without the count.
+    """
+    print()
+    print(rule("="))
+    print(" ERRORS - COUNTS, NOT PERCENTAGES")
+    print(rule("="))
+    total_auto = m["tp_auto"] + m["fp_auto"]
+    print(f"  {'Wrong auto-links (written, no planner)':<44}"
+          f"{m['wrong_auto_links']:>5}  of {total_auto} auto-linked")
+    print(f"  {'  ...of which a NO_MATCH was linked':<44}"
+          f"{m['no_match_linked']:>5}")
+    print(f"  {'Wrong review rows (queued, not written)':<44}"
+          f"{m['wrong_review_rows']:>5}")
+    print(f"  {'Gold mentions with no candidate at all':<44}"
+          f"{m['missed_no_candidate']:>5}  of {m['n_pos']} gold positives")
+    print(f"  {'NO_MATCH mentions correctly refused':<44}"
+          f"{m['neg_rejected']:>5}  of {m['n_neg']}")
+    if m["wrong_auto_links"] == 0:
+        print()
+        print("  No auto-link wrote a wrong activity on these mentions.")
+    else:
+        print()
+        print("  Each wrong auto-link is a wrong date on the schedule that no")
+        print("  planner was asked about. This is the figure the thresholds")
+        print("  are chosen against.")
 
 
 def print_confusion(m: dict):
@@ -1016,22 +1058,25 @@ def main():
     ap.add_argument("--ground-truth", default=str(GROUND_TRUTH),
                     help="labelled mentions to evaluate with "
                          "(default: dataset/ground_truth.csv)")
-    ap.add_argument("--production", action="store_true",
-                    help="use the fitted ranker + calibrator from "
-                         "matching/artifacts (only applies to the baseline they "
-                         "were fitted against; otherwise falls back and says so)")
+    ap.add_argument("--calibrate", action="store_true",
+                    help="TUNING MODE: grid-search thresholds on the dev split "
+                         "and report at those. The result is a PROPOSAL for "
+                         "matching/config.py :: SHIPPED_THRESHOLDS, not a "
+                         "description of the build that ships.")
     args = ap.parse_args()
 
     print("Loading schedule + ground truth ...")
-    cfg = None
-    if args.production:
-        from matching.config import production
-        from matching.schedule_index import ScheduleIndex
-        sha = ScheduleIndex.from_json(args.schedule).baseline.sha256
-        cfg = production(sha)
-        print("  ranking: fitted ranker + calibrator"
-              if cfg.ranker_path else
-              "  ranking: hand-set blend (no artefact for this baseline)")
+    # The SAME configuration the server builds. `server/main.py` calls
+    # `production(sha)` with the active baseline's sha256, and so does this:
+    # an evaluation of a different engine than the one that ships is not an
+    # evaluation of anything anyone can use. See D-093.
+    from matching.config import production, SHIPPED_THRESHOLDS
+    from matching.schedule_index import ScheduleIndex
+    sha = ScheduleIndex.from_json(args.schedule).baseline.sha256
+    cfg = production(sha)
+    print("  ranking: fitted ranker + calibrator"
+          if cfg.ranker_path else
+          "  ranking: hand-set blend (no fitted artefact for this baseline)")
     _ENGINE = MatchingEngine(args.schedule, config=cfg)
     embed_info = (
         "sentence-transformers all-MiniLM-L6-v2 (local, offline)"
@@ -1055,33 +1100,53 @@ def main():
     for r, d in zip(rows, decisions):
         r["decision"] = d
 
-    # Splits, when the key carries them. Thresholds are tuned on dev and the
-    # headline is reported on test — a threshold chosen on the rows it is then
-    # scored against is not a measurement, it is a memory of them.
+    # A threshold chosen on the rows it is then scored against is not a
+    # measurement, it is a memory of them. The split column is assigned BY
+    # SOURCE FILE, so near-duplicate mentions from one DPR cannot straddle it.
     dev = [r for r in rows if r["split"] == "dev"]
     test = [r for r in rows if r["split"] == "test"]
     split_mode = bool(dev and test)
+    if split_mode:
+        print(f"  splits: dev {len(dev)} | test {len(test)}  "
+              f"(assigned by source file, never by row)")
 
     if args.cv:
         t = run_cv(rows)
         m = _CV_METRICS or evaluate(rows, t)
         mode = "5-fold cross-validated thresholds (pooled held-out)"
         report_rows = rows
+    elif args.calibrate:
+        if not split_mode:
+            print("  WARNING: no split column — tuning and scoring the same rows")
+        tune_on = dev if split_mode else rows
+        t = calibrate(tune_on, coverage_floor=args.coverage_floor)
+        score_on = test if split_mode else rows
+        m = evaluate(score_on, t)
+        mode = (f"TUNING RUN — thresholds grid-searched on dev "
+                f"({len(tune_on)} mentions), reported on "
+                f"{'HELD-OUT test' if split_mode else 'the same rows'} "
+                f"({len(score_on)} mentions). NOT the shipped build.")
+        report_rows = score_on
+        if t != SHIPPED_THRESHOLDS:
+            print(f"  NOTE: this proposes {t}, which is NOT what ships "
+                  f"({SHIPPED_THRESHOLDS}).")
     elif split_mode:
-        t = calibrate(dev, coverage_floor=args.coverage_floor)
+        # The default, and the one every quoted figure comes from: the shipped
+        # thresholds, measured on mentions no threshold was tuned against.
+        t = SHIPPED_THRESHOLDS
         m = evaluate(test, t)
-        mode = (f"thresholds calibrated on dev ({len(dev)} mentions), "
-                f"metrics reported on HELD-OUT test ({len(test)} mentions)")
+        mode = (f"SHIPPED configuration, measured on HELD-OUT test "
+                f"({len(test)} mentions never used for tuning)")
         report_rows = test
-        print(f"  splits: train {sum(1 for r in rows if r['split'] == 'train')} | "
-              f"dev {len(dev)} | test {len(test)}")
     else:
-        t = calibrate(rows, coverage_floor=args.coverage_floor)
+        t = SHIPPED_THRESHOLDS
         m = evaluate(rows, t)
-        mode = "calibrated + evaluated on the full dataset"
+        mode = ("SHIPPED configuration on the full dataset — this key carries "
+                "no split column, so nothing here is held out")
         report_rows = rows
 
     print_headline(m, t, mode)
+    print_errors(m)
     print_confusion(m)
     print_pr_curve(precision_at_coverage(report_rows, t), t)
     print_near_miss(report_rows, t)
@@ -1102,6 +1167,14 @@ def main():
     print(" Definitions: precision = correct suggestions / all concrete")
     print(" suggestions (AUTO_LINK + REVIEW); recall = correct suggestions")
     print(" / gold positives; coverage = auto-linked / all mentions.")
+    print(rule("-"))
+    print(" Reproduce this exact run:")
+    print(f"   python eval.py --schedule {args.schedule} \\")
+    print(f"                  --ground-truth {args.ground_truth}")
+    print(" Thresholds come from matching/config.py :: SHIPPED_THRESHOLDS,")
+    print(" which server/main.py imports as MATCHING_THRESHOLDS. Quoting a")
+    print(" figure that this command does not print means quoting a build")
+    print(" nobody is running.")
     print(rule("="))
 
 

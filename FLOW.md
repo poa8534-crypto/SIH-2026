@@ -1291,6 +1291,57 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The metrics describe the build that ships — one threshold constant
+for the server and the evaluator, tuned on dev and measured on held-out test.
+**Date:** 2026-09-05 · **Decision:** D-093
+
+```
+ONE CONFIGURATION                                                 (D-093)
+
+  matching/config.py :: SHIPPED_THRESHOLDS
+      Thresholds(tau_high=0.80, tau_low=0.40, margin_min=0.03)
+          |                                    |
+          |                                    |
+  server/main.py                          eval.py
+      MATCHING_THRESHOLDS = SHIPPED_        default mode evaluates AT it
+      get_matching_engine()                 builds its engine through the
+          production(sha)  <--- same call ---> same production(sha)
+
+  THE SPLIT   dataset/ground_truth.csv, column `split`
+      assigned BY SOURCE FILE, never by row
+          dev   100 mentions  6 sources  3 hard negatives
+          test  154 mentions  6 sources  9 hard negatives
+      Row-wise splitting would put near-duplicate mentions of one pour on
+      both sides, and the held-out score would measure memorisation.
+
+  CHOOSING THE THRESHOLDS   on dev only
+      among sets with 100% dev auto-link precision and >= 45% dev coverage,
+      take the highest tau_high, then the largest margin
+          -> 0.80 / 0.40 / 0.03
+
+      on HELD-OUT test:
+          0.75/0.30/0.02  dev-optimal      93.2%   7 wrong auto-links
+          0.70/0.40/0.03  previously shipped 95.2%  5 wrong auto-links
+          0.80/0.40/0.03  SHIPPED          100.0%   0 wrong auto-links
+
+  eval.py MODES
+      (default)     shipped config, shipped thresholds, held-out test
+      --calibrate   grid search on dev; mode line says NOT the shipped
+                    build, and a NOTE names the difference
+      --cv          5-fold, pooled out-of-fold
+
+  print_errors()    wrong auto-links, wrong review rows, mentions with no
+                    candidate, NO_MATCH outcomes - as COUNTS, beside the
+                    percentages that hide them.
+
+  The footer prints the command that reproduces the run. A figure this
+  command does not print describes a build nobody is running.
+```
+
+---
+
+### Previous modification area (D-092)
+
 **Task:** An imported schedule becomes the project — the matcher re-indexes
 from the active baseline, activities are attributed to the baseline they came
 from, and export preserves relationship type and lag.

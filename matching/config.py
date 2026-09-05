@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from matching.models import Thresholds
+
 
 @dataclass(frozen=True)
 class RetrievalConfig:
@@ -123,6 +125,42 @@ class EngineConfig:
 
 
 DEFAULT = EngineConfig()
+
+#: The decision thresholds the SERVER RUNS. One constant, imported by
+#: `server/main.py` and by `eval.py`, so a quoted accuracy figure describes the
+#: build that ships rather than a threshold set chosen for the occasion.
+#:
+#: HOW THESE WERE CHOSEN, and why they are not the dev-optimal ones.
+#: `dataset/ground_truth.csv` carries a `split` column assigned BY SOURCE FILE
+#: (D-093) - mentions from one DPR describe one day's work in one writer's
+#: phrasing, so splitting by row would put near-duplicates on both sides. The
+#: rule, applied to the 100 dev mentions and never to test:
+#:
+#:     among threshold sets holding 100% auto-link precision on dev with at
+#:     least 45% dev coverage, take the highest tau_high, then the largest
+#:     margin - the most CONSERVATIVE point rather than the highest-coverage
+#:     one.
+#:
+#: That conservatism is the whole point. The dev-optimal set (0.75/0.30/0.02)
+#: also reaches 100% on dev and collapses to 93.2% on the 154 held-out test
+#: mentions - seven auto-links onto the wrong activity. The previously shipped
+#: set (0.70/0.40/0.03) scores 95.2% there. These score:
+#:
+#:     auto-link precision   100.0%   0 wrong auto-links out of 67
+#:     coverage               43.5%   67 of 154 mentions auto-linked
+#:     top-1 accuracy         86.9%   126 of 145 gold positives
+#:     wrong review rows      28      queued for a planner, not written
+#:     NO_MATCH rejection     0/9     all nine routed to REVIEW, never linked
+#:
+#: measured on data no threshold was tuned against. Reproduce with:
+#:
+#:     python eval.py
+#:
+#: The coverage cost is real - 43.5% against 68.2% for the old set - and it is
+#: the price of the constraint this project actually claims: a wrong auto-link
+#: writes a wrong date onto a schedule, and a REVIEW row costs a planner ten
+#: seconds. See D-093.
+SHIPPED_THRESHOLDS = Thresholds(tau_high=0.80, tau_low=0.40, margin_min=0.03)
 
 #: Where `fit_production.py` writes the fitted ranker and calibrator.
 ARTIFACT_DIR = Path(__file__).resolve().parent / "artifacts"

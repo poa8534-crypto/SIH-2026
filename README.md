@@ -91,16 +91,38 @@ hand, and the whole product is pointless.
 So the system is deliberately **cautious**. When it is not sure, it refuses to act
 and asks a human. That is why our measured numbers look the way they do.
 
-**What the running application achieves** — v1 evaluation corpus (254 labelled
-mentions against the 120-activity demo schedule). These are calibrated and
-reported on the same data; there is no held-out split in the v1 key, and that
-has to be said whenever the numbers are:
+**What the running application achieves.** One command, and it measures the
+build that ships — the same `production(sha)` configuration `server/main.py`
+builds, at the thresholds it imports from `matching/config.py`:
+
+```bash
+python eval.py
+```
+
+Reported on the **held-out test split**: 154 labelled mentions against the
+120-activity demo schedule, from six source documents no threshold was tuned
+against. Tuning used the other six (100 mentions). The split is by source file,
+so near-duplicate mentions from one daily report cannot appear on both sides.
 
 | Number | What it means |
 |---|---|
-| **100%** auto-link precision | 128 of 128. Every automatic match was correct |
-| **50.4%** coverage | We only auto-matched about half. The rest went to a human |
-| **87.2%** top-1 accuracy | 211 of 242. Our best guess was right 87% of the time |
+| **100%** auto-link precision | 67 of 67. **Zero** wrong auto-links |
+| **43.5%** coverage | We auto-matched under half. The rest went to a human |
+| **86.9%** top-1 accuracy | 126 of 145. Our best guess was right 87% of the time |
+| **28** wrong review rows | queued for a planner to reject — never written |
+| **0 of 9** NO_MATCH refused | all nine were queued for review rather than linked |
+
+The last two rows are errors, stated as counts. A percentage hides how many
+times a planner has to clean up after us.
+
+> Until 2026-09-05 this table read *100% precision, 50.4% coverage, 87.2%
+> top-1* over all 254 mentions. Those thresholds had been grid-searched on the
+> same rows they were then scored against, and they were not the thresholds the
+> server ran. Measured honestly on held-out data, the set the server actually
+> shipped scored **95.2%** — five auto-links onto the wrong activity. The
+> operating point was made stricter until the precision claim survived a
+> held-out test, and coverage fell from a claimed 50.4% to a measured 43.5%.
+> See `METRICS.md` §3.1 and D-093.
 
 **The honest held-out number** — the harder v2 research corpus (814 mentions,
 218 activities, proper train/dev/test). Thresholds picked on dev, reported on a

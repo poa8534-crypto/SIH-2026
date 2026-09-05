@@ -1,255 +1,255 @@
-source,source_date,raw_mention,activity_id,match_type
-dpr_day_01.txt,2026-08-03,Foundation concreting for pipe rack pedestals P7 to P12,CIV-FDN-1007,exact
-dpr_day_01.txt,2026-08-03,Tank TK-1 shell erection,SEQ-TKN-1066,exact
-dpr_day_01.txt,2026-08-03,Backfilling around equipment foundation EF-2 and EF-3,CIV-BKL-1012,exact
-dpr_day_01.txt,2026-08-03,Equipment foundation for CS-01 concreting,CIV-FND-1018,exact
-dpr_day_01.txt,2026-08-03,24 inch main header P-1001 spool erection,PIP-ERC-1030,exact
-dpr_day_01.txt,2026-08-03,Pipe rack Tier 2 steel erection,PIP-RCK-1024,exact
-dpr_day_01.txt,2026-08-03,12 inch transfer line spool fabrication,PIP-SPL-1026,exact
-dpr_day_01.txt,2026-08-03,Vessel V-101 separator arrived,SEQ-VSL-1054,exact
-dpr_day_01.txt,2026-08-03,Exchanger E-101 setting on foundation,SEQ-EXC-1059,exact
-dpr_day_01.txt,2026-08-03,Earthing grid installation,ELE-GRD-1086,exact
-dpr_day_01.txt,2026-08-03,BBS observations,HSE-BBS-1113,exact
-dpr_day_01.txt,2026-08-03,NCR opened for improper scaffolding tag,HSE-NCR-1117,exact
-dpr_day_01.txt,2026-08-03,Weekly safety stats,HSE-DSH-1121,exact
-dpr_day_01.txt,2026-08-03,material delivery status report,NO_MATCH,no_match
-dpr_day_02.txt,2026-08-06,"Backfilling equip foundation EF-1, EF-2, EF-3",CIV-BKL-1012,exact
-dpr_day_02.txt,2026-08-06,Containment bund wall Zone A,CIV-BND-1013,exact
-dpr_day_02.txt,2026-08-06,Drainage channels perimeter,CIV-DWG-1015,exact
-dpr_day_02.txt,2026-08-06,24 inch P-1001 spool erection,PIP-ERC-1030,exact
-dpr_day_02.txt,2026-08-06,8 inch flare header P-1003 spool fabrication,PIP-SPL-1027,exact
-dpr_day_02.txt,2026-08-06,Spool erection 12 inch P-1002,PIP-ERC-1031,exact
-dpr_day_02.txt,2026-08-06,V-101 separator jacking,SEQ-VSL-1055,exact
-dpr_day_02.txt,2026-08-06,V-102 filter vessel arrived,SEQ-VSL-1056,exact
-dpr_day_02.txt,2026-08-06,Compressor skid CS-01 delivery,SEQ-SKD-1062,exact
-dpr_day_02.txt,2026-08-06,Level transmitter calibration,INS-TRN-1096,exact
-dpr_day_02.txt,2026-08-06,Pressure transmitter calib,INS-TRN-1097,exact
-dpr_day_02.txt,2026-08-06,Scaffolding inspection,HSE-SPC-1118,exact
-dpr_day_02.txt,2026-08-06,Permits to work issued,HSE-PMT-1116,exact
-dpr_day_02.txt,2026-08-06,soil compaction test results submitted,NO_MATCH,no_match
-dpr_day_03.txt,2026-08-11,Grade beams pipe rack,CIV-GBM-1014,exact
-dpr_day_03.txt,2026-08-11,Firewater pit Zone B,CIV-PLG-1017,exact
-dpr_day_03.txt,2026-08-11,Flooring MCC room,CIV-FLR-1020,exact
-dpr_day_03.txt,2026-08-11,24 inch P-1001 spool erection,PIP-ERC-1030,exact
-dpr_day_03.txt,2026-08-11,4 inch utility water P-1010 spool erection,PIP-ERC-1033,exact
-dpr_day_03.txt,2026-08-11,Pipe support installation Tier 1,PIP-SUP-1049,exact
-dpr_day_03.txt,2026-08-11,Tier 2 pipe rack steel,PIP-RCK-1024,exact
-dpr_day_03.txt,2026-08-11,V-101 separator setting,SEQ-VSL-1055,exact
-dpr_day_03.txt,2026-08-11,V-102 filter jacking,SEQ-VSL-1057,exact
-dpr_day_03.txt,2026-08-11,Exchanger E-101 nozzle orientation,SEQ-PIP-1074,exact
-dpr_day_03.txt,2026-08-11,Pump P-101A delivered,SEQ-PMP-1060,exact
-dpr_day_03.txt,2026-08-11,HT cable laying,ELE-CBL-1076,exact
-dpr_day_03.txt,2026-08-11,MCC panels installed,ELE-SWG-1082,exact
-dpr_day_03.txt,2026-08-11,Transformer TR-01 oil filling,ELE-TRF-1080,exact
-dpr_day_03.txt,2026-08-11,Calibrated level transmitters,INS-TRN-1096,exact
-dpr_day_03.txt,2026-08-11,"Junction boxes JB-01, JB-02, JB-03 installed",INS-ICS-1104,exact
-dpr_day_03.txt,2026-08-11,Transmitter mounting on V-101,INS-FLD-1099,exact
-dpr_day_03.txt,2026-08-11,TK-1 shell erection 6th course,SEQ-TKN-1066,exact
-dpr_day_03.txt,2026-08-11,24 inch main header P-1002 flange start,NO_MATCH,no_match
-dpr_day_04.txt,2026-08-15,8 inch flare header P-1003 spool fabrication,PIP-SPL-1027,exact
-dpr_day_04.txt,2026-08-15,6 inch drain header P-1015 fabrication,PIP-SPL-1029,exact
-dpr_day_04.txt,2026-08-15,Header skid HS-01 delivered,SEQ-SKD-1064,exact
-dpr_day_04.txt,2026-08-15,V-102 filter vessel setting,SEQ-VSL-1057,exact
-dpr_day_04.txt,2026-08-15,TK-1 shell erection on 7th course,SEQ-TKN-1066,exact
-dpr_day_04.txt,2026-08-15,Pump P-101B delivered,SEQ-PMP-1060,exact
-dpr_day_04.txt,2026-08-15,Fire extinguisher audit,HSE-FRE-1119,exact
-dpr_day_04.txt,2026-08-15,Independence Day safety briefing,HSE-IND-1112,exact
-dpr_day_04.txt,2026-08-15,permit for confined space entry in TK-1,HSE-PMT-1116,exact
-dpr_day_05.txt,2026-08-19,Cable tray buried Zone A+B,CIV-APN-1022,exact
-dpr_day_05.txt,2026-08-19,Grade beams P8-P12 pour,CIV-GBM-1014,exact
-dpr_day_05.txt,2026-08-19,Plastering MCC room walls,CIV-PLT-1021,exact
-dpr_day_05.txt,2026-08-19,24 inch P-1001 flange management,PIP-FLG-1035,exact
-dpr_day_05.txt,2026-08-19,12 inch P-1002 flange bolt-up,PIP-FLG-1036,exact
-dpr_day_05.txt,2026-08-19,12 inch P-1002 hydrotest,PIP-HYT-1041,exact
-dpr_day_05.txt,2026-08-19,Pipe support Tier 2,PIP-SUP-1050,exact
-dpr_day_05.txt,2026-08-19,CS-01 compressor skid set,SEQ-SKD-1063,exact
-dpr_day_05.txt,2026-08-19,HS-01 header skid setting,SEQ-SKD-1065,exact
-dpr_day_05.txt,2026-08-19,Pump alignment P-101A,SEQ-ALN-1070,exact
-dpr_day_05.txt,2026-08-19,TK-1 shell 8th course completed,SEQ-TKN-1066,exact
-dpr_day_05.txt,2026-08-19,HT cable laying complete,ELE-CBL-1076,exact
-dpr_day_05.txt,2026-08-19,LT cable laying started,ELE-CBL-1077,exact
-dpr_day_05.txt,2026-08-19,Lightning protection pipe rack,ELE-GRD-1087,exact
-dpr_day_05.txt,2026-08-19,Temperature transmitters calibrated,INS-TRN-1098,exact
-dpr_day_05.txt,2026-08-19,Pressure transmitters calibrated,INS-TRN-1097,exact
-dpr_day_05.txt,2026-08-19,Transmitter mounting on V-102,INS-FLD-1099,exact
-dpr_day_05.txt,2026-08-19,Junction box JB-04 and JB-05 installed,INS-ICS-1104,exact
-dpr_day_05.txt,2026-08-19,BBS observations,HSE-BBS-1113,exact
-dpr_day_05.txt,2026-08-19,Weekly safety stats,HSE-DSH-1121,exact
-dpr_day_05.txt,2026-08-19,line erected for 8 inch flare,PIP-ERC-1032,exact
-dpr_day_05.txt,2026-08-19,pipe rack column steel placed,PIP-RCK-1023,exact
-dpr_day_06.txt,2026-08-23,Drainage channels,CIV-DWG-1015,exact
-dpr_day_06.txt,2026-08-23,Fencing chain-link,CIV-FNC-1016,exact
-dpr_day_06.txt,2026-08-23,Floor tiles MCC room,CIV-FLR-1020,exact
-dpr_day_06.txt,2026-08-23,24 inch P-1001 flange management,PIP-FLG-1035,exact
-dpr_day_06.txt,2026-08-23,8 inch P-1003 flare header erection,PIP-ERC-1032,exact
-dpr_day_06.txt,2026-08-23,8 inch P-1003 flange bolt-up,PIP-FLG-1037,exact
-dpr_day_06.txt,2026-08-23,6 inch P-1015 drain header erection,PIP-ERC-1034,exact
-dpr_day_06.txt,2026-08-23,4 inch P-1010 utility water erection,PIP-ERC-1033,exact
-dpr_day_06.txt,2026-08-23,4 inch P-1010 hydrotest,PIP-HYT-1043,exact
-dpr_day_06.txt,2026-08-23,TK-1 roof installation,SEQ-TKN-1067,exact
-dpr_day_06.txt,2026-08-23,TK-1 hydrotest,SEQ-TKN-1068,exact
-dpr_day_06.txt,2026-08-23,V-101 nozzle-ready inspection,SEQ-PIP-1073,exact
-dpr_day_06.txt,2026-08-23,CS-01 epoxy grouting,SEQ-ALN-1071,exact
-dpr_day_06.txt,2026-08-23,HS-01 grouting,SEQ-ALN-1072,exact
-dpr_day_06.txt,2026-08-23,LT cable laying,ELE-CBL-1077,exact
-dpr_day_06.txt,2026-08-23,Control cable laying,ELE-CBL-1078,exact
-dpr_day_06.txt,2026-08-23,Cable termination HT,ELE-FLT-1083,exact
-dpr_day_06.txt,2026-08-23,Pressure transmitters calibrated,INS-TRN-1097,exact
-dpr_day_06.txt,2026-08-23,Field instrument mounting pressure,INS-FLD-1100,exact
-dpr_day_06.txt,2026-08-23,Field instrument mounting temperature,INS-FLD-1101,exact
-dpr_day_06.txt,2026-08-23,Control valve installation,INS-FND-1102,exact
-dpr_day_06.txt,2026-08-23,"Safety valve PSV-01, PSV-02, PSV-03",INS-FND-1103,exact
-dpr_day_06.txt,2026-08-23,NCR closed scaffolding,HSE-NCR-1117,exact
-dpr_day_06.txt,2026-08-23,Scaffolding inspection,HSE-SPC-1118,exact
-dpr_day_06.txt,2026-08-23,cable laying for 6.6kV transformer,ELE-TRF-1080,exact
-dpr_day_06.txt,2026-08-23,BBS walk at night shift,HSE-BBS-1113,exact
-dpr_day_06.txt,2026-08-23,welding consumable inventory check,NO_MATCH,no_match
-dpr_day_07.txt,2026-08-27,Cable tray buried Zone B completed,CIV-APN-1022,exact
-dpr_day_07.txt,2026-08-27,Drainage channels,CIV-DWG-1015,exact
-dpr_day_07.txt,2026-08-27,24 inch P-1001 hydrotest,PIP-HYT-1040,exact
-dpr_day_07.txt,2026-08-27,8 inch P-1003 flare header erection complete,PIP-ERC-1032,exact
-dpr_day_07.txt,2026-08-27,8 inch P-1003 flange management complete,PIP-FLG-1037,exact
-dpr_day_07.txt,2026-08-27,8 inch P-1003 hydrotest,PIP-HYT-1042,exact
-dpr_day_07.txt,2026-08-27,6 inch P-1015 drain header erection,PIP-ERC-1034,exact
-dpr_day_07.txt,2026-08-27,6 inch P-1015 flange bolt-up,PIP-FLG-1039,exact
-dpr_day_07.txt,2026-08-27,Skid piping CS-01,PIP-SKN-1051,exact
-dpr_day_07.txt,2026-08-27,P&ID punch list walkdown,PIP-PCD-1053,exact
-dpr_day_07.txt,2026-08-27,TK-1 hydrotest complete,SEQ-TKN-1068,exact
-dpr_day_07.txt,2026-08-27,Pump alignment P-101B,SEQ-ALN-1070,exact
-dpr_day_07.txt,2026-08-27,Equipment foundation settlement survey,SEQ-CMN-1075,exact
-dpr_day_07.txt,2026-08-27,Cable termination HT,ELE-FLT-1083,exact
-dpr_day_07.txt,2026-08-27,Cable termination LT,ELE-FLT-1084,exact
-dpr_day_07.txt,2026-08-27,Control cable laying,ELE-CBL-1078,exact
-dpr_day_07.txt,2026-08-27,Insulation resistance testing HT,ELE-IGT-1090,exact
-dpr_day_07.txt,2026-08-27,Control valve installation,INS-FND-1102,exact
-dpr_day_07.txt,2026-08-27,"Safety valve PSV-04, PSV-05, PSV-06",INS-FND-1103,exact
-dpr_day_07.txt,2026-08-27,Pressure transmitter mounting,INS-FLD-1100,exact
-dpr_day_07.txt,2026-08-27,Marshalling cabinet wiring,INS-ICS-1105,exact
-dpr_day_07.txt,2026-08-27,rebar fixing for tank foundation ringwall,CIV-FDN-1009,exact
-dpr_day_07.txt,2026-08-27,tank foundation settlement reading TK-1,CIV-FDN-1009,exact
-dpr_day_07.txt,2026-08-27,construction joint treatment at P7-P8,NO_MATCH,no_match
-dpr_day_08.txt,2026-09-02,Drainage channels complete,CIV-DWG-1015,exact
-dpr_day_08.txt,2026-09-02,Plot boundary fencing complete,CIV-FNC-1016,exact
-dpr_day_08.txt,2026-09-02,Plastering MCC room,CIV-PLT-1021,exact
-dpr_day_08.txt,2026-09-02,24 inch P-1001 hydrotest complete,PIP-HYT-1040,exact
-dpr_day_08.txt,2026-09-02,8 inch P-1003 hydrotest complete,PIP-HYT-1042,exact
-dpr_day_08.txt,2026-09-02,6 inch P-1015 drain header erection complete,PIP-ERC-1034,exact
-dpr_day_08.txt,2026-09-02,6 inch P-1015 flange bolt-up complete,PIP-FLG-1039,exact
-dpr_day_08.txt,2026-09-02,6 inch P-1015 hydrotest,PIP-HYT-1044,exact
-dpr_day_08.txt,2026-09-02,Pipe insulation 24 inch P-1001,PIP-INS-1045,exact
-dpr_day_08.txt,2026-09-02,Pipe insulation 12 inch P-1002,PIP-INS-1046,exact
-dpr_day_08.txt,2026-09-02,Skid piping CS-01 complete,PIP-SKN-1051,exact
-dpr_day_08.txt,2026-09-02,P&ID punch list close-out,PIP-PCD-1053,exact
-dpr_day_08.txt,2026-09-02,TK-1 internal coating,SEQ-TKN-1069,exact
-dpr_day_08.txt,2026-09-02,Pump run-in test P-101A,ELE-MTR-1094,exact
-dpr_day_08.txt,2026-09-02,Cable termination HT complete,ELE-FLT-1083,exact
-dpr_day_08.txt,2026-09-02,Cable termination LT,ELE-FLT-1084,exact
-dpr_day_08.txt,2026-09-02,Cable termination control,ELE-FLT-1085,exact
-dpr_day_08.txt,2026-09-02,Insulation resistance testing HT complete,ELE-IGT-1090,exact
-dpr_day_08.txt,2026-09-02,Insulation resistance testing LT,ELE-IGT-1091,exact
-dpr_day_08.txt,2026-09-02,Lighting circuit testing,ELE-LIG-1089,exact
-dpr_day_08.txt,2026-09-02,Marshalling cabinet wiring,INS-ICS-1105,exact
-dpr_day_08.txt,2026-09-02,Loop check,INS-LOOP-1107,exact
-dpr_day_08.txt,2026-09-02,Control valve installation complete,INS-FND-1102,exact
-dpr_day_08.txt,2026-09-02,All 14 RTDs mounted,INS-FLD-1101,exact
-dpr_day_08.txt,2026-09-02,Emergency drill TK-1 fire,HSE-EMG-1120,exact
-dpr_day_08.txt,2026-09-02,Fire extinguisher audit,HSE-FRE-1119,exact
-dpr_day_08.txt,2026-09-02,safety induction for new batch of 30 workers,HSE-IND-1112,exact
-dpr_day_08.txt,2026-09-02,cable tray 6.6kV from substation,NO_MATCH,no_match
-dpr_day_08.txt,2026-09-02,valve set pressure verified on PSV-03,INS-FND-1103,exact
-dpr_day_08.txt,2026-09-02,scaffold dismantling at Zone A,NO_MATCH,no_match
-dpr_day_09.txt,2026-09-08,Pipe insulation 24 inch P-1001 complete,PIP-INS-1045,exact
-dpr_day_09.txt,2026-09-08,Pipe insulation 12 inch P-1002 complete,PIP-INS-1046,exact
-dpr_day_09.txt,2026-09-08,Pipe insulation 8 inch P-1003,PIP-INS-1047,exact
-dpr_day_09.txt,2026-09-08,Paint coating pipe rack,PIP-PAI-1048,exact
-dpr_day_09.txt,2026-09-08,P&ID punch list walkdown,PIP-PCD-1053,exact
-dpr_day_09.txt,2026-09-08,TK-1 internal coating complete,SEQ-TKN-1069,exact
-dpr_day_09.txt,2026-09-08,Cable termination LT complete,ELE-FLT-1084,exact
-dpr_day_09.txt,2026-09-08,Control cable termination complete,ELE-FLT-1085,exact
-dpr_day_09.txt,2026-09-08,Insulation resistance testing LT complete,ELE-IGT-1091,exact
-dpr_day_09.txt,2026-09-08,Lighting circuit testing,ELE-LIG-1089,exact
-dpr_day_09.txt,2026-09-08,Area lighting installation,ELE-LIG-1088,exact
-dpr_day_09.txt,2026-09-08,Marshalling cabinet wiring complete,INS-ICS-1105,exact
-dpr_day_09.txt,2026-09-08,DCS panel integration,INS-ICS-1106,exact
-dpr_day_09.txt,2026-09-08,Loop check,INS-LOOP-1107,exact
-dpr_day_09.txt,2026-09-08,Control valve loop check,INS-LOOP-1108,exact
-dpr_day_09.txt,2026-09-08,As-built datasheets,INS-DOC-1111,exact
-dpr_day_09.txt,2026-09-08,Emergency drill live,HSE-EMG-1120,exact
-dpr_day_09.txt,2026-09-08,BBS observations,HSE-BBS-1113,exact
-dpr_day_09.txt,2026-09-08,line isolation for TK-1 paint,NO_MATCH,no_match
-dpr_day_09.txt,2026-09-08,pipe support marking on ground for Tier 2,PIP-SUP-1050,exact
-dpr_day_09.txt,2026-09-08,insulation on 12 inch P-1015,NO_MATCH,no_match
-dpr_day_09.txt,2026-09-08,spool marking and numbering in workshop,NO_MATCH,no_match
-dpr_day_10.txt,2026-09-15,Pipe insulation 8 inch P-1003 complete,PIP-INS-1047,exact
-dpr_day_10.txt,2026-09-15,Paint coating pipe rack,PIP-PAI-1048,exact
-dpr_day_10.txt,2026-09-15,P&ID punch list close-out,PIP-PCD-1053,exact
-dpr_day_10.txt,2026-09-15,SWGR 6.6kV energisation,ELE-ENG-1092,exact
-dpr_day_10.txt,2026-09-15,MCC energised,ELE-ENG-1093,exact
-dpr_day_10.txt,2026-09-15,Motor start-up P-101A,ELE-MTR-1094,exact
-dpr_day_10.txt,2026-09-15,Motor start-up P-101B,ELE-MTR-1094,exact
-dpr_day_10.txt,2026-09-15,CS-01 motor start-up,ELE-MTR-1095,exact
-dpr_day_10.txt,2026-09-15,Area lighting complete,ELE-LIG-1088,exact
-dpr_day_10.txt,2026-09-15,Lighting circuit testing complete,ELE-LIG-1089,exact
-dpr_day_10.txt,2026-09-15,Loop check complete,INS-LOOP-1107,exact
-dpr_day_10.txt,2026-09-15,Control valve loop check complete,INS-LOOP-1108,exact
-dpr_day_10.txt,2026-09-15,DCS integration complete,INS-ICS-1106,exact
-dpr_day_10.txt,2026-09-15,SIS logic test,INS-SFT-1109,exact
-dpr_day_10.txt,2026-09-15,ESD functional test,INS-SFT-1110,exact
-dpr_day_10.txt,2026-09-15,As-built datasheets,INS-DOC-1111,exact
-dpr_day_10.txt,2026-09-15,Monthly safety report,HSE-DSH-1121,exact
-dpr_day_10.txt,2026-09-15,BBS observations,HSE-BBS-1113,exact
-dpr_day_10.txt,2026-09-15,JMR for August progress billing,NO_MATCH,no_match
-dpr_day_10.txt,2026-09-15,earthing system continuity test,ELE-GRD-1086,exact
-dpr_day_10.txt,2026-09-15,weekly progress photo compilation,NO_MATCH,no_match
-piping_progress.xlsx,2026-09-15,Pipe Rack Steel Erection Tier 1 — ,PIP-1023,exact
-piping_progress.xlsx,2026-09-15,"Pipe Rack Steel Erection Tier 2 — 4 MT remaining, crane issue",PIP-1024,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 24"" Main Header — 18 spools fabricated",PIP-1025,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 12"" Transfer Line — 12 spools completed",PIP-1026,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 8"" Flare Header — 10 of 14 spools done",PIP-1027,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 4"" Utility Water — 8 spools done",PIP-1028,exact
-piping_progress.xlsx,2026-09-15,"Spool Fab — 6"" Drain Header — 2 of 10 spools done",PIP-1029,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 24"" Main Header — All 18 spools erected",PIP-1030,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 12"" Transfer — 12 spools erected",PIP-1031,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 8"" Flare Header — 14 spools erected",PIP-1032,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 4"" Utility Water — 8 spools erected",PIP-1033,exact
-piping_progress.xlsx,2026-09-15,"Spool Erection — 6"" Drain Header — 10 spools erected",PIP-1034,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 24"" Main Header — 36 flanges bolted",PIP-1035,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 12"" Transfer — 24 flanges done",PIP-1036,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 8"" Flare Header — 28 flanges bolted",PIP-1037,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 4"" Utility Water — 16 flanges done",PIP-1038,exact
-piping_progress.xlsx,2026-09-15,"Flange Mgmt — 6"" Drain Header — 20 flanges bolted",PIP-1039,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 24"" Main Header — All 6 sections passed",PIP-1040,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 12"" Transfer — 4 sections passed",PIP-1041,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 8"" Flare Header — 5 sections passed",PIP-1042,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 4"" Utility Water — 3 sections passed",PIP-1043,exact
-piping_progress.xlsx,2026-09-15,"Hydrotest — 6"" Drain Header — 3 sections passed",PIP-1044,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 24"" Main Header — 120 m2 done",PIP-1045,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 12"" Transfer — 65 m2 done",PIP-1046,exact
-piping_progress.xlsx,2026-09-15,"Insulation — 8"" Flare Header — 50 of 80 m2 done",PIP-1047,exact
-piping_progress.xlsx,2026-09-15,"Paint Coating — Pipe Rack — 720 of 850 m2, humidity delay",PIP-1048,exact
-piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 1 — 145 supports installed,PIP-1049,exact
-piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 2 — 3 rejected for elevation,PIP-1050,exact
-piping_progress.xlsx,2026-09-15,Skid Piping — CS-01 — 6 spools fab + erect,PIP-1051,exact
-piping_progress.xlsx,2026-09-15,"P&ID Punch List Close-out — 8/12 Cat A, 20/28 Cat B closed",PIP-1053,exact
-civil_progress.xlsx,2026-09-15,Site Clearing Zone A — Complete,CIV-SIT-1001,exact
-civil_progress.xlsx,2026-09-15,Site Clearing Zone B — Complete,CIV-SIT-1002,exact
-civil_progress.xlsx,2026-09-15,Grading & Compaction A+B — 95% MDD achieved,CIV-SIT-1003,exact
-civil_progress.xlsx,2026-09-15,"Bored Piling — Pipe Rack P1-P12 — 1 day over, piling rig breakdown",CIV-PLY-1004,exact
-civil_progress.xlsx,2026-09-15,Bored Piling — Equip Fdn EF1-EF4 — Complete,CIV-PLY-1005,exact
-civil_progress.xlsx,2026-09-15,"Bored Piling — Tank TK-1 — 1 day over, rain delay",CIV-PLY-1006,exact
-civil_progress.xlsx,2026-09-15,"Pedestal Concreting P1-P12 — M30 concrete, cubes passed",CIV-FDN-1007,exact
-civil_progress.xlsx,2026-09-15,"Equip Foundation EF1-EF4 — M35 concrete, 7-day strength OK",CIV-FDN-1008,exact
-civil_progress.xlsx,2026-09-15,Tank Ringwall Foundation TK-1 — Complete,CIV-FDN-1009,exact
-civil_progress.xlsx,2026-09-15,Slab-on-Grade Pump House — 200 mm thk M30,CIV-FDN-1010,exact
-civil_progress.xlsx,2026-09-15,Backfilling — Pipe Rack Trenches — Compacted sand fill,CIV-BKL-1011,exact
-civil_progress.xlsx,2026-09-15,Backfilling — Equipment Pads — Approved backfill material,CIV-BKL-1012,exact
-civil_progress.xlsx,2026-09-15,"Containment Bund Wall Zone A — Complete, 600mm thk RC",CIV-BND-1013,exact
-civil_progress.xlsx,2026-09-15,Grade Beams Pipe Rack — Completed in 2 pours,CIV-GBM-1014,exact
-civil_progress.xlsx,2026-09-15,Drainage Channels Perimeter — Delayed by fencing conflict,CIV-DWG-1015,exact
-civil_progress.xlsx,2026-09-15,"Fence & Gate Plot Boundary — Complete, 3 gates",CIV-FNC-1016,exact
-civil_progress.xlsx,2026-09-15,Firewater Pit Zone B — Lined pit complete,CIV-PLG-1017,exact
-civil_progress.xlsx,2026-09-15,"Foundation — Compressor Skid CS-01 — M35, curing complete",CIV-FND-1018,exact
-civil_progress.xlsx,2026-09-15,"Foundation — Header Skid HS-01 — M30, complete",CIV-FND-1019,exact
-civil_progress.xlsx,2026-09-15,Flooring — MCC Room — Tiles done. Holiday delays,CIV-FLR-1020,exact
-civil_progress.xlsx,2026-09-15,Plastering & Painting MCC Room — 2 coats plaster + distemper,CIV-PLT-1021,exact
-civil_progress.xlsx,2026-09-15,"Cable Tray Buried A+B — Completed, backfilled",CIV-APN-1022,exact
+source,source_date,raw_mention,activity_id,match_type,split
+dpr_day_01.txt,2026-08-03,Foundation concreting for pipe rack pedestals P7 to P12,CIV-FDN-1007,exact,dev
+dpr_day_01.txt,2026-08-03,Tank TK-1 shell erection,SEQ-TKN-1066,exact,dev
+dpr_day_01.txt,2026-08-03,Backfilling around equipment foundation EF-2 and EF-3,CIV-BKL-1012,exact,dev
+dpr_day_01.txt,2026-08-03,Equipment foundation for CS-01 concreting,CIV-FND-1018,exact,dev
+dpr_day_01.txt,2026-08-03,24 inch main header P-1001 spool erection,PIP-ERC-1030,exact,dev
+dpr_day_01.txt,2026-08-03,Pipe rack Tier 2 steel erection,PIP-RCK-1024,exact,dev
+dpr_day_01.txt,2026-08-03,12 inch transfer line spool fabrication,PIP-SPL-1026,exact,dev
+dpr_day_01.txt,2026-08-03,Vessel V-101 separator arrived,SEQ-VSL-1054,exact,dev
+dpr_day_01.txt,2026-08-03,Exchanger E-101 setting on foundation,SEQ-EXC-1059,exact,dev
+dpr_day_01.txt,2026-08-03,Earthing grid installation,ELE-GRD-1086,exact,dev
+dpr_day_01.txt,2026-08-03,BBS observations,HSE-BBS-1113,exact,dev
+dpr_day_01.txt,2026-08-03,NCR opened for improper scaffolding tag,HSE-NCR-1117,exact,dev
+dpr_day_01.txt,2026-08-03,Weekly safety stats,HSE-DSH-1121,exact,dev
+dpr_day_01.txt,2026-08-03,material delivery status report,NO_MATCH,no_match,dev
+dpr_day_02.txt,2026-08-06,"Backfilling equip foundation EF-1, EF-2, EF-3",CIV-BKL-1012,exact,dev
+dpr_day_02.txt,2026-08-06,Containment bund wall Zone A,CIV-BND-1013,exact,dev
+dpr_day_02.txt,2026-08-06,Drainage channels perimeter,CIV-DWG-1015,exact,dev
+dpr_day_02.txt,2026-08-06,24 inch P-1001 spool erection,PIP-ERC-1030,exact,dev
+dpr_day_02.txt,2026-08-06,8 inch flare header P-1003 spool fabrication,PIP-SPL-1027,exact,dev
+dpr_day_02.txt,2026-08-06,Spool erection 12 inch P-1002,PIP-ERC-1031,exact,dev
+dpr_day_02.txt,2026-08-06,V-101 separator jacking,SEQ-VSL-1055,exact,dev
+dpr_day_02.txt,2026-08-06,V-102 filter vessel arrived,SEQ-VSL-1056,exact,dev
+dpr_day_02.txt,2026-08-06,Compressor skid CS-01 delivery,SEQ-SKD-1062,exact,dev
+dpr_day_02.txt,2026-08-06,Level transmitter calibration,INS-TRN-1096,exact,dev
+dpr_day_02.txt,2026-08-06,Pressure transmitter calib,INS-TRN-1097,exact,dev
+dpr_day_02.txt,2026-08-06,Scaffolding inspection,HSE-SPC-1118,exact,dev
+dpr_day_02.txt,2026-08-06,Permits to work issued,HSE-PMT-1116,exact,dev
+dpr_day_02.txt,2026-08-06,soil compaction test results submitted,NO_MATCH,no_match,dev
+dpr_day_03.txt,2026-08-11,Grade beams pipe rack,CIV-GBM-1014,exact,dev
+dpr_day_03.txt,2026-08-11,Firewater pit Zone B,CIV-PLG-1017,exact,dev
+dpr_day_03.txt,2026-08-11,Flooring MCC room,CIV-FLR-1020,exact,dev
+dpr_day_03.txt,2026-08-11,24 inch P-1001 spool erection,PIP-ERC-1030,exact,dev
+dpr_day_03.txt,2026-08-11,4 inch utility water P-1010 spool erection,PIP-ERC-1033,exact,dev
+dpr_day_03.txt,2026-08-11,Pipe support installation Tier 1,PIP-SUP-1049,exact,dev
+dpr_day_03.txt,2026-08-11,Tier 2 pipe rack steel,PIP-RCK-1024,exact,dev
+dpr_day_03.txt,2026-08-11,V-101 separator setting,SEQ-VSL-1055,exact,dev
+dpr_day_03.txt,2026-08-11,V-102 filter jacking,SEQ-VSL-1057,exact,dev
+dpr_day_03.txt,2026-08-11,Exchanger E-101 nozzle orientation,SEQ-PIP-1074,exact,dev
+dpr_day_03.txt,2026-08-11,Pump P-101A delivered,SEQ-PMP-1060,exact,dev
+dpr_day_03.txt,2026-08-11,HT cable laying,ELE-CBL-1076,exact,dev
+dpr_day_03.txt,2026-08-11,MCC panels installed,ELE-SWG-1082,exact,dev
+dpr_day_03.txt,2026-08-11,Transformer TR-01 oil filling,ELE-TRF-1080,exact,dev
+dpr_day_03.txt,2026-08-11,Calibrated level transmitters,INS-TRN-1096,exact,dev
+dpr_day_03.txt,2026-08-11,"Junction boxes JB-01, JB-02, JB-03 installed",INS-ICS-1104,exact,dev
+dpr_day_03.txt,2026-08-11,Transmitter mounting on V-101,INS-FLD-1099,exact,dev
+dpr_day_03.txt,2026-08-11,TK-1 shell erection 6th course,SEQ-TKN-1066,exact,dev
+dpr_day_03.txt,2026-08-11,24 inch main header P-1002 flange start,NO_MATCH,no_match,dev
+dpr_day_04.txt,2026-08-15,8 inch flare header P-1003 spool fabrication,PIP-SPL-1027,exact,dev
+dpr_day_04.txt,2026-08-15,6 inch drain header P-1015 fabrication,PIP-SPL-1029,exact,dev
+dpr_day_04.txt,2026-08-15,Header skid HS-01 delivered,SEQ-SKD-1064,exact,dev
+dpr_day_04.txt,2026-08-15,V-102 filter vessel setting,SEQ-VSL-1057,exact,dev
+dpr_day_04.txt,2026-08-15,TK-1 shell erection on 7th course,SEQ-TKN-1066,exact,dev
+dpr_day_04.txt,2026-08-15,Pump P-101B delivered,SEQ-PMP-1060,exact,dev
+dpr_day_04.txt,2026-08-15,Fire extinguisher audit,HSE-FRE-1119,exact,dev
+dpr_day_04.txt,2026-08-15,Independence Day safety briefing,HSE-IND-1112,exact,dev
+dpr_day_04.txt,2026-08-15,permit for confined space entry in TK-1,HSE-PMT-1116,exact,dev
+dpr_day_05.txt,2026-08-19,Cable tray buried Zone A+B,CIV-APN-1022,exact,dev
+dpr_day_05.txt,2026-08-19,Grade beams P8-P12 pour,CIV-GBM-1014,exact,dev
+dpr_day_05.txt,2026-08-19,Plastering MCC room walls,CIV-PLT-1021,exact,dev
+dpr_day_05.txt,2026-08-19,24 inch P-1001 flange management,PIP-FLG-1035,exact,dev
+dpr_day_05.txt,2026-08-19,12 inch P-1002 flange bolt-up,PIP-FLG-1036,exact,dev
+dpr_day_05.txt,2026-08-19,12 inch P-1002 hydrotest,PIP-HYT-1041,exact,dev
+dpr_day_05.txt,2026-08-19,Pipe support Tier 2,PIP-SUP-1050,exact,dev
+dpr_day_05.txt,2026-08-19,CS-01 compressor skid set,SEQ-SKD-1063,exact,dev
+dpr_day_05.txt,2026-08-19,HS-01 header skid setting,SEQ-SKD-1065,exact,dev
+dpr_day_05.txt,2026-08-19,Pump alignment P-101A,SEQ-ALN-1070,exact,dev
+dpr_day_05.txt,2026-08-19,TK-1 shell 8th course completed,SEQ-TKN-1066,exact,dev
+dpr_day_05.txt,2026-08-19,HT cable laying complete,ELE-CBL-1076,exact,dev
+dpr_day_05.txt,2026-08-19,LT cable laying started,ELE-CBL-1077,exact,dev
+dpr_day_05.txt,2026-08-19,Lightning protection pipe rack,ELE-GRD-1087,exact,dev
+dpr_day_05.txt,2026-08-19,Temperature transmitters calibrated,INS-TRN-1098,exact,dev
+dpr_day_05.txt,2026-08-19,Pressure transmitters calibrated,INS-TRN-1097,exact,dev
+dpr_day_05.txt,2026-08-19,Transmitter mounting on V-102,INS-FLD-1099,exact,dev
+dpr_day_05.txt,2026-08-19,Junction box JB-04 and JB-05 installed,INS-ICS-1104,exact,dev
+dpr_day_05.txt,2026-08-19,BBS observations,HSE-BBS-1113,exact,dev
+dpr_day_05.txt,2026-08-19,Weekly safety stats,HSE-DSH-1121,exact,dev
+dpr_day_05.txt,2026-08-19,line erected for 8 inch flare,PIP-ERC-1032,exact,dev
+dpr_day_05.txt,2026-08-19,pipe rack column steel placed,PIP-RCK-1023,exact,dev
+dpr_day_06.txt,2026-08-23,Drainage channels,CIV-DWG-1015,exact,test
+dpr_day_06.txt,2026-08-23,Fencing chain-link,CIV-FNC-1016,exact,test
+dpr_day_06.txt,2026-08-23,Floor tiles MCC room,CIV-FLR-1020,exact,test
+dpr_day_06.txt,2026-08-23,24 inch P-1001 flange management,PIP-FLG-1035,exact,test
+dpr_day_06.txt,2026-08-23,8 inch P-1003 flare header erection,PIP-ERC-1032,exact,test
+dpr_day_06.txt,2026-08-23,8 inch P-1003 flange bolt-up,PIP-FLG-1037,exact,test
+dpr_day_06.txt,2026-08-23,6 inch P-1015 drain header erection,PIP-ERC-1034,exact,test
+dpr_day_06.txt,2026-08-23,4 inch P-1010 utility water erection,PIP-ERC-1033,exact,test
+dpr_day_06.txt,2026-08-23,4 inch P-1010 hydrotest,PIP-HYT-1043,exact,test
+dpr_day_06.txt,2026-08-23,TK-1 roof installation,SEQ-TKN-1067,exact,test
+dpr_day_06.txt,2026-08-23,TK-1 hydrotest,SEQ-TKN-1068,exact,test
+dpr_day_06.txt,2026-08-23,V-101 nozzle-ready inspection,SEQ-PIP-1073,exact,test
+dpr_day_06.txt,2026-08-23,CS-01 epoxy grouting,SEQ-ALN-1071,exact,test
+dpr_day_06.txt,2026-08-23,HS-01 grouting,SEQ-ALN-1072,exact,test
+dpr_day_06.txt,2026-08-23,LT cable laying,ELE-CBL-1077,exact,test
+dpr_day_06.txt,2026-08-23,Control cable laying,ELE-CBL-1078,exact,test
+dpr_day_06.txt,2026-08-23,Cable termination HT,ELE-FLT-1083,exact,test
+dpr_day_06.txt,2026-08-23,Pressure transmitters calibrated,INS-TRN-1097,exact,test
+dpr_day_06.txt,2026-08-23,Field instrument mounting pressure,INS-FLD-1100,exact,test
+dpr_day_06.txt,2026-08-23,Field instrument mounting temperature,INS-FLD-1101,exact,test
+dpr_day_06.txt,2026-08-23,Control valve installation,INS-FND-1102,exact,test
+dpr_day_06.txt,2026-08-23,"Safety valve PSV-01, PSV-02, PSV-03",INS-FND-1103,exact,test
+dpr_day_06.txt,2026-08-23,NCR closed scaffolding,HSE-NCR-1117,exact,test
+dpr_day_06.txt,2026-08-23,Scaffolding inspection,HSE-SPC-1118,exact,test
+dpr_day_06.txt,2026-08-23,cable laying for 6.6kV transformer,ELE-TRF-1080,exact,test
+dpr_day_06.txt,2026-08-23,BBS walk at night shift,HSE-BBS-1113,exact,test
+dpr_day_06.txt,2026-08-23,welding consumable inventory check,NO_MATCH,no_match,test
+dpr_day_07.txt,2026-08-27,Cable tray buried Zone B completed,CIV-APN-1022,exact,test
+dpr_day_07.txt,2026-08-27,Drainage channels,CIV-DWG-1015,exact,test
+dpr_day_07.txt,2026-08-27,24 inch P-1001 hydrotest,PIP-HYT-1040,exact,test
+dpr_day_07.txt,2026-08-27,8 inch P-1003 flare header erection complete,PIP-ERC-1032,exact,test
+dpr_day_07.txt,2026-08-27,8 inch P-1003 flange management complete,PIP-FLG-1037,exact,test
+dpr_day_07.txt,2026-08-27,8 inch P-1003 hydrotest,PIP-HYT-1042,exact,test
+dpr_day_07.txt,2026-08-27,6 inch P-1015 drain header erection,PIP-ERC-1034,exact,test
+dpr_day_07.txt,2026-08-27,6 inch P-1015 flange bolt-up,PIP-FLG-1039,exact,test
+dpr_day_07.txt,2026-08-27,Skid piping CS-01,PIP-SKN-1051,exact,test
+dpr_day_07.txt,2026-08-27,P&ID punch list walkdown,PIP-PCD-1053,exact,test
+dpr_day_07.txt,2026-08-27,TK-1 hydrotest complete,SEQ-TKN-1068,exact,test
+dpr_day_07.txt,2026-08-27,Pump alignment P-101B,SEQ-ALN-1070,exact,test
+dpr_day_07.txt,2026-08-27,Equipment foundation settlement survey,SEQ-CMN-1075,exact,test
+dpr_day_07.txt,2026-08-27,Cable termination HT,ELE-FLT-1083,exact,test
+dpr_day_07.txt,2026-08-27,Cable termination LT,ELE-FLT-1084,exact,test
+dpr_day_07.txt,2026-08-27,Control cable laying,ELE-CBL-1078,exact,test
+dpr_day_07.txt,2026-08-27,Insulation resistance testing HT,ELE-IGT-1090,exact,test
+dpr_day_07.txt,2026-08-27,Control valve installation,INS-FND-1102,exact,test
+dpr_day_07.txt,2026-08-27,"Safety valve PSV-04, PSV-05, PSV-06",INS-FND-1103,exact,test
+dpr_day_07.txt,2026-08-27,Pressure transmitter mounting,INS-FLD-1100,exact,test
+dpr_day_07.txt,2026-08-27,Marshalling cabinet wiring,INS-ICS-1105,exact,test
+dpr_day_07.txt,2026-08-27,rebar fixing for tank foundation ringwall,CIV-FDN-1009,exact,test
+dpr_day_07.txt,2026-08-27,tank foundation settlement reading TK-1,CIV-FDN-1009,exact,test
+dpr_day_07.txt,2026-08-27,construction joint treatment at P7-P8,NO_MATCH,no_match,test
+dpr_day_08.txt,2026-09-02,Drainage channels complete,CIV-DWG-1015,exact,test
+dpr_day_08.txt,2026-09-02,Plot boundary fencing complete,CIV-FNC-1016,exact,test
+dpr_day_08.txt,2026-09-02,Plastering MCC room,CIV-PLT-1021,exact,test
+dpr_day_08.txt,2026-09-02,24 inch P-1001 hydrotest complete,PIP-HYT-1040,exact,test
+dpr_day_08.txt,2026-09-02,8 inch P-1003 hydrotest complete,PIP-HYT-1042,exact,test
+dpr_day_08.txt,2026-09-02,6 inch P-1015 drain header erection complete,PIP-ERC-1034,exact,test
+dpr_day_08.txt,2026-09-02,6 inch P-1015 flange bolt-up complete,PIP-FLG-1039,exact,test
+dpr_day_08.txt,2026-09-02,6 inch P-1015 hydrotest,PIP-HYT-1044,exact,test
+dpr_day_08.txt,2026-09-02,Pipe insulation 24 inch P-1001,PIP-INS-1045,exact,test
+dpr_day_08.txt,2026-09-02,Pipe insulation 12 inch P-1002,PIP-INS-1046,exact,test
+dpr_day_08.txt,2026-09-02,Skid piping CS-01 complete,PIP-SKN-1051,exact,test
+dpr_day_08.txt,2026-09-02,P&ID punch list close-out,PIP-PCD-1053,exact,test
+dpr_day_08.txt,2026-09-02,TK-1 internal coating,SEQ-TKN-1069,exact,test
+dpr_day_08.txt,2026-09-02,Pump run-in test P-101A,ELE-MTR-1094,exact,test
+dpr_day_08.txt,2026-09-02,Cable termination HT complete,ELE-FLT-1083,exact,test
+dpr_day_08.txt,2026-09-02,Cable termination LT,ELE-FLT-1084,exact,test
+dpr_day_08.txt,2026-09-02,Cable termination control,ELE-FLT-1085,exact,test
+dpr_day_08.txt,2026-09-02,Insulation resistance testing HT complete,ELE-IGT-1090,exact,test
+dpr_day_08.txt,2026-09-02,Insulation resistance testing LT,ELE-IGT-1091,exact,test
+dpr_day_08.txt,2026-09-02,Lighting circuit testing,ELE-LIG-1089,exact,test
+dpr_day_08.txt,2026-09-02,Marshalling cabinet wiring,INS-ICS-1105,exact,test
+dpr_day_08.txt,2026-09-02,Loop check,INS-LOOP-1107,exact,test
+dpr_day_08.txt,2026-09-02,Control valve installation complete,INS-FND-1102,exact,test
+dpr_day_08.txt,2026-09-02,All 14 RTDs mounted,INS-FLD-1101,exact,test
+dpr_day_08.txt,2026-09-02,Emergency drill TK-1 fire,HSE-EMG-1120,exact,test
+dpr_day_08.txt,2026-09-02,Fire extinguisher audit,HSE-FRE-1119,exact,test
+dpr_day_08.txt,2026-09-02,safety induction for new batch of 30 workers,HSE-IND-1112,exact,test
+dpr_day_08.txt,2026-09-02,cable tray 6.6kV from substation,NO_MATCH,no_match,test
+dpr_day_08.txt,2026-09-02,valve set pressure verified on PSV-03,INS-FND-1103,exact,test
+dpr_day_08.txt,2026-09-02,scaffold dismantling at Zone A,NO_MATCH,no_match,test
+dpr_day_09.txt,2026-09-08,Pipe insulation 24 inch P-1001 complete,PIP-INS-1045,exact,test
+dpr_day_09.txt,2026-09-08,Pipe insulation 12 inch P-1002 complete,PIP-INS-1046,exact,test
+dpr_day_09.txt,2026-09-08,Pipe insulation 8 inch P-1003,PIP-INS-1047,exact,test
+dpr_day_09.txt,2026-09-08,Paint coating pipe rack,PIP-PAI-1048,exact,test
+dpr_day_09.txt,2026-09-08,P&ID punch list walkdown,PIP-PCD-1053,exact,test
+dpr_day_09.txt,2026-09-08,TK-1 internal coating complete,SEQ-TKN-1069,exact,test
+dpr_day_09.txt,2026-09-08,Cable termination LT complete,ELE-FLT-1084,exact,test
+dpr_day_09.txt,2026-09-08,Control cable termination complete,ELE-FLT-1085,exact,test
+dpr_day_09.txt,2026-09-08,Insulation resistance testing LT complete,ELE-IGT-1091,exact,test
+dpr_day_09.txt,2026-09-08,Lighting circuit testing,ELE-LIG-1089,exact,test
+dpr_day_09.txt,2026-09-08,Area lighting installation,ELE-LIG-1088,exact,test
+dpr_day_09.txt,2026-09-08,Marshalling cabinet wiring complete,INS-ICS-1105,exact,test
+dpr_day_09.txt,2026-09-08,DCS panel integration,INS-ICS-1106,exact,test
+dpr_day_09.txt,2026-09-08,Loop check,INS-LOOP-1107,exact,test
+dpr_day_09.txt,2026-09-08,Control valve loop check,INS-LOOP-1108,exact,test
+dpr_day_09.txt,2026-09-08,As-built datasheets,INS-DOC-1111,exact,test
+dpr_day_09.txt,2026-09-08,Emergency drill live,HSE-EMG-1120,exact,test
+dpr_day_09.txt,2026-09-08,BBS observations,HSE-BBS-1113,exact,test
+dpr_day_09.txt,2026-09-08,line isolation for TK-1 paint,NO_MATCH,no_match,test
+dpr_day_09.txt,2026-09-08,pipe support marking on ground for Tier 2,PIP-SUP-1050,exact,test
+dpr_day_09.txt,2026-09-08,insulation on 12 inch P-1015,NO_MATCH,no_match,test
+dpr_day_09.txt,2026-09-08,spool marking and numbering in workshop,NO_MATCH,no_match,test
+dpr_day_10.txt,2026-09-15,Pipe insulation 8 inch P-1003 complete,PIP-INS-1047,exact,test
+dpr_day_10.txt,2026-09-15,Paint coating pipe rack,PIP-PAI-1048,exact,test
+dpr_day_10.txt,2026-09-15,P&ID punch list close-out,PIP-PCD-1053,exact,test
+dpr_day_10.txt,2026-09-15,SWGR 6.6kV energisation,ELE-ENG-1092,exact,test
+dpr_day_10.txt,2026-09-15,MCC energised,ELE-ENG-1093,exact,test
+dpr_day_10.txt,2026-09-15,Motor start-up P-101A,ELE-MTR-1094,exact,test
+dpr_day_10.txt,2026-09-15,Motor start-up P-101B,ELE-MTR-1094,exact,test
+dpr_day_10.txt,2026-09-15,CS-01 motor start-up,ELE-MTR-1095,exact,test
+dpr_day_10.txt,2026-09-15,Area lighting complete,ELE-LIG-1088,exact,test
+dpr_day_10.txt,2026-09-15,Lighting circuit testing complete,ELE-LIG-1089,exact,test
+dpr_day_10.txt,2026-09-15,Loop check complete,INS-LOOP-1107,exact,test
+dpr_day_10.txt,2026-09-15,Control valve loop check complete,INS-LOOP-1108,exact,test
+dpr_day_10.txt,2026-09-15,DCS integration complete,INS-ICS-1106,exact,test
+dpr_day_10.txt,2026-09-15,SIS logic test,INS-SFT-1109,exact,test
+dpr_day_10.txt,2026-09-15,ESD functional test,INS-SFT-1110,exact,test
+dpr_day_10.txt,2026-09-15,As-built datasheets,INS-DOC-1111,exact,test
+dpr_day_10.txt,2026-09-15,Monthly safety report,HSE-DSH-1121,exact,test
+dpr_day_10.txt,2026-09-15,BBS observations,HSE-BBS-1113,exact,test
+dpr_day_10.txt,2026-09-15,JMR for August progress billing,NO_MATCH,no_match,test
+dpr_day_10.txt,2026-09-15,earthing system continuity test,ELE-GRD-1086,exact,test
+dpr_day_10.txt,2026-09-15,weekly progress photo compilation,NO_MATCH,no_match,test
+piping_progress.xlsx,2026-09-15,Pipe Rack Steel Erection Tier 1 — ,PIP-1023,exact,test
+piping_progress.xlsx,2026-09-15,"Pipe Rack Steel Erection Tier 2 — 4 MT remaining, crane issue",PIP-1024,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Fab — 24"" Main Header — 18 spools fabricated",PIP-1025,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Fab — 12"" Transfer Line — 12 spools completed",PIP-1026,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Fab — 8"" Flare Header — 10 of 14 spools done",PIP-1027,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Fab — 4"" Utility Water — 8 spools done",PIP-1028,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Fab — 6"" Drain Header — 2 of 10 spools done",PIP-1029,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Erection — 24"" Main Header — All 18 spools erected",PIP-1030,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Erection — 12"" Transfer — 12 spools erected",PIP-1031,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Erection — 8"" Flare Header — 14 spools erected",PIP-1032,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Erection — 4"" Utility Water — 8 spools erected",PIP-1033,exact,test
+piping_progress.xlsx,2026-09-15,"Spool Erection — 6"" Drain Header — 10 spools erected",PIP-1034,exact,test
+piping_progress.xlsx,2026-09-15,"Flange Mgmt — 24"" Main Header — 36 flanges bolted",PIP-1035,exact,test
+piping_progress.xlsx,2026-09-15,"Flange Mgmt — 12"" Transfer — 24 flanges done",PIP-1036,exact,test
+piping_progress.xlsx,2026-09-15,"Flange Mgmt — 8"" Flare Header — 28 flanges bolted",PIP-1037,exact,test
+piping_progress.xlsx,2026-09-15,"Flange Mgmt — 4"" Utility Water — 16 flanges done",PIP-1038,exact,test
+piping_progress.xlsx,2026-09-15,"Flange Mgmt — 6"" Drain Header — 20 flanges bolted",PIP-1039,exact,test
+piping_progress.xlsx,2026-09-15,"Hydrotest — 24"" Main Header — All 6 sections passed",PIP-1040,exact,test
+piping_progress.xlsx,2026-09-15,"Hydrotest — 12"" Transfer — 4 sections passed",PIP-1041,exact,test
+piping_progress.xlsx,2026-09-15,"Hydrotest — 8"" Flare Header — 5 sections passed",PIP-1042,exact,test
+piping_progress.xlsx,2026-09-15,"Hydrotest — 4"" Utility Water — 3 sections passed",PIP-1043,exact,test
+piping_progress.xlsx,2026-09-15,"Hydrotest — 6"" Drain Header — 3 sections passed",PIP-1044,exact,test
+piping_progress.xlsx,2026-09-15,"Insulation — 24"" Main Header — 120 m2 done",PIP-1045,exact,test
+piping_progress.xlsx,2026-09-15,"Insulation — 12"" Transfer — 65 m2 done",PIP-1046,exact,test
+piping_progress.xlsx,2026-09-15,"Insulation — 8"" Flare Header — 50 of 80 m2 done",PIP-1047,exact,test
+piping_progress.xlsx,2026-09-15,"Paint Coating — Pipe Rack — 720 of 850 m2, humidity delay",PIP-1048,exact,test
+piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 1 — 145 supports installed,PIP-1049,exact,test
+piping_progress.xlsx,2026-09-15,Pipe Support Install — Tier 2 — 3 rejected for elevation,PIP-1050,exact,test
+piping_progress.xlsx,2026-09-15,Skid Piping — CS-01 — 6 spools fab + erect,PIP-1051,exact,test
+piping_progress.xlsx,2026-09-15,"P&ID Punch List Close-out — 8/12 Cat A, 20/28 Cat B closed",PIP-1053,exact,test
+civil_progress.xlsx,2026-09-15,Site Clearing Zone A — Complete,CIV-SIT-1001,exact,dev
+civil_progress.xlsx,2026-09-15,Site Clearing Zone B — Complete,CIV-SIT-1002,exact,dev
+civil_progress.xlsx,2026-09-15,Grading & Compaction A+B — 95% MDD achieved,CIV-SIT-1003,exact,dev
+civil_progress.xlsx,2026-09-15,"Bored Piling — Pipe Rack P1-P12 — 1 day over, piling rig breakdown",CIV-PLY-1004,exact,dev
+civil_progress.xlsx,2026-09-15,Bored Piling — Equip Fdn EF1-EF4 — Complete,CIV-PLY-1005,exact,dev
+civil_progress.xlsx,2026-09-15,"Bored Piling — Tank TK-1 — 1 day over, rain delay",CIV-PLY-1006,exact,dev
+civil_progress.xlsx,2026-09-15,"Pedestal Concreting P1-P12 — M30 concrete, cubes passed",CIV-FDN-1007,exact,dev
+civil_progress.xlsx,2026-09-15,"Equip Foundation EF1-EF4 — M35 concrete, 7-day strength OK",CIV-FDN-1008,exact,dev
+civil_progress.xlsx,2026-09-15,Tank Ringwall Foundation TK-1 — Complete,CIV-FDN-1009,exact,dev
+civil_progress.xlsx,2026-09-15,Slab-on-Grade Pump House — 200 mm thk M30,CIV-FDN-1010,exact,dev
+civil_progress.xlsx,2026-09-15,Backfilling — Pipe Rack Trenches — Compacted sand fill,CIV-BKL-1011,exact,dev
+civil_progress.xlsx,2026-09-15,Backfilling — Equipment Pads — Approved backfill material,CIV-BKL-1012,exact,dev
+civil_progress.xlsx,2026-09-15,"Containment Bund Wall Zone A — Complete, 600mm thk RC",CIV-BND-1013,exact,dev
+civil_progress.xlsx,2026-09-15,Grade Beams Pipe Rack — Completed in 2 pours,CIV-GBM-1014,exact,dev
+civil_progress.xlsx,2026-09-15,Drainage Channels Perimeter — Delayed by fencing conflict,CIV-DWG-1015,exact,dev
+civil_progress.xlsx,2026-09-15,"Fence & Gate Plot Boundary — Complete, 3 gates",CIV-FNC-1016,exact,dev
+civil_progress.xlsx,2026-09-15,Firewater Pit Zone B — Lined pit complete,CIV-PLG-1017,exact,dev
+civil_progress.xlsx,2026-09-15,"Foundation — Compressor Skid CS-01 — M35, curing complete",CIV-FND-1018,exact,dev
+civil_progress.xlsx,2026-09-15,"Foundation — Header Skid HS-01 — M30, complete",CIV-FND-1019,exact,dev
+civil_progress.xlsx,2026-09-15,Flooring — MCC Room — Tiles done. Holiday delays,CIV-FLR-1020,exact,dev
+civil_progress.xlsx,2026-09-15,Plastering & Painting MCC Room — 2 coats plaster + distemper,CIV-PLT-1021,exact,dev
+civil_progress.xlsx,2026-09-15,"Cable Tray Buried A+B — Completed, backfilled",CIV-APN-1022,exact,dev

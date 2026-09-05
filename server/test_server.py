@@ -1246,8 +1246,19 @@ class TestCrossDPRStatistics:
 
         coverage = len(ground_truth_ids & linked_ids) / len(ground_truth_ids) if ground_truth_ids else 0
         print(f"\nGround truth coverage: {coverage:.1%} ({len(ground_truth_ids & linked_ids)}/{len(ground_truth_ids)})")
-        # Prepass-only matching covers ~27% of ground truth (LLM would push this higher)
-        assert coverage >= 0.25, f"Coverage too low: {coverage:.1%}"
+        # A REGRESSION FLOOR, not a quoted figure.
+        #
+        # This counts distinct ACTIVITIES reached by an auto-link during a
+        # rules-only ingest of ten DPRs. It is not the same quantity as any
+        # metric in eval.py - those are per-mention, this is per-activity,
+        # and it counts only what AUTO_LINKED. It read 25% at the old
+        # tau_high=0.70 and reads 21.3% at the shipped 0.80 (D-093): the
+        # stricter operating point trades exactly this for a held-out
+        # auto-link precision of 100%.
+        #
+        # The floor sits below the current reading so it catches a collapse
+        # rather than a retune. Quote eval.py, never this number.
+        assert coverage >= 0.18, f"Coverage collapsed: {coverage:.1%}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
