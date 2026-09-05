@@ -4184,13 +4184,16 @@ def _compute_suggested_duration(
         p80_actual = sorted_actuals[min(p80_idx, len(sorted_actuals) - 1)]
 
     recommendation = f"For {activity_type} activities, "
-    if len(actual_days) < 2:
+    if len(actual_days) < MIN_ACTUALS_FOR_ESTIMATE:
         # One completed activity is an anecdote, not a pattern, and the
         # dataset contains same-day activities that would otherwise produce a
-        # 0-day "recommendation".
+        # 0-day "recommendation". The bar is the same one the tender estimate
+        # applies (D-094) — one system, one opinion about what counts as
+        # evidence.
         recommendation = (
-            f"Not enough completed {activity_type} activities yet — "
-            f"{len(actual_days)} of {len(matching)} have actual dates. "
+            f"Insufficient evidence: {len(actual_days)} of {len(matching)} "
+            f"{activity_type} activities have actual dates, and at least "
+            f"{MIN_ACTUALS_FOR_ESTIMATE} are needed. No duration is suggested. "
             f"Planned duration is {median_planned}d."
         )
         median_actual = None
@@ -4217,6 +4220,56 @@ def _compute_suggested_duration(
 
 # ── POST /memory/estimate & GET /memory/estimate ─────────────────────────────
 
+#: Completed activities needed before a duration percentile is offered.
+#:
+#: Three, matching `server/productivity.py :: MIN_COMPARABLES` — the same
+#: question was answered there for the granularity engine and answering it
+#: differently here would mean one system with two opinions about what counts
+#: as evidence. Two points define a range with no interior; three is the least
+#: that can show a shape. It is still a small number and the response says so.
+MIN_ACTUALS_FOR_ESTIMATE = 3
+
+#: Site-condition multipliers. THESE ARE ASSUMPTIONS, not measurements.
+#:
+#: Nothing in this system has measured what monsoon costs on Upper Assam civil
+#: work: `delay_events` records rain delays but the corpus holds too few to fit
+#: a factor against, and no weather series is ingested at all. The numbers are
+#: planning conventions of the kind a tender team applies by hand, and they are
+#: kept because a tender estimate that ignores the monsoon is wrong in a more
+#: expensive direction — but every response labels them, and the unadjusted
+#: figure is recoverable by dividing by the factor the response states.
+_SITE_CONDITIONS = {
+    "monsoon": (
+        1.35, 0.25,
+        "an ASSUMPTION: a 35% duration allowance and 25% contingency for "
+        "Upper Assam monsoon working. Not fitted to this project's records — "
+        "nothing here has measured what the monsoon costs, and no weather "
+        "series is ingested.",
+    ),
+    "remote": (
+        1.20, 0.18,
+        "an ASSUMPTION: a 20% duration allowance and 18% contingency for "
+        "remote drill-site logistics. A planning convention, not a figure "
+        "derived from this project's records.",
+    ),
+    "standard": (
+        1.00, 0.08,
+        "no site-condition allowance; an 8% contingency, which is a planning "
+        "convention rather than a measured figure.",
+    ),
+}
+
+
+def _site_condition(cond: str):
+    """(multiplier, contingency fraction, the sentence that labels them)."""
+    c = (cond or "").lower()
+    if "monsoon" in c or "assam" in c:
+        return _SITE_CONDITIONS["monsoon"]
+    if "remote" in c or "drill" in c:
+        return _SITE_CONDITIONS["remote"]
+    return _SITE_CONDITIONS["standard"]
+
+
 def _compute_tender_estimate(
     discipline: str,
     activity_type: Optional[str],
@@ -4225,20 +4278,24 @@ def _compute_tender_estimate(
     site_condition: str,
     db: Session,
 ) -> TenderEstimateResponse:
-    activities = db.query(Activity).all()
+    """Empirical tender duration, or a refusal that says why.
+
+    See `TenderEstimateResponse` for what this used to invent. The rule now:
+    percentiles come from completed activities or they do not come at all.
+    """
+    activities = scoped_activities(db)
     disc_clean = discipline.lower().strip()
     act_type_clean = (activity_type.strip().upper()) if activity_type else None
 
-    # Filter activities
-    matching = [a for a in activities if a.discipline.lower() == disc_clean]
+    matching = [a for a in activities if (a.discipline or "").lower() == disc_clean]
     if act_type_clean:
         type_matching = [a for a in matching if a.activity_id.startswith(act_type_clean)]
         if type_matching:
             matching = type_matching
 
     sample_size = len(matching)
-    actual_days = []
-    planned_days = []
+    actual_days: list[int] = []
+    planned_days: list[int] = []
     for a in matching:
         if a.planned_start and a.planned_finish:
             p_days = (a.planned_finish - a.planned_start).days
@@ -4249,101 +4306,100 @@ def _compute_tender_estimate(
             if a_days > 0:
                 actual_days.append(a_days)
 
-    # Productivity rate from completed items with quantity
-    qty_rates = []
-    for a in matching:
-        if a.actual_qty and a.actual_qty > 0 and a.actual_start and a.actual_finish:
-            d = (a.actual_finish - a.actual_start).days
-            if d > 0:
-                qty_rates.append(a.actual_qty / d)
-
-    avg_prod_rate = round(statistics.mean(qty_rates), 2) if qty_rates else None
+    # Productivity, under the same evidence bar as the durations. One completed
+    # activity's rate was previously reported as "historical productivity".
+    qty_rates = [
+        a.actual_qty / (a.actual_finish - a.actual_start).days
+        for a in matching
+        if a.actual_qty and a.actual_qty > 0 and a.actual_start and a.actual_finish
+        and (a.actual_finish - a.actual_start).days > 0
+    ]
+    enough_rates = len(qty_rates) >= MIN_ACTUALS_FOR_ESTIMATE
+    avg_prod_rate = round(statistics.mean(qty_rates), 2) if enough_rates else None
     prod_uom_str = f"{uom or 'units'}/day" if avg_prod_rate else None
 
-    # Calculate baseline days
-    base_planned_p50 = float(statistics.median(planned_days)) if planned_days else 10.0
+    # The median PLANNED duration is a fact about the baseline and is always
+    # reported. It is never scaled into a substitute for the percentiles.
+    base_planned_p50 = float(statistics.median(planned_days)) if planned_days else None
 
-    # If actual durations exist, compute empirical percentiles
-    if len(actual_days) >= 2:
-        sorted_actuals = sorted(actual_days)
-        n = len(sorted_actuals)
-        p10 = float(sorted_actuals[max(0, int(n * 0.10))])
-        p50 = float(statistics.median(sorted_actuals))
-        p90 = float(sorted_actuals[min(n - 1, int(n * 0.90))])
-    elif len(actual_days) == 1:
-        p10 = float(actual_days[0] * 0.8)
-        p50 = float(actual_days[0])
-        p90 = float(actual_days[0] * 1.3)
-    else:
-        # Fallback to planned
-        p10 = round(base_planned_p50 * 0.85, 1)
-        p50 = round(base_planned_p50 * 1.15, 1)
-        p90 = round(base_planned_p50 * 1.45, 1)
+    multiplier, contingency_fraction, weather_basis = _site_condition(site_condition)
 
-    # If target quantity is specified and productivity rate exists, scale appropriately
+    enough = len(actual_days) >= MIN_ACTUALS_FOR_ESTIMATE
+    if not enough:
+        # INSUFFICIENT EVIDENCE. Nothing is estimated, and the response says
+        # what is missing rather than falling back to a multiple of the plan.
+        note = (
+            f"Insufficient evidence: {len(actual_days)} completed "
+            f"{act_type_clean or disc_clean} activities carry both actual "
+            f"dates, and at least {MIN_ACTUALS_FOR_ESTIMATE} are needed before "
+            f"a duration percentile means anything. "
+            + (
+                f"{sample_size} activities are in scope; the rest have not "
+                "finished."
+                if sample_size
+                else "No activities match this discipline or type."
+            )
+            + " No tender duration is offered."
+        )
+        return TenderEstimateResponse(
+            discipline=discipline,
+            activity_type=act_type_clean or f"{disc_clean.upper()}-GENERAL",
+            site_condition=site_condition,
+            target_quantity=target_quantity,
+            uom=uom,
+            sample_size=sample_size,
+            actuals_count=len(actual_days),
+            minimum_actuals_required=MIN_ACTUALS_FOR_ESTIMATE,
+            evidence_sufficient=False,
+            evidence_note=note,
+            historical_productivity_rate=avg_prod_rate,
+            productivity_uom=prod_uom_str,
+            baseline_days_p50=base_planned_p50,
+            weather_risk_factor=multiplier,
+            weather_basis=weather_basis,
+            risk_factors=_tender_risk_factors(activities, db),
+            risk_factors_note=_RISK_FACTORS_NOTE,
+            computed_at=_now(),
+        )
+
+    sorted_actuals = sorted(actual_days)
+    n = len(sorted_actuals)
+    p10 = float(sorted_actuals[max(0, int(n * 0.10))])
+    p50 = float(statistics.median(sorted_actuals))
+    p90 = float(sorted_actuals[min(n - 1, int(n * 0.90))])
+
+    # Scaling to a target quantity needs a rate, and the rate is now held to
+    # the same evidence bar. Without one the durations stay per-activity and
+    # the note says so.
+    quantity_scaled = False
     if target_quantity and target_quantity > 0 and avg_prod_rate and avg_prod_rate > 0:
         qty_days = target_quantity / avg_prod_rate
         scale = qty_days / max(1.0, p50)
         p10 = round(p10 * scale, 1)
         p50 = round(qty_days, 1)
         p90 = round(p90 * scale, 1)
+        quantity_scaled = True
 
-    # Site condition adjustments
-    weather_multiplier = 1.0
-    contingency = 0
-    cond = site_condition.lower()
-    if "monsoon" in cond or "assam" in cond:
-        weather_multiplier = 1.35
-        contingency = max(3, int(p50 * 0.25))
-    elif "remote" in cond or "drill" in cond:
-        weather_multiplier = 1.20
-        contingency = max(2, int(p50 * 0.18))
-    else:
-        weather_multiplier = 1.0
-        contingency = max(1, int(p50 * 0.08))
-
-    cal_p10 = round(p10 * weather_multiplier, 1)
-    cal_p50 = round(p50 * weather_multiplier, 1)
-    cal_p90 = round(p90 * weather_multiplier, 1)
+    contingency = max(1, int(p50 * contingency_fraction))
+    cal_p10 = round(p10 * multiplier, 1)
+    cal_p50 = round(p50 * multiplier, 1)
+    cal_p90 = round(p90 * multiplier, 1)
     recommended_duration = int(round(cal_p50 + contingency))
 
-    # Real historical risk factors
-    delay_stats = _compute_delay_reasons(activities, db)
-    risk_factors: list[TenderRiskFactor] = []
+    note = (
+        f"Percentiles over {n} completed {act_type_clean or disc_clean} "
+        f"activities. {n} is a small sample: p10 and p90 are the extremes of "
+        f"what this project has actually done, not a fitted distribution."
+    )
+    if quantity_scaled:
+        note += (
+            f" Scaled to {target_quantity} {uom or 'units'} at the measured "
+            f"rate of {avg_prod_rate} {prod_uom_str}."
+        )
 
-    for d in delay_stats[:4]:
-        prob = min(85, max(20, d.frequency * 15))
-        impact = max(2, d.days_lost)
-        cat_lower = (d.category or "").lower()
-        reason_lower = d.reason.lower()
-        if "weather" in cat_lower or "monsoon" in reason_lower or "rain" in reason_lower:
-            mitigation = "Contractual weather buffer (FIDIC Cl. 8.4) & elevated equipment pads."
-        elif "access" in cat_lower or "permit" in reason_lower:
-            mitigation = "Obtain Oil India Limited ROW / environmental clearances prior to mobilization."
-        elif "material" in cat_lower or "spool" in reason_lower:
-            mitigation = "Require factory acceptance test (FAT) inspection sign-off 2 weeks prior to dispatch."
-        else:
-            mitigation = "Deploy stand-by equipment and proactive permit coordination."
-
-        risk_factors.append(TenderRiskFactor(
-            risk_type=d.reason.capitalize(),
-            probability_pct=prob,
-            impact_days=impact,
-            mitigation=mitigation,
-            historical_frequency=d.frequency,
-        ))
-
-    if not risk_factors:
-        risk_factors.append(TenderRiskFactor(
-            risk_type="Upper Assam Monsoon Delays",
-            probability_pct=65,
-            impact_days=int(contingency),
-            mitigation="Schedule earthwork outside June-August and maintain dewatering pumps on site.",
-            historical_frequency=3,
-        ))
-
-    # P6 PMXML Activity Snippet
     act_id = act_type_clean or f"TND-{disc_clean[:3].upper()}-001"
+    # No EarlyStart/EarlyFinish: those were hardcoded to 2026-10-01/2026-10-28
+    # regardless of the estimate, and P6 computes them from the logic anyway.
     pmxml = f"""<Activity>
   <ObjectId>1001</ObjectId>
   <Id>{act_id}</Id>
@@ -4354,8 +4410,6 @@ def _compute_tender_estimate(
   <PlannedDuration>{recommended_duration * 8}h</PlannedDuration>
   <RemainingDuration>{recommended_duration * 8}h</RemainingDuration>
   <OriginalDuration>{recommended_duration * 8}h</OriginalDuration>
-  <EarlyStart>2026-10-01T08:00:00</EarlyStart>
-  <EarlyFinish>2026-10-28T17:00:00</EarlyFinish>
   <Discipline>{discipline}</Discipline>
   <RiskClassification>{site_condition}</RiskClassification>
   <P10AggressiveDays>{cal_p10}</P10AggressiveDays>
@@ -4371,20 +4425,74 @@ def _compute_tender_estimate(
         target_quantity=target_quantity,
         uom=uom,
         sample_size=sample_size,
-        actuals_count=len(actual_days),
+        actuals_count=n,
+        minimum_actuals_required=MIN_ACTUALS_FOR_ESTIMATE,
+        evidence_sufficient=True,
+        evidence_note=note,
         historical_productivity_rate=avg_prod_rate,
         productivity_uom=prod_uom_str,
         baseline_days_p50=base_planned_p50,
         calibrated_days_p10=cal_p10,
         calibrated_days_p50=cal_p50,
         calibrated_days_p90=cal_p90,
-        weather_risk_factor=weather_multiplier,
+        weather_risk_factor=multiplier,
+        weather_basis=weather_basis,
         total_contingency_days=contingency,
+        contingency_basis=(
+            f"{int(contingency_fraction * 100)}% of the p50 duration, "
+            "a planning convention rather than a measured figure."
+        ),
         recommended_tender_duration=recommended_duration,
-        risk_factors=risk_factors,
+        risk_factors=_tender_risk_factors(activities, db),
+        risk_factors_note=_RISK_FACTORS_NOTE,
         pmxml_snippet=pmxml,
         computed_at=_now(),
     )
+
+
+_RISK_FACTORS_NOTE = (
+    "Delay causes this project actually recorded, with how many times each was "
+    "observed. `historical_frequency` is a count, not a rate: on a corpus this "
+    "size most causes appear once. No probability is attached — one previously "
+    "was, computed as frequency x 15 and floored at 20%, which put '20% "
+    "probability' against a cause seen exactly once."
+)
+
+
+def _tender_risk_factors(activities, db: Session) -> list[TenderRiskFactor]:
+    """Recorded delay causes, or an empty list.
+
+    There used to be a fallback: when nothing was recorded this returned
+    "Upper Assam Monsoon Delays, 65% probability, historical_frequency 3" —
+    a risk, a probability and a history, none of which existed. An empty list
+    is the honest answer, and the caller states it.
+    """
+    factors: list[TenderRiskFactor] = []
+    for d in _compute_delay_reasons(activities, db)[:4]:
+        cat_lower = (d.category or "").lower()
+        reason_lower = d.reason.lower()
+        if "weather" in cat_lower or "monsoon" in reason_lower or "rain" in reason_lower:
+            mitigation = "Contractual weather buffer (FIDIC Cl. 8.4) & elevated equipment pads."
+        elif "access" in cat_lower or "permit" in reason_lower:
+            mitigation = "Obtain Oil India Limited ROW / environmental clearances prior to mobilization."
+        elif "material" in cat_lower or "spool" in reason_lower:
+            mitigation = "Require factory acceptance test (FAT) inspection sign-off 2 weeks prior to dispatch."
+        else:
+            mitigation = "Deploy stand-by equipment and proactive permit coordination."
+
+        factors.append(TenderRiskFactor(
+            risk_type=d.reason.capitalize(),
+            probability_pct=None,
+            impact_days=max(2, d.days_lost),
+            mitigation=mitigation,
+            historical_frequency=d.frequency,
+            basis=(
+                f"observed {d.frequency} time"
+                f"{'' if d.frequency == 1 else 's'} in this project's delay "
+                f"register, costing {d.days_lost} days at most"
+            ),
+        ))
+    return factors
 
 
 @app.post("/memory/estimate", response_model=TenderEstimateResponse)

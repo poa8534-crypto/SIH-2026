@@ -8942,3 +8942,158 @@ schedule they then plan against.
 - NO_MATCH rejection is 0/9. Nothing is corrupted by it, but the hard-negative
   path is the weakest part of the matcher and the denominator is too small to
   tune against.
+
+---
+
+## 2026-09-05 / D-094 — Insufficient evidence is an answer
+
+### Context
+The "institutional memory" surface produced a number whatever the evidence,
+and the thinner the evidence the more confident the number looked.
+
+**`POST /memory/estimate` invented tender durations.** A tender duration is a
+figure a contractor prices work against. This endpoint produced one in every
+case:
+
+* with ONE completed activity it produced a distribution — `p10 = actual x
+  0.8`, `p90 = actual x 1.3` — a spread invented from a single observation;
+* with NO completed activities it produced `planned x 0.85 / 1.15 / 1.45`,
+  three multipliers with no derivation, labelled P10 / P50 / P90;
+* with no planned durations either, it fell back to a literal `10.0` days.
+
+**Its risk matrix manufactured probabilities.** `probability_pct = min(85,
+max(20, frequency * 15))` — a percentage produced by multiplying a count by
+fifteen. On this corpus every recorded cause has a frequency of 1, so the
+screen showed "20% probability" against causes observed exactly once. Under
+those, the frontend printed "Observed N times on past OIL projects": this
+system has never seen another project.
+
+**And when nothing was recorded, it made something up.** The empty case
+returned a hardcoded `TenderRiskFactor` — "Upper Assam Monsoon Delays, 65%
+probability, historical_frequency 3" — a risk, a probability and a history,
+none of which existed.
+
+**The Historical Benchmarks table led with anecdotes.** It sorted by delta
+and put `CIV-PLT +29.0d · +483%` at the top of the screen, computed from ONE
+completed activity. The largest number on the page was the least supported one.
+
+### Decision
+
+**`MIN_ACTUALS_FOR_ESTIMATE = 3`, and below it nothing is estimated.** Three
+matches `server/productivity.py :: MIN_COMPARABLES` — the same question was
+answered there for the granularity engine (D-087) and answering it differently
+here would leave one system with two opinions about what counts as evidence.
+
+When the bar is not met, `evidence_sufficient` is false, every duration field
+is null — and they are null together, so no caller can pick one out — and
+`evidence_note` states how many records were found and how many are needed.
+The median PLANNED duration is still reported, because it is a fact about the
+baseline, and it is never scaled into a substitute for the percentiles. That
+scaling was the defect.
+
+The same bar now gates the productivity rate, `suggested_duration`, and the
+planned-vs-actual delta on the Memory screen, where a row below it keeps its
+counts and says "insufficient evidence" where the delta was.
+
+**Monsoon multipliers stay, labelled at every point they appear.** They are
+kept because a tender estimate that ignores the Upper Assam monsoon is wrong in
+a more expensive direction. They are labelled because nothing in this system
+has measured what the monsoon costs: `delay_events` records rain delays but the
+corpus holds too few to fit a factor against, and no weather series is ingested
+at all. `_SITE_CONDITIONS` carries the multiplier, the contingency fraction and
+the sentence that names both as assumptions; the response returns
+`weather_basis` and `contingency_basis`; and the operating-condition selector
+says so before the estimate is even requested. The unadjusted figure is
+recoverable by dividing by the factor the response states.
+
+**A risk factor reports a count, not a rate.** `probability_pct` is now
+optional and is always null: it stays in the schema so a version fitted against
+real history can populate it, and `basis` says which of the two a reader is
+looking at ("observed 1 time in this project's delay register, costing 21 days
+at most"). The fabricated fallback is deleted; when nothing is recorded the
+list is empty and `risk_factors_note` explains what the numbers are.
+
+### Alternatives Considered
+- **Defer the whole feature.** Explicitly on the table, and rejected: the
+  underlying delay register and duration ledger are real and are the strongest
+  part of this surface. What had to go was the invention layered on top, not
+  the layer beneath it.
+- **Show the invented numbers greyed out or marked "indicative".** Rejected.
+  A qualifier does not survive a screenshot, and P10/P50/P90 in a tender panel
+  reads as a measurement however it is styled.
+- **Drop the monsoon multipliers entirely.** Rejected — the user asked for them
+  kept as labelled assumptions, and they are genuinely useful. What was wrong
+  was presenting them as calibration.
+- **Set the bar at 2.** Rejected: two points define a range with no interior.
+  Three is the least that can show a shape, and it is still small enough that
+  the response says so in `evidence_note`.
+
+### What it does now
+```
+piping / monsoon_upper_assam        17 actuals
+  sufficient  p10/p50/p90 = 6.8 / 14.9 / 23.0 d   recommended 17d
+  "Percentiles over 17 completed piping activities. 17 is a small sample:
+   p10 and p90 are the extremes of what this project has actually done,
+   not a fitted distribution."
+  weather x1.35 — "an ASSUMPTION: ... Not fitted to this project's records"
+
+PIP-SPL / monsoon_upper_assam        2 actuals
+  INSUFFICIENT — every duration field null, pmxml_snippet null
+  "Insufficient evidence: 2 completed PIP-SPL activities carry both actual
+   dates, and at least 3 are needed before a duration percentile means
+   anything. 5 activities are in scope; the rest have not finished. No
+   tender duration is offered."
+
+hse / standard                       0 actuals
+  INSUFFICIENT
+
+risk factors    prob=None  freq=1
+  "observed 1 time in this project's delay register, costing 21 days at most"
+```
+
+On the Memory screen the planned-vs-actual table now leads with `PIP-HYT 3/5`
+and `CIV-PLY 3/3` rather than a single-activity `+483%`, and the fourteen
+types below the bar read "insufficient evidence" beside their real counts.
+
+### Verification
+`python -m pytest -q` — 1190 passed, up from 1186.
+`cd frontend && npx vitest run` — 166 passed, up from 162. `npx tsc --noEmit`
+clean. `python scripts/healthcheck.py` — 31 passed.
+
+Two backend tests were rewritten because they pinned the invention:
+`test_tender_estimate_post` and `test_tender_estimate_get` asserted
+`recommended_tender_duration > 0` unconditionally, which could never fail while
+the endpoint manufactured a number in every branch. They now supply the
+completed work the estimate requires, and four new tests cover the refusal: a
+thin scope, a discipline with no completed work, the count-not-probability
+contract, and that no risk factor is invented when none is recorded.
+
+`tenderEstimator.test.tsx` grew from 2 tests to 6, including one asserting the
+insufficient panel renders and no percentile card does.
+
+### Affected Areas
+`server/main.py` (`MIN_ACTUALS_FOR_ESTIMATE`, `_SITE_CONDITIONS`,
+`_site_condition`, `_compute_tender_estimate`, `_tender_risk_factors`,
+`_RISK_FACTORS_NOTE`, `_compute_suggested_duration`), `server/schemas.py`
+(`TenderRiskFactor`, `TenderEstimateResponse`),
+`frontend/src/components/TenderEstimator.tsx`, `frontend/src/pages/Memory.tsx`,
+`frontend/src/types.ts`, `server/test_server.py`,
+`frontend/src/test/tenderEstimator.test.tsx`.
+
+`_compute_tender_estimate` also now reads `scoped_activities(db)` rather than
+every activity in the table, so it estimates from one project rather than two
+(D-092).
+
+### Trade-offs / Consequences
+The demo shows fewer numbers. On the seeded corpus only five activity types
+clear the bar for a planned-vs-actual delta, and a tender query against a
+specific type will usually refuse. That is what this corpus supports, and the
+refusal is a more defensible thing to put in front of a client than a
+percentile computed from one activity.
+
+**Still open, and stated rather than hidden:** `_compute_productivity` and
+`_compute_delay_reasons` behind `GET /memory/query` still report means and
+frequencies with no minimum sample. The Memory screen labels their denominators
+(`"no completed activities yet"`, `"21/22"`, the reports column), so nothing
+there is unlabelled — but the bar applied above has not been applied to them,
+and it should be.

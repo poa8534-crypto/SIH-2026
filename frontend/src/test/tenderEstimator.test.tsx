@@ -48,6 +48,9 @@ const MOCK_ESTIMATE: TenderEstimateResponse = {
   uom: 'spools',
   sample_size: 24,
   actuals_count: 18,
+  minimum_actuals_required: 3,
+  evidence_sufficient: true,
+  evidence_note: 'Percentiles over 18 completed PIP-SPL activities.',
   historical_productivity_rate: 0.42,
   productivity_uom: 'spools/day',
   baseline_days_p50: 15.0,
@@ -55,19 +58,42 @@ const MOCK_ESTIMATE: TenderEstimateResponse = {
   calibrated_days_p50: 38.0,
   calibrated_days_p90: 54.0,
   weather_risk_factor: 1.35,
+  weather_basis:
+    'an ASSUMPTION: a 35% duration allowance and 25% contingency for Upper Assam monsoon working.',
   total_contingency_days: 9,
+  contingency_basis: '25% of the p50 duration, a planning convention rather than a measured figure.',
   recommended_tender_duration: 47,
   risk_factors: [
     {
       risk_type: 'Heavy Monsoon Rain & Waterlogging',
-      probability_pct: 75,
+      probability_pct: null,
       impact_days: 12,
       mitigation: 'Contractual weather buffer (FIDIC Cl. 8.4) & elevated equipment pads.',
       historical_frequency: 5,
+      basis: "observed 5 times in this project's delay register, costing 12 days at most",
     },
   ],
+  risk_factors_note: 'historical_frequency is a count, not a rate.',
   pmxml_snippet: '<Activity><Id>PIP-SPL</Id><PlannedDuration>376h</PlannedDuration></Activity>',
   computed_at: '2026-09-05T12:00:00Z',
+};
+
+/** The same query, against a scope this project has barely started. */
+const MOCK_INSUFFICIENT: TenderEstimateResponse = {
+  ...MOCK_ESTIMATE,
+  actuals_count: 2,
+  evidence_sufficient: false,
+  evidence_note:
+    'Insufficient evidence: 2 completed PIP-SPL activities carry both actual dates, and at least 3 are needed before a duration percentile means anything. No tender duration is offered.',
+  historical_productivity_rate: null,
+  productivity_uom: null,
+  calibrated_days_p10: null,
+  calibrated_days_p50: null,
+  calibrated_days_p90: null,
+  total_contingency_days: null,
+  contingency_basis: '',
+  recommended_tender_duration: null,
+  pmxml_snippet: null,
 };
 
 const MOCK_MEMORY_ALL: MemoryQueryResponse = {
@@ -124,7 +150,55 @@ describe('TenderEstimator Component', () => {
 
     expect(screen.getByText('0.42')).toBeInTheDocument();
     expect(screen.getByText('Heavy Monsoon Rain & Waterlogging')).toBeInTheDocument();
-    expect(screen.getByText('75%')).toBeInTheDocument();
+  });
+
+  it('states that the site-condition allowance is an assumption', async () => {
+    wrap(<TenderEstimator durations={MOCK_DURATIONS} />);
+
+    await waitFor(() => expect(screen.getByText('47d')).toBeInTheDocument());
+    expect(
+      screen.getByText(/not factors fitted to this project/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/planning convention/i)).toBeInTheDocument();
+  });
+
+  it('shows a count, never a manufactured probability', async () => {
+    wrap(<TenderEstimator durations={MOCK_DURATIONS} />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Heavy Monsoon Rain & Waterlogging')).toBeInTheDocument()
+    );
+    // The column is now "Times observed" and the cell carries the count.
+    expect(screen.getByText('Times observed')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.queryByText('75%')).not.toBeInTheDocument();
+    // And it no longer claims to have seen other projects.
+    expect(screen.queryByText(/past OIL projects/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/this project's delay register/)).toBeInTheDocument();
+  });
+
+  it('says "insufficient evidence" instead of inventing a duration', async () => {
+    vi.spyOn(api, 'estimateTender').mockResolvedValue(MOCK_INSUFFICIENT);
+    wrap(<TenderEstimator durations={MOCK_DURATIONS} />);
+
+    expect(await screen.findByText('Insufficient evidence')).toBeInTheDocument();
+    expect(screen.getByText(/2 of 3 completed/)).toBeInTheDocument();
+    expect(screen.getByText(/No tender duration is offered/)).toBeInTheDocument();
+
+    // Not one percentile card, and no recommended duration.
+    expect(screen.queryByText('P50 Tender Baseline')).not.toBeInTheDocument();
+    expect(screen.queryByText('P10 Aggressive')).not.toBeInTheDocument();
+    expect(screen.queryByText('47d')).not.toBeInTheDocument();
+  });
+
+  it('reports the planned duration without turning it into an estimate', async () => {
+    vi.spyOn(api, 'estimateTender').mockResolvedValue(MOCK_INSUFFICIENT);
+    wrap(<TenderEstimator durations={MOCK_DURATIONS} />);
+
+    await screen.findByText('Insufficient evidence');
+    expect(
+      screen.getByText(/what was planned, not what it has taken/)
+    ).toBeInTheDocument();
   });
 
   it('switches between Historical Benchmarks and Tender Estimator tab on Memory page', async () => {

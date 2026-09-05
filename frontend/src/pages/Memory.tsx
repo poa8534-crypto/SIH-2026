@@ -55,13 +55,28 @@ interface Overrun extends DurationDistribution {
   deltaPct: number;
 }
 
+/** Completed activities before a mean is worth comparing against a plan.
+ *
+ *  Three, the same bar `server/main.py :: MIN_ACTUALS_FOR_ESTIMATE` and
+ *  `server/productivity.py :: MIN_COMPARABLES` apply. This table used to sort
+ *  by delta and put `CIV-PLT +29.0d · +483%` at the top of the screen off ONE
+ *  completed activity — the single largest number on the page, and an
+ *  anecdote. Rows below the bar keep their counts, which are facts, and say
+ *  "insufficient evidence" where the delta was. See D-094. */
+const MIN_ACTUALS_FOR_DELTA = 3;
+
 function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
-  const { withActuals, withoutActuals } = useMemo(() => {
+  const { withActuals, thin, withoutActuals } = useMemo(() => {
     const ok: Overrun[] = [];
+    const weak: DurationDistribution[] = [];
     let missing = 0;
     for (const r of rows) {
       if (r.actual_mean_days === null || r.planned_mean_days === 0) {
         missing += 1;
+        continue;
+      }
+      if (r.actuals_count < MIN_ACTUALS_FOR_DELTA) {
+        weak.push(r);
         continue;
       }
       const deltaDays = r.actual_mean_days - r.planned_mean_days;
@@ -72,13 +87,24 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
         deltaPct: (deltaDays / r.planned_mean_days) * 100,
       });
     }
+    weak.sort((a, b) => b.actuals_count - a.actuals_count);
     // Worst overrun first.
     ok.sort((a, b) => b.deltaPct - a.deltaPct);
-    return { withActuals: ok, withoutActuals: missing };
+    return { withActuals: ok, thin: weak, withoutActuals: missing };
   }, [rows]);
 
-  if (withActuals.length === 0) {
+  if (withActuals.length === 0 && thin.length === 0) {
     return <NoData>No activity type has both an actual start and finish yet.</NoData>;
+  }
+
+  if (withActuals.length === 0) {
+    return (
+      <NoData>
+        No activity type has {MIN_ACTUALS_FOR_DELTA} completed activities yet.
+        {' '}{thin.length} {thin.length === 1 ? 'type has' : 'types have'} one or
+        two, which is too few to compare against the plan.
+      </NoData>
+    );
   }
 
   return (
@@ -126,6 +152,31 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
                 </tr>
               );
             })}
+            {thin.map((r) => (
+              <tr
+                key={r.activity_type}
+                className="border-b border-hair last:border-0 even:bg-surface"
+              >
+                <td className="px-3 py-3 font-mono text-body text-muted whitespace-nowrap">
+                  {r.activity_type}
+                </td>
+                <td className="px-3 py-3 font-mono text-body text-muted text-right">
+                  {r.planned_mean_days.toFixed(1)}d
+                </td>
+                <td className="px-3 py-3 font-mono text-body text-muted text-right">
+                  —
+                </td>
+                <td
+                  className="px-3 py-3 text-label text-muted text-right"
+                  colSpan={1}
+                >
+                  insufficient evidence
+                </td>
+                <td className="px-3 py-3 font-mono text-body text-muted text-right">
+                  {r.actuals_count}/{r.count}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -280,11 +331,13 @@ function SuggestedDurationPanel({
 
   // Default to the worst overrun among types that can actually produce a
   // suggestion. The raw worst overrun on this dataset is a single-activity
-  // outlier, which lands the panel on "not enough data" — a poor first
-  // impression of the section that closes the loop.
+  // outlier, which lands the panel on "insufficient evidence" — a poor first
+  // impression of the section that closes the loop. The bar is the same one
+  // the table and the backend apply (D-094), so this cannot select a type the
+  // endpoint will then refuse to estimate.
   const defaultType = useMemo(() => {
     const scored = types
-      .filter((t) => t.actuals_count >= 2 && t.planned_mean_days > 0)
+      .filter((t) => t.actuals_count >= MIN_ACTUALS_FOR_DELTA && t.planned_mean_days > 0)
       .map((t) => ({
         type: t.activity_type,
         pct: ((t.actual_mean_days as number) - t.planned_mean_days) / t.planned_mean_days,

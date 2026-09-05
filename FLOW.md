@@ -1291,6 +1291,68 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Insufficient evidence is an answer — the tender estimator and the
+historical benchmarks stop manufacturing numbers, and the monsoon multipliers
+are labelled as assumptions.
+**Date:** 2026-09-05 · **Decision:** D-094
+
+```
+TENDER ESTIMATE — THE EVIDENCE BAR                                (D-094)
+
+  POST|GET /memory/estimate
+      server/main.py :: _compute_tender_estimate
+          scoped_activities(db)          one project, not two (D-092)
+          filter by discipline, then by activity_type prefix
+          actual_days  = completed activities with both actual dates
+
+      MIN_ACTUALS_FOR_ESTIMATE = 3
+          matches productivity.py :: MIN_COMPARABLES — one system, one
+          opinion about what counts as evidence
+
+      len(actual_days) < 3   ->   REFUSE
+          evidence_sufficient  false
+          calibrated_days_p10/p50/p90     null
+          recommended_tender_duration     null
+          total_contingency_days          null
+          pmxml_snippet                   null
+          evidence_note   how many were found, how many are needed
+          baseline_days_p50 IS still reported - a fact about the plan,
+          never scaled into a substitute for the percentiles
+
+          Was: 1 actual  -> actual x0.8 / x1.0 / x1.3
+               0 actuals -> planned x0.85 / 1.15 / 1.45
+               no plan   -> a literal 10.0 days
+
+      len(actual_days) >= 3  ->   percentiles over the ACTUALS, then
+          _site_condition(cond) -> (multiplier, fraction, basis sentence)
+              monsoon  1.35 / 0.25    ASSUMPTION, stated in every response
+              remote   1.20 / 0.18    ASSUMPTION
+              standard 1.00 / 0.08    planning convention
+          weather_basis + contingency_basis travel WITH the numbers
+
+  RISK FACTORS   _tender_risk_factors(activities, db)
+      _compute_delay_reasons -> the project's own delay register
+      probability_pct  ALWAYS None
+          was min(85, max(20, frequency * 15)) - "20%" off one observation
+      basis            "observed N times in this project's delay register"
+      empty register   -> [] and risk_factors_note
+          was a hardcoded "Upper Assam Monsoon Delays, 65%, frequency 3"
+
+  THE SCREENS
+      TenderEstimator.tsx   evidence_sufficient false -> one panel with the
+          note and no percentile card at all
+      Memory.tsx            MIN_ACTUALS_FOR_DELTA = 3; a row below it keeps
+          its counts and reads "insufficient evidence" where the delta was.
+          Was: sorted by delta, so CIV-PLT +483% off ONE activity led.
+
+  Pinned by server/test_server.py (6 tender tests) and
+  frontend/src/test/tenderEstimator.test.tsx (6).
+```
+
+---
+
+### Previous modification area (D-093)
+
 **Task:** The metrics describe the build that ships — one threshold constant
 for the server and the evaluator, tuned on dev and measured on held-out test.
 **Date:** 2026-09-05 · **Decision:** D-093

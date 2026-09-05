@@ -1086,11 +1086,25 @@ class MemoryQueryResponse(BaseModel):
 # ── Tender Estimator & Institutional Memory v2 ──────────────────────────────
 
 class TenderRiskFactor(BaseModel):
+    """A delay cause this project actually recorded, and how often.
+
+    `probability_pct` is OPTIONAL and is normally None. It used to be computed
+    as `min(85, max(20, frequency * 15))` — a percentage manufactured by
+    multiplying a count by fifteen, which put "20% probability" against causes
+    observed exactly once. A frequency is a fact; a probability derived from it
+    by an arbitrary constant is not, and on this corpus every frequency is 1.
+
+    It stays in the schema so a future version fitted against enough history
+    can populate it, and `basis` says which of the two a reader is looking at.
+    """
+
     risk_type: str
-    probability_pct: int
+    probability_pct: Optional[int] = None
     impact_days: int
     mitigation: str
     historical_frequency: int
+    #: Where these numbers came from, in one sentence.
+    basis: str = ""
 
 
 class TenderEstimateRequest(BaseModel):
@@ -1102,24 +1116,65 @@ class TenderEstimateRequest(BaseModel):
 
 
 class TenderEstimateResponse(BaseModel):
+    """An empirical duration estimate, or a statement that there is not one.
+
+    EVERY DURATION FIELD IS NULLABLE, and they are all null together. This
+    endpoint used to manufacture a number whatever the evidence:
+
+      * with ONE completed activity it produced a distribution — p10 = actual
+        x 0.8, p90 = actual x 1.3 — a spread invented from a single observation;
+      * with NO completed activities it produced planned x 0.85 / 1.15 / 1.45,
+        three multipliers with no derivation, labelled P10/P50/P90;
+      * with no planned durations either it fell back to a literal 10.0 days.
+
+    A tender duration is a number a contractor prices work against. Inventing
+    one is worse than declining to give one, so when the evidence is thin the
+    fields below are null, `evidence_sufficient` is false, and `evidence_note`
+    says exactly how many records were found and how many are needed. See
+    D-094.
+    """
+
     discipline: str
     activity_type: str
     site_condition: str
     target_quantity: Optional[float] = None
     uom: Optional[str] = None
+
+    #: How much history this rests on. `actuals_count` is the one that matters:
+    #: `sample_size` counts activities in scope, most of which may be unstarted.
     sample_size: int = 0
     actuals_count: int = 0
+    minimum_actuals_required: int = 0
+    evidence_sufficient: bool = False
+    evidence_note: str = ""
+
     historical_productivity_rate: Optional[float] = None
     productivity_uom: Optional[str] = None
-    baseline_days_p50: float = 0
-    calibrated_days_p10: float = 0
-    calibrated_days_p50: float = 0
-    calibrated_days_p90: float = 0
+
+    #: Median PLANNED duration in scope. Always reported when it exists,
+    #: because it is a fact about the baseline rather than an estimate — but it
+    #: is not a substitute for the percentiles below and is never scaled into
+    #: one.
+    baseline_days_p50: Optional[float] = None
+
+    #: Empirical percentiles over COMPLETED activities, after the site-condition
+    #: multiplier. Null when `evidence_sufficient` is false.
+    calibrated_days_p10: Optional[float] = None
+    calibrated_days_p50: Optional[float] = None
+    calibrated_days_p90: Optional[float] = None
+
+    #: The site-condition assumption, stated rather than folded silently into
+    #: the numbers. `weather_basis` names it as an assumption every time.
     weather_risk_factor: float = 1.0
-    total_contingency_days: int = 0
-    recommended_tender_duration: int = 0
+    weather_basis: str = ""
+    total_contingency_days: Optional[int] = None
+    contingency_basis: str = ""
+
+    recommended_tender_duration: Optional[int] = None
     risk_factors: list[TenderRiskFactor] = []
-    pmxml_snippet: str = ""
+    risk_factors_note: str = ""
+    #: Emitted only when there is a duration to put in it.
+    pmxml_snippet: Optional[str] = None
     computed_at: datetime
 
 

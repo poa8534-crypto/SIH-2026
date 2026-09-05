@@ -796,25 +796,130 @@ class TestMemoryQuery:
         assert data["suggested_duration"] is not None
 
     def test_tender_estimate_post(self):
+        """A scope with enough completed work gets a real estimate.
+
+        These tests used to assert `recommended_tender_duration > 0`
+        unconditionally, which is exactly the behaviour D-094 removed: the
+        endpoint manufactured a duration from one observation, or from planned
+        duration x 0.85/1.15/1.45, or from a literal 10 days. The assertion
+        could never fail, so it was pinning the invention.
+        """
+        # This fixture seeds the baseline with no captured progress, so give
+        # the estimator the completed work it requires. Four activities, real
+        # dates, no shortcuts — the point is that the bar is met, not bypassed.
+        db = TestSession()
+        try:
+            rows = (
+                db.query(Activity)
+                .filter(Activity.discipline == "piping")
+                .order_by(Activity.activity_id)
+                .limit(4)
+                .all()
+            )
+            assert len(rows) == 4
+            for offset, row in enumerate(rows):
+                row.actual_start = row.planned_start
+                row.actual_finish = row.planned_start + timedelta(days=6 + offset)
+            db.commit()
+        finally:
+            db.close()
+
         payload = {
             "discipline": "piping",
-            "activity_type": "PIP-SPL",
-            "target_quantity": 40.0,
-            "uom": "spools",
             "site_condition": "monsoon_upper_assam",
         }
         response = client.post("/memory/estimate", json=payload)
         assert response.status_code == 200
         data = response.json()
         assert data["discipline"] == "piping"
-        assert data["activity_type"] == "PIP-SPL"
-        assert data["weather_risk_factor"] == 1.35
+        assert data["evidence_sufficient"] is True
+        assert data["actuals_count"] >= data["minimum_actuals_required"]
         assert data["recommended_tender_duration"] > 0
         assert data["calibrated_days_p50"] > 0
         assert data["total_contingency_days"] > 0
-        assert len(data["risk_factors"]) > 0
         assert "<Activity>" in data["pmxml_snippet"]
-        assert "</Activity>" in data["pmxml_snippet"]
+
+        # The site-condition allowance is applied AND labelled as an assumption.
+        assert data["weather_risk_factor"] == 1.35
+        assert "ASSUMPTION" in data["weather_basis"]
+        assert "not fitted" in data["weather_basis"].lower()
+
+    def test_a_thin_scope_is_refused_rather_than_estimated(self):
+        """PIP-SPL has two completed activities in the demo corpus."""
+        response = client.post("/memory/estimate", json={
+            "discipline": "piping",
+            "activity_type": "PIP-SPL",
+            "site_condition": "monsoon_upper_assam",
+        })
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["evidence_sufficient"] is False
+        assert data["actuals_count"] < data["minimum_actuals_required"]
+        assert "Insufficient evidence" in data["evidence_note"]
+        assert "No tender duration is offered" in data["evidence_note"]
+
+        # Every duration field is null, and they are null together.
+        for field_name in (
+            "calibrated_days_p10", "calibrated_days_p50", "calibrated_days_p90",
+            "recommended_tender_duration", "total_contingency_days",
+            "pmxml_snippet",
+        ):
+            assert data[field_name] is None, f"{field_name} was invented"
+
+        # The planned duration is still reported — it is a fact about the
+        # baseline — but it is not scaled into an estimate.
+        assert data["baseline_days_p50"] is not None
+
+    def test_a_discipline_with_no_completed_work_is_refused(self):
+        response = client.get("/memory/estimate?discipline=hse&site_condition=standard")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["evidence_sufficient"] is False
+        assert data["actuals_count"] == 0
+        assert data["recommended_tender_duration"] is None
+
+    def test_risk_factors_carry_a_count_not_a_manufactured_probability(self, monkeypatch):
+        """`probability_pct` was `min(85, max(20, frequency * 15))`.
+
+        The delay register is empty on this fixture, so a recorded cause is
+        supplied rather than ingested — what is under test is how a cause is
+        PRESENTED, not how it is detected.
+        """
+        import server.main as main
+        from server.schemas import DelayReason
+
+        monkeypatch.setattr(main, "_compute_delay_reasons", lambda *a, **k: [
+            DelayReason(
+                reason="rain delay",
+                frequency=1,
+                affected_activities=["CIV-FDN-1007"],
+                days_lost=4,
+                category="weather",
+            ),
+        ])
+        data = client.get("/memory/estimate?discipline=piping").json()
+
+        assert data["risk_factors"], "expected the supplied delay cause"
+        for factor in data["risk_factors"]:
+            assert factor["probability_pct"] is None
+            assert factor["historical_frequency"] >= 1
+            assert "delay register" in factor["basis"]
+        assert "count, not a rate" in data["risk_factors_note"]
+
+    def test_no_risk_factor_is_invented_when_none_is_recorded(self, monkeypatch):
+        """The fallback used to be a fabricated monsoon risk with a fabricated
+        history: 65% probability, historical_frequency 3."""
+        import server.main as main
+
+        monkeypatch.setattr(main, "_compute_delay_reasons", lambda *a, **k: [])
+        response = client.get("/memory/estimate?discipline=piping")
+        data = response.json()
+
+        assert data["risk_factors"] == []
+        assert not any(
+            "Upper Assam Monsoon" in str(f) for f in data["risk_factors"]
+        )
 
     def test_tender_estimate_get(self):
         response = client.get("/memory/estimate?discipline=civil&site_condition=standard")
@@ -822,7 +927,7 @@ class TestMemoryQuery:
         data = response.json()
         assert data["discipline"] == "civil"
         assert data["weather_risk_factor"] == 1.0
-        assert data["recommended_tender_duration"] > 0
+        assert "planning convention" in data["weather_basis"]
         assert "pmxml_snippet" in data
 
 

@@ -662,10 +662,13 @@ export interface MemoryQueryResponse {
 
 export interface TenderRiskFactor {
   risk_type: string;
-  probability_pct: number;
+  /** Normally null. It used to be `frequency x 15` floored at 20%, which put
+   *  "20% probability" against a cause observed exactly once. */
+  probability_pct: number | null;
   impact_days: number;
   mitigation: string;
   historical_frequency: number;
+  basis: string;
 }
 
 export interface TenderEstimateRequest {
@@ -676,6 +679,13 @@ export interface TenderEstimateRequest {
   site_condition?: string;
 }
 
+/** An empirical duration estimate, or a statement that there is not one.
+ *
+ *  Every duration field is nullable and they are all null together. When
+ *  `evidence_sufficient` is false the screen must render `evidence_note`
+ *  rather than a number: this endpoint used to manufacture percentiles from a
+ *  single observation, or from planned duration x 0.85/1.15/1.45, or from a
+ *  literal 10 days. See D-094. */
 export interface TenderEstimateResponse {
   discipline: string;
   activity_type: string;
@@ -684,17 +694,24 @@ export interface TenderEstimateResponse {
   uom: string | null;
   sample_size: number;
   actuals_count: number;
+  minimum_actuals_required: number;
+  evidence_sufficient: boolean;
+  evidence_note: string;
   historical_productivity_rate: number | null;
   productivity_uom: string | null;
-  baseline_days_p50: number;
-  calibrated_days_p10: number;
-  calibrated_days_p50: number;
-  calibrated_days_p90: number;
+  baseline_days_p50: number | null;
+  calibrated_days_p10: number | null;
+  calibrated_days_p50: number | null;
+  calibrated_days_p90: number | null;
   weather_risk_factor: number;
-  total_contingency_days: number;
-  recommended_tender_duration: number;
+  /** Names the multiplier as an assumption. Always rendered beside it. */
+  weather_basis: string;
+  total_contingency_days: number | null;
+  contingency_basis: string;
+  recommended_tender_duration: number | null;
   risk_factors: TenderRiskFactor[];
-  pmxml_snippet: string;
+  risk_factors_note: string;
+  pmxml_snippet: string | null;
   computed_at: string;
 }
 

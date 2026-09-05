@@ -166,9 +166,17 @@ export function TenderEstimator({ durations }: Props) {
               className="bg-surface border border-hair rounded px-3 py-2 text-body text-fg focus:outline-none focus:border-accent"
             >
               <option value="standard">Standard Dry Season (1.0x)</option>
-              <option value="monsoon_upper_assam">Upper Assam Monsoon (+35% delay risk)</option>
-              <option value="remote_drill_site">Remote Well Site (+20% logistics)</option>
+              <option value="monsoon_upper_assam">Upper Assam Monsoon (+35%, assumed)</option>
+              <option value="remote_drill_site">Remote Well Site (+20%, assumed)</option>
             </select>
+            {/* The multiplier is a planning convention, not something this
+                system measured. It is labelled at the point of choice as well
+                as on the result, because a reader who never scrolls down would
+                otherwise take it for a fitted figure. */}
+            <p className="text-label text-muted leading-relaxed">
+              These allowances are assumptions applied to the measured
+              durations, not factors fitted to this project&rsquo;s records.
+            </p>
           </div>
         </div>
       </div>
@@ -182,7 +190,37 @@ export function TenderEstimator({ durations }: Props) {
 
       {error && <ErrorState error={error} onRetry={() => refetch()} />}
 
-      {estimate && !isLoading && !error && (
+      {estimate && !isLoading && !error && !estimate.evidence_sufficient && (
+        /* NO NUMBER IS BETTER THAN AN INVENTED ONE.
+         *
+         * This panel used to show a full P10/P50/P90 spread in every case: with
+         * one completed activity the backend produced actual x 0.8 / x 1.3, and
+         * with none it produced planned x 0.85 / 1.15 / 1.45 — three multipliers
+         * with no derivation, rendered here in the same typography as a measured
+         * figure. A tender duration is a number someone prices work against.
+         * See D-094. */
+        <div className="bg-raised border border-warn/40 rounded-lg p-5 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-label uppercase font-mono tracking-wider text-warn font-semibold">
+              Insufficient evidence
+            </span>
+            <span className="text-label font-mono text-muted">
+              {estimate.actuals_count} of {estimate.minimum_actuals_required} completed
+              activities needed
+            </span>
+          </div>
+          <p className="text-body text-fg leading-relaxed">{estimate.evidence_note}</p>
+          {estimate.baseline_days_p50 !== null && (
+            <p className="text-label text-muted">
+              The baseline plans {estimate.baseline_days_p50}d for this work.
+              That is what was planned, not what it has taken, and it is not
+              scaled into an estimate here.
+            </p>
+          )}
+        </div>
+      )}
+
+      {estimate && !isLoading && !error && estimate.evidence_sufficient && (
         <>
           {/* Three-Point Duration Distribution Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -197,7 +235,8 @@ export function TenderEstimator({ durations }: Props) {
                 </div>
               </div>
               <p className="text-label text-muted mt-3">
-                Best-case 10th percentile execution under zero delays.
+                The fastest end of what this project has actually done, over{' '}
+                {estimate.actuals_count} completed activities.
               </p>
             </div>
 
@@ -216,8 +255,13 @@ export function TenderEstimator({ durations }: Props) {
               </div>
               <div className="text-label text-fg/80 mt-3 flex items-center justify-between border-t border-hair pt-2">
                 <span>Base: {estimate.calibrated_days_p50}d</span>
-                <span className="text-accent font-mono">+{estimate.total_contingency_days}d buffer</span>
+                <span className="text-accent font-mono">
+                  +{estimate.total_contingency_days}d buffer
+                </span>
               </div>
+              <p className="text-label text-muted mt-2 leading-relaxed">
+                {estimate.contingency_basis}
+              </p>
             </div>
 
             {/* P90 Card */}
@@ -230,8 +274,12 @@ export function TenderEstimator({ durations }: Props) {
                   {estimate.calibrated_days_p90}d
                 </div>
               </div>
+              {/* Was "90% confidence threshold covering extreme weather",
+                  which describes a fitted distribution. This is an order
+                  statistic over a handful of activities. */}
               <p className="text-label text-muted mt-3">
-                90% confidence threshold covering extreme weather.
+                The slowest end of the same {estimate.actuals_count} activities.
+                An extreme observed, not a confidence level.
               </p>
             </div>
 
@@ -251,7 +299,9 @@ export function TenderEstimator({ durations }: Props) {
                 </div>
               </div>
               <p className="text-label text-muted mt-3">
-                Drawn from {estimate.actuals_count} confirmed field ledger completions.
+                {estimate.historical_productivity_rate !== null
+                  ? `Mean rate over completed activities carrying a measured quantity.`
+                  : `Not enough completed activities carry a measured quantity.`}
               </p>
             </div>
           </div>
@@ -266,8 +316,8 @@ export function TenderEstimator({ durations }: Props) {
                     <thead>
                       <tr className="border-b border-hair text-label uppercase tracking-wider text-muted font-medium">
                         <th className="px-4 py-3">Risk Factor</th>
-                        <th className="px-4 py-3 text-center">Probability</th>
-                        <th className="px-4 py-3 text-right">Historical Impact</th>
+                        <th className="px-4 py-3 text-center">Times observed</th>
+                        <th className="px-4 py-3 text-right">Worst impact</th>
                         <th className="px-4 py-3">Contractual Mitigation</th>
                       </tr>
                     </thead>
@@ -276,17 +326,19 @@ export function TenderEstimator({ durations }: Props) {
                         <tr key={idx} className="hover:bg-raised/40 transition-colors">
                           <td className="px-4 py-3 font-medium text-body text-fg">
                             {rf.risk_type}
+                            {/* Was "Observed N times on past OIL projects" —
+                                this system has never seen another project.
+                                `basis` says where the count came from. */}
                             <div className="text-label text-muted mt-0.5">
-                              Observed {rf.historical_frequency} times on past OIL projects
+                              {rf.basis}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-label font-mono ${
-                              rf.probability_pct >= 50
-                                ? 'bg-danger/15 text-danger border border-danger/30'
-                                : 'bg-warn/15 text-warn border border-warn/30'
-                            }`}>
-                              {rf.probability_pct}%
+                            {/* A count, not a percentage. The percentage was
+                                frequency x 15 floored at 20%. */}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-label font-mono bg-warn/15 text-warn border border-warn/30">
+                              {rf.historical_frequency}
+                              {rf.probability_pct !== null && ` · ${rf.probability_pct}%`}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-mono text-body text-fg tabular-nums whitespace-nowrap">
