@@ -1350,3 +1350,27 @@ class ScheduleAuditResponse(BaseModel):
     findings: list[ScheduleAuditFinding] = []
     calibrated_schedule_snippet: Optional[str] = None
     audited_at: datetime
+
+
+# ── Ask NAVIS Q&A Chatbot ────────────────────────────────────────────────────
+
+class ChatAction(BaseModel):
+    type: str  # "insert_draft" | "link" | "filter"
+    label: str
+    text: Optional[str] = None
+    url: Optional[str] = None
+
+
+class ChatRequest(BaseModel):
+    question: str
+    role: str = "planner"  # "field" | "planner" | "executive"
+    context: Optional[dict] = None
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    citations: list[str] = []
+    grounded: bool = True
+    model_available: bool = False
+    suggested_actions: list[ChatAction] = []
+

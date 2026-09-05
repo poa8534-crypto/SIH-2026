@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -19,6 +19,7 @@ import { useSession } from '../../hooks/useSession';
 import { api } from '../../lib/api';
 import { FieldNav } from '../../components/FieldNav';
 import { FIELD_ROLE } from '../../config';
+import { AskNavisChat } from '../../components/AskNavisChat';
 
 interface FieldWorkspaceShellProps {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useSession();
   const location = useLocation();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule', 'header'],
@@ -166,11 +168,22 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-raised border border-hair font-mono text-label text-muted">
               <Calendar size={13} className="text-muted" />
               <span>Data date: {scheduleData?.data_date ?? '2026-03-01'}</span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
+              title="Ask NAVIS Assistant"
+              aria-label="Ask NAVIS"
+            >
+              <Sparkles size={13} className="text-accent" />
+              <span>Ask NAVIS</span>
+            </button>
 
             <button
               onClick={signOut}
@@ -192,6 +205,12 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
           <FieldNav />
         </div>
       </div>
+
+      <AskNavisChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        role="field"
+      />
     </div>
   );
 }

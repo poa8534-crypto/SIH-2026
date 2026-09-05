@@ -1076,3 +1076,24 @@ export interface BaselineImportResponse {
   message: string;
 }
 
+export interface ChatAction {
+  type: 'insert_draft' | 'link' | 'filter' | string;
+  label: string;
+  text?: string | null;
+  url?: string | null;
+}
+
+export interface ChatRequest {
+  question: string;
+  role?: string;
+  context?: Record<string, unknown> | null;
+}
+
+export interface ChatResponse {
+  answer: string;
+  citations: string[];
+  grounded: boolean;
+  model_available: boolean;
+  suggested_actions: ChatAction[];
+}
+

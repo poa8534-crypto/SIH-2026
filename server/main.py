@@ -235,7 +235,11 @@ from .schemas import (
     KnowledgeRulesResponse,
     ScheduleAuditFinding,
     ScheduleAuditResponse,
+    ChatAction,
+    ChatRequest,
+    ChatResponse,
 )
+from server.qa_agent import QAAgent
 
 logger = logging.getLogger(__name__)
 
@@ -5256,6 +5260,317 @@ def _create_event_from_slots(
     db.flush()
 
     return le.id, review.id
+
+
+# ── Ask NAVIS Q&A Chatbot ────────────────────────────────────────────────────
+
+def _chat_llm_generate(prompt: str) -> Optional[str]:
+    """Attempt optional Ollama/LLM generation; degrade silently on any error."""
+    if not agent_llm.llm_enabled():
+        return None
+    try:
+        from extraction.llm_backend import OllamaBackend
+        backend = OllamaBackend(timeout=agent_llm.llm_timeout_seconds())
+        return backend._generate(prompt, {}, {})
+    except Exception:
+        return None
+
+
+@app.post("/chat", response_model=ChatResponse)
+@app.post("/qa/ask", response_model=ChatResponse)
+def ask_navis(req: ChatRequest, db: Session = Depends(get_db)):
+    """Conversational Q&A assistant across Field Supervisor, Project Manager, and Executive roles.
+
+    Enforces read-only operation:
+    - Never mutates baseline or schedule.
+    - Never approves or resolves matches.
+    - Grounded in active schedule, memory, delay, EVM, and review queue records.
+    """
+    q = (req.question or "").strip()
+    role = (req.role or "planner").lower()
+
+    if not q:
+        return ChatResponse(
+            answer="Please ask a question about project progress, activities, delays, or reporting.",
+            citations=[],
+            grounded=False,
+            model_available=agent_llm.llm_enabled(),
+            suggested_actions=[],
+        )
+
+    # 1. Gather all project data for QAAgent and role grounding
+    activities = db.query(Activity).all()
+    evm_result = compute_evm(db, DATA_DATE)
+    duration_dist = _compute_duration_distribution(activities)
+    productivity_list = _compute_productivity(activities)
+    delay_reasons = _compute_delay_reasons(activities, db)
+    suggested_dur = _compute_suggested_duration(activities)
+
+    qa_data = {
+        "duration_distribution": [d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in duration_dist],
+        "productivity": [p.model_dump() if hasattr(p, "model_dump") else p.dict() for p in productivity_list],
+        "delay_reasons": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in delay_reasons],
+        "suggested_duration": (suggested_dur.model_dump() if hasattr(suggested_dur, "model_dump") else suggested_dur.dict()) if suggested_dur else None,
+        "evm": evm_result,
+    }
+
+    q_lower = q.lower()
+    actions: list[ChatAction] = []
+    citations: list[str] = []
+
+    # 2. Field Supervisor role-specific queries
+    if role == "field":
+        # Question: How to report progress or format
+        if any(w in q_lower for w in ["how do i report", "how to report", "how to log", "format", "guide", "example", "how to"]):
+            if "spool" in q_lower or "piping" in q_lower or "pipe" in q_lower:
+                sample_text = "Poured spool erection on 24-inch header at Sector A, 6 of 18 completed"
+                guide = (
+                    "To report piping progress, describe the specific line, spool, or header, the workfront location, "
+                    "and the installed quantity.\n\n"
+                    "Example report:\n"
+                    f"\"{sample_text}\"\n\n"
+                    "NAVIS will extract the discipline, match the P6 activity, and prepare the draft for planner review."
+                )
+                actions.append(ChatAction(type="insert_draft", label="Insert into report draft", text=sample_text))
+            elif "concrete" in q_lower or "civil" in q_lower or "pour" in q_lower or "raft" in q_lower:
+                sample_text = "Poured 40 m3 concrete on raft foundation at Well Pad 04"
+                guide = (
+                    "To report civil progress, mention the structure type (foundation/raft/pedestal), cubic meters poured, "
+                    "and workfront.\n\n"
+                    "Example report:\n"
+                    f"\"{sample_text}\"\n\n"
+                    "NAVIS will map this to the appropriate civil schedule package."
+                )
+                actions.append(ChatAction(type="insert_draft", label="Insert into report draft", text=sample_text))
+            elif "delay" in q_lower or "weather" in q_lower or "hold" in q_lower or "rain" in q_lower:
+                sample_text = "Work halted due to heavy monsoon rain and standing water at Sector A"
+                guide = (
+                    "To report a site constraint or delay, state the cause (monsoon rain, access hold, equipment breakdown) "
+                    "and affected area.\n\n"
+                    "Example report:\n"
+                    f"\"{sample_text}\"\n\n"
+                    "This will alert the Planning Engineer to record weather delay attribution."
+                )
+                actions.append(ChatAction(type="insert_draft", label="Insert into report draft", text=sample_text))
+            else:
+                sample_text = "Completed spool hydrotest on line 6-P-1015 at Well Pad 04"
+                guide = (
+                    "Describe what happened on site in plain words: the work done, equipment tag or item, location, "
+                    "and status (started, in progress, finished).\n\n"
+                    "Example report:\n"
+                    f"\"{sample_text}\""
+                )
+                actions.append(ChatAction(type="insert_draft", label="Insert into report draft", text=sample_text))
+
+            citations.append("Field Reporting Guide")
+            return ChatResponse(
+                answer=guide,
+                citations=citations,
+                grounded=True,
+                model_available=agent_llm.llm_enabled(),
+                suggested_actions=actions,
+            )
+
+        # Question: Status of my reports
+        if any(w in q_lower for w in ["my report", "last report", "submission", "my updates", "status of"]):
+            field_items = _field_events(db)
+            if not field_items:
+                return ChatResponse(
+                    answer="You have not submitted any field reports in this session yet. Use 'Tap & Speak' or Report Studio to submit your first update.",
+                    citations=["Field Reports"],
+                    grounded=True,
+                    model_available=agent_llm.llm_enabled(),
+                    suggested_actions=[ChatAction(type="link", label="Create report", url="/field/report")],
+                )
+            event, review = field_items[0]
+            ref = _report_reference(event)
+            status = _report_status(review)
+            conf_str = f"{(event.confidence * 100):.1f}%" if event.confidence else "pending"
+            act_id = event.activity_id or "Unmatched"
+            citations.extend([ref, act_id])
+            answer = (
+                f"Your most recent submission is **{ref}**:\n"
+                f"- Reported: \"{event.raw_text}\"\n"
+                f"- Matched Activity: `{act_id}` ({conf_str} confidence)\n"
+                f"- Status: **{status}**\n\n"
+                "The schedule remains unchanged until the Planning Engineer formally confirms this update."
+            )
+            actions.append(ChatAction(type="link", label="View My Updates", url="/field/reports"))
+            return ChatResponse(
+                answer=answer,
+                citations=citations,
+                grounded=True,
+                model_available=agent_llm.llm_enabled(),
+                suggested_actions=actions,
+            )
+
+        # Question: Clarifications from planner
+        if any(w in q_lower for w in ["clarification", "question", "planner ask", "query"]):
+            unanswered_clarifs = [
+                (e, r) for e, r in _field_events(db)
+                if r and r.clarification_question and not r.clarification_response
+            ]
+            if unanswered_clarifs:
+                event, review = unanswered_clarifs[0]
+                citations.extend([review.id, _report_reference(event)])
+                actions.append(ChatAction(type="link", label="Answer Clarification", url="/field/clarifications"))
+                return ChatResponse(
+                    answer=(
+                        f"You have **{len(unanswered_clarifs)}** pending question(s) from Planning:\n\n"
+                        f"From {review.clarification_asked_by or 'Priya Das'}: \"{review.clarification_question}\"\n"
+                        f"Regarding report: \"{event.raw_text}\"\n\n"
+                        "Please open Clarifications to submit your response."
+                    ),
+                    citations=citations,
+                    grounded=True,
+                    model_available=agent_llm.llm_enabled(),
+                    suggested_actions=actions,
+                )
+            else:
+                return ChatResponse(
+                    answer="All questions from the Planning Engineer have been answered. There are no pending technical inquiries.",
+                    citations=["Clarifications Ledger"],
+                    grounded=True,
+                    model_available=agent_llm.llm_enabled(),
+                    suggested_actions=[ChatAction(type="link", label="View Clarifications", url="/field/clarifications")],
+                )
+
+    # 3. Project Manager role-specific queries
+    elif role == "planner":
+        # Question: Link justification / matching confidence
+        if any(w in q_lower for w in ["why did navis link", "why link", "confidence", "matcher", "how was matched"]):
+            actions.append(ChatAction(type="link", label="Open in Reconcile", url="/reconcile"))
+            actions.append(ChatAction(type="link", label="View in Schedule", url="/schedule"))
+            pending_reviews = (
+                db.query(ReviewQueueItem)
+                .filter(ReviewQueueItem.status == "pending")
+                .order_by(ReviewQueueItem.created_at.desc())
+                .all()
+            )
+            if pending_reviews:
+                top = pending_reviews[0]
+                le = db.query(LinkedEvent).filter(LinkedEvent.id == top.linked_event_id).first()
+                conf_pct = f"{(top.confidence * 100):.1f}%" if top.confidence else "0%"
+                citations.extend([top.id, top.activity_id or "unassigned"])
+                explanation = (
+                    f"NAVIS links field reports to baseline activities by calculating syntactic token overlap, "
+                    f"discipline alignment, tag normalization (e.g. equipment IDs), and schedule window proximity.\n\n"
+                    f"For pending item `{top.id}` against `{top.activity_id}`:\n"
+                    f"- Confidence: {conf_pct}\n"
+                    f"- Rationale: {top.reason or 'Matched based on discipline and equipment tag match'}\n"
+                    f"- Source Text: \"{le.raw_text if le else ''}\"\n\n"
+                    "You can confirm, reassign, or reject this candidate in the Reconcile queue."
+                )
+            else:
+                citations.append("Matching Engine")
+                explanation = (
+                    "NAVIS links field reports to baseline activities by scoring syntactic token overlap, "
+                    "discipline alignment, tag normalization (e.g. equipment IDs), and schedule window proximity. "
+                    "When confidence exceeds threshold τ_high, candidate links are proposed; anything below or conflicting "
+                    "is flagged for planner confirmation in the Reconcile queue."
+                )
+            return ChatResponse(
+                answer=explanation,
+                citations=citations,
+                grounded=True,
+                model_available=agent_llm.llm_enabled(),
+                suggested_actions=actions,
+            )
+
+    # 4. Senior Management role-specific queries
+    elif role == "executive":
+        # Question: Projected completion / schedule forecast
+        if any(w in q_lower for w in ["projected completion", "forecast", "when will", "finish date", "completion date"]):
+            cov = evm_result.get("evidence_coverage")
+            cov_pct = f"{(cov.get('fraction', 0) * 100):.1f}%" if isinstance(cov, dict) else "unknown"
+            spi = evm_result.get("spi")
+            spi_str = f"{spi:.2f}" if spi is not None else "withheld"
+            total_acts = len(activities)
+            completed_acts = sum(1 for a in activities if a.actual_finish is not None)
+            actions.append(ChatAction(type="link", label="View Executive Overview", url="/executive"))
+            citations.append("EVM Engine")
+            disclaimer = ""
+            if not evm_result.get("spi_headline_safe"):
+                disclaimer = f"\n\n*Notice: Evidence coverage is currently {cov_pct}. Schedule performance (SPI) is withheld until sufficient field reports are verified.*"
+            return ChatResponse(
+                answer=(
+                    f"**Project Completion Outlook**:\n"
+                    f"- Total Activities: {total_acts} ({completed_acts} completed)\n"
+                    f"- Schedule Performance Index (SPI): {spi_str}\n"
+                    f"- Evidence Coverage: {cov_pct}\n"
+                    f"- Critical Path: Driving activities in Civil and Piping determine overall forecast.{disclaimer}"
+                ),
+                citations=citations,
+                grounded=True,
+                model_available=agent_llm.llm_enabled(),
+                suggested_actions=actions,
+            )
+
+        # Question: Biggest exposure / risks
+        if any(w in q_lower for w in ["exposure", "risk", "dispute", "claim", "liability"]):
+            raid_items = db.query(RaidItem).filter(RaidItem.status == "OPEN").all()
+            actions.append(ChatAction(type="link", label="View Exposure Register", url="/executive/exposure"))
+            if raid_items:
+                top_items = raid_items[:3]
+                citations.extend([item.id for item in top_items])
+                item_lines = "\n".join([f"- **{item.id}** ({item.kind}): {item.description} [Impact: {item.schedule_impact_days or 0} days]" for item in top_items])
+                return ChatResponse(
+                    answer=(
+                        f"**Current Exposure Profile** ({len(raid_items)} open items):\n"
+                        f"{item_lines}\n\n"
+                        "All delay notices and contractual dispute shields are tracked in the Exposure register."
+                    ),
+                    citations=citations,
+                    grounded=True,
+                    model_available=agent_llm.llm_enabled(),
+                    suggested_actions=actions,
+                )
+            else:
+                return ChatResponse(
+                    answer="No open high-severity exposure items recorded in the active RAID register.",
+                    citations=["Exposure Register"],
+                    grounded=True,
+                    model_available=agent_llm.llm_enabled(),
+                    suggested_actions=actions,
+                )
+
+        # Question: Data reliability / provenance
+        if any(w in q_lower for w in ["reliable", "reliability", "provenance", "lineage", "accuracy"]):
+            actions.append(ChatAction(type="link", label="View Data Lineage", url="/executive/provenance"))
+            cov = evm_result.get("evidence_coverage")
+            cov_pct = f"{(cov.get('fraction', 0) * 100):.1f}%" if isinstance(cov, dict) else "unknown"
+            return ChatResponse(
+                answer=(
+                    f"**Data Lineage & Reliability**:\n"
+                    f"- Actual Progress Verified with Evidence: {cov_pct}\n"
+                    f"- Every actual start/finish date requires immutable AuditRecord logging.\n"
+                    f"- Matching adheres strictly to human-in-the-loop review by the Project Manager before schedule updates."
+                ),
+                citations=["Audit Ledger", "Data Provenance"],
+                grounded=True,
+                model_available=agent_llm.llm_enabled(),
+                suggested_actions=actions,
+            )
+
+    # 5. Core Q&A Agent fallback (handles delay, duration, productivity, evm, recommendations)
+    agent = QAAgent(generate=_chat_llm_generate)
+    qa_res = agent.answer(q, qa_data)
+
+    # Contextual actions based on topics
+    if "delay" in q_lower:
+        actions.append(ChatAction(type="link", label="View Delay Attribution", url="/delay"))
+    if "productivity" in q_lower or "duration" in q_lower:
+        actions.append(ChatAction(type="link", label="View Institutional Memory", url="/memory"))
+    if "reconcile" in q_lower or "review" in q_lower:
+        actions.append(ChatAction(type="link", label="Open Reconcile", url="/reconcile"))
+
+    return ChatResponse(
+        answer=qa_res["answer"],
+        citations=qa_res["citations"],
+        grounded=qa_res["grounded"],
+        model_available=qa_res["model_available"],
+        suggested_actions=actions,
+    )
 
 
 # ── Static SPA frontend mount (Docker / Production) ─────────────────────────

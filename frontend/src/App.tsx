@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch, Scale } from 'lucide-react';
+import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch, Scale, Sparkles } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
+import { AskNavisChat } from './components/AskNavisChat';
 import Reconcile from './pages/Reconcile';
 import Schedule from './pages/Schedule';
 import Ingest from './pages/Ingest';
@@ -56,6 +57,7 @@ function DesktopShell({
   // Whatever the current page published via usePageHeader. Null until the
   // page's effect runs, and for any route that has not adopted the hook.
   const [pageHeader, setPageHeader] = useState<PageHeader | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const {
     data: scheduleData,
@@ -184,6 +186,16 @@ function DesktopShell({
             {headerError && (
               <ErrorState error={headerError} mode="bare" className="max-w-[360px]" />
             )}
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
+              title="Ask NAVIS Assistant"
+              aria-label="Ask NAVIS"
+            >
+              <Sparkles size={13} className="text-accent" />
+              <span>Ask NAVIS</span>
+            </button>
             <span className="hidden md:inline-flex items-center gap-1.5 text-label font-mono text-muted bg-raised px-2.5 py-1 rounded-md border border-hair">
               <span>P6 Baseline</span>
               <span className="text-heading font-semibold">Rev-08</span>
@@ -195,12 +207,19 @@ function DesktopShell({
           <main className="flex-1 overflow-auto p-6">{children}</main>
         </PageHeaderContext.Provider>
       </div>
+
+      <AskNavisChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        role={location.pathname.startsWith('/executive') ? 'executive' : 'planner'}
+      />
     </div>
   );
 }
 
 function MobileShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // The same project identity the planner sidebar shows, off the same query
   // key, so the two shells cannot name the project differently. There is no
@@ -250,7 +269,17 @@ function MobileShell({ children }: { children: React.ReactNode }) {
             </span>
           </span>
         </span>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair bg-surface hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
+            title="Ask NAVIS Assistant"
+            aria-label="Ask NAVIS"
+          >
+            <Sparkles size={13} className="text-accent" />
+            <span>Ask NAVIS</span>
+          </button>
           <Button variant="icon" onClick={toggleTheme} title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </Button>
@@ -263,6 +292,12 @@ function MobileShell({ children }: { children: React.ReactNode }) {
       </main>
       <FieldNav />
       </div>
+
+      <AskNavisChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        role="field"
+      />
     </div>
   );
 }

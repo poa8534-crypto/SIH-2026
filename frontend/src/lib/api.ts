@@ -31,6 +31,8 @@ import {
   KnowledgeRule,
   KnowledgeRulesResponse,
   ScheduleAuditResponse,
+  ChatRequest,
+  ChatResponse,
 } from '../types';
 
 export class ApiError extends Error {
@@ -438,6 +440,16 @@ export const api = {
 
   agentTurn: (body: AgentTurnRequest): Promise<AgentTurnResponse> => {
     return fetchWithHandler('/agent/turn', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  askChat: (body: ChatRequest): Promise<ChatResponse> => {
+    return fetchWithHandler('/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Mic,
   ShieldCheck,
@@ -7,9 +8,8 @@ import {
   Wrench,
   Truck,
   AlertTriangle,
-  Bot,
-  CheckCircle2
 } from 'lucide-react';
+import { api } from '../../lib/api';
 import { NeedsYourResponse, RecentUpdates } from '../../components/FieldContextBlocks';
 
 export function IdleStage({
@@ -26,13 +26,19 @@ export function IdleStage({
   serverError: React.ReactNode;
   contextBlock: React.ReactNode;
 }) {
+  const { data: clarifications } = useQuery({
+    queryKey: ['clarifications', 'unanswered'],
+    queryFn: () => api.getClarifications(true),
+  });
+  const unanswered = clarifications?.length ?? 0;
+
   return (
     <div className="w-full max-w-[880px] mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
       {/* Centered Top Heading */}
       <div className="text-center flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface border border-hair text-muted font-mono text-[11px] font-medium uppercase tracking-wider mb-3">
           <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-          Field Voice · J. Gogoi · Shift B
+          Field Voice · Sector A · Digboi Well #4
         </div>
 
         <h1 className="text-h1 font-semibold text-heading tracking-tight">
@@ -48,7 +54,7 @@ export function IdleStage({
           <button
             type="button"
             onClick={onStart}
-            className="w-full max-w-sm py-3.5 px-5 rounded-lg bg-fg hover:opacity-90 active:opacity-95 text-surface font-medium text-body shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer"
+            className="w-full max-w-sm py-3.5 px-5 rounded-lg bg-fg hover:opacity-90 active:opacity-95 text-surface font-medium text-body shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer min-h-[48px]"
           >
             <div className="h-8 w-8 rounded-full bg-surface/20 flex items-center justify-center shrink-0">
               <Mic size={18} />
@@ -75,7 +81,7 @@ export function IdleStage({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Link
           to="/field/clarifications"
-          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center justify-between gap-3 group"
+          className="p-3.5 min-h-[56px] rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center justify-between gap-3 group"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
@@ -86,35 +92,37 @@ export function IdleStage({
                 Answer planner queries
               </div>
               <div className="text-label text-muted truncate">
-                Pre-baseline technical holds
+                Pre-baseline technical questions
               </div>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn font-mono text-[10px] font-bold shrink-0">
-            2 urgent
-          </span>
+          {unanswered > 0 && (
+            <span className="px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn font-mono text-[10px] font-bold shrink-0">
+              {unanswered} pending
+            </span>
+          )}
         </Link>
 
         <Link
           to="/field/report"
-          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
+          className="p-3.5 min-h-[56px] rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
           <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
             <Wrench size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-body font-semibold text-heading leading-tight truncate">
-              Report Rig Mod 12 progress
+              Report work progress
             </div>
             <div className="text-label text-muted truncate">
-              Verify spool erection &amp; torque logs
+              Erection, hydrotest &amp; installations
             </div>
           </div>
         </Link>
 
         <Link
-          to="/field/reports"
-          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
+          to="/field/report"
+          className="p-3.5 min-h-[56px] rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
           <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
             <Truck size={16} />
@@ -130,15 +138,15 @@ export function IdleStage({
         </Link>
 
         <Link
-          to="/field"
-          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
+          to="/field/report"
+          className="p-3.5 min-h-[56px] rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
           <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
             <AlertTriangle size={16} />
           </div>
           <div className="min-w-0">
             <div className="text-body font-semibold text-heading leading-tight truncate">
-              Flag site delay / weather hold
+              Flag site delay / constraint
             </div>
             <div className="text-label text-muted truncate">
               Monsoon shutdown &amp; equipment hold

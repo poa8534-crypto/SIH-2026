@@ -68,9 +68,30 @@
 - [x] **Provenance (`ExecutiveProvenance.tsx`)**:
   - [x] Data lineage breakdown (Field reports vs spreadsheets vs voice).
 
-## 6. Verification & Quality Gates
+## 6. On-Demand "Ask NAVIS" Conversational AI Chatbot
+- [x] **Universal Header Integration**: Labeled "Ask NAVIS" trigger button with Sparkles icon present across Field Supervisor, Project Manager, and Senior Management headers.
+- [x] **Non-Intrusive Drawer / Modal (`AskNavisChat.tsx`)**:
+  - [x] Desktop / tablet: Clean slide-out panel on the right (420px), dismissible with close button or Esc key.
+  - [x] Mobile: Full-width responsive modal with touch targets >= 44px.
+  - [x] Closed by default (never auto-opens, never interrupts work).
+- [x] **Role-Specific Grounding & Starter Prompts**:
+  - [x] Field Supervisor: Report guidance with ready-to-use example sentences, recent submission status lookups, and planner clarification tracking.
+  - [x] Project Manager: Match justification explanation, critical path delay attribution, historical productivity benchmarks.
+  - [x] Senior Management: Forecast completion dates with evidence coverage disclaimers, top exposure breakdown, and data reliability metrics.
+- [x] **Actionable Interactions**:
+  - [x] "Insert into report draft" action button for Field Supervisor (copies structured report text into Report Studio).
+  - [x] Deep navigation links ("Open in Reconcile", "View in Schedule", "View Exposure Register", "View Data Lineage").
+  - [x] Copy to clipboard control with instant visual feedback.
+  - [x] Clear conversation thread control.
+- [x] **Deterministic Read-Only Architecture (`/chat` & `/qa/ask`)**:
+  - [x] Zero mutations: bot cannot alter actuals, approve matches, or modify baselines.
+  - [x] Grounded citation tracking citing specific P6 activities, reports, and EVM data sources.
+  - [x] Resilient offline fallback: when Ollama is unavailable, deterministic Python facts provide immediate answers.
+
+## 7. Verification & Quality Gates
 - [x] TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
-- [x] Complete Vitest test suite (`npm test -- --run`) with 100% pass rate (18 test files, 166 tests).
-- [x] Backend Pytest suite (`pytest`) with 100% pass rate (1,190 tests passed).
+- [x] Complete Vitest test suite (`npm test -- --run`) with 100% pass rate (19 test files, 171 tests).
+- [x] Backend Pytest suite (`pytest`) with 100% pass rate (1,196 tests passed, including new Ask NAVIS chat test suite).
 - [x] Loading, empty, error, validation, and success state coverage on all redesigned views.
 - [x] Visual verification of Light and Dark modes with ChatGPT/Codex minimalist palette.
+
