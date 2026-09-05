@@ -24,7 +24,7 @@ import type { Discipline, ExecutiveMetricsResponse } from '../../types';
 export default function ExecutiveOverview() {
   usePageHeader(
     'Executive Intelligence & Risk Oversight',
-    'C-Suite strategic portfolio control, S-Curve trajectory, and FIDIC dispute exposure.',
+    'C-Suite strategic project control, S-Curve trajectory, and FIDIC dispute exposure.',
     '/executive'
   );
 
@@ -75,11 +75,9 @@ export default function ExecutiveOverview() {
     return v;
   };
 
-  /* The what-if sliders move a date, not a rupee figure. The cost line here
-   * used to multiply the slider total by a ₹12.5 lakh/day rate written into
-   * this component — a rate no contract in this system supplies. The slip is
-   * now applied to the computed logic finish, under the stated assumption
-   * that it lands on a critical activity with no float left. */
+  /* The what-if sliders move a date, not a rupee figure. The slip is applied
+   * to the computed logic finish, under the stated assumption that it lands
+   * on a critical activity with no float left. */
   const simulatedFinish = useMemo(() => {
     if (!forecast?.logic_finish) return null;
     const d = new Date(`${forecast.logic_finish}T00:00:00Z`);
@@ -127,12 +125,12 @@ export default function ExecutiveOverview() {
 
   return (
     <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-6 font-sans">
-      {/* Top Strategic Context Bar */}
+      {/* Top Strategic Context Bar — Honest single-project view */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-hair">
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
             <span className="font-semibold text-fg">
-              PORTFOLIO: SECTOR 04 // ONSHORE ASSETS
+              {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
             </span>
             <span>·</span>
             <span>
@@ -153,12 +151,9 @@ export default function ExecutiveOverview() {
           <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
             FIDIC 1999 CLAUSE 20.1 / 8.4
           </span>
-          <span className="px-2.5 py-1 rounded-full bg-surface text-muted font-medium border border-hair">
-            PRIMAVERA P6 REV-08
-          </span>
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface text-ok font-medium border border-hair">
             <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-            Verified P6 Baseline Active
+            Senior Management (Read-Only)
           </span>
         </div>
       </div>
@@ -167,7 +162,7 @@ export default function ExecutiveOverview() {
         <SkeletonRows rows={8} />
       ) : (
         <>
-          {/* Top 4 KPI Strategic Strip */}
+          {/* Top 4 KPI Strategic Strip (understandable in ~30 seconds) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: SPI */}
             <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col justify-between">
@@ -266,6 +261,10 @@ export default function ExecutiveOverview() {
                 </span>
               </div>
             </div>
+          </div>
+
+          <div className="text-label text-muted font-mono -mt-2 px-1">
+            * Note: Progress and earned value are duration-weighted (0/100 rule upon actual finish), not financial cash flow.
           </div>
 
           {/* S-Curve Trajectory Chart Panel */}
