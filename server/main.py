@@ -111,7 +111,12 @@ from matching.primavera import ScheduleParseError
 from matching.schedule_index import ScheduleIndex
 from matching.textutils import alias_key
 from matching.vocabulary import resolve as resolve_vocabulary, vocabulary
-from server.evm import compute_evm
+from server.evm import (
+    SOURCE_NO_EVIDENCE as EVM_NO_EVIDENCE,
+    compute_evm,
+    percent_complete as evm_percent_complete,
+)
+from server.evm import _event_percentages as evm_event_percentages
 from server.notifications import field_notifications
 from server.raid import (
     KINDS as RAID_KINDS,
@@ -1915,19 +1920,24 @@ def get_schedule(
     ):
         actual_date_confidence[aid] = conf
 
+    # Percent complete is derived by server/evm.py, not here. This screen used
+    # to run its own version - max(LinkedEvent.percentage), with no
+    # actual_finish rule and no quantity rule - so the Schedule screen and the
+    # EVM figures could disagree about the same activity, and did. One
+    # derivation, one place, the same reason the delay vocabulary is one list
+    # (D-048, D-084).
+    schedule_percentages = evm_event_percentages(db)
+
     for act in activities:
         # Recompute variance
         act.compute_variance(DATA_DATE)
 
-        # Compute percent complete from linked events
-        events = db.query(LinkedEvent).filter(
-            LinkedEvent.activity_id == act.activity_id
-        ).all()
-        pct = None
-        if events:
-            pcts = [e.percentage for e in events if e.percentage is not None]
-            if pcts:
-                pct = max(pcts)
+        pct, pct_source = evm_percent_complete(act, schedule_percentages)
+        # An activity nobody has reported stays null on this screen rather than
+        # rendering a 0% that reads like a measurement. The floor is an EV
+        # convention; a table cell is not the place for it.
+        if pct_source == EVM_NO_EVIDENCE:
+            pct = None
 
         if act.start_variance_days is not None:
             total_start_var.append(act.start_variance_days)

@@ -1291,6 +1291,52 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 0 of the Granularity Resolution Engine — earned value now reads
+the installed quantity the roll-up already measured. A defect fix: eleven
+in-progress activities were scoring 0% with reported quantity progress.
+**Date:** 2026-09-05 · **Decision:** D-084
+
+```
+PERCENT COMPLETE — ONE DERIVATION, FOUR RULES                     (D-084)
+
+  server/evm.py  percent_complete(activity, event_percentages)
+      1. actual_finish set                    -> 100%   actual_finish
+      2. quantity_ratio(activity), CAPPED     -> ratio  installed_quantity NEW
+           installed / planned, both present, planned > 0
+           mirrors RollupAccumulator, which prefers a measured quantity
+           over an asserted one for the same reason
+      3. max(LinkedEvent.percentage)          -> value  linked_event_percentage
+      4. otherwise                            -> 0%     no_evidence_floor
+
+  CALLED BY
+    server/evm.py    compute_evm()          EV, SPI, evidence coverage
+    server/main.py   get_schedule()         NEW - it had a THIRD derivation
+                                            inline (max percentage, no
+                                            actual_finish rule, no quantity
+                                            rule) and disagreed with EVM about
+                                            the same activity. Now one place.
+                                            A no-evidence activity renders
+                                            null there, not 0%.
+
+  OVER-INSTALLATION
+    quantity_ratio() is uncapped; percent_complete caps at 100 for EV.
+    compute_evm collects raw > 100 into `quantity_overruns` REGARDLESS of
+    which rule scored the node - CIV-FDN-1008 finishes at rule 1 and never
+    reaches rule 2, yet 180/120 m3 is still a linking fault.
+
+  PERCENT_SOURCES tuple drives EVMFigures.as_dict, which previously named its
+  three keys by hand and silently dropped the fourth.
+
+  MEASURED  EV 554.0 -> 640.4 · SPI 0.4311 -> 0.4984 · coverage 45% -> 55%
+            no_evidence_floor 64 -> 53 · evidenced SPI 0.9503 -> 0.9033 (down,
+            because the excluded activities were the late ones)
+  Pinned by server/test_evm.py (29 tests).
+```
+
+---
+
+### Previous modification area (D-083)
+
 **Task:** Phase 7 — the planner screen at `/delay`. The chain that proposes a
 liability, a notice window, a concurrency reading and a float split now has a
 place where a human rules. Completes the Contractor Dispute Shield.

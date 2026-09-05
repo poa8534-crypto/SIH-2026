@@ -22,9 +22,12 @@ from server.evm import (
     SOURCE_ACTUAL_FINISH,
     SOURCE_LINKED_EVENT,
     SOURCE_NO_EVIDENCE,
+    SOURCE_QUANTITY,
     compute_evm,
+    percent_complete,
     planned_fraction,
     planned_weight,
+    quantity_ratio,
 )
 
 DATA_DATE = date(2026, 9, 15)
@@ -43,7 +46,7 @@ def db():
 
 
 def _activity(db, activity_id, start, finish, *, discipline="civil",
-              actual_finish=None):
+              actual_finish=None, planned_qty=0, actual_qty=None, uom=""):
     act = Activity(
         activity_id=activity_id,
         wbs_path="1.1",
@@ -51,8 +54,9 @@ def _activity(db, activity_id, start, finish, *, discipline="civil",
         discipline=discipline,
         planned_start=start,
         planned_finish=finish,
-        planned_qty=0,
-        uom="",
+        planned_qty=planned_qty,
+        actual_qty=actual_qty,
+        uom=uom,
         predecessors="[]",
         actual_finish=actual_finish,
     )
@@ -292,6 +296,140 @@ class TestEvidenceCoverage:
         assert sub["spi"] == pytest.approx(0.5)
         # And the whole-project figure is the misleading one it protects against.
         assert r["project"]["spi"] == pytest.approx(0.125)
+
+
+# -- The quantity rule (D-084) ----------------------------------------------
+
+class TestQuantityScoresProgress:
+    """Rule 2: installed over planned quantity.
+
+    Its absence was not a gap in coverage but a WRONG NUMBER. On the seeded
+    corpus eleven in-progress activities carrying reported quantity progress -
+    five of them complete by quantity - were scored 0% and counted as
+    unevidenced, so EV and SPI were both understated and the executive screen
+    called them unreported.
+    """
+
+    def test_quantity_scores_an_activity_with_no_asserted_percentage(self, db):
+        # 800 of 1200 m installed, and nothing ever asserted a percentage.
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=1200, actual_qty=800, uom="m")
+        db.commit()
+
+        pct, source = percent_complete(act, {})
+        assert pct == pytest.approx(66.7)
+        assert source == SOURCE_QUANTITY
+
+    def test_quantity_beats_an_asserted_percentage(self, db):
+        """Mirrors the roll-up, which prefers a measured quantity over an
+        asserted one for the same reason: a quantity is a measurement against
+        a planned scope, a percentage is somebody's estimate of one."""
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=850, actual_qty=850, uom="m2")
+        db.commit()
+
+        pct, source = percent_complete(act, {"A": 85.0})
+        assert pct == 100.0
+        assert source == SOURCE_QUANTITY
+
+    def test_actual_finish_still_wins(self, db):
+        """Rule 1 is unchanged. A finished node is 100% whatever the
+        quantities say."""
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=120, actual_qty=60, uom="m3",
+                        actual_finish=date(2026, 9, 9))
+        db.commit()
+
+        pct, source = percent_complete(act, {})
+        assert pct == 100.0
+        assert source == SOURCE_ACTUAL_FINISH
+
+    def test_a_node_with_no_planned_quantity_falls_through(self, db):
+        """installed/0 yields no percentage - the same refusal the roll-up
+        makes when it declines to derive one."""
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=0, actual_qty=40, uom="m3")
+        db.commit()
+
+        assert quantity_ratio(act) is None
+        assert percent_complete(act, {"A": 25.0}) == (25.0, SOURCE_LINKED_EVENT)
+        assert percent_complete(act, {})[1] == SOURCE_NO_EVIDENCE
+
+    def test_no_reported_quantity_is_still_the_floor(self, db):
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=1200, actual_qty=None, uom="m")
+        db.commit()
+
+        assert quantity_ratio(act) is None
+        assert percent_complete(act, {}) == (0.0, SOURCE_NO_EVIDENCE)
+
+    def test_it_moves_earned_value(self, db):
+        """The point of the rule. A 10-day activity wholly before the data
+        date, 800 of 1200 m installed:
+            weight = 10, PV = 10 x 1.0 = 10, EV = 10 x 0.667 = 6.67
+        Before the rule it earned nothing at all."""
+        _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                  planned_qty=1200, actual_qty=800, uom="m")
+        db.commit()
+
+        r = compute_evm(db, DATA_DATE)
+        assert r["project"]["earned_value"] == pytest.approx(6.67, abs=0.01)
+        counts = r["project"]["percent_source_counts"]
+        assert counts[SOURCE_QUANTITY] == 1
+        # Every source is reported, present or not: an omitted category reads
+        # as "none of these" rather than "not counted".
+        assert counts[SOURCE_NO_EVIDENCE] == 0
+        # And it now counts as evidenced, which is what the executive screen's
+        # unevidenced banner reads.
+        assert r["evidence_coverage"]["activities_with_evidence"] == 1
+
+
+class TestOverInstallationIsCappedAndReported:
+    """An activity installing more than its planned quantity is usually a
+    quantity from different work matched onto the node - a linking fault, not
+    a node that is 150% built."""
+
+    def test_the_ratio_is_capped_for_earned_value(self, db):
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=120, actual_qty=180, uom="m3")
+        db.commit()
+
+        assert quantity_ratio(act) == pytest.approx(150.0)
+        assert percent_complete(act, {})[0] == 100.0
+
+    def test_the_overrun_is_reported(self, db):
+        _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                  planned_qty=120, actual_qty=180, uom="m3")
+        db.commit()
+
+        overruns = compute_evm(db, DATA_DATE)["quantity_overruns"]
+        assert len(overruns) == 1
+        assert overruns[0]["activity_id"] == "A"
+        assert overruns[0]["raw_percent"] == pytest.approx(150.0)
+        assert overruns[0]["installed_qty"] == 180.0
+        assert overruns[0]["planned_qty"] == 120.0
+
+    def test_it_is_reported_even_when_the_node_finished(self, db):
+        """CIV-FDN-1008 on the seeded corpus is exactly this: a finished node
+        scored 100% by rule 1, which never reaches the quantity rule. The
+        linking fault is just as real, so the check does not depend on which
+        rule scored it."""
+        _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                  planned_qty=120, actual_qty=180, uom="m3",
+                  actual_finish=date(2026, 9, 9))
+        db.commit()
+
+        overruns = compute_evm(db, DATA_DATE)["quantity_overruns"]
+        assert len(overruns) == 1
+        assert overruns[0]["scored_by"] == SOURCE_ACTUAL_FINISH
+
+    def test_no_overrun_is_an_empty_list_not_a_missing_field(self, db):
+        """A different statement from the field being absent."""
+        _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                  planned_qty=120, actual_qty=60, uom="m3")
+        db.commit()
+
+        assert compute_evm(db, DATA_DATE)["quantity_overruns"] == []
 
 
 if __name__ == "__main__":

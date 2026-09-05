@@ -7501,3 +7501,142 @@ other planner screens. That endpoint recomputes the critical path on each call
 (D-082), so at 120 activities it is milliseconds and at ten thousand it would
 need the cache D-082 already names as the next step. Worth knowing before this
 is pointed at a real schedule.
+
+---
+
+## 2026-09-05 / D-084 — Earned value reads the quantity the roll-up already measured
+
+### Context
+Phase 0 of the Granularity Resolution Engine, and a defect rather than a
+feature. `RollupAccumulator` has always measured installed against planned
+quantity — that is how "40 m of 120 m planned" becomes 33% — and writes the
+result to `Activity.actual_qty`. `percent_complete` in `server/evm.py` never
+read it. Its precedence was `actual_finish` → `max(LinkedEvent.percentage)` →
+0% floor.
+
+So an activity whose only evidence was a measured quantity fell to the floor.
+On the seeded corpus that is **eleven in-progress activities, five of them
+complete by quantity**, scored 0% and counted as unevidenced:
+
+```
+ELE-CBL-1076   quantity  66.7%   evm 0.0%   (no_evidence_floor)
+PIP-INS-1045   quantity 100.0%   evm 0.0%
+ELE-SWG-1082   quantity 100.0%   evm 0.0%
+INS-TRN-1097   quantity  22.2%   evm 0.0%
+…7 more
+```
+
+Earned value was understated, SPI with it, and the executive Overview's
+unevidenced-activity banner was counting activities that had evidence.
+
+### Decision
+A quantity rule, inserted above the asserted percentage and below
+`actual_finish`:
+
+```
+1. actual_finish set                       -> 100%
+2. installed / planned quantity, capped    -> that ratio      NEW
+3. max(LinkedEvent.percentage)             -> that value
+4. otherwise                               -> 0% floor
+```
+
+**Quantity outranks an asserted percentage, mirroring the roll-up.**
+`RollupAccumulator` already prefers a measured quantity over a stated one, for
+the reason that decides it here too: a quantity is a measurement against a
+planned scope, a percentage is somebody's estimate of one. On this corpus the
+two mostly agree — 71.0/71.0, 66.7/66.7, 87.5/87.5 — because the roll-up
+derived the percentage from the quantity in the first place. Where they differ
+the quantity is the later, cumulative reading: `ELE-CBL-1078` is 3400 of 3400 m
+installed against an asserted 88.2%.
+
+**The ratio is capped at 100 and the overrun reported, never printed.** An
+activity installing more than its planned quantity is almost always a LINKING
+fault — a quantity from different work matched onto the node. `CIV-FDN-1008`
+reads 180 of 120 m³ because a *backfilling* quantity landed on a *concreting*
+node. Capping keeps EV honest; `quantity_overruns` keeps the fault visible
+instead of silently absorbed, and each entry carries `scored_by` so a reader
+can tell an overrun capped out of EV from one on a node that had already
+finished. The check runs regardless of which rule scored the node — precisely
+because `CIV-FDN-1008` finishes at rule 1 and never reaches rule 2.
+
+**`get_schedule` now calls `percent_complete` instead of deriving its own.**
+It had a third derivation inline: `max(LinkedEvent.percentage)`, with no
+`actual_finish` rule and no quantity rule, so the Schedule screen and the EVM
+figures could disagree about the same activity and did. One derivation in one
+place — the same rule that made the delay vocabulary a single list (D-048).
+An activity nobody has reported still renders as null on that screen rather
+than 0%: the floor is an earned-value convention, and a table cell is not the
+place for it.
+
+**A fourth defect, found while adding the third source.**
+`EVMFigures.as_dict` built `percent_source_counts` by naming its three keys by
+hand, so the new source was silently dropped from every response — the counts
+came back all-zero while EV moved. It now builds from a `PERCENT_SOURCES`
+tuple. A report that omits a category reads as "none of these" rather than
+"not counted", which is the more dangerous of the two failures.
+
+### Measured movement
+Against the seeded corpus at data date 2026-09-15, with the rule switched off
+and on:
+
+```
+                     BEFORE     AFTER
+earned value          554.0     640.4     (+86.4)
+project SPI          0.4311    0.4984
+evidenced SPI        0.9503    0.9033
+evidence coverage       45%       55%     (56 -> 67 of 120 activities)
+
+percent_source_counts
+  actual_finish            38 ->  38
+  installed_quantity        0 ->  28      NEW
+  linked_event_percentage  18 ->   1
+  no_evidence_floor        64 ->  53      (-11, the understated activities)
+
+quantity_overruns   CIV-FDN-1008  150.0%  scored_by actual_finish
+```
+
+The evidenced-subset SPI moves **down**, 0.9503 to 0.9033, and that is the
+honest direction: the eleven activities that were being excluded are the ones
+running behind. A fix that only ever improved a headline would be a fix worth
+distrusting.
+
+### Alternatives Considered
+- **Put quantity below the asserted percentage.** Rejected: it would contradict
+  the roll-up's own precedence, and on the three activities where the two
+  disagree the asserted figure is the stale one.
+- **Let the ratio exceed 100%.** Rejected. It would credit earned value for
+  work outside the node's planned scope, on the strength of what is almost
+  certainly a mis-link.
+- **Silently drop the overruns once capped.** Rejected: the cap fixes the
+  arithmetic and hides the cause. Reporting them is how the mis-link gets
+  found.
+- **Leave `get_schedule` with its own derivation.** Rejected — it was already
+  producing different answers from the EVM stack for the same activity.
+
+### Verification
+`python -m pytest -q` — 1066 passed, up from 1056. The 10 new tests in
+`server/test_evm.py` assert the rule and its edges: quantity scoring an
+activity with no asserted percentage, quantity beating an asserted one,
+`actual_finish` still winning, a zero planned quantity falling through, a
+missing actual quantity staying at the floor, the earned value it produces
+worked out by hand, the cap, the overrun reported, the overrun reported even
+on a finished node, and an empty overrun list rather than an absent field.
+
+`scripts/healthcheck.py` against a running server — 31 checks passed, 34
+endpoints. `GET /schedule` was then compared row by row against
+`evm.percent_complete`: **0 mismatches across 120 activities**, which is the
+unification working. `matching/` and `extraction/` untouched, so `eval.py` is
+not implicated.
+
+### Affected Areas
+`server/evm.py` (`SOURCE_QUANTITY`, `PERCENT_SOURCES`, `quantity_ratio`,
+`percent_complete`, `compute_evm`, and the module docstring that specifies the
+precedence), `server/main.py` (`get_schedule` calls the shared derivation),
+`server/test_evm.py`.
+
+### Trade-offs / Consequences
+Project SPI moves from 0.4311 to 0.4984 and is still not a safe headline —
+coverage is 55%, below the 60% `HEADLINE_COVERAGE_MIN` threshold, so
+`spi_headline_safe` stays false and the executive screen keeps its banner. The
+fix raises coverage by ten points; it does not make the whole-project figure
+trustworthy, and nothing here pretends otherwise.

@@ -26,15 +26,38 @@ remained.
 
 PERCENT COMPLETE — precedence, in this exact order
 --------------------------------------------------
-`Activity` has **no `percent_complete` column**. It is derived, here and in
-`get_schedule`, and for most activities it is unknown. The order is:
+`Activity` has **no `percent_complete` column**. It is derived, here and by
+`get_schedule`, which calls this function so the two cannot diverge. The order
+is:
 
     1. `actual_finish` is set                     -> 100%
-    2. else max(LinkedEvent.percentage) for that
+    2. else installed / planned quantity, when
+       both are present and planned > 0           -> that ratio, capped at 100
+    3. else max(LinkedEvent.percentage) for that
        activity, if any event carries one         -> that value
-    3. else                                       -> 0%
+    4. else                                       -> 0%
 
-Rule 3 is a **floor, not an estimate**. An activity with no evidence contributes
+**Rule 2 mirrors the roll-up.** `RollupAccumulator` prefers a measured quantity
+over an asserted percentage for the same reason this does: a quantity is a
+measurement against a planned scope, and a percentage is somebody's estimate of
+one. `Activity.actual_qty` is what that accumulation wrote, so reading it here
+is reading the roll-up's own answer rather than a second derivation of it.
+
+Rule 2 was absent until D-084, and its absence was not a gap in coverage but a
+wrong number: on the seeded corpus eleven in-progress activities carrying
+reported quantity progress - five of them complete by quantity - were scored 0%
+and counted as unevidenced. EV was understated, SPI with it, and the executive
+screen's unevidenced-activity banner counted activities that had evidence.
+
+**The ratio is capped at 100 and the overrun is reported, not printed.**
+An activity installing more than its planned quantity is usually a LINKING
+fault - a quantity from different work matched onto the node - not a node that
+is 150% built. `CIV-FDN-1008` reads 180 of 120 m3 because a backfilling
+quantity landed on a concreting node. Capping keeps EV honest; listing the
+overruns in `quantity_overruns` keeps the fault visible instead of silently
+absorbed.
+
+Rule 4 is a **floor, not an estimate**. An activity with no evidence contributes
 nothing to EV; it is never credited with progress it has not reported. Treating
 that 0% as though it were a measurement is exactly how an SPI becomes
 misleading, which is why `percent_source_counts` is returned alongside the
@@ -66,10 +89,22 @@ COST_UNAVAILABLE_REASON = (
     "the denominator."
 )
 
-#: The three rules in PERCENT COMPLETE above, in precedence order.
+#: The four rules in PERCENT COMPLETE above, in precedence order.
 SOURCE_ACTUAL_FINISH = "actual_finish"
+SOURCE_QUANTITY = "installed_quantity"
 SOURCE_LINKED_EVENT = "linked_event_percentage"
 SOURCE_NO_EVIDENCE = "no_evidence_floor"
+
+#: Every source, in precedence order. `as_dict` builds the counts FROM this
+#: rather than naming each key, because it previously named three by hand and
+#: silently dropped a fourth the moment one was added - a report that omits a
+#: category reads as "none of these" rather than "not counted".
+PERCENT_SOURCES = (
+    SOURCE_ACTUAL_FINISH,
+    SOURCE_QUANTITY,
+    SOURCE_LINKED_EVENT,
+    SOURCE_NO_EVIDENCE,
+)
 
 #: Below this share of schedule weight carrying evidence, a whole-project SPI
 #: says more about reporting coverage than about schedule performance, and
@@ -112,16 +147,42 @@ def planned_fraction(activity: Activity, data_date: date) -> float:
     return max(0.0, min(1.0, elapsed / total))
 
 
+def quantity_ratio(activity: Activity) -> Optional[float]:
+    """Installed over planned quantity as a percentage, uncapped, or None.
+
+    Uncapped on purpose: the caller caps it for EV and keeps the raw figure to
+    decide whether this node has an overrun worth reporting. Returns None when
+    either quantity is missing or the planned quantity is zero - a node with
+    nothing to measure against yields no percentage, which is the same rule the
+    roll-up applies when it declines to derive one.
+    """
+    planned = activity.planned_qty
+    installed = activity.actual_qty
+    if not planned or planned <= 0 or installed is None:
+        return None
+    return (float(installed) / float(planned)) * 100.0
+
+
 def percent_complete(
     activity: Activity, event_percentages: dict[str, float]
 ) -> tuple[float, str]:
-    """Percent complete and which of the three rules produced it.
+    """Percent complete and which of the four rules produced it.
 
     `event_percentages` is a prefetched `activity_id -> max(percentage)` map, so
     this stays one query for the whole schedule rather than one per activity.
+
+    The precedence is documented in this module's docstring and asserted in
+    `server/test_evm.py`. `get_schedule` calls this rather than deriving its
+    own, so the Schedule screen and the EVM figures can never disagree about
+    how complete an activity is.
     """
     if activity.actual_finish is not None:
         return 100.0, SOURCE_ACTUAL_FINISH
+    ratio = quantity_ratio(activity)
+    if ratio is not None:
+        # Capped: an over-installed node is a linking fault to report, never a
+        # node that earned more value than it was planned to hold.
+        return min(100.0, round(ratio, 1)), SOURCE_QUANTITY
     pct = event_percentages.get(activity.activity_id)
     if pct is not None:
         return float(pct), SOURCE_LINKED_EVENT
@@ -158,15 +219,8 @@ class EVMFigures:
             "total_weight": round(self.total_weight, 4),
             "activity_count": self.activity_count,
             "percent_source_counts": {
-                SOURCE_ACTUAL_FINISH: self.percent_source_counts.get(
-                    SOURCE_ACTUAL_FINISH, 0
-                ),
-                SOURCE_LINKED_EVENT: self.percent_source_counts.get(
-                    SOURCE_LINKED_EVENT, 0
-                ),
-                SOURCE_NO_EVIDENCE: self.percent_source_counts.get(
-                    SOURCE_NO_EVIDENCE, 0
-                ),
+                source: self.percent_source_counts.get(source, 0)
+                for source in PERCENT_SOURCES
             },
         }
 
@@ -207,11 +261,35 @@ def compute_evm(db: Session, data_date: date) -> dict:
     # The same arithmetic restricted to activities that reported something.
     evidenced = EVMFigures()
     evidenced_weight = 0.0
+    # Nodes installing more than they planned. Capped in EV above, listed here,
+    # because the usual cause is a quantity from other work matched onto the
+    # node - a linking fault worth a planner's eye, not a percentage.
+    overruns: list[dict] = []
 
     for act in activities:
         weight = planned_weight(act)
         fraction = planned_fraction(act, data_date)
         pct, source = percent_complete(act, percentages)
+
+        # Checked regardless of which rule scored the node. A node that
+        # finished is scored 100% by rule 1 and never reaches rule 2, but if it
+        # installed 180 of a planned 120 the linking fault is just as real -
+        # and CIV-FDN-1008, the one node on the seeded corpus that does this,
+        # is exactly that case.
+        raw = quantity_ratio(act)
+        if raw is not None and raw > 100.0:
+            overruns.append({
+                "activity_id": act.activity_id,
+                "description": act.description,
+                "installed_qty": float(act.actual_qty),
+                "planned_qty": float(act.planned_qty),
+                "uom": act.uom or "",
+                "raw_percent": round(raw, 1),
+                # Which rule actually scored it, so a reader can tell an
+                # overrun that was capped out of EV from one that never
+                # reached the quantity rule because the node had finished.
+                "scored_by": source,
+            })
 
         pv = weight * fraction
         ev = weight * (pct / 100.0)
@@ -269,6 +347,16 @@ def compute_evm(db: Session, data_date: date) -> dict:
                 f"performance. Use evidenced_subset.spi, and show coverage "
                 f"beside it."
             )
+        ),
+        # Capped out of EV, reported here. An empty list is the answer that
+        # no node reported more than its planned scope, which is a different
+        # statement from the field being absent.
+        "quantity_overruns": overruns,
+        "quantity_overrun_note": (
+            "An activity installing more than its planned quantity is usually "
+            "a quantity from different work matched onto the node. Percent "
+            "complete is capped at 100 for earned value; the raw figure is "
+            "kept here so the linking fault stays visible."
         ),
         # The defensible figure: of the work we can actually see, how is it
         # tracking. Same arithmetic, stated subset, nothing estimated.
