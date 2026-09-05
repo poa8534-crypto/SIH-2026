@@ -69,10 +69,20 @@ beforeEach(() => {
   } as never);
 });
 
-/** Wait for the queue to load and the first item to auto-select. */
+/** Wait for the queue to load and the first item to auto-select.
+ *
+ * Waiting for "Ask Supervisor" is not enough: it renders as soon as an ITEM
+ * is selected, while Confirm stays disabled until the effect that picks a
+ * CANDIDATE has run. Under a parallel run the click landed in that window and
+ * hit a disabled button, so the resolve tests passed alone and failed
+ * alongside any other file. Wait for the state the tests actually depend on.
+ */
 async function ready() {
   wrap(<Reconcile />);
   await screen.findByText(/Ask Supervisor/);
+  await waitFor(() =>
+    expect(document.getElementById('confirm-match')).not.toBeDisabled()
+  );
 }
 
 describe('planner clarify action', () => {

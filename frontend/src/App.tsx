@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch } from 'lucide-react';
+import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch, Scale } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
@@ -11,6 +11,7 @@ import Ingest from './pages/Ingest';
 import Field from './pages/Field';
 import Memory from './pages/Memory';
 import Raid from './pages/Raid';
+import Delay from './pages/Delay';
 import Home from './pages/Home';
 import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
@@ -261,6 +262,11 @@ const PLANNER_NAV: NavItem[] = [
      Exposure screen reads could never be filled by anyone. The detector
      proposed; nobody could accept. */
   { path: '/raid', label: 'Exposure', icon: ShieldAlert },
+  /* Delay attribution. The whole chain behind it — taxonomy, classification,
+     the notice clock, concurrency and float — proposes; this is where a
+     planner rules, and without the screen the proposals had nowhere to go.
+     Same shape of gap /raid had before it got a nav entry. */
+  { path: '/delay', label: 'Delay', icon: Scale },
   { path: '/memory', label: 'Memory', icon: Database },
 ];
 
@@ -361,6 +367,7 @@ export default function App() {
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/ingest" element={<Ingest />} />
           <Route path="/raid" element={<Raid />} />
+          <Route path="/delay" element={<Delay />} />
           <Route path="/memory" element={<Memory />} />
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="*" element={<Navigate to="/home" replace />} />

@@ -16,6 +16,10 @@ import {
   RaidCandidate,
   RaidItem,
   ResolveResponse,
+  DelayAttribution,
+  DelayClassifyResponse,
+  DelayNoticeResponse,
+  Liability,
   ReviewItem,
   ScheduleResponse
 } from '../types';
@@ -95,6 +99,67 @@ export const api = {
   /** Past ingests, newest first, without their events. */
   listJobs: (limit: number = 50): Promise<JobSummary[]> => {
     return fetchWithHandler(`/jobs?limit=${limit}`);
+  },
+
+  /**
+   * The delay attribution matrix. GET /delay/attribution.
+   *
+   * Read-only: the rows are written by the ingest and resolution paths, not
+   * by this call, so two identical requests do the same amount of work.
+   */
+  getDelayAttribution: (discipline?: string): Promise<DelayAttribution> => {
+    const query = discipline ? `?discipline=${encodeURIComponent(discipline)}` : '';
+    return fetchWithHandler(`/delay/attribution${query}`);
+  },
+
+  /**
+   * A planner rules on who carries one delay. POST /delay/{id}/classify.
+   *
+   * There is no "accept the proposal" shortcut by design: a planner who
+   * agrees sends the same value the machine proposed, and the audit trail
+   * then shows a human agreed rather than a default nobody read (D-078).
+   */
+  classifyDelay: (
+    delayEventId: string,
+    body: { liability: Liability; note?: string; adjudicated_by?: string }
+  ): Promise<DelayClassifyResponse> => {
+    return fetchWithHandler(`/delay/${delayEventId}/classify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
+   * Record that contractual notice was given. POST /delay/{id}/notice.
+   *
+   * `served_on` is the date notice was GIVEN, not the date it was typed here.
+   * A date after the deadline is accepted and comes back `served_late` — a
+   * late notice is a fact about the project (D-080).
+   */
+  recordDelayNotice: (
+    delayEventId: string,
+    body: { served_on: string; reference?: string; recorded_by?: string }
+  ): Promise<DelayNoticeResponse> => {
+    return fetchWithHandler(`/delay/${delayEventId}/notice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
+   * Absolute URL for the Delay Attribution Report.
+   *
+   * A URL rather than a fetch: the HTML is meant to be opened and printed,
+   * and the CSV to be saved. Absolute because the frontend is served from a
+   * different origin in development — the same reason `getBaseUrl` is
+   * exported for export downloads.
+   */
+  delayReportUrl: (format: 'html' | 'csv', discipline?: string): string => {
+    const query = new URLSearchParams({ format });
+    if (discipline) query.set('discipline', discipline);
+    return `${getBaseUrl()}/delay/report?${query.toString()}`;
   },
 
   getReviewQueue: (status: string = 'pending'): Promise<ReviewItem[]> => {

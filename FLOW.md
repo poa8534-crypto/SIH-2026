@@ -1291,6 +1291,53 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 7 — the planner screen at `/delay`. The chain that proposes a
+liability, a notice window, a concurrency reading and a float split now has a
+place where a human rules. Completes the Contractor Dispute Shield.
+**Date:** 2026-09-04 · **Decision:** D-083
+
+```
+DELAY SCREEN — WHERE THE PROPOSALS GO                             (D-083)
+
+  frontend/src/App.tsx      PLANNER_NAV + <Route path="/delay">
+  frontend/src/lib/role.ts  planner.allows gains '/delay'
+
+  frontend/src/pages/Delay.tsx
+      useQuery ['delayAttribution']   GET /delay/attribution, 3s poll
+        |
+        +-- header      delays classified / carrying a ruling /
+        |               days recorded vs days BEYOND FLOAT /
+        |               notice windows closed
+        |               caveat text comes from the API's impact_days_basis,
+        |               never restated here, so screen and report cannot drift
+        +-- banner      network.logic_matches_dates === false ->
+        |               27 broken ties, both finish dates, "advisory"
+        +-- ConcurrencyPanel   pairs, status, and the both_beyond_float reading
+        +-- queue       one row per delay: activity, effective liability,
+        |               the word "proposal" when unruled, FloatLine, NoticeLine
+        +-- detail      evidence verbatim + file/row citation
+                        Proposed AND Ruled side by side (an override reads
+                          as an override)
+                        4 ruling buttons, id=`rule-${liability}`
+                          -> api.classifyDelay   POST /delay/{id}/classify
+                        date + reference -> api.recordDelayNotice
+                          -> POST /delay/{id}/notice
+                        both invalidate ['delayAttribution'] and ['auditRecent']
+
+  Report links are plain <a>, not <Button to=...>: `to` renders a
+  react-router Link and the report is served from the API origin.
+
+  Composers clear when the selection MOVES, not when it first arrives — the
+  auto-select lands a render after the pane, and clearing then wiped anything
+  typed in that window.
+
+  Pinned by frontend/src/test/delay.test.tsx (14 tests).
+```
+
+---
+
+### Previous modification area (D-082)
+
 **Task:** Phase 6 — the critical-path pass. Each slip is split into float
 consumed and delay beyond float, so the report can say which days could have
 moved the completion date. Completes the Contractor Dispute Shield (Phases 0–6).

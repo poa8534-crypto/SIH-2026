@@ -55,7 +55,7 @@ export const ROLE_PROFILES: Record<Role, RoleProfile> = {
       'Owns the schedule. Reads every field report against the evidence and ' +
       'decides what is true. The only role that changes the plan.',
     home: '/home',
-    allows: ['/home', '/reconcile', '/schedule', '/ingest', '/memory', '/raid'],
+    allows: ['/home', '/reconcile', '/schedule', '/ingest', '/memory', '/raid', '/delay'],
   },
   executive: {
     id: 'executive',

@@ -61,6 +61,162 @@ export interface ReviewItem {
   match_method?: string;
 }
 
+/** ── Delay attribution (the Contractor Dispute Shield) ────────────────────
+ *
+ *  Liability is a PROPOSAL until a planner rules. `liability_proposed` is the
+ *  deterministic reading of the delay category; `liability_final` is null
+ *  until someone has ruled, and `liability_effective` is whichever currently
+ *  applies. A screen that showed only the effective value would present a
+ *  machine proposal as a finding, which is the one thing that would discredit
+ *  the whole feature — so all three travel together. See D-078.
+ */
+export type Liability =
+  | 'COMPENSABLE'
+  | 'NON_COMPENSABLE'
+  | 'EXCUSABLE'
+  | 'CONTESTED';
+
+/** SERVED / OPEN / LAPSED / UNKNOWN. LAPSED means "no notice recorded here",
+ *  never "no notice was given" — NAVIS holds no notice register. See D-080. */
+export type NoticeStatus = 'SERVED' | 'OPEN' | 'LAPSED' | 'UNKNOWN';
+
+export interface DelayEvent {
+  id: string;
+  activity_id: string | null;
+  phrase: string;
+  category: string;
+  liability_proposed: Liability;
+  liability_final: Liability | null;
+  liability_effective: Liability;
+  adjudicated: boolean;
+  adjudication_note: string | null;
+  inferred_by: string;
+  confidence: number | null;
+  discipline: string | null;
+  month: string | null;
+  /** The activity's whole finish slip, credited to every cause recorded
+   *  against it. An upper bound — `beyond_float_days` is the claimable part. */
+  impact_days: number;
+  /** Baseline float, null when the activity could not be scheduled at all. */
+  activity_total_float: number | null;
+  float_consumed_days: number;
+  /** The only part of the slip that can have moved the completion date. */
+  beyond_float_days: number;
+  on_critical_path: boolean;
+  evidenced_on: string | null;
+  /** REPORTED is a date a source asserted; the others are inferences. */
+  evidenced_basis: string | null;
+  notice_due_on: string | null;
+  notice_status: NoticeStatus;
+  notice_days_remaining: number | null;
+  notice_served_on: string | null;
+  notice_reference: string | null;
+  audit_record_id: string | null;
+  source_file: string | null;
+  source_line: number | null;
+  source_row: number | null;
+  source_span: string | null;
+}
+
+export interface ConcurrentDelayPair {
+  /** SAME_ACTIVITY is definitional; OVERLAPPING_WINDOW is temporal only. */
+  kind: 'SAME_ACTIVITY' | 'OVERLAPPING_WINDOW';
+  status: 'CONFLICT' | 'UNRESOLVED' | 'ALIGNED';
+  overlap_start: string;
+  overlap_end: string;
+  overlap_days: number;
+  left_delay_event_id: string;
+  left_activity_id: string | null;
+  left_phrase: string;
+  left_category: string;
+  left_liability: Liability;
+  left_adjudicated: boolean;
+  left_beyond_float_days: number;
+  right_delay_event_id: string;
+  right_activity_id: string | null;
+  right_phrase: string;
+  right_category: string;
+  right_liability: Liability;
+  right_adjudicated: boolean;
+  right_beyond_float_days: number;
+  /** Both sides outran their own float, so each could have moved the finish.
+   *  This is what turns a temporal overlap into a claim about the date. */
+  both_beyond_float: boolean;
+}
+
+export interface DelayConcurrency {
+  pairs: ConcurrentDelayPair[];
+  total_pairs: number;
+  pairs_listed: number;
+  counts: Record<string, number>;
+  beyond_float_pairs: number;
+  note: string;
+}
+
+/** The baseline network the float figures came from. Two finish dates, and
+ *  neither is preferred: where the authored dates break the ties they state,
+ *  float is advisory until they are reconciled. See D-082. */
+export interface DelayNetworkSummary {
+  activities_scheduled: number;
+  critical_activities: number;
+  project_finish: string | null;
+  authored_finish: string | null;
+  logic_conflicts: number;
+  logic_matches_dates: boolean;
+  unresolved_activities: string[];
+  dangling_predecessors: string[];
+  calendar_basis: string;
+}
+
+export interface DelayAttribution {
+  events: DelayEvent[];
+  total_events: number;
+  adjudicated_events: number;
+  /** Days a planner has ruled on, per liability. */
+  adjudicated_days: Record<string, number>;
+  /** Every row at its effective liability — proposals included. */
+  proposed_days: Record<string, number>;
+  days_by_month: Record<string, number>;
+  categories_present: string[];
+  notice_window_days: number;
+  notice_counts: Record<string, number>;
+  notice_lapsed_days: number;
+  notice_as_of: string | null;
+  beyond_float_days: Record<string, number>;
+  adjudicated_beyond_float_days: Record<string, number>;
+  float_basis: string;
+  network: DelayNetworkSummary;
+  concurrency: DelayConcurrency;
+  impact_days_basis: string;
+  unadjudicated_note: string;
+  notice_note: string;
+  computed_at: string;
+}
+
+export interface DelayClassifyResponse {
+  delay_event_id: string;
+  activity_id: string | null;
+  liability_proposed: Liability;
+  liability_previous: Liability | null;
+  liability_final: Liability;
+  overrides_proposal: boolean;
+  audit_records_created: number;
+  message: string;
+}
+
+export interface DelayNoticeResponse {
+  delay_event_id: string;
+  activity_id: string | null;
+  evidenced_on: string | null;
+  notice_due_on: string | null;
+  notice_served_on: string;
+  notice_reference: string | null;
+  previous_served_on: string | null;
+  served_late: boolean;
+  audit_records_created: number;
+  message: string;
+}
+
 /** ARCHITECTURE.md 2.3. EXPLICIT and RELATIVE_RESOLVED both come from the
  *  source; DEFAULTED_TO_REPORT_DATE is an inference the source never made. */
 export type DateBasis = 'EXPLICIT' | 'RELATIVE_RESOLVED' | 'DEFAULTED_TO_REPORT_DATE';
