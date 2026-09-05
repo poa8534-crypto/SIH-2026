@@ -37,11 +37,15 @@ vi.mock('../lib/api', async () => {
       getExecutiveMetrics: vi.fn().mockResolvedValue({
         as_of: '2026-09-15',
         kpis: { spi: 0.88, spi_band: 'Slipping', pv_total: 120, ev_total: 105.6, float_drift_days: 14, critical_activities_count: 14, evidence_coverage_pct: 84.2, total_activities: 64, evidenced_activities: 56, unevidenced_activities: 8 },
-        dispute_shield: { employer_delay_days: 24, contractor_delay_days: 8, concurrent_delay_days: 6, neutral_delay_days: 10, employer_claim_cr: 14.2, contractor_ld_risk_cr: 3.8, contract_value_cr: 180, notice_compliance_pct: 82.5, notice_served_count: 4, notice_open_count: 2, notice_lapsed_count: 1 },
-        completion_forecast: { baseline_finish: '2026-10-15', current_forecast_finish: '2026-10-29', variance_days: 14, p10_finish: '2026-10-15', p50_finish: '2026-10-29', p90_finish: '2026-11-12', monte_carlo_runs: 1000 },
+        dispute_shield: { employer_delay_days: 0, contractor_delay_days: 1, neutral_delay_days: 1, contested_delay_days: 41, employer_beyond_float_days: 0, contractor_beyond_float_days: 1, concurrent_pairs: 1, concurrent_conflicts: 0, adjudicated_days: {}, adjudicated_beyond_float_days: {}, adjudicated_events: 0, total_events: 4, notice_compliance_pct: 50, notice_served_count: 0, notice_open_count: 2, notice_lapsed_count: 2, notice_unknown_count: 0, notice_note: null, impact_days_basis: null, unadjudicated_note: null },
+        financial: { available: false, reason: 'No contract value was supplied.', basis: null, contract_value_cr: null, prolongation_lakhs_per_day: null, employer_claim_cr: null, contractor_ld_risk_cr: null, ld_pct_per_week: 0.5, ld_cap_pct: 10, note: null },
+        completion_forecast: { baseline_finish: '2026-09-28', logic_finish: '2026-10-12', exposed_finish: '2026-10-12', current_forecast_finish: '2026-10-12', variance_days: 14, open_critical_exposure_days: 0, is_probabilistic: false, logic_conflicts: 27, logic_conflicts_note: null, basis: 'Three computed dates, not percentiles.' },
         s_curve: [],
+        ev_basis: 'A percentage of planned duration, on a 0/100 rule.',
         critical_drivers: [],
+        critical_drivers_note: 'Null means no cause is recorded.',
         milestones: [],
+        milestones_note: 'Derived from the baseline.',
       }),
     },
   };

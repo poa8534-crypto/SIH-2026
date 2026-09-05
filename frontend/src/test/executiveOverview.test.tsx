@@ -6,91 +6,135 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import ExecutiveOverview from '../pages/executive/Overview';
 import { api } from '../lib/api';
+import type { ExecutiveMetricsResponse } from '../types';
 
-const MOCK_METRICS = {
+/**
+ * The executive screen, and what it must NOT do.
+ *
+ * This screen previously rendered ₹14.20 Cr of employer claim, ₹3.80 Cr of LD
+ * risk, an ₹180.00 Cr contract baseline, a P90 of 2026-11-12 and 84.2%
+ * evidence coverage as hardcoded fallbacks, against an endpoint that was in
+ * fact returning ₹0.00 because it read the delay layer with key names that
+ * layer never emitted. The invented figures were therefore what a reader saw
+ * while the endpoint was broken.
+ *
+ * The old tests here asserted those same invented numbers, so they passed
+ * throughout. These assert the opposite property: that an unavailable figure
+ * renders as unavailable, and that every figure shown came from the payload.
+ * See D-090.
+ */
+
+const BASE: ExecutiveMetricsResponse = {
   as_of: '2026-09-15',
   kpis: {
-    spi: 0.88,
-    spi_band: 'Slipping',
-    pv_total: 120.0,
-    ev_total: 105.6,
+    spi: 0.4984,
+    spi_band: 'Behind',
+    pv_total: 1284.6,
+    ev_total: 640.4,
     float_drift_days: 14,
-    critical_activities_count: 14,
-    evidence_coverage_pct: 84.2,
-    total_activities: 64,
-    evidenced_activities: 56,
-    unevidenced_activities: 8,
+    critical_activities_count: 31,
+    evidence_coverage_pct: 64.2,
+    total_activities: 120,
+    evidenced_activities: 77,
+    unevidenced_activities: 43,
   },
   dispute_shield: {
-    employer_delay_days: 24,
-    contractor_delay_days: 8,
-    concurrent_delay_days: 6,
-    neutral_delay_days: 10,
-    employer_claim_cr: 14.20,
-    contractor_ld_risk_cr: 3.80,
-    contract_value_cr: 180.0,
-    notice_compliance_pct: 82.5,
-    notice_served_count: 4,
+    employer_delay_days: 0,
+    contractor_delay_days: 1,
+    neutral_delay_days: 1,
+    contested_delay_days: 41,
+    employer_beyond_float_days: 0,
+    contractor_beyond_float_days: 1,
+    concurrent_pairs: 1,
+    concurrent_conflicts: 0,
+    adjudicated_days: { COMPENSABLE: 0, NON_COMPENSABLE: 0, EXCUSABLE: 0, CONTESTED: 0 },
+    adjudicated_beyond_float_days: { COMPENSABLE: 0, NON_COMPENSABLE: 0, EXCUSABLE: 0, CONTESTED: 0 },
+    adjudicated_events: 0,
+    total_events: 4,
+    notice_compliance_pct: 50.0,
+    notice_served_count: 0,
     notice_open_count: 2,
-    notice_lapsed_count: 1,
+    notice_lapsed_count: 2,
+    notice_unknown_count: 0,
+    notice_note: 'Notice windows are 28 days from the date the delay was evidenced.',
+    impact_days_basis: 'Each activity’s whole finish slip is credited to every cause.',
+    unadjudicated_note: 'Rows without a planner ruling are proposals.',
+  },
+  financial: {
+    available: false,
+    reason: 'No contract value was supplied, so no financial exposure is computed.',
+    basis: null,
+    contract_value_cr: null,
+    prolongation_lakhs_per_day: null,
+    employer_claim_cr: null,
+    contractor_ld_risk_cr: null,
+    ld_pct_per_week: 0.5,
+    ld_cap_pct: 10.0,
+    note: null,
   },
   completion_forecast: {
-    baseline_finish: '2026-10-15',
-    current_forecast_finish: '2026-10-29',
+    baseline_finish: '2026-09-28',
+    logic_finish: '2026-10-12',
+    exposed_finish: '2026-10-12',
+    current_forecast_finish: '2026-10-12',
     variance_days: 14,
-    p10_finish: '2026-10-15',
-    p50_finish: '2026-10-29',
-    p90_finish: '2026-11-12',
-    monte_carlo_runs: 1000,
+    open_critical_exposure_days: 0,
+    is_probabilistic: false,
+    logic_conflicts: 27,
+    logic_conflicts_note:
+      "27 of the baseline's logic ties are broken by its own authored dates.",
+    basis: 'Three computed dates, not percentiles.',
   },
   s_curve: [
-    {
-      date: '2026-08-01',
-      week_label: 'W01',
-      pv_cumulative: 10.0,
-      ev_cumulative: 8.5,
-      ev_projected: 8.5,
-      is_future: false,
-    },
-    {
-      date: '2026-09-15',
-      week_label: 'W07',
-      pv_cumulative: 60.0,
-      ev_cumulative: 52.8,
-      ev_projected: 52.8,
-      is_future: false,
-    },
-    {
-      date: '2026-10-29',
-      week_label: 'W13',
-      pv_cumulative: 100.0,
-      ev_cumulative: null,
-      ev_projected: 100.0,
-      is_future: true,
-    },
+    { date: '2026-07-09', week_label: 'W07', pv_cumulative: 11.6, ev_cumulative: 3.3, ev_projected: 3.3, is_future: false },
+    { date: '2026-08-20', week_label: 'W13', pv_cumulative: 65.1, ev_cumulative: 19.0, ev_projected: 19.0, is_future: false },
+    { date: '2026-10-01', week_label: 'W19', pv_cumulative: 100.0, ev_cumulative: null, ev_projected: 34.8, is_future: true },
   ],
+  ev_basis: 'A percentage of planned duration, on a 0/100 rule.',
   critical_drivers: [
     {
-      activity_id: 'ACT-CIV-1002',
-      description: 'Pad-04 concrete pour & curing',
-      discipline: 'CIVIL',
-      planned_finish: '2026-08-30',
-      actual_finish: null,
-      finish_variance_days: 14,
-      driving_delay: 'Foundation curing & monsoon hold',
+      activity_id: 'CIV-PLY-1004',
+      description: 'Piling — Rig Pad',
+      discipline: 'civil',
+      planned_finish: '2026-06-20',
+      actual_finish: '2026-06-21',
+      finish_variance_days: 1,
+      driving_delay: 'piling rig breakdown',
+      driving_delay_category: 'EQUIPMENT_BREAKDOWN',
+      driving_delay_liability: 'NON_COMPENSABLE',
+      driving_delay_adjudicated: false,
+      driving_delay_source: 'civil_progress.xlsx',
       critical: true,
     },
   ],
+  critical_drivers_note: 'Null means no cause is recorded.',
   milestones: [
     {
-      name: 'Commercial Operation Date (COD)',
-      baseline_date: '2026-10-15',
-      forecast_date: '2026-10-29',
+      name: 'Civil scope complete',
+      activity_id: 'CIV-FEN-1019',
+      activity_description: 'Fence & Gate — Plot Boundary',
+      derived: true,
+      derivation: 'last planned finish in this discipline',
+      baseline_date: '2026-08-18',
+      forecast_date: '2026-09-02',
+      basis: 'actual_finish',
+      variance_days: 15,
+      status: 'COMPLETE',
+    },
+    {
+      name: 'Project finish',
+      activity_id: null,
+      activity_description: null,
+      derived: true,
+      derivation: 'latest finish across the network',
+      baseline_date: '2026-09-28',
+      forecast_date: '2026-10-12',
+      basis: 'cpm_project_finish',
       variance_days: 14,
       status: 'CRITICAL',
-      confidence: '71.2%',
     },
   ],
+  milestones_note: 'The baseline carries no milestone flag, so these are derived.',
 };
 
 function wrap(ui: React.ReactNode) {
@@ -104,47 +148,168 @@ function wrap(ui: React.ReactNode) {
   );
 }
 
-describe('ExecutiveOverview', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    vi.spyOn(api, 'getExecutiveMetrics').mockResolvedValue(MOCK_METRICS as never);
-    vi.spyOn(api, 'getSchedule').mockResolvedValue({
-      project: 'OIL Pipeline 04A',
-      data_date: '2026-09-15',
-      activities: [],
-    } as never);
-  });
+function mount(metrics: ExecutiveMetricsResponse = BASE) {
+  vi.spyOn(api, 'getExecutiveMetrics').mockResolvedValue(metrics as never);
+  vi.spyOn(api, 'getSchedule').mockResolvedValue({
+    project: 'OIL Well-Site Duliajan',
+    data_date: '2026-09-15',
+    activities: [],
+  } as never);
+  wrap(<ExecutiveOverview />);
+}
 
-  it('renders strategic executive KPI strip', async () => {
-    wrap(<ExecutiveOverview />);
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
 
-    expect(await screen.findByText('0.88')).toBeInTheDocument();
-    expect(screen.getByText('Slipping')).toBeInTheDocument();
+describe('the KPI strip', () => {
+  it('renders the values the payload actually carries', async () => {
+    mount();
+
+    expect(await screen.findByText('0.50')).toBeInTheDocument();
+    expect(screen.getByText('Behind')).toBeInTheDocument();
     expect(screen.getByText('+14d')).toBeInTheDocument();
-    expect(screen.getAllByText(/14.20/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/84.2/)).toBeInTheDocument();
+    expect(screen.getByText(/64.2/)).toBeInTheDocument();
   });
 
-  it('renders cumulative EVM S-Curve and FIDIC Dispute Shield', async () => {
-    wrap(<ExecutiveOverview />);
+  it('renders an em dash, not a plausible number, when a KPI is missing', async () => {
+    mount({ ...BASE, kpis: { ...BASE.kpis, spi: null, evidence_coverage_pct: null as never } });
 
-    expect(await screen.findByText(/Cumulative S-Curve/i)).toBeInTheDocument();
-    expect(screen.getByText(/FIDIC Contractual Dispute Shield/i)).toBeInTheDocument();
-    expect(screen.getByText('24 Days')).toBeInTheDocument();
-    expect(screen.getByText('8 Days')).toBeInTheDocument();
-    expect(screen.getByText(/82.5% Compliant/i)).toBeInTheDocument();
+    // The old screen printed 0.88 and 84.2% here regardless of the payload.
+    expect(await screen.findAllByText('—')).not.toHaveLength(0);
+    expect(screen.queryByText('0.88')).not.toBeInTheDocument();
+    expect(screen.queryByText(/84.2/)).not.toBeInTheDocument();
+  });
+});
+
+describe('money', () => {
+  it('shows delay in days and names the absence when no contract value was supplied', async () => {
+    mount();
+
+    expect(await screen.findByText(/FIDIC Contractual Dispute Shield/i)).toBeInTheDocument();
+    expect(screen.getByText('0 Days')).toBeInTheDocument();
+    expect(screen.getByText('1 Days')).toBeInTheDocument();
+    expect(
+      screen.getByText(/No claim value — no contract sum supplied/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/CONTRACT VALUE NOT SUPPLIED/)).toBeInTheDocument();
   });
 
-  it('runs interactive what-if scenario simulator and updates cost impact', async () => {
-    wrap(<ExecutiveOverview />);
+  it('never invents a rupee figure', async () => {
+    mount();
+    await screen.findByText(/FIDIC Contractual Dispute Shield/i);
+
+    // The four literals this screen used to fall back to.
+    for (const invented of ['14.20', '3.80', '180.00', '2026-11-12']) {
+      expect(screen.queryByText(new RegExp(invented))).not.toBeInTheDocument();
+    }
+  });
+
+  it('prices the days when the operator does supply a contract', async () => {
+    mount({
+      ...BASE,
+      financial: {
+        ...BASE.financial,
+        available: true,
+        reason: null,
+        basis: 'operator_supplied',
+        contract_value_cr: 180.0,
+        prolongation_lakhs_per_day: 12.5,
+        employer_claim_cr: 0.0,
+        contractor_ld_risk_cr: 0.13,
+        note: 'Operator assumptions applied to the project evidence.',
+      },
+    });
+
+    expect(await screen.findByText(/CONTRACT BASELINE: ₹180.00 CR/)).toBeInTheDocument();
+    expect(screen.getByText(/₹0.13 Cr LD Risk/)).toBeInTheDocument();
+  });
+});
+
+describe('the completion range', () => {
+  it('shows three computed dates and no percentile', async () => {
+    mount();
+
+    expect(await screen.findByText('Baseline')).toBeInTheDocument();
+    expect(screen.getByText('Logic')).toBeInTheDocument();
+    expect(screen.getByText('Exposed')).toBeInTheDocument();
+    expect(screen.getByText('as authored')).toBeInTheDocument();
+    expect(screen.getByText('CPM over actuals')).toBeInTheDocument();
+
+    expect(screen.queryByText(/P10/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/P90/)).not.toBeInTheDocument();
+  });
+
+  it('says when the baseline disagrees with its own logic', async () => {
+    mount();
+    expect(
+      await screen.findByText(/27 of the baseline's logic ties are broken/)
+    ).toBeInTheDocument();
+  });
+});
+
+describe('milestones', () => {
+  it('states that they are derived and where each date came from', async () => {
+    mount();
+
+    expect(await screen.findByText('Derived Milestones')).toBeInTheDocument();
+    expect(screen.getByText('DERIVED FROM BASELINE')).toBeInTheDocument();
+    expect(screen.getByText('Civil scope complete')).toBeInTheDocument();
+    expect(screen.getByText('actual · +15d')).toBeInTheDocument();
+    expect(screen.getByText(/carries no milestone flag/)).toBeInTheDocument();
+  });
+
+  it('carries no confidence percentage', async () => {
+    mount();
+    await screen.findByText('Derived Milestones');
+    expect(screen.queryByText(/conf\./)).not.toBeInTheDocument();
+  });
+});
+
+describe('critical path drivers', () => {
+  it('names the recorded cause and cites the document', async () => {
+    mount();
+
+    expect(await screen.findByText('piling rig breakdown')).toBeInTheDocument();
+    expect(screen.getByText(/EQUIPMENT_BREAKDOWN/)).toBeInTheDocument();
+    expect(screen.getByText(/proposed, not adjudicated/)).toBeInTheDocument();
+    expect(screen.getByText('civil_progress.xlsx')).toBeInTheDocument();
+  });
+
+  it('says so when no cause is recorded, rather than supplying one', async () => {
+    mount({
+      ...BASE,
+      critical_drivers: [
+        {
+          ...BASE.critical_drivers[0],
+          driving_delay: null,
+          driving_delay_category: null,
+          driving_delay_liability: null,
+          driving_delay_source: null,
+        },
+      ],
+    });
+
+    expect(await screen.findByText('No cause recorded')).toBeInTheDocument();
+    // The string the old code would have produced from the "CIV" prefix.
+    expect(
+      screen.queryByText(/Foundation curing & monsoon hold/)
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe('the what-if simulator', () => {
+  it('moves the computed finish date instead of inventing a cost', async () => {
+    mount();
 
     expect(await screen.findByText(/What-If/i)).toBeInTheDocument();
-    const weatherSlider = screen.getAllByRole('slider')[0];
-
-    // Change weather days to 10
-    fireEvent.change(weatherSlider, { target: { value: '10' } });
+    fireEvent.change(screen.getAllByRole('slider')[0], { target: { value: '10' } });
 
     expect(screen.getAllByText('+10 Days').length).toBeGreaterThan(0);
-    expect(screen.getByText(/₹1.25 Crores/i)).toBeInTheDocument();
+    // logic_finish 2026-10-12 plus 10 days.
+    expect(screen.getByText('2026-10-22')).toBeInTheDocument();
+    // The old screen printed "₹1.25 Crores" here from a rate written into
+    // the component.
+    expect(screen.queryByText(/₹1.25 Crores/)).not.toBeInTheDocument();
   });
 });

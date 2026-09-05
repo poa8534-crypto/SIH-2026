@@ -138,7 +138,10 @@ def check_endpoints(base: str) -> None:
     # disappearing without anyone noticing is exactly what this check is for.
     # It read 8 long after the surface had grown to 30 (D-072 counted them),
     # so the check had been failing on every run regardless of server health.
-    expected_endpoints = 36
+    # It then read 36 while the surface was 44, and failed every run again -
+    # which is the argument for re-pinning it in the same commit as any change
+    # that adds or removes an operation, not later.
+    expected_endpoints = 44
     record("GET  /openapi.json (/docs)", status == 200 and n_endpoints == expected_endpoints,
            f"{n_endpoints} endpoints exposed, expected {expected_endpoints}")
 

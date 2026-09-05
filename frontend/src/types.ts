@@ -884,13 +884,21 @@ export interface ExecutiveSCurvePoint {
   is_future: boolean;
 }
 
+/** A milestone the backend DERIVED from the schedule, because the baseline
+ *  carries no milestone flag. `derivation` says how, `basis` says whether the
+ *  forecast date is an actual date or the CPM early finish. There is no
+ *  confidence field: nothing in the system calibrates one. */
 export interface ExecutiveMilestone {
   name: string;
-  baseline_date: string;
-  forecast_date: string;
-  variance_days: number;
-  status: string;
-  confidence: string;
+  activity_id: string | null;
+  activity_description: string | null;
+  derived: boolean;
+  derivation: string;
+  baseline_date: string | null;
+  forecast_date: string | null;
+  basis: 'actual_finish' | 'cpm_early_finish' | 'cpm_project_finish' | 'not_scheduled' | string;
+  variance_days: number | null;
+  status: 'COMPLETE' | 'ON_TRACK' | 'AT_RISK' | 'CRITICAL' | 'UNSCHEDULED' | string;
 }
 
 export interface ExecutiveCriticalDriver {
@@ -900,7 +908,14 @@ export interface ExecutiveCriticalDriver {
   planned_finish: string | null;
   actual_finish: string | null;
   finish_variance_days: number;
-  driving_delay: string;
+  /** The worst delay RECORDED against this activity, with its citation.
+   *  Null means no cause is recorded — which is a real state, not a prompt
+   *  to supply one. */
+  driving_delay: string | null;
+  driving_delay_category: string | null;
+  driving_delay_liability: string | null;
+  driving_delay_adjudicated: boolean;
+  driving_delay_source: string | null;
   critical: boolean;
 }
 
@@ -918,31 +933,65 @@ export interface ExecutiveMetricsResponse {
     evidenced_activities: number;
     unevidenced_activities: number;
   };
+  /** Liability in DAYS, keyed by the delay layer's own vocabulary. There is
+   *  no money here — see `financial`, which is opt-in. */
   dispute_shield: {
     employer_delay_days: number;
     contractor_delay_days: number;
-    concurrent_delay_days: number;
     neutral_delay_days: number;
-    employer_claim_cr: number;
-    contractor_ld_risk_cr: number;
-    contract_value_cr: number;
-    notice_compliance_pct: number;
+    contested_delay_days: number;
+    employer_beyond_float_days: number;
+    contractor_beyond_float_days: number;
+    concurrent_pairs: number;
+    concurrent_conflicts: number;
+    adjudicated_days: Record<string, number>;
+    adjudicated_beyond_float_days: Record<string, number>;
+    adjudicated_events: number;
+    total_events: number;
+    notice_compliance_pct: number | null;
     notice_served_count: number;
     notice_open_count: number;
     notice_lapsed_count: number;
+    notice_unknown_count: number;
+    notice_note: string | null;
+    impact_days_basis: string | null;
+    unadjudicated_note: string | null;
   };
+  /** Money only when an operator supplied contract parameters. When
+   *  `available` is false every figure here is null and `reason` says why —
+   *  the screen must render the absence, never a placeholder. */
+  financial: {
+    available: boolean;
+    reason: string | null;
+    basis: string | null;
+    contract_value_cr: number | null;
+    prolongation_lakhs_per_day: number | null;
+    employer_claim_cr: number | null;
+    contractor_ld_risk_cr: number | null;
+    ld_pct_per_week: number;
+    ld_cap_pct: number;
+    note: string | null;
+  };
+  /** Three computed dates. NOT percentiles — `is_probabilistic` is false and
+   *  stays false until something in the system holds a duration distribution. */
   completion_forecast: {
     baseline_finish: string | null;
+    logic_finish: string | null;
+    exposed_finish: string | null;
     current_forecast_finish: string | null;
     variance_days: number;
-    p10_finish: string;
-    p50_finish: string;
-    p90_finish: string;
-    monte_carlo_runs: number;
+    open_critical_exposure_days: number;
+    is_probabilistic: boolean;
+    logic_conflicts: number;
+    logic_conflicts_note: string | null;
+    basis: string;
   };
   s_curve: ExecutiveSCurvePoint[];
+  ev_basis: string;
   critical_drivers: ExecutiveCriticalDriver[];
+  critical_drivers_note: string;
   milestones: ExecutiveMilestone[];
+  milestones_note: string;
 }
 
 // ── Schedule Feasibility & Knowledge Auditor ────────────────────────────────

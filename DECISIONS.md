@@ -8230,3 +8230,203 @@ The drawer now makes three requests when it opens — audit, ledger, productivit
 `percent_complete`. At 120 activities that is imperceptible; on a large
 schedule it is the cache D-082 already names as the next step, and the drawer
 is where it would first be felt.
+
+---
+
+## 2026-09-05 / D-090 — The executive layer stops inventing figures
+
+### Context
+An audit of the executive oversight work found that `server/executive_metrics.py`
+and `frontend/src/pages/executive/Overview.tsx` — the first screen a Senior
+Management judge opens — carried eight fabricated figures, sitting directly on
+top of layers that had been built with the opposite discipline. The core of
+this project refuses to write an Actual Finish it cannot evidence (D-008),
+refuses to let an LLM assign liability (D-006, D-077), refuses to emit a cost
+metric whose denominator it would have to invent (`server/evm.py ::
+COST_UNAVAILABLE_REASON`) — and then a screen above all of that printed
+₹14.20 Crores of employer claim from nowhere.
+
+The eight:
+
+1. `proposed_days` read with the key names `"EMPLOYER"`, `"CONTRACTOR"`,
+   `"CONCURRENT"`, `"NEUTRAL"`. The delay layer keys that dict by its own
+   `Liability` enum — `COMPENSABLE`, `NON_COMPENSABLE`, `EXCUSABLE`,
+   `CONTESTED` — so every `.get()` fell to its default and every downstream
+   financial figure was **₹0.00**, on every run, with 43 delay-days sitting
+   in the evidence underneath. `beyond_float` was read for a key the layer
+   spells `beyond_float_days`, so it was dead too.
+2. `ESTIMATED_CONTRACT_VALUE_CR = 180.0`, commented as an "Indian
+   Infrastructure / PSU EPC" baseline. No contract in this system says so.
+3. `DAILY_PROLONGATION_COST_LAKHS = 12.5`, likewise, and duplicated as a
+   literal `12.5` inside the frontend's scenario simulator.
+4. P10 / P50 / P90 computed as `drift − 3`, `drift`, `drift + 14`.
+5. `"monte_carlo_runs": 1000` beside them, and
+   `FORECAST ALGORITHM: MONTE CARLO (1,000 RUNS)` printed under the chart.
+   No simulation exists anywhere in this repository.
+6. Historical earned value back-cast as `today_ev × (elapsed_fraction) ** 1.15`
+   — an exponent with no derivation, drawing a plausible progress history for
+   a corpus in which nothing had completed.
+7. Five hardcoded milestones with invented names, invented baseline and
+   forecast dates, and confidence figures of 94.2% / 78.5% / 65.0% / 71.2%.
+   Four of the five would have rendered unchanged against an empty database.
+8. `driving_delay` selected by substring: `"CIV" in activity_id` produced
+   "Foundation curing & monsoon hold", whether or not any report had mentioned
+   curing or rain — while `delay_events` held the real cause, its category,
+   its proposed liability and the document line it was read from.
+
+The frontend then supplied hardcoded fallbacks for exactly the figures the
+broken endpoint was returning as null or zero — `?? '14.20'`, `?? '3.80'`,
+`?? '180.00'`, `?? '2026-11-12'`, `?? '84.2'`, `?? 24`, `?? 8` — so the screen
+looked most confident precisely when it knew least.
+
+### Decision
+
+**Money is opt-in, and is the operator's assumption.** The two constants are
+deleted. `compute_executive_metrics` takes `contract_value_cr` and
+`prolongation_lakhs_per_day` as optional keyword arguments, exposed as
+optional query parameters on `GET /executive/metrics`. Neither is defaulted.
+Without them the payload reports delay exposure in **days**, and
+`financial.available` is false with `FINANCIAL_UNAVAILABLE_REASON` — modelled
+directly on `evm.py`'s refusal to emit a cost metric. With them, every figure
+is labelled `operator_supplied`. `LD_PCT_PER_WEEK` and
+`MAX_LIQUIDATED_DAMAGES_PCT` remain constants because they are FIDIC 8.7
+clause parameters, not facts about one contract.
+
+**Liability is read through the enum.** `Liability` is imported and used for
+every lookup, so the two vocabularies cannot drift apart again. Concurrency
+now comes from `delay_data["concurrency"]` (D-081), because overlapping delay
+windows are a different question from who carries the delay — there is no
+CONCURRENT liability and the payload no longer implies one. `beyond_float_days`
+is reported alongside the headline days, since only those can have moved
+completion.
+
+**Three computed dates replace three percentiles.** `baseline_finish` (the
+baseline as authored), `logic_finish` (the CPM forward pass over evidenced
+actuals, D-082), and `exposed_finish` (logic plus recorded delay that has
+already outrun its float on critical activities *still open* — exposure the
+network has not absorbed). `is_probabilistic: false` is in the payload, and
+`basis` says why: this system holds one baseline, not a duration distribution,
+so a percentile would be a label on arithmetic. `exposed_finish` is declared an
+upper bound for the reason `attribution` already gives about `impact_days`.
+
+**The range discloses that the baseline disagrees with itself.**
+`variance_days` is logic finish minus authored finish and reads +14d, while the
+worst recorded slip on the whole project is 1 day. The difference is the 27
+broken logic ties `compute_schedule` reports. `logic_conflicts` and
+`logic_conflicts_note` are now in the payload and on the screen, because
+without them the honest number looks like a bug.
+
+**Earned value is measured, on a stated rule.** The S-curve's history is
+computed from actual finish dates under an explicit 0/100 rule: an activity
+earns its planned-duration weight on the day it actually finished, and work in
+progress earns nothing. `ev_basis` states the rule and states that this is not
+the same quantity as `kpis.ev_total`, which is the EVM stack's own earned value
+in its own units and credits partial percent complete. The 0.85 fallback SPI
+is gone: when SPI cannot be computed, `ev_projected` is null.
+
+**Causes and milestones come from the data or are absent.** `driving_delay` is
+the worst delay recorded against the activity, carrying its category, its
+liability, whether a planner has adjudicated it, and its source file and line.
+Null means no cause is recorded — a real and reportable state. Milestones are
+derived from the schedule (the last-finishing activity of each discipline, plus
+the project finish), each row declaring `derived`, `derivation` and `basis`
+(`actual_finish` / `cpm_early_finish` / `cpm_project_finish`). There is no
+confidence column, because nothing in this system calibrates one.
+
+**The frontend renders absence as absence.** Every hardcoded fallback is gone,
+replaced by a `dash()` helper. The scenario simulator moves the computed finish
+date instead of multiplying slider-days by a rate written into the component,
+and prices it only when the operator supplied a rate. The two static captions
+under the chart — the Monte Carlo claim and the rollup description — now state
+what the curve actually is.
+
+### Alternatives Considered
+- **Alias the old key names so the numbers appear.** Rejected: it preserves
+  the vocabulary that caused the mismatch, and the mismatch is the bug.
+- **Default the contract value to ₹180 Cr and label it "illustrative".**
+  Rejected. A label under a large rupee figure is not read; the figure is. The
+  same argument was settled for cost metrics in `evm.py` and settling it
+  differently here would make the project's own standard situational.
+- **Implement a real Monte Carlo so P10/P50/P90 become true.** Rejected for
+  now: a simulation needs per-activity duration distributions, and this system
+  holds one baseline. Inventing the distributions to compute the percentiles
+  would move the fabrication one layer down, not remove it.
+- **Keep the five named milestones as demo dressing.** Rejected: they are the
+  rows a client would photograph.
+
+### What it shows on the live corpus
+`GET /executive/metrics` against the running server, no parameters:
+
+```
+dispute_shield   employer 0d · contractor 1d · neutral 1d · contested 41d
+                 beyond float: employer 0d · contractor 1d
+                 4 delay events, 0 adjudicated · notice 50.0% within window
+financial        available: false — "No contract value was supplied..."
+completion       baseline 2026-09-28 · logic 2026-10-12 · exposed 2026-10-12
+                 is_probabilistic: false · logic_conflicts: 27
+critical_drivers CIV-PLY-1004  +1d  "piling rig breakdown" (EQUIPMENT)
+                 proposed, not adjudicated · civil_progress.xlsx
+milestones       7 derived — 1 COMPLETE, 1 ON_TRACK, 4 AT_RISK, 1 CRITICAL
+```
+
+With `?contract_value_cr=180&prolongation_lakhs_per_day=12.5`, the same days
+price to ₹0.00 Cr of employer claim and ₹0.13 Cr of LD risk, labelled
+`operator_supplied`. The honest figures are far smaller than the invented ones,
+which is the point: ₹14.20 Crores was never anything but a number someone typed.
+
+### Verification
+`python -m pytest -q` — 1163 passed, up from 1147. `server/test_executive_metrics.py`
+was rewritten from 2 tests to 18. The old ones asserted only that keys were
+*present* (`assert "contractor_ld_risk_cr" in dispute`), which is why a value
+that had been ₹0.00 since the day it was written never failed a build. The new
+ones pin values and behaviour, including a monkeypatched delay payload keyed by
+the real `Liability` enum that fails if a hand-written key name returns.
+
+`cd frontend && npx vitest run` — 156 passed, up from 147.
+`frontend/src/test/executiveOverview.test.tsx` was rewritten from 3 tests to 12;
+the old ones asserted the invented numbers (`/14.20/`, `₹1.25 Crores`) and so
+passed throughout. The new ones assert that those exact literals are **absent**.
+`npx tsc --noEmit` clean.
+
+`python eval.py` — auto-link precision 100.0%, top-1 87.2%, coverage 50.4%:
+unchanged, as expected, since nothing in `matching/` or `extraction/` was
+touched.
+
+`python scripts/healthcheck.py` — **31 passed, 0 failed**. It had been failing
+on every run: the endpoint count was pinned at 36 against a surface of 44. It
+is re-pinned at 44, with a note that the pin belongs in the same commit as any
+change to the endpoint surface.
+
+The screen was then loaded in a browser against the running API and read end to
+end, which is how two static captions were caught that a grep of the payload
+would not have found: `FORECAST ALGORITHM: MONTE CARLO (1,000 RUNS)` and
+`Projected EV (P50)` were hardcoded JSX, not payload fields.
+
+### Affected Areas
+`server/executive_metrics.py` (rewritten computation, unchanged aggregation
+shape), `server/main.py :: get_executive_metrics` (two optional query
+parameters), `server/test_executive_metrics.py` (rewritten),
+`frontend/src/pages/executive/Overview.tsx`, `frontend/src/types.ts`,
+`frontend/src/test/executiveOverview.test.tsx` (rewritten),
+`frontend/src/test/roleRouting.test.tsx` (mock updated to the real shape),
+`scripts/healthcheck.py`, `.claude/launch.json` (frontend preview port moved
+off 5173, which is in a Windows excluded port range on this machine).
+
+### Trade-offs / Consequences
+The executive screen now shows smaller, sparser numbers: 0 employer delay-days
+instead of ₹14.20 Cr, one critical driver instead of six, no rupee figure at
+all unless the operator supplies a contract. That is a real presentational
+cost and it was accepted deliberately. A judge who asks "where does ₹14.20
+Crores come from?" gets an answer that ends the demo; a judge who asks where
+0 days comes from gets a document, a line number and a delay register.
+
+The screen is also now the strongest available demonstration of the property
+this project is actually arguing for, because it is the one place where the
+system had to be made to admit it did not know something.
+
+**Not fixed here, and stated rather than hidden:** the landing page
+(`frontend/src/pages/Home.tsx` and the workspace selector) still carries
+decorative telemetry — `LATENCY: 18MS`, `98.4% NOMINAL ALIGNMENT`,
+`VOL: +3.2%`, `EARNED VALUE: 100%` on a named activity. It is marketing chrome
+rather than a reported metric, but it is the same class of thing on the first
+screen anyone sees, and it should be reviewed before the demo.

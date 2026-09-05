@@ -2622,14 +2622,46 @@ def get_evm(db: Session = Depends(get_db)):
 # ── GET /executive/metrics ──────────────────────────────────────────────────
 
 @app.get("/executive/metrics")
-def get_executive_metrics(db: Session = Depends(get_db)):
-    """Portfolio oversight intelligence for senior management.
+def get_executive_metrics(
+    db: Session = Depends(get_db),
+    contract_value_cr: Optional[float] = Query(
+        None,
+        gt=0,
+        description=(
+            "Contract sum in ₹ Crores. Optional and NOT defaulted. Nothing "
+            "this system ingests carries a contract sum, so without it the "
+            "delay exposure is returned in days and `financial.available` is "
+            "false with the reason."
+        ),
+    ),
+    prolongation_lakhs_per_day: Optional[float] = Query(
+        None,
+        gt=0,
+        description=(
+            "Indirect prolongation cost in ₹ Lakhs per day, for pricing "
+            "compensable delay. Optional; without it no employer claim value "
+            "is computed."
+        ),
+    ),
+):
+    """Portfolio oversight for senior management.
 
-    Returns high-level KPIs, cumulative EVM S-Curve (PV vs EV), critical path float
-    drift, milestone health, contractual FIDIC dispute liability breakdown in ₹ Crores,
-    and ground-truth evidence coverage.
+    KPIs, the cumulative S-Curve, the completion range, milestone health,
+    delay liability in DAYS, and evidence coverage - each aggregated from the
+    layer that owns it: the CPM pass (D-082), the EVM stack (D-084) and the
+    delay attribution layer (D-076..D-081).
+
+    Money is opt-in. The two query parameters are the operator's contract
+    assumptions and are never defaulted; supplied, the delay days are priced
+    against them and labelled `operator_supplied`, and absent, no rupee figure
+    is emitted at all. See D-090 and `server/executive_metrics.py`.
     """
-    return executive_metrics.compute_executive_metrics(db, DATA_DATE)
+    return executive_metrics.compute_executive_metrics(
+        db,
+        DATA_DATE,
+        contract_value_cr=contract_value_cr,
+        prolongation_lakhs_per_day=prolongation_lakhs_per_day,
+    )
 
 
 # ── Schedule Feasibility & Knowledge Auditor ────────────────────────────────

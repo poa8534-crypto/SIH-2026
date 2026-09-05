@@ -1291,6 +1291,72 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The executive layer stops inventing figures — eight fabricated
+numbers removed from `executive_metrics.py` and the Overview screen, and money
+made opt-in.
+**Date:** 2026-09-05 · **Decision:** D-090
+
+```
+GET /executive/metrics                                            (D-090)
+  ?contract_value_cr=          optional, NOT defaulted
+  ?prolongation_lakhs_per_day= optional, NOT defaulted
+
+  server/main.py :: get_executive_metrics
+      -> executive_metrics.compute_executive_metrics(db, DATA_DATE, **params)
+
+  It aggregates; it derives nothing of its own:
+      cpm.compute_schedule(activities)      network, float, early finishes
+      evm.compute_evm(db, as_of)            spi, pv_total, ev_total, sources
+      delay_events.attribution(db, as_of)   liability days, notices, events
+
+  LIABILITY  read through delay_taxonomy.Liability, never a literal
+      COMPENSABLE      -> employer_delay_days
+      NON_COMPENSABLE  -> contractor_delay_days
+      EXCUSABLE        -> neutral_delay_days
+      CONTESTED        -> contested_delay_days
+      beyond_float_days reported beside each
+      concurrency from delay_data["concurrency"], NOT a liability bucket
+
+  MONEY      financial.available is false unless the operator supplied a
+             contract value; then LD = days/7 x 0.5% x value, capped at 10%
+             (FIDIC 8.7), and employer claim = days x prolongation rate.
+             Absent, the reason is in the payload. No constant, no default.
+
+  COMPLETION baseline_finish   authored latest planned finish
+             logic_finish      network.project_finish
+             exposed_finish    logic + beyond-float days on critical
+                               activities with no actual_finish
+             is_probabilistic: false · logic_conflicts: len(conflicts)
+
+  S-CURVE    pv   duration-weighted planned value per week
+             ev   0/100 on actual_finish, history only
+             ev_projected  planned value extended at measured SPI,
+                           null when SPI is null
+
+  DRIVERS    worst DelayEvent per activity by impact_days
+             phrase, category, liability, adjudicated, source file+line
+             null when nothing is recorded - never inferred from the id
+
+  MILESTONES last planned finish per discipline, plus project finish
+             basis: actual_finish | cpm_early_finish | cpm_project_finish
+             no confidence field exists
+
+  frontend/src/pages/executive/Overview.tsx
+      dash()  renders an unavailable figure as an em dash. Every hardcoded
+              fallback (14.20, 3.80, 180.00, 2026-11-12, 84.2, 24, 8) is gone.
+      the simulator moves logic_finish by the slider total and prices it
+      only against an operator-supplied rate.
+
+  Pinned by server/test_executive_metrics.py (18) and
+  frontend/src/test/executiveOverview.test.tsx (12), which assert VALUES -
+  the previous tests asserted key presence and the invented literals, and
+  passed while the endpoint returned zero.
+```
+
+---
+
+### Previous modification area (D-089)
+
 **Task:** Phase 4 — the engine surfaces in the Schedule drawer. Completes the
 Granularity Resolution Engine (Phases 0–4).
 **Date:** 2026-09-05 · **Decision:** D-089
