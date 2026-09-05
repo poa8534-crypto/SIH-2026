@@ -114,13 +114,48 @@ export const WORK_FRONTS = [
   'Sector B · Pipeline Route',
 ] as const;
 
-/** The structured context sent with every agent turn. */
-export function agentContext(location: string, discipline: Discipline) {
+/** The structured context sent with every agent turn.
+ *
+ *  `discipline` is OPTIONAL and is omitted when the supervisor has not chosen
+ *  one. The reporting form used to default to the first discipline in the
+ *  list — Civil — so every report from an electrician arrived tagged civil
+ *  until someone noticed, and "I love pizza" came back carrying a discipline
+ *  the system had no reason to believe. A field the user did not fill is not
+ *  context; it is a guess. See D-095. */
+export function agentContext(location: string, discipline?: Discipline | null) {
   return {
     project_code: PROJECT.code,
     location,
-    discipline,
+    ...(discipline ? { discipline } : {}),
     data_date: PROJECT.dataDate,
     timezone: PROJECT.timezone,
   };
+}
+
+const DISCIPLINE_KEY = 'navis.discipline';
+
+/** The discipline this supervisor last reported under, if any.
+ *
+ *  A remembered choice is a legitimate default — the same person usually
+ *  reports on the same trade — but it is the ONLY legitimate one. Absent a
+ *  saved preference the form opens on "Select discipline" rather than
+ *  choosing for them.
+ *
+ *  Storage is wrapped for the same reason `lib/role.ts` wraps it: a private
+ *  window or blocked site data makes `localStorage` throw on access. */
+export function savedDiscipline(): Discipline | null {
+  try {
+    const v = window.localStorage.getItem(DISCIPLINE_KEY);
+    return isDiscipline(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function rememberDiscipline(discipline: Discipline): void {
+  try {
+    window.localStorage.setItem(DISCIPLINE_KEY, discipline);
+  } catch {
+    /* Still works for this session; it just will not be remembered. */
+  }
 }

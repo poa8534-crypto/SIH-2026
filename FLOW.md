@@ -1291,6 +1291,65 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The reporting flow gets explicit states, a refusal renders as a
+refusal, and clarification moves out of the embedded chat panel.
+**Date:** 2026-09-06 · **Decision:** D-095
+
+```
+REPORT STUDIO - STATES                                            (D-095)
+
+  draft -- check --> checking --> phaseFor(response)
+                                   not_a_progress_report -> invalid
+                                   !awaiting_confirmation -> needs_clarification
+                                   no slots.activity_id   -> unmatched
+                                   otherwise              -> ready
+  ready|unmatched -- confirm --> submitting --> submitted
+                                   (only with event_created AND a row id)
+
+  FAILURE is not a state. It is a separate {kind, message}:
+      ApiError        -> confirmed  "Nothing was stored."
+      anything else   -> uncertain  "may or may not have been recorded",
+                                    with Retry (idempotent per session)
+  and the phase returns to where the draft already was.
+
+  INVALIDATION   draftKey = report + date + workFront + discipline
+      any change  -> clear interpretation, disable submit, NEW session id
+                     (server slots are never overwritten once set, so the
+                      old session would answer about the old text)
+  STALENESS      every request takes seqRef++ and captures draftKey;
+                 a reply that is not the latest, or whose key moved, is
+                 discarded
+
+  CONTEXT        agentContext(workFront, discipline || null)
+                 omits `discipline` entirely when unchosen, so
+                 server/main.py :: _apply_context seeds nothing
+                 savedDiscipline() / rememberDiscipline() - the only default
+
+  RELEVANCE      server/main.py :: _unreportable_reason
+                 REPORTABLE_TERMS now covers work PREVENTED as well as work
+                 done - permits, access, weather, materials, drawings,
+                 plant, manpower, mobilisation, handover
+                 the refusal names both halves; the outcome code is never
+                 shown to a supervisor
+
+  CLARIFICATION  in the reporting flow: agent_message, `choices` as chips,
+                 and a free-text answer box inside the review panel.
+                 The embedded Field Update Assistant is deleted.
+
+  ASK NAVIS      opens only from its button, in all three shells.
+                 Escape / close button / backdrop, and focus returns to the
+                 trigger. Hooks now run before `if (!isOpen) return null`,
+                 without which toggling threw "Rendered more hooks than
+                 during the previous render" and destroyed the draft.
+
+  Pinned by frontend/src/test/fieldStudio.test.tsx (25) and
+  frontend/src/test/chatSeparation.test.tsx (10).
+```
+
+---
+
+### Previous modification area (D-094)
+
 **Task:** Insufficient evidence is an answer — the tender estimator and the
 historical benchmarks stop manufacturing numbers, and the monsoon multipliers
 are labelled as assumptions.

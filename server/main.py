@@ -4606,10 +4606,17 @@ def agent_turn(
         if slots.description is None:
             refusal = _unreportable_reason(req.message)
             if refusal is not None:
+                # Readable, and it names the two things that count as a
+                # report — work done AND work prevented. The second half was
+                # missing, so a supervisor refused for "waiting for permit"
+                # was told to describe work done, which is exactly what they
+                # could not do. See D-095.
                 agent_msg = (
-                    f"I can't log that — {refusal}. Tell me what work was done, "
-                    "for example \"poured 40 m3 of the raft\" or "
-                    "\"24\"-P-1001-A1A hydrotest complete\"."
+                    f"I can't log that — {refusal}. Tell me what happened on "
+                    "site: work done, for example \"poured 40 m3 of the raft\" "
+                    "or \"24\"-P-1001-A1A hydrotest complete\"; or what stopped "
+                    "work, for example \"no access to the north pad since "
+                    "Tuesday\"."
                 )
                 turn = ConversationTurn(
                     id=_uuid(),
@@ -4959,6 +4966,23 @@ complete completed done finished start started begin begun
 progress ongoing resumed
 delay delayed hold held blocked stopped shutdown breakdown
 inspection inspected approved rejected ncr rfi
+# Blockers and stoppages. A report that no work happened, and why, is a
+# progress report - often the most valuable one, because it is what a delay
+# claim is later built from (D-077). The gate previously turned these away
+# unless they happened to contain a construction noun: "waiting for permit"
+# was refused as "it does not mention any construction activity, quantity or
+# tag", which is both wrong and unhelpful. See D-095.
+permit permits clearance clearances approval waiting awaiting pending
+access blocked blocking obstruction obstructed restricted restriction
+idle standby standing suspended suspension stoppage stopped downtime
+weather rain rains rainfall monsoon flood flooded flooding waterlogged
+storm wind lightning
+material materials shortage unavailable delivery delivered consignment
+drawing drawings revision revised specification spec
+crane cranes equipment machine machinery plant pump generator
+manpower labour labor crew gang shift mobilise mobilised mobilize
+mobilized demobilise demobilised demobilize demobilized
+handed handover front fronts availability available
 """.split())
 
 #: A bare number with a unit is itself evidence of a measurement.
@@ -5009,7 +5033,8 @@ def _unreportable_reason(text: str, tags=None, quantity=None) -> Optional[str]:
         return None
 
     return (
-        "it does not mention any construction activity, quantity or tag"
+        "it does not describe site work, a quantity, an equipment tag, or "
+        "something that stopped work"
     )
 
 

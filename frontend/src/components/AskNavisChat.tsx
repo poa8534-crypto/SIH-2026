@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Bot,
   X,
@@ -53,6 +53,57 @@ const STARTER_PROMPTS: Record<string, string[]> = {
   ],
 };
 
+const EXECUTIVE_DESTINATION_PROMPTS: Record<string, string[]> = {
+  '/executive/milestones': [
+    'Which commitments are likely to slip beyond contract date?',
+    'What is the driving predecessor for the Piping milestone?',
+    'Are there any contractual milestones slipping?',
+    'Explain the total float on Civil scope complete',
+  ],
+  '/executive/progress': [
+    'Which discipline has the lowest schedule performance index?',
+    'Explain the difference between activity counts and earned value',
+    'How many unevidenced activities are in progress?',
+    'Show cumulative earned value vs planned value',
+  ],
+  '/executive/risks': [
+    'What are our top 3 accepted RAID exposure risks?',
+    'Summarize contractor delay notices under FIDIC 20.1',
+    'How many days of employer delay are currently claimable?',
+    'Are there any active source telemetry conflicts?',
+  ],
+  '/executive/forecasts': [
+    'Explain the logic-driven completion finish vs baseline finish',
+    'Which critical path activities drive the logic finish date?',
+    'What happens to the finish date if monsoon delay increases by 10 days?',
+    'Is the completion forecast based on Monte Carlo simulation?',
+  ],
+  '/executive/insights': [
+    'Which trades are systematically exceeding planned durations?',
+    'What is the most frequent delay cause recorded across field notes?',
+    'Which activity types have low sample size warnings?',
+    'How does actual piping duration compare to planned duration?',
+  ],
+  '/executive/reports': [
+    "Draft an executive summary for today's review meeting",
+    'What are the key data confidence caveats to mention?',
+    'Summarize milestone slippages for the board review',
+    'List open contractor delay notices for review',
+  ],
+  '/executive/confidence': [
+    'What is our reporting evidence coverage percentage and denominator?',
+    'Which in-progress activities are stale (> 7 days without update)?',
+    'Are there conflicting progress claims between drone and field logs?',
+    'How is the offline research corpus separated from live project data?',
+  ],
+  '/executive': [
+    'What is our projected completion date?',
+    'Where is our biggest exposure right now?',
+    'How reliable is our progress data?',
+    'Summarize current schedule performance',
+  ],
+};
+
 export function AskNavisChat({
   isOpen,
   onClose,
@@ -78,11 +129,29 @@ export function AskNavisChat({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Focus input when opened
+  /**
+   * Focus moves in on open and BACK OUT on close.
+   *
+   * Without the second half, dismissing the panel drops focus onto the
+   * document body: a keyboard or screen-reader user is returned to the top of
+   * the page rather than to the "Ask NAVIS" button they opened it from, and
+   * the reporting form they were part-way through is several tab stops away.
+   * The element that had focus when the panel opened is the one to restore.
+   * See D-095.
+   */
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 150);
+      restoreFocusRef.current = document.activeElement as HTMLElement | null;
+      const t = setTimeout(() => inputRef.current?.focus(), 150);
+      return () => clearTimeout(t);
     }
+    const previous = restoreFocusRef.current;
+    restoreFocusRef.current = null;
+    // Only if it is still in the document — the trigger may have unmounted
+    // while the panel was open.
+    if (previous && document.contains(previous)) previous.focus();
+    return undefined;
   }, [isOpen]);
 
   // Scroll to bottom
@@ -91,6 +160,30 @@ export function AskNavisChat({
       threadEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, loading, isOpen]);
+
+  /* HOOKS BEFORE THE EARLY RETURN.
+   *
+   * `useLocation` and this `useMemo` used to sit below `if (!isOpen) return
+   * null`, so the component ran a different number of hooks open than closed.
+   * React tolerates that until the panel actually toggles, and then throws
+   * "Rendered more hooks than during the previous render" and tears down the
+   * tree — which on the field workspace takes an in-progress report draft
+   * with it. Nothing caught it because the existing tests render the panel
+   * either open or closed, never both. See D-095. */
+  const location = useLocation();
+
+  const starters = useMemo(() => {
+    if (role === 'executive') {
+      const pathname = location.pathname;
+      const matchedKey = Object.keys(EXECUTIVE_DESTINATION_PROMPTS).find((p) =>
+        p === '/executive' ? pathname === '/executive' : pathname.startsWith(p)
+      );
+      if (matchedKey && EXECUTIVE_DESTINATION_PROMPTS[matchedKey]) {
+        return EXECUTIVE_DESTINATION_PROMPTS[matchedKey];
+      }
+    }
+    return STARTER_PROMPTS[role] ?? STARTER_PROMPTS.planner;
+  }, [role, location.pathname]);
 
   if (!isOpen) return null;
 
@@ -165,7 +258,6 @@ export function AskNavisChat({
     }
   };
 
-  const starters = STARTER_PROMPTS[role] ?? STARTER_PROMPTS.planner;
 
   return (
     <div

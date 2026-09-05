@@ -9097,3 +9097,163 @@ frequencies with no minimum sample. The Memory screen labels their denominators
 (`"no completed activities yet"`, `"21/22"`, the reports column), so nothing
 there is unlabelled — but the bar applied above has not been applied to them,
 and it should be.
+
+---
+
+## 2026-09-06 / D-095 — The reporting flow has states, and a refusal is one of them
+
+### Context
+The Report Studio had two states: "no response yet" and "a response arrived".
+Every 200 opened the interpretation panel, so a response the server had sent
+in order to REFUSE the input rendered as a result. Typing "I love pizza"
+produced:
+
+* the heading "NAVIS understood" over a panel of extracted values;
+* a discipline chip reading **Civil** — because the discipline select
+  defaulted to the first entry in an alphabetical list and sent it as request
+  context, which `_apply_context` then wrote into the slot;
+* a match confidence, from a matcher that had never been run on it.
+
+The server behaved correctly throughout: `_unreportable_reason` gates the
+agent path before the matcher and returned `match_outcome:
+"not_a_progress_report"` with a readable sentence. The screen had nowhere to
+put that answer, so it put it where every other answer went.
+
+Three further problems sat behind it.
+
+**The relevance gate refused blockers.** `REPORTABLE_TERMS` covered work done
+but not work prevented, so "waiting for permit" came back as *"it does not
+mention any construction activity, quantity or tag"* — wrong, and unhelpful,
+because the refusal then told the supervisor to describe work done, which is
+exactly what they could not do. A report that nothing happened, and why, is
+what a delay claim is later built from (D-077).
+
+**The clarification questions arrived in a chat panel.** A permanently
+embedded "Field Update Assistant" occupied a third of the screen, answered
+itself on a `setTimeout`, and was where the questions a report could not be
+submitted without appeared — mixed in with general chit-chat.
+
+**Ask NAVIS crashed on close.** `useLocation` and a `useMemo` sat below
+`if (!isOpen) return null`, so the component ran a different number of hooks
+open than closed. React tolerates that until the panel actually toggles, and
+then throws *"Rendered more hooks than during the previous render"* and tears
+down the tree — taking an in-progress report draft with it. The existing tests
+render the panel either open or closed and never both, so nothing caught it.
+
+### Decision
+
+**Eight named states, and a failure that is not one of them.**
+
+```
+draft -> checking -> invalid | needs_clarification | unmatched | ready
+                  -> submitting -> submitted
+```
+
+`phaseFor(turn)` maps a response to exactly one: `not_a_progress_report` to
+`invalid`, an open slot to `needs_clarification`, a completed report with no
+`activity_id` to `unmatched`, otherwise `ready`. A request FAILURE is tracked
+separately, so a dropped connection returns the draft to the state it was
+already in rather than destroying the interpretation.
+
+**A refusal renders as a refusal.** "This does not look like a site report",
+the server's own sentence, and an explicit statement that nothing was stored
+and nothing inferred. The interpretation panel does not open. The outcome code
+`not_a_progress_report` is never shown: it is an internal value, and a
+supervisor who reads it learns nothing.
+
+**"Select discipline" replaces the arbitrary default.** The only legitimate
+default is a remembered one, so `savedDiscipline()` reads the discipline this
+supervisor last submitted under and `rememberDiscipline()` writes it on a
+successful submission. `agentContext()` OMITS the field when nothing is
+chosen, so the server infers what it can and asks when it cannot.
+
+**Selected and extracted values are labelled differently.** Every chip in the
+review panel says "you selected" or "read from your report". Only the second
+kind can be wrong in a way the supervisor would want to correct.
+
+**Report validity is separate from discipline classification.** The gate
+gained a blocker vocabulary — permits, clearances, access, weather, materials,
+drawings, plant, manpower, mobilisation, handover — and its refusal sentence
+now names both halves: *"it does not describe site work, a quantity, an
+equipment tag, or something that stopped work"*. Quantity was already
+conditional on a countable plural (`_quantity_relevant`), so a blocker was
+never asked for one.
+
+**"NAVIS understood" became "Review your report"**, and "A few details
+needed" while a slot is open. The first claimed comprehension; these describe
+a proposal a person is being asked to check.
+
+**Editing invalidates the interpretation and mints a new session.** The new
+session id is the important half: slots accumulate server-side and are never
+overwritten once set, so re-checking an edited report on the same session
+would answer about the old one. Any change to the report text, date,
+discipline or work front clears the interpretation and disables submission
+until the draft is checked again.
+
+**A stale response cannot overwrite a newer draft.** Every request takes a
+number from a monotonic counter and captures the draft key it was sent for. A
+reply whose number is not the latest, or whose key no longer matches, is
+discarded silently.
+
+**Clarification moved into the reporting flow.** The embedded assistant is
+gone. The agent's question, its closed-set answers as chips, and a free-text
+answer box now sit inside the review panel. General assistance stays behind
+the Ask NAVIS button, which opens nothing on its own.
+
+**A lost response is not reported as a refusal.** An `ApiError` means the
+server answered, so "nothing was stored" is a fact. Anything else means the
+request never got a reply, and on a confirm that is genuinely ambiguous — the
+write may have committed before the connection dropped. That case says "Could
+not confirm", states that the update may or may not have been recorded, and
+offers Retry. Retry is safe because `_existing_agent_submission` files one
+submission per session and hands back the existing row on a repeat, so it
+cannot create a second record.
+
+### Verification
+`python -m pytest -q` — 1196 passed. `cd frontend && npx vitest run` — 195
+passed, up from 166. `npx tsc --noEmit` clean.
+
+`frontend/src/test/fieldStudio.test.tsx` was rewritten from 11 tests to 25,
+walking each journey: an untouched form that makes no request, irrelevant
+input that infers no discipline and shows no outcome code, an incomplete
+report through clarification to review, an unmatched report that still has a
+route to the planner, edit-invalidates-recheck-submit, both failure kinds, and
+a late response that must not overwrite a newer draft.
+
+`frontend/src/test/chatSeparation.test.tsx` is new (10 tests): the panel never
+opens itself and closes on Escape and on its button in all three roles, focus
+returns to the trigger, the draft and the interpretation survive an open and
+close, and a chat message reaches `/chat` and never `/agent/turn`.
+
+Checked in a browser against the running API:
+
+```
+"I love pizza"            -> refused; no discipline, no activity, no panel
+"Pump installation finished" -> "Where is this work happening?"
+"Work stopped because access was blocked" -> accepted, asks the discipline
+piling report              -> Review your report, 69.9%, sources labelled
+edit the text              -> panel gone, submit disabled, "check it again"
+Ask NAVIS open then close  -> draft preserved, focus back on the trigger
+375x812                    -> both primary actions in view, no h-scroll
+```
+
+### Affected Areas
+`frontend/src/pages/field/ReportStudio.tsx` (rewritten),
+`frontend/src/config.ts` (`agentContext` discipline optional,
+`savedDiscipline`, `rememberDiscipline`),
+`frontend/src/components/AskNavisChat.tsx` (focus restoration; hooks moved
+above the early return), `server/main.py` (`REPORTABLE_TERMS` blocker
+vocabulary, refusal sentence), `frontend/src/test/fieldStudio.test.tsx`,
+`frontend/src/test/chatSeparation.test.tsx` (new).
+
+### Trade-offs / Consequences
+Submitting now takes two deliberate actions — Check, then Send — where it
+previously took one. That is the cost of never showing a supervisor a
+confirmation built on an interpretation that no longer matches what they
+typed.
+
+**Not done here, and stated rather than hidden:** the mobile layout was
+verified at 375x812 with the on-screen keyboard absent. A real device with the
+keyboard raised shortens the viewport further, and the fixed action bar sits
+above the bottom nav rather than above the keyboard; that needs a device test
+before the demo.
