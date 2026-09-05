@@ -34,6 +34,15 @@ vi.mock('../lib/api', async () => {
       getFieldClarifications: vi.fn(),
       getFieldNotifications: vi.fn(),
       getMemory: vi.fn(),
+      getExecutiveMetrics: vi.fn().mockResolvedValue({
+        as_of: '2026-09-15',
+        kpis: { spi: 0.88, spi_band: 'Slipping', pv_total: 120, ev_total: 105.6, float_drift_days: 14, critical_activities_count: 14, evidence_coverage_pct: 84.2, total_activities: 64, evidenced_activities: 56, unevidenced_activities: 8 },
+        dispute_shield: { employer_delay_days: 24, contractor_delay_days: 8, concurrent_delay_days: 6, neutral_delay_days: 10, employer_claim_cr: 14.2, contractor_ld_risk_cr: 3.8, contract_value_cr: 180, notice_compliance_pct: 82.5, notice_served_count: 4, notice_open_count: 2, notice_lapsed_count: 1 },
+        completion_forecast: { baseline_finish: '2026-10-15', current_forecast_finish: '2026-10-29', variance_days: 14, p10_finish: '2026-10-15', p50_finish: '2026-10-29', p90_finish: '2026-11-12', monte_carlo_runs: 1000 },
+        s_curve: [],
+        critical_drivers: [],
+        milestones: [],
+      }),
     },
   };
 });
