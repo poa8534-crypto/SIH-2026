@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  navis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: navis-epc-platform
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - PYTHONUNBUFFERED=1
+      # Optional: set GEMINI_API_KEY or OPENAI_API_KEY for cloud OCR and LLM reasoning
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
