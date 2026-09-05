@@ -67,13 +67,15 @@ def discipline_choice_text() -> str:
 # Answers a supervisor actually types, beyond the labels themselves.
 _DISCIPLINE_SYNONYMS: dict[str, str] = {
     "elec": "electrical", "electric": "electrical", "electricals": "electrical",
+    "bijli": "electrical", "vidyut": "electrical", "wiring": "electrical",
     "static equipment": "static_equipment", "staticequipment": "static_equipment",
     "static": "static_equipment", "equipment": "static_equipment",
-    "mechanical": "static_equipment", "mech": "static_equipment",
+    "mechanical": "static_equipment", "mech": "static_equipment", "yantrik": "static_equipment",
     "instruments": "instrumentation", "instrument": "instrumentation",
     "instr": "instrumentation", "inst": "instrumentation",
-    "safety": "hse", "ehs": "hse", "h&s": "hse",
+    "safety": "hse", "ehs": "hse", "h&s": "hse", "suraksha": "hse",
     "pipe": "piping", "pipes": "piping",
+    "khudaai": "civil", "dhalai": "civil", "mitti": "civil",
 }
 
 # Words that merely describe work of a discipline, used only when the message
@@ -81,19 +83,19 @@ _DISCIPLINE_SYNONYMS: dict[str, str] = {
 _DISCIPLINE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "civil": ("civil", "foundation", "concrete", "backfill", "grading", "slab",
               "flooring", "tile", "plaster", "drainage", "fencing", "pedestal",
-              "excavat", "rebar", "formwork"),
+              "excavat", "rebar", "formwork", "khudaai", "dhalai"),
     "piping": ("pipe", "spool", "flange", "hydrotest", "erection", "erect",
                "insulation", "coating", "paint", "header", "boltup", "bolt-up"),
     "static_equipment": ("vessel", "exchanger", "pump", "compressor", "skid",
-                         "tank", "jacking", "grout", "nozzle"),
+                         "tank", "jacking", "grout", "nozzle", "yantrik"),
     "electrical": ("cable", "termination", "earthing", "grounding",
                    "transformer", "swgr", "switchgear", "panel", "energis",
-                   "megger", "motor", "conduit", "glanding"),
+                   "megger", "motor", "conduit", "glanding", "bijli", "vidyut"),
     "instrumentation": ("instrument", "transmitter", "calibrat", "loop check",
                         "loop checking", "dcs", "sis", "esd", "junction box",
                         "control valve"),
     "hse": ("safety", "ncr", "near-miss", "near miss", "lti", "bbs",
-            "scaffold", "permit", "jsa", "induction", "drill", "toolbox"),
+            "scaffold", "permit", "jsa", "induction", "drill", "toolbox", "suraksha"),
 }
 
 
@@ -146,13 +148,13 @@ STATUS_LABELS: dict[str, str] = {
 
 _STATUS_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Order matters: "not started" must beat "started".
-    ("not_started", ("not started", "not yet started", "no progress", "yet to start")),
-    ("blocked", ("blocked", "on hold", "stopped", "halted", "waiting on", "held up")),
-    ("delayed", ("delay", "delayed", "behind schedule", "behind", "slipped")),
+    ("not_started", ("not started", "not yet started", "no progress", "yet to start", "shuru nahi", "aarambh nahi")),
+    ("blocked", ("blocked", "on hold", "stopped", "halted", "waiting on", "held up", "ruk gaya", "kaam band", "atki gise", "bandh", "strike")),
+    ("delayed", ("delay", "delayed", "behind schedule", "behind", "slipped", "late", "deri", "paani bhara", "baarish")),
     ("completed", ("completed", "complete", "done", "finished", "finish",
-                   "closed", "passed", "khotom", "over")),
+                   "closed", "passed", "khotom", "over", "ho gaya", "hogaya", "ho gya", "khatam", "khatam ho gaya", "pura ho gaya", "pura", "shesh hoise", "hol", "samapta")),
     ("in_progress", ("started", "resumed", "ongoing", "in progress", "underway",
-                     "continuing", "progressing", "chalu", "shuru")),
+                     "continuing", "progressing", "chalu", "shuru", "chal raha hai", "chal raha", "choli ase", "lag gaya", "shuru hua")),
 )
 
 
@@ -162,7 +164,7 @@ def parse_status(text: str) -> Optional[str]:
         return None
     low = text.lower()
     for value, words in _STATUS_PATTERNS:
-        if any(w in low for w in words):
+        if any(re.search(rf"\b{re.escape(w)}\b", low) for w in words):
             return value
     return None
 
@@ -340,11 +342,11 @@ def parse_date(text: str, data_date: date) -> Optional[date]:
         return None
     low = text.strip().lower()
 
-    if "day before yesterday" in low:
+    if "day before yesterday" in low or re.search(r"\bparso\b", low):
         return data_date - timedelta(days=2)
-    if "yesterday" in low:
+    if "yesterday" in low or re.search(r"\b(kal|kali|beeta kal)\b", low):
         return data_date - timedelta(days=1)
-    if "today" in low or "aaj" in low:
+    if "today" in low or re.search(r"\b(aaj|aaji)\b", low):
         return data_date
     if "tomorrow" in low:
         raise InvalidDate("a future date cannot be reported as progress")

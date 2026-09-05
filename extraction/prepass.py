@@ -85,7 +85,7 @@ MONTH_MAP = {
 
 # Relative date words
 RELATIVE_DATE_RE = re.compile(
-    r'\b(yesterday|today|tomorrow|last week|this week|next week)\b',
+    r'\b(yesterday|today|tomorrow|last week|this week|next week|kal|kali|aaj|aaji|parso)\b',
     re.IGNORECASE,
 )
 
@@ -158,7 +158,7 @@ DISCIPLINE_KEYWORDS: dict[Discipline, list[re.Pattern]] = {
 COMPLETED_RE = re.compile(
     r'\b(complet\w*|done|finished|passed|closed|all passed|'
     r'all \d+ .* (?:done|passed|complete|erected)|'
-    r'khotom|ho gaya|kaam khatom)\b',
+    r'khotom|ho gaya|kaam khatom|khatam|hogaya|ho gya|pura ho gaya|pura|shesh hoise|hol|samapta)\b',
     re.IGNORECASE,
 )
 
@@ -168,14 +168,14 @@ COMPLETED_RE = re.compile(
 # check pending"). Without this, a line's overall status would suppress a
 # completion the source states explicitly.
 _DATE_TOKEN = (
-    r'(?:yesterday|today'
+    r'(?:yesterday|today|kal|kali|aaj|aaji|parso'
     r'|\d{4}-\d{1,2}-\d{1,2}'
     r'|\d{1,2}/\d{1,2}/\d{4}'
     r'|\d{1,2}\s*/?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*'
     r'(?:\s*/?\s*\d{4})?)'
 )
 COMPLETION_WITH_DATE_RE = re.compile(
-    r'\b(?:complet\w*|done|finished|erected|poured|passed|closed)\b'
+    r'\b(?:complet\w*|done|finished|erected|poured|passed|closed|khatam|ho gaya)\b'
     r'[\s,]*(?:on|by|upto|up to)?[\s,]*\(?\s*' + _DATE_TOKEN,
     re.IGNORECASE,
 )
@@ -207,15 +207,15 @@ def is_forecast_language(text: str) -> bool:
 # Used to bind an extracted date to a start rather than a finish.
 STARTED_RE = re.compile(
     r'\b(started|commenced|began|begun|mobilis\w*|mobiliz\w*|kicked off|'
-    r'shuru|chalu)\b',
+    r'shuru|chalu|aarambh|shuru hua|lag gaya)\b',
     re.IGNORECASE,
 )
 IN_PROGRESS_RE = re.compile(
-    r'\b(in progress|ongoing|started|working|under way|chalu|shuru|%\s*(?:done|complete))\b',
+    r'\b(in progress|ongoing|started|working|under way|chalu|shuru|chal raha|choli ase|%\s*(?:done|complete))\b',
     re.IGNORECASE,
 )
 DELAYED_RE = re.compile(
-    r'\b(delay|delayed|behind|overdue|held up|pending)\b',
+    r'\b(delay|delayed|behind|overdue|held up|pending|ruk gaya|atki gise|kaam band|paani bhara|baarish|bandh)\b',
     re.IGNORECASE,
 )
 
@@ -381,12 +381,14 @@ def extract_dates_with_basis(
 
     for m in RELATIVE_DATE_RE.finditer(text):
         word = m.group(1).lower()
-        if word == "yesterday":
+        if word in ("yesterday", "kal", "kali"):
             _add(ref - timedelta(days=1), DateBasis.RELATIVE_RESOLVED)
-        elif word == "today":
+        elif word in ("today", "aaj", "aaji"):
             _add(ref, DateBasis.RELATIVE_RESOLVED)
         elif word == "tomorrow":
             _add(ref + timedelta(days=1), DateBasis.RELATIVE_RESOLVED)
+        elif word == "parso":
+            _add(ref - timedelta(days=2), DateBasis.RELATIVE_RESOLVED)
         # "last week", "this week", "next week" are too vague to resolve
 
     return dates, warnings
