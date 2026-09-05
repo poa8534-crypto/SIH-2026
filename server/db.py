@@ -100,6 +100,24 @@ class Activity(Base):
     start_variance_days = Column(Integer, nullable=True)
     finish_variance_days = Column(Integer, nullable=True)
 
+    # Which baseline this activity belongs to.
+    #
+    # Importing a schedule LEAVES the previous baseline's activities in this
+    # table, because deleting them would orphan their LinkedEvent and
+    # AuditRecord rows and destroy the append-only trail (D-004). Without this
+    # column, two projects' activities were therefore indistinguishable once
+    # both had been imported: the matcher indexed a single file on disk, and
+    # anything reading the table straight got both schedules mixed together.
+    #
+    # Nullable because a database created before this column exists has rows
+    # that predate it. `_attribute_activities_to_baseline` in server/main.py
+    # adopts those on the next startup, and until it does the scoping helper
+    # treats an unattributed table as unscoped rather than as empty - a wrong
+    # answer of zero activities is far worse than a wide one. See D-092.
+    baseline_id = Column(
+        String, ForeignKey("baseline_versions.id"), nullable=True, index=True
+    )
+
     created_at = Column(DateTime, default=_now)
     updated_at = Column(DateTime, default=_now, onupdate=_now)
 
@@ -754,6 +772,7 @@ _ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("activities", "actual_finish_basis", "VARCHAR"),
     ("activities", "wbs_level", "INTEGER"),
     ("activities", "calendar", "VARCHAR"),
+    ("activities", "baseline_id", "VARCHAR"),
     ("linked_events", "reported_date_basis", "VARCHAR"),
     ("linked_events", "asserted_start_basis", "VARCHAR"),
     ("linked_events", "asserted_finish_basis", "VARCHAR"),

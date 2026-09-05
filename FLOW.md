@@ -1291,6 +1291,68 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** An imported schedule becomes the project — the matcher re-indexes
+from the active baseline, activities are attributed to the baseline they came
+from, and export preserves relationship type and lag.
+**Date:** 2026-09-05 · **Decision:** D-092
+
+```
+IMPORT -> INDEX -> REPORT -> RETRIEVE                             (D-092)
+
+  POST /schedule/import  (replace=true)
+      provider.read_activities()          JSON | PMXML | XER
+      validate_activities()               refuses a broken file
+      create / update Activity rows       actuals never touched
+      _activate_baseline()                previous row retired, not deleted
+      db.flush()
+      _attribute_activities_to_baseline(db, record, ids_in_file)
+          -> Activity.baseline_id = the new baseline
+      db.commit()
+      rebuild_matching_engine(db)         <-- the fix
+          build_index_from_active_baseline(db)
+              scoped_activities(db)       active baseline's rows only
+              _activity_to_dict(row)      predecessor_LINKS, not ids
+              ScheduleIndex(dicts, baseline=ProviderBaselineVersion(...))
+          _engine_from_index(index)       production(sha) picks artefacts
+          None -> keep the old engine, never install an empty index
+
+  STALENESS, for the multi-worker case
+      get_matching_engine(db)
+          _index_is_stale(db, engine)     index.baseline.sha256 != active
+          -> rebuild_matching_engine(db)
+      Passed a session by: ingest (link_events_to_activities), the
+      RollupAccumulator at ingest, _replay_linked_event on review resolve,
+      and _match_slots on the agent path.
+
+  SCOPING — ONE PROJECT AT A TIME
+      scoped_activities(db)
+          active baseline's rows, ordered by id
+          NOTHING attributed yet -> every row (wide, not empty)
+      Used by GET /schedule, its CPM pass, and the index build.
+      The previous baseline's activities stay in the table (D-004) and out
+      of the project.
+
+  EXPORT — the logic survives
+      POST /schedule/export
+          project_name = active baseline's name, not a constant
+          _generate_pmxml / _generate_xer
+              act.predecessor_links()     rel + lag_days, per tie
+              lag written as "{n}d"       a bare number = HOURS in XER
+              window = min planned_start .. max planned_finish
+      Was: predecessor_list() with Type="FS" Lag="0d" on every tie, which
+      flattened SS/FF/SF and every lag - the input to cpm.py's float and to
+      every beyond-float delay day.
+
+  Pinned by server/test_imported_schedule_is_usable.py (9, the acceptance
+  condition on a tunnelling schedule alien to both shipped baselines) and
+  server/test_export_roundtrip.py (8, round-tripped through the real
+  importer).
+```
+
+---
+
+### Previous modification area (D-091)
+
 **Task:** The Report Studio stops reporting false success — it now submits
 what was typed, and shows success only when the server confirms it persisted.
 **Date:** 2026-09-05 · **Decision:** D-091

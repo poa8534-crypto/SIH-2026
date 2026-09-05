@@ -8591,3 +8591,192 @@ mock-up of the same kind — a hardcoded P-201 update with an Exif photo panel
 and a fabricated review outcome. The route a supervisor takes immediately
 after a real submission therefore still shows invented content. It is the next
 thing to fix on this surface.
+
+---
+
+## 2026-09-05 / D-092 — An imported schedule becomes the project
+
+### Context
+NAVIS could import a Primavera baseline and could not then be used on it.
+
+`get_matching_engine()` built its index from `SCHEDULE_PATH`, a file on disk,
+and cached it in a module-level singleton for the life of the process.
+Importing a schedule wrote activities into the database and never touched that
+index. The result was a product that displayed the new schedule on every read
+endpoint and could not link a single field report to it:
+
+* an activity unique to the imported file matched **nothing**;
+* worse, a report about it could match a superficially similar activity from
+  the OLD baseline, and the response carried a confidence and an activity id
+  that looked exactly like a correct answer.
+
+`_matcher_baseline_drift` surfaced the divergence as an integrity warning, so
+it was a known limitation rather than a silent one, and
+`server/test_baseline.py` had two tests asserting that the warning appeared —
+a limitation pinned rather than fixed.
+
+Two further defects sat behind it.
+
+**The table held two projects.** An import deliberately leaves the previous
+baseline's activities in place, because deleting them would orphan their
+`LinkedEvent` and `AuditRecord` rows and destroy the append-only trail
+(D-004). But nothing recorded which activity belonged to which baseline, so
+every unscoped consumer saw both schedules at once. `GET /schedule` returned
+120 + 218 activities as one project, with one variance total, one SPI and one
+critical path computed across two unrelated networks.
+
+**Export flattened the logic.** Both `_generate_pmxml` and `_generate_xer`
+iterated `predecessor_list()` — activity ids only — and wrote `Type="FS"`,
+`Lag="0d"` against every tie. A schedule imported with SS and FF links and
+multi-day lags came back out as a pure finish-to-start network with no lag
+anywhere. That is not cosmetic: `server/cpm.py` computes total float, the
+critical path and every beyond-float delay day from exactly those ties, and
+`server/delay_events.py` builds a liquidated-damages argument on top. A lossy
+export changes who owes whom time. The exporter also announced every file as
+"OIL Well-Site Duliajan" over a fixed 2026-06-01/2026-09-30 window, whatever
+schedule it actually contained.
+
+### Decision
+
+**The matcher is rebuilt from the active baseline on every import.**
+`rebuild_matching_engine(db)` builds a `ScheduleIndex` from the database rows
+of the active baseline and installs a new `MatchingEngine`. It returns None
+and leaves the previous engine in place when there is nothing indexable: a
+matcher still linking against yesterday's schedule is recoverable, and one
+replaced by an empty index is not — an index over zero activities matches
+nothing, and "nothing matched" is indistinguishable from "the matcher is fine,
+your report is unusual".
+
+**The singleton checks itself.** `get_matching_engine(db)` compares the
+index's baseline sha256 against the active baseline's and rebuilds on a
+mismatch. The engine is process-global while the baseline lives in the
+database, so under more than one worker the two genuinely can diverge: one
+process imports, another keeps indexing the old project. Every call site that
+holds a session now passes it — ingest, the review-resolve replay, and the
+agent's `_match_slots`. The cost is one indexed row per call.
+
+**`Activity.baseline_id` says which project an activity belongs to.**
+Attribution happens at seed time, at import time for every activity the file
+names, and once retrospectively for rows that predate the column.
+`scoped_activities(db)` returns the active baseline's rows and is used by
+`GET /schedule`, by the CPM pass behind it, and by the index build.
+
+The unattributed case is deliberately wide rather than narrow: if the active
+baseline owns no rows yet, every activity is returned. Answering "0
+activities" for a table that plainly contains a schedule would be a far more
+confusing failure than answering with all of it, and the startup backfill
+closes the gap on the next boot.
+
+**Export carries the logic and names the project.** Both exporters iterate
+`predecessor_links()` and write the stored `rel` and `lag_days`. The lag
+string is `{n}d`, which `matching/primavera.py :: _lag_days` reads back as
+exactly n days — a bare number in an XER lag column would be read as HOURS and
+a 3-day lag would come back as 0. The project name is the active baseline's,
+and the date window is the range of the activities being exported.
+
+A row stored in the older shape — a JSON list of bare ids — still exports as
+FS with zero lag, because that is what a bare id has always meant. Pinned by a
+test, so this change cannot silently rewrite the meaning of every activity
+seeded before typed links existed.
+
+### Alternatives Considered
+- **Delete the previous baseline's activities on import.** Rejected: it
+  orphans the audit trail, which D-004 exists to protect. Scoping gives the
+  same clean project view and keeps the history.
+- **Rebuild the index on every request.** Rejected: it re-embeds every
+  activity description. The sha comparison gets the same correctness for one
+  indexed row.
+- **Add a `project_id` and support many concurrent projects.** Rejected as
+  out of scope. One active baseline at a time is what the product claims, and
+  `baseline_id` is what makes that claim true rather than a description of an
+  unenforced convention.
+- **Keep the drift warning as the answer.** Rejected. Reporting a limitation
+  honestly is better than hiding it and worse than removing it, and this one
+  stood between the product and any schedule it had not shipped with.
+
+### What it does now
+`server/test_imported_schedule_is_usable.py` imports a schedule deliberately
+alien to both shipped baselines — TBM drives, shaft sinking, `TUN`/`SHF` ids,
+vocabulary that appears nowhere in `dataset/` — over the seeded demo project,
+then reports work against it through `POST /agent/turn`:
+
+```
+import tunnelling_baseline.json (3 activities, replace=true)
+  index      {TUN-BOR-9001, SHF-SNK-9002, TUN-SEG-9003}
+             no CIV-SIT-1001, no PIP-* survivors
+  /schedule  3 activities - the 120 demo rows are still in the table,
+             attributed to the previous baseline, and out of the project
+
+"Tunnel boring machine drive on the north adit is complete, 450 m bored"
+  -> matched TUN-BOR-9001, committed, review_item_id returned
+"Shaft sinking on ventilation shaft V2 finished, 62 m sunk"
+  -> GET /review-queue carries the row against SHF-SNK-9002
+
+export of that project, re-parsed:
+  SHF-SNK-9002  <- TUN-BOR-9001  SS  +9d
+  TUN-SEG-9003  <- TUN-BOR-9001  FF  +5d
+```
+
+The last block is the round trip that used to come back as two FS ties with
+no lag.
+
+### Verification
+`python -m pytest -q` — 1186 passed, up from 1163. Two new files:
+`server/test_imported_schedule_is_usable.py` (9 tests, the acceptance
+condition) and `server/test_export_roundtrip.py` (8 tests, which round-trip
+through the real importer rather than asserting on substrings, and include a
+negative control confirming a flattened export would fail them).
+
+Four existing tests changed, all of them pinning behaviour this decision
+deliberately reverses:
+
+* `TestMatcherBaselineDrift` asserted that importing produced a drift warning.
+  Replaced by `TestMatcherFollowsTheImport`, which asserts the index actually
+  changes and that no warning is produced.
+* `test_a_real_commit_creates_the_activities_and_leaves_the_demo_ones_alone`
+  expected `/schedule` to report 123 activities after importing 3 over 120.
+  It now expects 3, and separately asserts that all 123 rows are still in the
+  table — which is the property its name was always about.
+* `test_pmxml_content_is_valid_xml` asserted the hardcoded project name. It
+  now asserts the name matches the active baseline, or the neutral fallback
+  when no baseline is recorded.
+
+A test-isolation fixture was added to both baseline-importing test modules.
+`_MATCHING_ENGINE` is a module-level singleton that these tests now mutate, so
+without it one test's imported schedule became the next test's starting state
+and the pollution escaped into every later module in the run.
+
+`python eval.py` — auto-link precision 100.0%, top-1 87.2%, coverage 50.4%:
+unchanged. `python scripts/healthcheck.py` — 31 passed, 0 failed, with
+`GET /schedule` still reporting 120 activities on the seeded demo database.
+`cd frontend && npx vitest run` — 162 passed, `npx tsc --noEmit` clean.
+
+### Affected Areas
+`server/db.py` (`Activity.baseline_id`, and the column added to
+`_ADDED_COLUMNS` so existing SQLite files migrate), `server/main.py`
+(`get_matching_engine`, `_index_is_stale`, `_build_engine_from_db_or_disk`,
+`build_index_from_active_baseline`, `rebuild_matching_engine`,
+`_activity_to_dict`, `scoped_activities`, `_attribute_activities_to_baseline`,
+the import and seed paths, `GET /schedule`, `_generate_pmxml`,
+`_generate_xer`, `POST /schedule/export`), `server/test_baseline.py`,
+`server/test_server.py`, and the two new test files.
+
+### Trade-offs / Consequences
+Importing a baseline now changes what `GET /schedule` returns far more sharply
+than before: the previous project disappears from the view in one step. That
+is the correct behaviour and it is also a bigger action than the old import
+was, so the endpoint's `replace=true` consent now carries more weight than
+when it only meant "update planned fields".
+
+`_matcher_baseline_drift` is kept even though it should no longer fire. It is
+the check that would catch a rebuild that failed, and a warning that never
+appears costs nothing.
+
+**Still open, and stated rather than hidden:** every other consumer of the
+activities table — `server/evm.py`, `server/cpm.py` called from
+`executive_metrics`, the quantity ledger, the delay layer — still queries
+`db.query(Activity).all()` unscoped. On a database where two baselines
+coexist, those figures span both projects. `GET /schedule` and the matcher
+were fixed here because they are what the acceptance condition runs through;
+scoping the rest is a mechanical follow-up and should happen before this is
+demonstrated on an imported schedule.

@@ -21,6 +21,8 @@ from sqlalchemy.orm import Session, sessionmaker
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import xml.etree.ElementTree as ET
+
 from server.db import (
     Activity,
     AliasLexicon,
@@ -34,7 +36,13 @@ from server.db import (
     _uuid,
     _now,
 )
-from server.main import app, get_db, link_events_to_activities, DATA_DATE
+from server.main import (
+    app,
+    get_active_baseline,
+    get_db,
+    link_events_to_activities,
+    DATA_DATE,
+)
 
 # ── Test database setup ──────────────────────────────────────────────────────
 
@@ -693,7 +701,20 @@ class TestScheduleExport:
         assert export_path.exists()
         content = export_path.read_text()
         assert '<?xml version="1.0"' in content
-        assert "OIL Well-Site Duliajan" in content
+        # The project name is the ACTIVE BASELINE's, not a constant. It was
+        # hardcoded to "OIL Well-Site Duliajan" with a fixed 2026-06-01 window,
+        # so every export of an imported schedule announced itself as the demo
+        # project over someone else's dates. See D-092.
+        root = ET.fromstring(content)
+        db = TestSession()
+        try:
+            active = get_active_baseline(db)
+        finally:
+            db.close()
+        expected = active.name if active is not None else "NAVIS schedule export"
+        assert root.get("Name") == expected
+        # And the window comes from the activities, not a fixed 2026-06-01.
+        assert root.get("StartDate") and root.get("FinishDate")
         # Should contain at least some activity IDs
         assert "CIV-FDN-1007" in content or "PIP-SPL-1025" in content
 
@@ -1363,10 +1384,16 @@ class TestPrimaveraImport:
         """The import path end to end, not just the dry run.
 
         The fixture ids do not exist in the 120-activity demo baseline, so they
-        are created alongside it: the demo activities are never modified, which
-        is the property that matters two days before a demo. (The autouse
-        fixture rebuilds the database per test, so this commit is not visible
-        to any other test.)
+        are CREATED rather than updated and no demo row is modified — the
+        property that matters two days before a demo. (The autouse fixture
+        rebuilds the database per test, so this commit is not visible to any
+        other test.)
+
+        What changed with D-092: the imported file becomes the ACTIVE baseline,
+        and GET /schedule reports one project rather than two schedules summed.
+        The demo rows are still in the table — deleting them would orphan their
+        audit trail (D-004) — they are simply not part of the project that is
+        now open.
         """
         before = client.get("/schedule").json()
         assert before["total_activities"] == 120
@@ -1378,11 +1405,20 @@ class TestPrimaveraImport:
         assert body["activities_updated"] == 0
 
         after = client.get("/schedule").json()
-        assert after["total_activities"] == 123
+        assert after["total_activities"] == 3
         ids = {a["activity_id"] for a in after["activities"]}
-        assert {"CIV-EXC-1001", "CIV-FDN-1002", "PIP-ERC-2001"} <= ids
-        # Not one demo activity gained or lost an actual.
-        assert after["activities_with_actuals"] == before["activities_with_actuals"]
+        assert ids == {"CIV-EXC-1001", "CIV-FDN-1002", "PIP-ERC-2001"}
+
+        # The demo activities were not deleted, only scoped out.
+        from server.db import Activity as ActivityRow
+        db = TestSession()
+        try:
+            assert db.query(ActivityRow).count() == 123
+            survivor = db.query(ActivityRow).filter(
+                ActivityRow.activity_id == "CIV-FDN-1007").first()
+            assert survivor is not None
+        finally:
+            db.close()
 
     def test_importing_again_without_replace_is_refused(self):
         """A second import needs explicit consent.

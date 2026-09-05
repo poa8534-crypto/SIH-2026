@@ -107,6 +107,10 @@ from matching import (
     Thresholds,
 )
 from matching.providers import (
+    # The provider-side baseline descriptor, distinct from the ORM row of the
+    # same name imported from .db below. `ScheduleIndex.baseline` holds this
+    # one, and `_matcher_baseline_drift` compares the two by sha256.
+    BaselineVersion as ProviderBaselineVersion,
     JsonScheduleProvider,
     PmxmlScheduleProvider,
     PrimaveraXerScheduleProvider,
@@ -446,11 +450,26 @@ def _seed_schedule_if_empty(db: Session) -> None:
             except (OSError, ValueError) as e:
                 logger.warning("Could not identify the loaded baseline: %s", e)
                 return
-            _activate_baseline(
+            record = _activate_baseline(
                 db, version, source="seed", created=0, updated=0,
                 note="registered retrospectively for a pre-existing activities table",
             )
+            db.flush()
+            _attribute_activities_to_baseline(db, record)
             db.commit()
+            return
+        # A baseline row exists. Adopt any activity that predates
+        # `Activity.baseline_id`, so scoping is exact from here on rather than
+        # falling back to the whole table forever.
+        active_row = get_active_baseline(db)
+        if active_row is not None:
+            adopted = _attribute_activities_to_baseline(db, active_row)
+            if adopted:
+                db.commit()
+                logger.info(
+                    "Attributed %d pre-existing activities to baseline %s",
+                    adopted, active_row.filename,
+                )
         return
 
     if not DEFAULT_BASELINE_PATH.exists():
@@ -473,8 +492,12 @@ def _seed_schedule_if_empty(db: Session) -> None:
         db.add(_activity_from_dict(act))
 
     version = provider.read_baseline()
-    _activate_baseline(
+    record = _activate_baseline(
         db, version, source="seed", created=len(activities), updated=0,
+    )
+    db.flush()
+    _attribute_activities_to_baseline(
+        db, record, [a["activity_id"] for a in activities]
     )
     db.commit()
     logger.info("Seeded %d activities from %s", len(activities), version.describe())
@@ -496,29 +519,215 @@ SCHEDULE_PATH = str(DEFAULT_BASELINE_PATH)
 _MATCHING_ENGINE: Optional[MatchingEngine] = None
 
 
-def get_matching_engine() -> MatchingEngine:
-    """Lazily build the schedule-linking engine.
+def get_matching_engine(db: Optional[Session] = None) -> MatchingEngine:
+    """The schedule-linking engine, built against the active baseline.
 
-    Built once per process. The MiniLM weights are held by a module-level
-    singleton in matching.retrieval, so even a rebuild here does not reload
-    them.
+    Built once per process and then reused. The MiniLM weights are held by a
+    module-level singleton in `matching.retrieval`, so even a rebuild here
+    does not reload them.
+
+    PASS `db` WHEN YOU HAVE ONE. The engine is a module-level singleton and
+    the baseline lives in the database, so the two can disagree: another
+    worker process imports a schedule and this process keeps indexing the old
+    one, silently linking today's reports onto yesterday's project. With `db`
+    this checks the active baseline's sha256 against the index's and rebuilds
+    when they differ, which costs one indexed row per call and makes the
+    divergence structurally impossible rather than merely reported.
 
     `production()` supplies the fitted ranker and calibrator ONLY when the
     active baseline is the one they were fitted against; against any other
-    schedule it returns the hand-set blend. The server still defaults to the
-    v1 baseline while the artefacts are fitted on v2, so today this
-    deliberately resolves to the hand-set behaviour — the guard is what makes
-    that a decision rather than an accident.
+    schedule it returns the hand-set blend. That guard is what makes running
+    unfitted artefacts against a stranger's schedule impossible by accident.
     """
     global _MATCHING_ENGINE
     if _MATCHING_ENGINE is None:
-        index = ScheduleIndex.from_json(SCHEDULE_PATH)
-        sha = index.baseline.sha256 if index.baseline else None
-        _MATCHING_ENGINE = MatchingEngine(
-            SCHEDULE_PATH, thresholds=MATCHING_THRESHOLDS,
-            config=production(sha), index=index,
-        )
+        _MATCHING_ENGINE = _build_engine_from_db_or_disk()
+    if db is not None and _index_is_stale(db, _MATCHING_ENGINE):
+        rebuilt = rebuild_matching_engine(db)
+        if rebuilt is None:
+            # Nothing indexable. Keep the engine we have and let
+            # `_matcher_baseline_drift` say so on the next read, rather than
+            # installing an index that matches nothing.
+            logger.warning("Active baseline is not indexable; keeping the current index")
     return _MATCHING_ENGINE
+
+
+def _index_is_stale(db: Session, engine_obj: MatchingEngine) -> bool:
+    """True when the index was built from a different baseline than the active one."""
+    active = get_active_baseline(db)
+    if active is None:
+        return False
+    indexed = engine_obj.index.baseline
+    if indexed is None:
+        # An index with no provenance came from disk. Treat it as stale only
+        # when the database names a baseline that is not the seeded default.
+        return active.source != "seed"
+    return indexed.sha256 != active.sha256
+
+
+def _engine_from_index(index: ScheduleIndex) -> MatchingEngine:
+    sha = index.baseline.sha256 if index.baseline else None
+    return MatchingEngine(
+        SCHEDULE_PATH, thresholds=MATCHING_THRESHOLDS,
+        config=production(sha), index=index,
+    )
+
+
+def _build_engine_from_db_or_disk() -> MatchingEngine:
+    """Prefer the active baseline in the database; fall back to disk.
+
+    Disk is the fallback rather than the source because the database is what
+    an import actually changes. A fresh process with a seeded database gets an
+    index over the same activities either way; a process whose database holds
+    an imported schedule gets that one, which is the whole point.
+    """
+    db = Session(engine)
+    try:
+        index = build_index_from_active_baseline(db)
+    except Exception as e:  # noqa: BLE001 - startup must not die on this
+        logger.warning("Could not index the active baseline (%s); using %s", e, SCHEDULE_PATH)
+        index = None
+    finally:
+        db.close()
+    if index is None:
+        index = ScheduleIndex.from_json(SCHEDULE_PATH)
+    return _engine_from_index(index)
+
+
+def build_index_from_active_baseline(db: Session) -> Optional[ScheduleIndex]:
+    """A `ScheduleIndex` over the ACTIVE baseline's activities, or None.
+
+    Returns None when there is nothing to index, so the caller can fall back
+    to the file on disk rather than install an empty index — an index over
+    zero activities matches nothing, and "nothing matched" is indistinguishable
+    from "the matcher is fine, your report is unusual".
+    """
+    active = get_active_baseline(db)
+    rows = scoped_activities(db)
+    if not rows:
+        return None
+    baseline = None
+    if active is not None:
+        baseline = ProviderBaselineVersion(
+            name=active.name,
+            filename=active.filename,
+            sha256=active.sha256,
+            activity_count=len(rows),
+            source_format=active.source_format,
+        )
+    return ScheduleIndex([_activity_to_dict(row) for row in rows], baseline=baseline)
+
+
+def rebuild_matching_engine(db: Session) -> Optional[ScheduleIndex]:
+    """Re-index against the active baseline. Called after an import.
+
+    Importing a schedule used to change what the SCHEDULE held without
+    changing what INGEST could link to: `get_matching_engine()` was pinned to
+    `SCHEDULE_PATH`, a file on disk, so a freshly imported baseline was
+    visible on every read endpoint and invisible to the matcher. Reporting
+    work against an activity that existed only in the new file therefore
+    matched nothing at all, or - worse - matched a plausible-looking activity
+    from the OLD baseline, and the supervisor had no way to tell which had
+    happened.
+
+    `_matcher_baseline_drift` reported that divergence honestly, which is why
+    it was a known limitation rather than a silent one. This removes it.
+
+    Returns the new index, or None when the active baseline could not be
+    indexed, in which case the previous engine is left in place: a matcher
+    that still links against yesterday's schedule is recoverable, and one
+    replaced by an empty index is not. See D-092.
+    """
+    global _MATCHING_ENGINE
+    index = build_index_from_active_baseline(db)
+    if index is None:
+        logger.warning("Baseline import: nothing to index; matcher left unchanged")
+        return None
+    _MATCHING_ENGINE = _engine_from_index(index)
+    logger.info(
+        "Matching index rebuilt: %d activities from %s",
+        len(index.records),
+        index.baseline.filename if index.baseline else "(unnamed baseline)",
+    )
+    return index
+
+
+def _activity_to_dict(row: Activity) -> dict:
+    """One activity row in the shape `ScheduleIndex` reads.
+
+    `predecessor_links()` rather than `predecessor_list()`: the index keeps
+    both the ids and the typed ties, and flattening them here would quietly
+    turn every SS and FF link into FS at exactly the moment a new schedule's
+    logic first enters the matcher.
+    """
+    return {
+        "activity_id": row.activity_id,
+        "wbs_path": row.wbs_path or "",
+        "wbs_level": row.wbs_level,
+        "description": row.description or "",
+        "detail": row.detail or "",
+        "discipline": row.discipline or "unknown",
+        "tag": row.tag,
+        "calendar": row.calendar,
+        "planned_start": row.planned_start,
+        "planned_finish": row.planned_finish,
+        "planned_qty": row.planned_qty,
+        "uom": row.uom or "",
+        "predecessors": row.predecessor_links(),
+    }
+
+
+def scoped_activities(db: Session) -> list[Activity]:
+    """The active baseline's activities, in id order.
+
+    ONE PROJECT AT A TIME. An import leaves the previous baseline's rows in
+    the table on purpose (D-004: deleting them would orphan the audit trail),
+    so without this every consumer saw two schedules at once - two projects'
+    activity counts summed, and a matcher that could link a report about the
+    new project onto an activity belonging to the old one.
+
+    The unattributed case is deliberately wide rather than narrow: if the
+    active baseline owns no rows yet - a database written before
+    `Activity.baseline_id` existed, or a test that builds activities directly -
+    every activity is returned. Answering "0 activities" for a table that
+    plainly contains a schedule would be a far more confusing failure than
+    answering with all of it, and `_attribute_activities_to_baseline` closes
+    the gap on the next startup.
+    """
+    active = get_active_baseline(db)
+    if active is not None:
+        owned = (
+            db.query(Activity)
+            .filter(Activity.baseline_id == active.id)
+            .order_by(Activity.activity_id)
+            .all()
+        )
+        if owned:
+            return owned
+    return db.query(Activity).order_by(Activity.activity_id).all()
+
+
+def _attribute_activities_to_baseline(
+    db: Session, baseline: BaselineVersion, activity_ids: Optional[list[str]] = None
+) -> int:
+    """Point activities at the baseline they came from.
+
+    With `activity_ids`, attributes exactly those - what an import does for
+    the rows it created or updated. Without, adopts every row that has no
+    baseline yet, which is the one-time backfill for a database that predates
+    the column.
+    """
+    query = db.query(Activity)
+    if activity_ids is None:
+        query = query.filter(Activity.baseline_id.is_(None))
+    else:
+        query = query.filter(Activity.activity_id.in_(activity_ids))
+    changed = 0
+    for row in query:
+        if row.baseline_id != baseline.id:
+            row.baseline_id = baseline.id
+            changed += 1
+    return changed
 
 
 def link_events_to_activities(
@@ -535,7 +744,7 @@ def link_events_to_activities(
     not a committed link. Ingest persistence treats it accordingly
     (review queue entry, no schedule mutation).
     """
-    engine = get_matching_engine()
+    engine = get_matching_engine(db)
     decisions = engine.match_events(list(events))
     results = []
     for event, decision in zip(events, decisions):
@@ -1150,7 +1359,7 @@ async def ingest_file(
                 f"the schedule.",
             )
 
-        decisions = get_matching_engine().match_events(result.events)
+        decisions = get_matching_engine(db).match_events(result.events)
 
         # Skip events already ingested (same source position + text)
         seen = _existing_event_keys(db)
@@ -1276,7 +1485,7 @@ async def ingest_file(
         audits_written = 0
         activities_touched: set[str] = set()
         if auto_pairs:
-            accumulator = RollupAccumulator(get_matching_engine())
+            accumulator = RollupAccumulator(get_matching_engine(db))
             for event, decision in auto_pairs:
                 accumulator.add(decision, event)
             audits_written, activities_touched = _apply_rollup_to_schedule(
@@ -1833,7 +2042,7 @@ def _apply_confirmed_event_to_schedule(
     so quantity rollup, the partial-scope guard, earliest-start/latest-finish
     precedence, and conflict capture all behave identically.
     """
-    engine = get_matching_engine()
+    engine = get_matching_engine(db)
     if activity_id not in engine.index.by_id:
         return 0
 
@@ -1932,11 +2141,15 @@ def get_schedule(
 
     Enforces schedule integrity rules server-side.
     """
-    query = db.query(Activity)
+    # ONE PROJECT. An import leaves the previous baseline's activities in the
+    # table (D-004), so an unscoped query returned two schedules at once -
+    # 120 + 218 activities summed into one variance total, one SPI and one
+    # critical path. `scoped_activities` returns the active baseline's rows,
+    # and falls back to the whole table only when nothing is attributed yet.
+    # See D-092.
+    activities = scoped_activities(db)
     if discipline:
-        query = query.filter(Activity.discipline == discipline)
-
-    activities = query.order_by(Activity.activity_id).all()
+        activities = [a for a in activities if a.discipline == discipline]
     response_activities = []
     warnings = []
     total_start_var = []
@@ -1966,7 +2179,10 @@ def get_schedule(
 
     # Baseline network & CPM float calculation over all baseline activities
     from server.cpm import compute_schedule
-    all_acts_for_cpm = db.query(Activity).all()
+    # The network is computed over the whole ACTIVE baseline, never over the
+    # discipline filter above: float is a property of the network, and a
+    # critical path computed from the civil activities alone is not one.
+    all_acts_for_cpm = scoped_activities(db)
     cpm_network = compute_schedule(all_acts_for_cpm)
 
     for act in activities:
@@ -2492,10 +2708,29 @@ async def import_schedule(
     record = _activate_baseline(
         db, version, source="import", created=created, updated=updated, note=note,
     )
+    db.flush()  # `record.id` has to exist before anything can point at it.
+
+    # Every activity named by this file now belongs to this baseline, whether
+    # it was created here or already existed under the previous one. An
+    # activity present in both files is part of both projects; the active
+    # baseline is the one that owns it for scoping purposes, and the previous
+    # baseline_versions row still records that it was there.
+    _attribute_activities_to_baseline(
+        db, record, [a["activity_id"] for a in activities]
+    )
     db.commit()
+
+    # Re-index. Until this existed, importing a schedule changed what the
+    # SCHEDULE held without changing what INGEST could link to: the matcher
+    # was pinned to a file on disk, so an activity unique to the new baseline
+    # was visible on every read endpoint and unreachable from a field report.
+    # See D-092.
+    index = rebuild_matching_engine(db)
+    indexed = len(index.records) if index is not None else 0
+
     logger.info(
-        "Imported baseline %s: %d created, %d updated",
-        version.describe(), created, updated,
+        "Imported baseline %s: %d created, %d updated, %d indexed",
+        version.describe(), created, updated, indexed,
     )
 
     return BaselineImportResponse(
@@ -2506,7 +2741,11 @@ async def import_schedule(
         replaced=bool(active is not None),
         message=(
             f"Imported {version.filename}: {created} activities created, "
-            f"{updated} updated"
+            f"{updated} updated, {indexed} indexed for linking"
+            if index is not None else
+            f"Imported {version.filename}: {created} activities created, "
+            f"{updated} updated. The matching index could NOT be rebuilt and "
+            "still links against the previous baseline."
         ),
     )
 
@@ -2525,11 +2764,17 @@ def export_schedule(
 
     activities = query.order_by(Activity.activity_id).all()
 
+    # Which project this is. It was hardcoded to "OIL Well-Site Duliajan" with
+    # a fixed 2026-06-01/2026-09-30 window, so every export of an imported
+    # schedule announced itself as the demo baseline over someone else's dates.
+    active = get_active_baseline(db)
+    project_name = active.name if active is not None else "NAVIS schedule export"
+
     if req.format == "pmxml":
-        content = _generate_pmxml(activities, req.include_actuals)
+        content = _generate_pmxml(activities, req.include_actuals, project_name)
         filename = f"schedule_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xml"
     elif req.format == "xer":
-        content = _generate_xer(activities, req.include_actuals)
+        content = _generate_xer(activities, req.include_actuals, project_name)
         filename = f"schedule_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xer"
     else:
         raise HTTPException(400, f"Unknown format: {req.format}")
@@ -2928,18 +3173,44 @@ def patch_raid_item(item_id: str, req: RaidPatchRequest, db: Session = Depends(g
     return _raid_response(db, item)
 
 
-def _generate_pmxml(activities: list[Activity], include_actuals: bool) -> str:
-    """Generate Primavera PMXML format."""
+def _generate_pmxml(
+    activities: list[Activity],
+    include_actuals: bool,
+    project_name: str = "NAVIS schedule export",
+) -> str:
+    """Generate Primavera PMXML.
+
+    RELATIONSHIP TYPE AND LAG SURVIVE THIS.
+    Both exporters used to iterate `predecessor_list()` — ids only — and write
+    `Type="FS" Lag="0d"` against every one of them. A baseline imported with
+    SS and FF ties and multi-day lags therefore came back out as a pure
+    finish-to-start network with no lag anywhere, and re-importing that file
+    produced a different schedule from the one that went in. That is not a
+    formatting detail: `server/cpm.py` computes float, the critical path and
+    every beyond-float delay day from exactly these ties, so a lossy export
+    silently changes who owes whom time. They now iterate
+    `predecessor_links()` and write what the row holds.
+
+    The lag string is `{n}d`, which `matching/primavera.py :: _lag_days` reads
+    back as exactly n days — the round trip is checked by a test rather than
+    assumed.
+    """
     import html as html_mod
 
     # PMXML namespace
     ns = "http://www.oracle.com/projectmanagement/xmlns"
     ET.register_namespace("", ns)
 
+    # Dates from the activities being exported, not from a fixed window.
+    starts = [a.planned_start for a in activities if a.planned_start]
+    finishes = [a.planned_finish for a in activities if a.planned_finish]
+
     project = ET.Element("Project")
-    project.set("Name", "OIL Well-Site Duliajan")
-    project.set("StartDate", "2026-06-01")
-    project.set("FinishDate", "2026-09-30")
+    project.set("Name", project_name)
+    if starts:
+        project.set("StartDate", min(starts).isoformat())
+    if finishes:
+        project.set("FinishDate", max(finishes).isoformat())
 
     # WBS
     wbs_elem = ET.SubElement(project, "WBS")
@@ -2973,12 +3244,15 @@ def _generate_pmxml(activities: list[Activity], include_actuals: bool) -> str:
             adf = ET.SubElement(act_elem, "ActualFinishDate")
             adf.text = act.actual_finish.isoformat()
 
-        # Relationships
-        for pred_id in act.predecessor_list():
+        # Relationships, as the row actually holds them. A bare predecessor
+        # id reads back from `predecessor_links()` as FS with zero lag, which
+        # is what a bare id has always meant, so rows stored in the older
+        # shape export identically to before.
+        for link in act.predecessor_links():
             rel = ET.SubElement(act_elem, "Predecessor")
-            rel.set("ActivityID", pred_id)
-            rel.set("Type", "FS")  # Finish-to-Start
-            rel.set("Lag", "0d")
+            rel.set("ActivityID", link["activity_id"])
+            rel.set("Type", link.get("rel") or "FS")
+            rel.set("Lag", f"{int(link.get('lag_days') or 0)}d")
 
         # Resource
         res = ET.SubElement(act_elem, "ResourceID")
@@ -2989,13 +3263,26 @@ def _generate_pmxml(activities: list[Activity], include_actuals: bool) -> str:
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(project, encoding="unicode")
 
 
-def _generate_xer(activities: list[Activity], include_actuals: bool) -> str:
-    """Generate Oracle XER format (stretch goal — simplified)."""
+def _generate_xer(
+    activities: list[Activity],
+    include_actuals: bool,
+    project_name: str = "NAVIS schedule export",
+) -> str:
+    """Generate Oracle XER (simplified).
+
+    Carries relationship type and lag for the same reason PMXML does, and by
+    the same route — see `_generate_pmxml`. The two formats are checked
+    against each other in `server/test_export_roundtrip.py`: one schedule must
+    not export two different logic networks depending on the format chosen,
+    which is the defect D-047 fixed once already when this wrote SS while
+    PMXML wrote FS.
+    """
+    short_name = (project_name or "NAVIS")[:20].replace("\t", " ")
     lines = [
         "ER!!!\tER 22.12\tXER Export",
         "T\tPROJECT\tPRJ\tPROJID\tprj-001",
-        "T\tPROJECT\tPRJ\tproj_short_name\tOIL-DULIAJAN",
-        "T\tPROJECT\tPRJ\tproj_name\tOIL Well-Site Duliajan",
+        f"T\tPROJECT\tPRJ\tproj_short_name\t{short_name}",
+        f"T\tPROJECT\tPRJ\tproj_name\t{project_name}",
         "",
     ]
 
@@ -3014,17 +3301,19 @@ def _generate_xer(activities: list[Activity], include_actuals: bool) -> str:
             lines.append(f"T\tACTIVITY\tACT\tact_end_date\t{act.actual_finish.strftime('%d-%b-%y').upper()}")
         lines.append("")
 
-        for pred_id in act.predecessor_list():
+        for link in act.predecessor_links():
             lines.extend([
-                f"T\tFUNCDD\tREL\tproject_id\tprj-001",
-                f"T\tFUNCDD\tREL\tpredecessor_act_id\t{pred_id}",
+                "T\tFUNCDD\tREL\tproject_id\tprj-001",
+                f"T\tFUNCDD\tREL\tpredecessor_act_id\t{link['activity_id']}",
                 f"T\tFUNCDD\tREL\tsuccessor_act_id\t{act.activity_id}",
-                # A bare predecessor id has always meant FS with zero lag, and
-                # _generate_pmxml writes FS for the same rows. This said SS,
-                # so one schedule exported two different logic networks
-                # depending on the format chosen. See D-047.
-                f"T\tFUNCDD\tREL\trelationship_type\tFS",
-                f"T\tFUNCDD\tREL\tlag\t0d",
+                # The stored type and lag, not a constant. This wrote FS/0d
+                # for every tie, which flattened SS, FF and SF links and every
+                # lag in the network; before D-047 it wrote SS while PMXML
+                # wrote FS for the same rows.
+                f"T\tFUNCDD\tREL\trelationship_type\t{link.get('rel') or 'FS'}",
+                # `{n}d`, which _lag_days reads back as n days. A bare number
+                # in an XER lag column would be read as HOURS.
+                f"T\tFUNCDD\tREL\tlag\t{int(link.get('lag_days') or 0)}d",
             ])
             lines.append("")
 
@@ -4279,7 +4568,7 @@ def agent_turn(
         slots.ask_count = 0
         # Every required slot is present. The real matcher decides the
         # activity and the confidence; neither is ever hardcoded.
-        _match_slots(slots, session_id)
+        _match_slots(slots, session_id, db)
 
         if not req.confirm:
             confidence = slots.confidence or 0.0
@@ -4710,7 +4999,7 @@ def _extract_intent(message: str) -> str:
         return "progress_update"
 
 
-def _match_slots(slots: SlotState, session_id: str) -> None:
+def _match_slots(slots: SlotState, session_id: str, db: Optional[Session] = None) -> None:
     """Run the real matching engine over the filled slots.
 
     Sets `activity_id`, `activity_description`, `confidence` and
@@ -4719,7 +5008,7 @@ def _match_slots(slots: SlotState, session_id: str) -> None:
     the product. A low confidence is reported as-is and routed to review rather
     than smoothed over.
     """
-    engine = get_matching_engine()
+    engine = get_matching_engine(db)
 
     event = PydanticEvent(
         raw_text=slots.description or "progress update",

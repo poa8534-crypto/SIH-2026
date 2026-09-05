@@ -44,6 +44,29 @@ def clean_database():
     Base.metadata.drop_all(bind=_test_engine)
 
 
+@pytest.fixture(autouse=True)
+def isolated_matching_engine():
+    """Give each test its own matcher, and hand the old one back afterwards.
+
+    `server.main._MATCHING_ENGINE` is a module-level singleton, and every test
+    in this file imports a baseline, which now rebuilds it (D-092). Without
+    this, one test's imported schedule is the next test's starting state, and
+    the pollution escapes into every other test module in the run.
+
+    Dropping it to None costs an index build per test in this file only. That
+    is the price of testing a process-global honestly rather than reaching for
+    an assertion that tolerates either state.
+    """
+    import server.main as main
+
+    previous = main._MATCHING_ENGINE
+    main._MATCHING_ENGINE = None
+    try:
+        yield
+    finally:
+        main._MATCHING_ENGINE = previous
+
+
 @pytest.fixture
 def seeded(client, db_session):
     """The reference baseline loaded the way the server loads it."""
@@ -298,27 +321,93 @@ class TestImportSucceeds:
         assert baseline["activity_count"] == 218
 
 
-class TestMatcherBaselineDrift:
-    """Importing a baseline changes what the SCHEDULE holds without changing
-    what INGEST can link to — the matcher stays pinned to the schedule its
-    thresholds and ground truth were built against. That divergence is real,
-    so it has to be visible rather than discovered through empty results."""
+class TestMatcherFollowsTheImport:
+    """An imported baseline is linkable, not just visible.
+
+    The matcher used to stay pinned to `SCHEDULE_PATH`, a file on disk, so
+    importing a schedule changed what the SCHEDULE held without changing what
+    INGEST could link to. `_matcher_baseline_drift` reported that honestly and
+    these tests asserted the warning — a limitation pinned rather than fixed.
+    `rebuild_matching_engine` now re-indexes from the active baseline on every
+    import, so the warning is gone and what replaces it is the stronger claim:
+    the new activities are reachable from a field report. See D-092.
+    """
 
     def test_no_warning_while_they_agree(self, client, seeded):
         client.get("/schedule")            # builds nothing; matcher may be lazy
         warnings = client.get("/schedule").json()["integrity_warnings"]
         assert not [w for w in warnings if w["field"] == "baseline"]
 
-    def test_the_divergence_is_reported(self, client, seeded):
+    def test_importing_re_indexes_the_matcher(self, client, seeded):
         from server.main import get_matching_engine
 
-        get_matching_engine()              # matcher is pinned to v1
+        engine = get_matching_engine()
+        before = set(engine.index.by_id)
+        assert "CIV-SIT-1001" in before, "expected the v1 demo baseline"
+
+        assert _import(client, V2, replace=True).status_code == 200
+
+        engine = get_matching_engine()
+        after = set(engine.index.by_id)
+        assert after != before, "the matcher still indexes the old baseline"
+        # v2 shares no activity ids with v1, so the index is now entirely the
+        # imported schedule and nothing of the previous one survives in it.
+        assert not (after & before)
+        assert engine.index.baseline is not None
+        assert "baseline_schedule_v2" in engine.index.baseline.filename
+
+    def test_no_drift_warning_after_an_import(self, client, seeded):
+        from server.main import get_matching_engine
+
+        get_matching_engine()
         assert _import(client, V2, replace=True).status_code == 200
         warnings = client.get("/schedule").json()["integrity_warnings"]
-        drift = [w for w in warnings if w["field"] == "baseline"]
-        assert drift, "a matcher/schedule mismatch was reported to nobody"
-        assert "baseline_schedule_v2.json" in drift[0]["message"]
-        assert "baseline_schedule.json" in drift[0]["message"]
+        assert not [w for w in warnings if w["field"] == "baseline"], (
+            "the matcher and the schedule should now agree by construction"
+        )
+
+    def test_the_import_reports_how_many_activities_it_indexed(self, client, seeded):
+        body = _import(client, V2, replace=True).json()
+        assert "indexed for linking" in body["message"]
+
+
+class TestOneProjectAtATime:
+    """The previous baseline's activities stay in the table and out of the
+    project. Deleting them would orphan their audit trail (D-004); leaving
+    them in scope summed two schedules into one set of figures. See D-092."""
+
+    def test_the_schedule_holds_only_the_active_baseline(self, client, seeded):
+        before = client.get("/schedule").json()["total_activities"]
+        assert before == 120
+
+        assert _import(client, V2, replace=True).status_code == 200
+
+        after = client.get("/schedule").json()
+        assert after["total_activities"] == 218
+        ids = {a["activity_id"] for a in after["activities"]}
+        assert "CIV-SIT-1001" not in ids, "v1 activity leaked into the v2 project"
+
+    def test_the_previous_activities_are_still_in_the_table(self, client, seeded):
+        assert _import(client, V2, replace=True).status_code == 200
+
+        seeded.expire_all()
+        row = seeded.query(Activity).filter(
+            Activity.activity_id == "CIV-SIT-1001").first()
+        assert row is not None, "an import must never delete activities"
+        # And it is attributed to the baseline it came from, not the new one.
+        active = seeded.query(BaselineVersion).filter(
+            BaselineVersion.is_active.is_(True)).first()
+        assert row.baseline_id != active.id
+
+    def test_imported_activities_are_attributed_to_the_new_baseline(self, client, seeded):
+        assert _import(client, V2, replace=True).status_code == 200
+
+        seeded.expire_all()
+        active = seeded.query(BaselineVersion).filter(
+            BaselineVersion.is_active.is_(True)).first()
+        attributed = seeded.query(Activity).filter(
+            Activity.baseline_id == active.id).count()
+        assert attributed == 218
 
 
 class TestImportNeverTouchesActuals:
