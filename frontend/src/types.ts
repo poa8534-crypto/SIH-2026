@@ -719,10 +719,12 @@ export interface TenderEstimateResponse {
 export interface AgentContext {
   project_code: string;
   location: string;
-  discipline: string;
+  discipline?: string;
   data_date: string;
   timezone: string;
 }
+
+export type Activity = ScheduleActivity;
 
 export interface AgentTurnRequest {
   session_id: string;

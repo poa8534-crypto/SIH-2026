@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, ListTodo, CalendarDays, Upload, Database, Sun, Moon, LogOut, LineChart, ShieldAlert, FileSearch, Scale, Sparkles } from 'lucide-react';
+import {
+  LayoutDashboard,
+  ListTodo,
+  CalendarDays,
+  Upload,
+  Database,
+  Sun,
+  Moon,
+  LogOut,
+  LineChart,
+  ShieldAlert,
+  FileSearch,
+  Scale,
+  Sparkles,
+  TrendingUp,
+  FileText,
+} from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
@@ -24,8 +40,13 @@ import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
 import Login from './pages/Login';
 import ExecutiveOverview from './pages/executive/Overview';
-import ExecutiveExposure from './pages/executive/Exposure';
-import ExecutiveProvenance from './pages/executive/Provenance';
+import ExecutiveMilestones from './pages/executive/Milestones';
+import ExecutiveProgress from './pages/executive/Progress';
+import ExecutiveRisksDelays from './pages/executive/RisksDelays';
+import ExecutiveForecasts from './pages/executive/Forecasts';
+import ExecutiveExecutionInsights from './pages/executive/ExecutionInsights';
+import ExecutiveManagementReports from './pages/executive/ManagementReports';
+import ExecutiveDataConfidence from './pages/executive/DataConfidence';
 import { SessionContext } from './hooks/useSession';
 import {
   ROLE_PROFILES,
@@ -38,7 +59,12 @@ import { Button, ErrorState } from './components/ui';
 
 // Placeholder route components
 
-type NavItem = { path: string; label: string; icon: typeof LayoutDashboard };
+type NavItem = {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+};
 
 function DesktopShell({
   children,
@@ -81,7 +107,9 @@ function DesktopShell({
   // intermediate value — which is what made Home flash "Home" -> "Project
   // Control" on every visit. A route that never publishes still falls back to
   // its nav label rather than inheriting the previous page's title.
-  const currentNav = navItems.find((item) => location.pathname.startsWith(item.path));
+  const currentNav = navItems.find((item) =>
+    item.end ? location.pathname === item.path : location.pathname.startsWith(item.path)
+  );
   const forThisRoute = pageHeader?.path === location.pathname ? pageHeader : null;
   const title = forThisRoute?.title ?? currentNav?.label ?? '';
   const subtitle = forThisRoute?.subtitle ?? '';
@@ -116,7 +144,9 @@ function DesktopShell({
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5 px-3 py-3">
           {navItems.map((item) => {
-            const active = location.pathname.startsWith(item.path);
+            const active = item.end
+              ? location.pathname === item.path
+              : location.pathname.startsWith(item.path);
             const Icon = item.icon;
             return (
               <Link
@@ -320,13 +350,19 @@ const PLANNER_NAV: NavItem[] = [
   { path: '/memory', label: 'Memory', icon: Database },
 ];
 
-/* Senior Management gets three destinations and no review queue. That absence
-   is the design, not an omission: ROADMAP §3.3 keeps this role read-only so
-   the plan keeps a single accountable owner. */
+/* Senior Management 8 analytical governance workspaces:
+   Overview, Milestones, Progress, Risks & Delays, Forecasts,
+   Execution Insights, Reports, and Data Confidence.
+   Strictly read-only; schedule mutation and review queues remain with the PM. */
 const EXECUTIVE_NAV: NavItem[] = [
-  { path: '/executive', label: 'Overview', icon: LineChart },
-  { path: '/executive/exposure', label: 'Exposure', icon: ShieldAlert },
-  { path: '/executive/provenance', label: 'Data', icon: FileSearch },
+  { path: '/executive', label: 'Overview', icon: LayoutDashboard, end: true },
+  { path: '/executive/milestones', label: 'Milestones', icon: CalendarDays },
+  { path: '/executive/progress', label: 'Progress', icon: LineChart },
+  { path: '/executive/risks', label: 'Risks & Delays', icon: ShieldAlert },
+  { path: '/executive/forecasts', label: 'Forecasts', icon: TrendingUp },
+  { path: '/executive/insights', label: 'Execution Insights', icon: Sparkles },
+  { path: '/executive/reports', label: 'Reports', icon: FileText },
+  { path: '/executive/confidence', label: 'Data Confidence', icon: FileSearch },
 ];
 
 export default function App() {
@@ -393,8 +429,15 @@ export default function App() {
         >
           <Routes>
             <Route path="/executive" element={<ExecutiveOverview />} />
-            <Route path="/executive/exposure" element={<ExecutiveExposure />} />
-            <Route path="/executive/provenance" element={<ExecutiveProvenance />} />
+            <Route path="/executive/milestones" element={<ExecutiveMilestones />} />
+            <Route path="/executive/progress" element={<ExecutiveProgress />} />
+            <Route path="/executive/risks" element={<ExecutiveRisksDelays />} />
+            <Route path="/executive/exposure" element={<Navigate to="/executive/risks" replace />} />
+            <Route path="/executive/forecasts" element={<ExecutiveForecasts />} />
+            <Route path="/executive/insights" element={<ExecutiveExecutionInsights />} />
+            <Route path="/executive/reports" element={<ExecutiveManagementReports />} />
+            <Route path="/executive/confidence" element={<ExecutiveDataConfidence />} />
+            <Route path="/executive/provenance" element={<Navigate to="/executive/confidence" replace />} />
             {/* Anything else this role has no business opening returns to the
                 overview rather than 404-ing into a planner screen. */}
             <Route path="*" element={<Navigate to="/executive" replace />} />

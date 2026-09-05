@@ -301,7 +301,6 @@ describe('critical path drivers', () => {
 describe('the what-if simulator', () => {
   it('moves the computed finish date instead of inventing a cost', async () => {
     mount();
-
     expect(await screen.findByText(/What-If/i)).toBeInTheDocument();
     fireEvent.change(screen.getAllByRole('slider')[0], { target: { value: '10' } });
 
