@@ -29,8 +29,12 @@ from server.productivity import (
     BASIS_REPORTED,
     MIN_COMPARABLES,
     MIN_REPORTED_DAYS,
+    NO_FORECAST_AWAITING_FINISH_DATE,
+    NO_FORECAST_FINISHED,
+    NO_FORECAST_NOT_STARTED,
     activity_type,
     comparables,
+    forecast,
     rates,
 )
 
@@ -232,6 +236,149 @@ class TestComparables:
         assert act.activity_id not in comparables(db_session, act)["members"]
 
 
+class TestTheForecast:
+    """`remaining / rate -> finish -> variance` (D-088). The division is
+    trivial; what needs asserting is which rate goes in the denominator, what
+    the answer is allowed to claim, and every case where it declines."""
+
+    def _running(self, db, *, uom="m"):
+        act = _setup(db, "CIV-SIT-1001", planned_qty=1200, uom=uom,
+                     planned_start=date(2026, 8, 1),
+                     planned_finish=date(2026, 8, 10),
+                     actual_start=date(2026, 8, 27), actual_qty=800)
+        job = _job(db)
+        _reading(db, job, act.activity_id, 500, uom, date(2026, 8, 28))
+        _reading(db, job, act.activity_id, 300, uom, date(2026, 9, 3))
+        db.commit()
+        return act
+
+    def test_it_forecasts_from_the_elapsed_rate_and_says_why(self, db_session):
+        """The reading a contract argues from, available on far more
+        activities than the reported rate, and it errs late."""
+        self._running(db_session)
+
+        f = forecast(db_session, "CIV-SIT-1001", AS_OF)["forecast"]
+        assert f["basis"] == BASIS_ELAPSED
+        # 400 m remaining at 40 m/day = 10 days from the data date.
+        assert f["remaining_days"] == 10
+        assert f["forecast_finish"] == date(2026, 9, 25)
+        assert f["baseline_finish"] == date(2026, 8, 10)
+        assert f["variance_days"] == 46
+        assert "contract argues from" in f["why"]
+
+    def test_every_usable_rate_produces_a_candidate(self, db_session):
+        """A single figure would hide that the same evidence supports a
+        range."""
+        self._running(db_session)
+
+        d = forecast(db_session, "CIV-SIT-1001", AS_OF)
+        by = {c["basis"]: c for c in d["candidates"]}
+        assert {BASIS_ELAPSED, BASIS_REPORTED, BASIS_PLANNED} <= set(by)
+        # The spread is real: the optimistic reading finishes sooner.
+        assert by[BASIS_REPORTED]["forecast_finish"] < by[BASIS_ELAPSED]["forecast_finish"]
+
+    def test_remaining_days_round_up(self, db_session):
+        """An activity does not finish a fraction of a day early, and rounding
+        down would let a forecast claim a day it has not earned."""
+        act = _setup(db_session, "CIV-SIT-1001", planned_qty=100, uom="m",
+                     planned_start=date(2026, 8, 1),
+                     planned_finish=date(2026, 8, 10),
+                     actual_start=date(2026, 9, 6), actual_qty=90)
+        job = _job(db_session)
+        _reading(db_session, job, act.activity_id, 90, "m", date(2026, 9, 7))
+        db_session.commit()
+
+        # 10 m left at 9 m/day = 1.11 days -> 2.
+        assert forecast(db_session, act.activity_id, AS_OF)["forecast"]["remaining_days"] == 2
+
+    def test_remaining_follows_percent_complete_not_the_readings(
+            self, db_session):
+        """`PIP-SPL-1027` on the real corpus reports 71% through an asserted
+        percentage and carries no measured quantity. Using the readings for
+        remaining would forecast it as though nothing had been built, and
+        contradict the progress figure on every other screen."""
+        act = _setup(db_session, "CIV-SIT-1001", planned_qty=14, uom="nos",
+                     planned_start=date(2026, 8, 1),
+                     planned_finish=date(2026, 8, 20),
+                     actual_start=date(2026, 8, 1), actual_qty=None)
+        job = _job(db_session)
+        db_session.add(LinkedEvent(
+            id=str(uuid.uuid4()), job_id=job.id, activity_id=act.activity_id,
+            source_file="dpr.txt", source_span="x", raw_text="x",
+            percentage=71.0, reported_date=date(2026, 8, 5), confidence=0.9,
+        ))
+        db_session.commit()
+
+        d = forecast(db_session, act.activity_id, AS_OF)
+        assert d["percent_complete"] == pytest.approx(71.0)
+        assert d["counted_qty"] == 0
+        # 29% of 14, not 14.
+        assert d["remaining_qty"] == pytest.approx(4.06)
+
+    def test_remaining_is_exact_when_a_quantity_was_measured(self, db_session):
+        """Going back through a percentage rounded to one decimal turns
+        1200 - 800 into 399.6, and a claim document does not want an
+        arithmetic artefact in it."""
+        self._running(db_session)
+
+        assert forecast(db_session, "CIV-SIT-1001", AS_OF)["remaining_qty"] == 400
+
+
+class TestItDeclinesToForecast:
+    def test_a_finished_activity_is_not_forecast(self, db_session):
+        _setup(db_session, "CIV-SIT-1001", planned_qty=100, uom="m",
+               planned_start=date(2026, 8, 1), planned_finish=date(2026, 8, 10),
+               actual_start=date(2026, 8, 1), actual_finish=date(2026, 8, 12),
+               actual_qty=100)
+        db_session.commit()
+
+        d = forecast(db_session, "CIV-SIT-1001", AS_OF)
+        assert d["forecast"] is None
+        assert d["reason"] == NO_FORECAST_FINISHED
+
+    def test_an_activity_that_never_started_is_not_forecast(self, db_session):
+        """There is no start to forecast from, and inventing one would be
+        forecasting the schedule rather than the work."""
+        _setup(db_session, "CIV-SIT-1001", planned_qty=100, uom="m",
+               planned_start=date(2026, 8, 1), planned_finish=date(2026, 8, 10))
+        db_session.commit()
+
+        d = forecast(db_session, "CIV-SIT-1001", AS_OF)
+        assert d["forecast"] is None
+        assert d["reason"] == NO_FORECAST_NOT_STARTED
+
+    def test_quantity_complete_with_no_finish_date_awaits_a_planner(
+            self, db_session):
+        """The roll-up withheld the finish date because no source named one
+        (D-015). Forecasting this as still running would contradict the review
+        queue it was put in."""
+        act = _setup(db_session, "CIV-SIT-1001", planned_qty=100, uom="m",
+                     planned_start=date(2026, 8, 1),
+                     planned_finish=date(2026, 8, 10),
+                     actual_start=date(2026, 8, 1), actual_qty=100)
+        job = _job(db_session)
+        _reading(db_session, job, act.activity_id, 100, "m", date(2026, 8, 9))
+        db_session.commit()
+
+        d = forecast(db_session, act.activity_id, AS_OF)
+        assert d["forecast"] is None
+        assert d["reason"] == NO_FORECAST_AWAITING_FINISH_DATE
+
+    def test_a_refusal_still_carries_its_evidence(self, db_session):
+        """"We cannot say" and "we did not look" are different answers."""
+        _setup(db_session, "CIV-SIT-1001", planned_qty=100, uom="m",
+               planned_start=date(2026, 8, 1), planned_finish=date(2026, 8, 10))
+        db_session.commit()
+
+        d = forecast(db_session, "CIV-SIT-1001", AS_OF)
+        assert d["rates"]
+        assert d["evidence"]["comparable_activities"] >= 0
+        assert "never written to the schedule" in d["forecast_note"]
+
+    def test_an_unknown_activity_is_none(self, db_session):
+        assert forecast(db_session, "NOT-AN-ACTIVITY", AS_OF) is None
+
+
 class TestTheEndpoint:
     def test_it_returns_all_three_rates(self, client, db_session):
         act = _setup(db_session, "CIV-SIT-1001", planned_qty=1200, uom="m",
@@ -251,6 +398,12 @@ class TestTheEndpoint:
         # The caveats travel in the payload, not only in the docs.
         assert "calendar days" in body["calendar_basis"]
         assert "none of them is the productivity" in body["basis_note"]
+        # The forecast rides on the same response.
+        assert body["forecast"]["basis"] == BASIS_ELAPSED
+        assert body["forecast"]["variance_days"] == 46
+        assert len(body["candidates"]) >= 2
+        assert body["evidence"]["measured_quantity"] == 800
+        assert "never written to the schedule" in body["forecast_note"]
 
     def test_an_unknown_activity_is_404(self, client, db_session):
         assert client.get("/activity/NOPE/productivity").status_code == 404

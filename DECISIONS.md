@@ -7988,3 +7988,132 @@ discipline for the Memory screen, one per activity for a forecast — and that
 is a duplication worth closing when the Memory screen next needs work. It was
 left alone deliberately: folding them together would change a shipped screen's
 numbers in a phase whose subject is a new endpoint.
+
+---
+
+## 2026-09-05 / D-088 — A forecast names the rate it used, and every rate that disagreed
+
+### Context
+Phase 3, and the last of the Granularity Resolution Engine that produces a
+number. D-087 gave every activity three productivity rates; this divides the
+remaining quantity by one of them and says when the work finishes.
+
+The division is trivial. Everything that matters is which rate goes in the
+denominator, what the answer is allowed to claim, and when to refuse.
+
+### Decision
+`server/productivity.py :: forecast`, carried on the existing
+`GET /activity/{id}/productivity` response rather than a new endpoint — "how
+fast" and "therefore when" are one question.
+
+**Every rate that can produce a forecast produces one, and one is nominated.**
+Reporting a single figure would hide that the same evidence supports a range.
+On `ELE-CBL-1076` the elapsed reading finishes 2026-10-04 (+47 days) and the
+planned rate finishes 2026-09-20 (+33); on `PIP-RCK-1024` the two are 2027-04-07
+and 2026-09-26. A reader who cannot see that spread cannot judge the headline.
+
+**The nomination rule, in order, stated on the response itself:**
+
+```
+observed_elapsed    when available. The reading a contract argues from, it is
+                    available on far more activities than the reported rate,
+                    and it errs late.
+comparable median   no observed rate, but three or more completed activities
+                    of the same type.
+planned             last, and labelled as the schedule's own assumption rather
+                    than an observation of anything.
+```
+
+The chosen candidate carries a `why` in prose, so the choice is legible without
+knowing the rule.
+
+**Remaining quantity comes from `percent_complete`, not from the readings.**
+This is the correction the phase turned on. The rate's numerator must be a
+measured quantity — a rate needs a measurement. But "how much is left" is a
+question about completeness, and `PIP-SPL-1027` reports 71% through an asserted
+percentage while carrying no measured quantity at all. Deriving remaining from
+`planned - counted` made it forecast as though nothing had been built: 14 of 14
+remaining, against every other screen in the product saying 71% done. It now
+uses `server/evm.py :: percent_complete` — the shared four-rule derivation the
+Schedule screen and EVM already use — so a forecast cannot contradict the
+progress figure printed beside it.
+
+Where a quantity WAS measured the subtraction is done directly rather than
+through the percentage: going back through a figure rounded to one decimal
+turns `1200 - 800` into 399.6, and a claim document does not want an arithmetic
+artefact in it.
+
+**Remaining days round up.** An activity does not finish a fraction of a day
+early, and rounding down would let a forecast claim a day it has not earned.
+
+**Nothing is written.** A forecast is a projection, exactly as a proposed
+liability (D-078) or a proposed actual date (D-009) is. `forecast_note` says so
+in the payload.
+
+**Five refusals, each with a reason rather than an empty object**, because "we
+cannot say" and "we did not look" are different answers:
+
+```
+already_finished                        38 activities
+not_started                             53   no start to forecast from
+quantity_complete_awaiting_finish_date   9   the roll-up withheld the finish
+                                             date because no source named one
+                                             (D-015); forecasting it as still
+                                             running would contradict the
+                                             review queue it was put in
+node_has_no_planned_quantity             1
+(forecast produced)                     19
+```
+
+### What it produces on the corpus
+```
+ELE-CBL-1076   66.7% · 400 m remaining
+  FORECAST 2026-10-04  vs baseline 2026-08-18  = +47d
+    from observed_elapsed at 22.22 m/day
+    alt  planned at 85.71 m/day -> 2026-09-20 (+33d)
+  EVIDENCE 1 reading over 1 reported day, 800 m confirmed, 0 comparables
+```
+
+The evidence line is the point of the design: one reading is a thin basis for a
+47-day claim, and the response says so rather than leaving a reader to assume
+otherwise.
+
+### Alternatives Considered
+- **Return one forecast.** Rejected — see the spread above.
+- **Average the candidates.** Rejected. The mean of a pessimistic and an
+  optimistic projection has no defensible derivation.
+- **Emit a numeric confidence score.** Rejected: there is no calibration behind
+  such a number, and a percentage would imply one. The sample counts and the
+  spread say the same thing without inventing precision.
+- **Nominate the reported rate when it exists.** Rejected: it excludes every
+  day nobody reported, which flatters exactly the activities whose forecasts
+  matter most.
+- **Forecast an activity that has not started.** Rejected. There is no start to
+  forecast from, and assuming one would be forecasting the schedule rather than
+  the work.
+
+### Verification
+`python -m pytest -q` — 1108 passed, up from 1098. The 10 new tests in
+`server/test_productivity.py` assert the nominated rate and its stated reason,
+every usable rate producing a candidate with the optimistic one finishing
+sooner, days rounding up, remaining following percent complete rather than the
+readings, remaining exact when a quantity was measured, and each of the four
+reachable refusals still carrying its evidence.
+
+`scripts/healthcheck.py` against a running server — 36 endpoints exposed,
+expected 36 (no new endpoint); 31 checks passed. `matching/` and `extraction/`
+untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/productivity.py` (`forecast`, `_forecast_from`, the refusal reasons,
+and remaining-quantity now derived from `percent_complete`),
+`server/schemas.py` (`ForecastCandidate`, `ForecastEvidence`, and the fields on
+`ProductivityResponse`), `server/main.py`, `server/test_productivity.py`.
+
+### Trade-offs / Consequences
+A forecast is a straight-line extrapolation from a single rate. It models no
+learning curve, no resource change and no logic: an activity whose successor
+cannot start until a permit arrives forecasts as though it can. The critical
+path exists (D-082) and is not consulted here, so these are ACTIVITY forecasts
+and never a project completion date. Saying which of those two a number is
+matters more than the number.

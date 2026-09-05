@@ -725,6 +725,36 @@ class ProductivityComparables(BaseModel):
     note: str
 
 
+class ForecastCandidate(BaseModel):
+    """When this activity finishes, according to one rate.
+
+    Every rate that can produce a forecast produces one. Reporting a single
+    figure would hide that the same evidence supports a range - on a sparsely
+    reported activity the pessimistic and optimistic readings can be months
+    apart, and a reader who cannot see that cannot judge the number.
+    """
+
+    basis: str
+    rate: float
+    remaining_days: int
+    forecast_finish: date_t
+    baseline_finish: Optional[date_t] = None
+    variance_days: Optional[int] = None
+    sample_size: int = 0
+    # Present only on the nominated forecast: why this rate and not another.
+    why: Optional[str] = None
+
+
+class ForecastEvidence(BaseModel):
+    """What the forecast rests on, in one object a reader can check."""
+
+    readings_counted: int = 0
+    reported_days: int = 0
+    measured_quantity: float = 0.0
+    uom: Optional[str] = None
+    comparable_activities: int = 0
+
+
 class ProductivityResponse(BaseModel):
     """How fast one activity actually went, said three ways.
 
@@ -744,10 +774,24 @@ class ProductivityResponse(BaseModel):
     actual_finish: Optional[date_t] = None
     as_of: date_t
     reported_days: int = 0
+    # Completeness, from the shared four-rule derivation in server/evm.py -
+    # so the forecast cannot contradict the progress figure beside it.
+    percent_complete: float = 0.0
+    percent_complete_source: str = ""
     rates: list[ProductivityRate] = []
     comparables: ProductivityComparables
     calendar_basis: str
     basis_note: str
+    # ── Forecast (D-088) ──
+    baseline_finish: Optional[date_t] = None
+    # The nominated forecast, or null with `reason` saying why none was made.
+    forecast: Optional[ForecastCandidate] = None
+    # Every rate that could produce one. The spread is the honest width of the
+    # evidence.
+    candidates: list[ForecastCandidate] = []
+    reason: Optional[str] = None
+    evidence: ForecastEvidence
+    forecast_note: str
 
 
 class QuantityContribution(BaseModel):

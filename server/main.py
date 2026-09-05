@@ -178,6 +178,8 @@ from .schemas import (
     DelayEventOut,
     DelayNoticeRequest,
     DelayNoticeResponse,
+    ForecastCandidate,
+    ForecastEvidence,
     ProductivityComparables,
     ProductivityRate,
     ProductivityResponse,
@@ -3162,18 +3164,25 @@ def get_evidence_corpus():
 @app.get("/activity/{activity_id}/productivity",
          response_model=ProductivityResponse)
 def get_activity_productivity(activity_id: str, db: Session = Depends(get_db)):
-    """How fast one activity actually went - three ways, none of them THE way.
+    """How fast one activity went, and therefore when it finishes.
 
     Divide measured quantity by elapsed calendar days and a sparsely reported
     activity looks catastrophic; divide by the days a reading was recorded and
     the idle fortnight vanishes. Both are computed, the planned rate sits
     beside them, and every one carries the sample it came from.
 
-    Only measured quantities feed this: D-086 stopped `actual_qty` holding a
-    figure back-derived from an asserted percentage, so a rate here is a rate
-    rather than a fiction wearing measured units.
+    Each rate that can produce a forecast produces one, and the response
+    nominates a headline with the reason it chose that rate. **A forecast is a
+    projection and is never written to the schedule** - the same rule that
+    keeps a proposed date out of the plan until a planner commits it (D-009).
+
+    Only measured quantities feed the RATES: D-086 stopped `actual_qty`
+    holding a figure back-derived from an asserted percentage, so a rate here
+    is a rate rather than a fiction wearing measured units. Remaining quantity
+    is a different question and comes from `percent_complete`, so the forecast
+    cannot contradict the progress figure shown beside it.
     """
-    data = productivity.rates(db, activity_id, DATA_DATE)
+    data = productivity.forecast(db, activity_id, DATA_DATE)
     if data is None:
         raise HTTPException(404, f"Activity {activity_id} not found")
     return ProductivityResponse(
@@ -3181,6 +3190,11 @@ def get_activity_productivity(activity_id: str, db: Session = Depends(get_db)):
             **data,
             "rates": [ProductivityRate(**r) for r in data["rates"]],
             "comparables": ProductivityComparables(**data["comparables"]),
+            "forecast": (
+                ForecastCandidate(**data["forecast"]) if data["forecast"] else None
+            ),
+            "candidates": [ForecastCandidate(**c) for c in data["candidates"]],
+            "evidence": ForecastEvidence(**data["evidence"]),
         }
     )
 

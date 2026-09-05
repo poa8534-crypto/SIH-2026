@@ -1291,6 +1291,53 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 3 of the Granularity Resolution Engine — the forecast.
+Remaining quantity over a named rate, with every rate that disagreed listed
+beside it, and five refusals that each carry a reason.
+**Date:** 2026-09-05 · **Decision:** D-088
+
+```
+FORECAST — WHICH RATE, AND WHAT IT MAY CLAIM                       (D-088)
+
+  server/productivity.py  forecast(db, activity_id, as_of)
+    built on rates() (D-087); carried on GET /activity/{id}/productivity,
+    because "how fast" and "therefore when" are one question
+      |
+      +-- REFUSALS, each with a reason not an empty object
+      |     already_finished                        38
+      |     not_started                             53
+      |     quantity_complete_awaiting_finish_date   9   D-015 withheld the
+      |                                                  finish date; saying
+      |                                                  "still running" would
+      |                                                  contradict the queue
+      |     node_has_no_planned_quantity             1
+      |     (forecast produced)                     19
+      |
+      +-- remaining = planned x (1 - percent_complete/100)
+      |     percent_complete is server/evm.py's SHARED four-rule derivation,
+      |     so the forecast cannot contradict the progress figure beside it.
+      |     Exact subtraction when a quantity was measured: going back through
+      |     a rounded percentage turns 1200-800 into 399.6.
+      |
+      +-- one candidate per usable rate: elapsed, reported, planned,
+      |     comparable median. ceil(remaining / rate) days from as_of.
+      |
+      +-- NOMINATION  observed_elapsed > comparable > planned
+            the chosen one carries `why` in prose
+
+  NOTHING IS WRITTEN. A forecast is a projection (D-009, D-078).
+
+  ELE-CBL-1076  66.7%, 400 m left
+    2026-10-04 vs baseline 2026-08-18 = +47d, from observed_elapsed 22.22 m/d
+    alt planned 85.71 m/d -> 2026-09-20 (+33d)
+    evidence: 1 reading, 1 reported day, 800 m confirmed, 0 comparables
+  Pinned by server/test_productivity.py (23 tests).
+```
+
+---
+
+### Previous modification area (D-087)
+
 **Task:** Phase 2 of the Granularity Resolution Engine — three productivity
 rates per activity, plus comparables, and the refusals that keep them honest.
 **Date:** 2026-09-05 · **Decision:** D-087
