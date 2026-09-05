@@ -693,6 +693,63 @@ class DelayEventOut(BaseModel):
     source_span: Optional[str] = None
 
 
+class ProductivityRate(BaseModel):
+    """One rate, or an honest absence of one.
+
+    `value` is null whenever the inputs cannot produce a rate, and `note` says
+    why. A zero would read as "measured, and nothing happened", which is a
+    different claim from "not enough to measure".
+    """
+
+    basis: str  # planned / observed_elapsed / observed_reported
+    value: Optional[float] = None
+    days: Optional[int] = None
+    quantity: Optional[float] = None
+    sample_size: int = 0
+    note: str
+
+
+class ProductivityComparables(BaseModel):
+    """Completed, quantified activities of the same type.
+
+    Below three, no average is offered: a mean of two is an anecdote with a
+    decimal point.
+    """
+
+    activity_type: str
+    count: int = 0
+    members: list[str] = []
+    median_qty_per_day: Optional[float] = None
+    mean_qty_per_day: Optional[float] = None
+    enough: bool = False
+    note: str
+
+
+class ProductivityResponse(BaseModel):
+    """How fast one activity actually went, said three ways.
+
+    None of the three is *the* productivity. The elapsed reading is punished
+    by reporting gaps, the reported reading ignores them, and the planned rate
+    is what the schedule assumed. A forecast has to name which one it used.
+    """
+
+    activity_id: str
+    description: Optional[str] = None
+    discipline: Optional[str] = None
+    uom: Optional[str] = None
+    planned_qty: float = 0.0
+    counted_qty: float = 0.0
+    remaining_qty: float = 0.0
+    actual_start: Optional[date_t] = None
+    actual_finish: Optional[date_t] = None
+    as_of: date_t
+    reported_days: int = 0
+    rates: list[ProductivityRate] = []
+    comparables: ProductivityComparables
+    calendar_basis: str
+    basis_note: str
+
+
 class QuantityContribution(BaseModel):
     """One reported reading, and what the roll-up did with it.
 

@@ -7874,3 +7874,117 @@ nothing instead of a plausible-looking fiction, which is the intended
 direction — `server/main.py :: _compute_productivity` already guards on
 `a.actual_qty and a.actual_qty > 0` and so simply stops counting those rows,
 which is correct: they never had a measured quantity to build a rate from.
+
+---
+
+## 2026-09-05 / D-087 — Three productivity rates, and none of them is the productivity
+
+### Context
+Phase 2 of the Granularity Resolution Engine. D-085's ledger says how much of
+an activity is built and which readings built it; D-086 made sure those
+readings are measurements. What was still missing is how FAST — the figure a
+forecast divides by, and one nothing in NAVIS could answer for a single
+activity.
+
+### Decision
+`server/productivity.py`, exposed as `GET /activity/{id}/productivity`.
+
+**There is no single honest number, so three are returned and none is named
+the productivity.** Divide measured quantity by elapsed calendar days since
+Actual Start and a sparsely reported activity looks catastrophic:
+`PIP-RCK-1024` comes out at 0.12 MT/day, which is a statement about how often
+somebody wrote a report, not about the crew. Divide instead by the days a
+reading was actually recorded and the bias inverts — the idle fortnight
+vanishes and the rate flatters.
+
+```
+planned            planned_qty / planned duration      what the schedule assumed
+observed_elapsed   counted qty / days since Actual Start
+                   includes days nobody reported. The pessimistic reading,
+                   and the one a contract argues from.
+observed_reported  counted qty / distinct dates carrying a reading
+                   excludes idle days. The optimistic reading, and the one a
+                   foreman recognises.
+```
+
+On `CIV-FDN-1008` those are 8.00, 12.00 and 90.00 m³/day. The spread is not a
+defect in the arithmetic; it is the honest width of what the evidence supports,
+and hiding it behind one number is what would be dishonest.
+
+**One reported day is not a rate.** It is the whole reading divided by one —
+on `ELE-CBL-1076`, 800 m/day. `MIN_REPORTED_DAYS = 2` refuses it and says why.
+`observed_elapsed` is deliberately exempt, because Actual Start is itself a
+second point in time, so one reading against it still yields a defensible
+figure.
+
+**Distinct dates, not distinct readings.** Two lines written on the same day
+are one day of work; counting them twice would halve the rate.
+
+**A finished activity measures to its Actual Finish, not the data date.**
+Otherwise every completed activity would appear to slow down the longer the
+project ran after it.
+
+**Fewer than three comparables is not an average.** A mean of two is an
+anecdote with a decimal point, so `comparables` reports the count and declines
+to average below `MIN_COMPARABLES`.
+
+**Every rate carries its sample.** A rate over two readings and a rate over
+twenty are different kinds of claim, and only one of them is a trend.
+
+### What the corpus actually supports, stated rather than discovered later
+D-086 left 38 of 120 activities with a MEASURED quantity, 24 of them complete.
+So:
+
+```
+observed_elapsed available on   38 activities
+observed_reported available on  11   (the rest have one reported day or none)
+comparable prefixes with 3+     2    CIV-FDN (4), CIV-PLY (3)
+```
+
+That is thin, and the module says so per activity rather than averaging its way
+past it. It is a fact about the corpus, not a fault in the rules: a wider
+dataset populates it, and inventing a mean from one comparable would not. The
+same figure appeared in `productivity.py`'s own docstring as "five prefixes"
+while it was being written — measured before D-086 — and was corrected in the
+same pass, because a stale number in a docstring is the exact fault this
+project keeps finding in its own files.
+
+### Alternatives Considered
+- **Pick one rate and call it productivity.** Rejected: whichever is chosen is
+  wrong for half the corpus, and the choice would be invisible to the reader.
+- **Average the two observed rates.** Rejected. The mean of a pessimistic and
+  an optimistic reading is not a better estimate, it is a number with no
+  defensible derivation at all.
+- **Let `observed_reported` stand on one day.** Rejected — see above. It is the
+  figure most likely to be quoted and least likely to be true.
+- **Re-derive which readings count.** Rejected: the per-reading detail comes
+  from `quantity_ledger.ledger`, itself derived from the roll-up's own
+  classifier, so this module adds no fourth opinion (D-048, D-085).
+
+### Verification
+`python -m pytest -q` — 1098 passed, up from 1085. The 13 new tests in
+`server/test_productivity.py` assert the planned rate, the two observed rates
+disagreeing in the expected direction, two readings on one day counting once,
+one reported day refused with the elapsed rate surviving, an activity that
+never started having no window, a finished activity measuring to its finish,
+the type prefix, comparables refusing to average below three, an incomplete
+sibling excluded, an activity not being its own comparable, and both endpoint
+paths.
+
+`scripts/healthcheck.py` against a running server — 36 endpoints exposed,
+expected 36; 31 checks passed. `matching/` and `extraction/` untouched, so
+`eval.py` is not implicated.
+
+### Affected Areas
+`server/productivity.py` (new), `server/test_productivity.py` (new),
+`server/main.py` (endpoint), `server/schemas.py`, `scripts/healthcheck.py`
+(35 → 36).
+
+### Trade-offs / Consequences
+`_compute_productivity` on `GET /memory/query` still computes its own
+per-discipline figure from completed activities only, and is untouched here.
+Two productivity derivations now exist for different questions — one per
+discipline for the Memory screen, one per activity for a forecast — and that
+is a duplication worth closing when the Memory screen next needs work. It was
+left alone deliberately: folding them together would change a shipped screen's
+numbers in a phase whose subject is a new endpoint.

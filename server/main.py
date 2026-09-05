@@ -8,6 +8,7 @@ Endpoints:
   GET  /schedule            planned vs actual, variance in days
   POST /schedule/export     emit PMXML (XER as stretch)
   GET  /activity/{id}/quantity  the readings behind one activity's installed qty
+  GET  /activity/{id}/productivity  planned / elapsed / reported rates + comparables
   GET  /delay/attribution   delay attribution matrix (category, liability, citation)
   POST /delay/{id}/classify planner rules on who carries one delay
   POST /delay/{id}/notice   planner records contractual notice for one delay
@@ -53,6 +54,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.textio import read_text
 from server import agent_llm
 from server import delay_report
+from server import productivity
 from server import quantity_ledger
 from server.delay_events import (
     adjudicate as adjudicate_delay,
@@ -176,6 +178,9 @@ from .schemas import (
     DelayEventOut,
     DelayNoticeRequest,
     DelayNoticeResponse,
+    ProductivityComparables,
+    ProductivityRate,
+    ProductivityResponse,
     QuantityContribution,
     QuantityLedgerResponse,
     DelayReason,
@@ -3150,6 +3155,34 @@ def get_evidence_corpus():
         # 404, not 500: the corpus is a large optional download, and its absence
         # is a fact about this checkout rather than a fault in the server.
         raise HTTPException(404, str(e))
+
+
+# ── GET /activity/{activity_id}/productivity ─────────────────────────────────
+
+@app.get("/activity/{activity_id}/productivity",
+         response_model=ProductivityResponse)
+def get_activity_productivity(activity_id: str, db: Session = Depends(get_db)):
+    """How fast one activity actually went - three ways, none of them THE way.
+
+    Divide measured quantity by elapsed calendar days and a sparsely reported
+    activity looks catastrophic; divide by the days a reading was recorded and
+    the idle fortnight vanishes. Both are computed, the planned rate sits
+    beside them, and every one carries the sample it came from.
+
+    Only measured quantities feed this: D-086 stopped `actual_qty` holding a
+    figure back-derived from an asserted percentage, so a rate here is a rate
+    rather than a fiction wearing measured units.
+    """
+    data = productivity.rates(db, activity_id, DATA_DATE)
+    if data is None:
+        raise HTTPException(404, f"Activity {activity_id} not found")
+    return ProductivityResponse(
+        **{
+            **data,
+            "rates": [ProductivityRate(**r) for r in data["rates"]],
+            "comparables": ProductivityComparables(**data["comparables"]),
+        }
+    )
 
 
 # ── GET /delay/attribution ───────────────────────────────────────────────────

@@ -1291,6 +1291,48 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 2 of the Granularity Resolution Engine — three productivity
+rates per activity, plus comparables, and the refusals that keep them honest.
+**Date:** 2026-09-05 · **Decision:** D-087
+
+```
+PRODUCTIVITY — THREE RATES, NONE OF THEM "THE" RATE                (D-087)
+
+  server/productivity.py  rates(db, activity_id, as_of)
+      reads quantity_ledger.ledger() for the per-reading detail, so it adds
+      no fourth opinion about which readings count (D-048, D-085)
+      |
+      +-- planned            planned_qty / planned duration
+      +-- observed_elapsed   counted qty / days since Actual Start
+      |                        to actual_finish when finished, else as_of
+      |                        includes days nobody reported - pessimistic
+      +-- observed_reported  counted qty / DISTINCT reported dates
+                               two lines on one day are one day
+                               REFUSED below MIN_REPORTED_DAYS (2): one day
+                               is the whole reading divided by one
+      +-- comparables()      same activity-type prefix, completed, measured
+                               no average below MIN_COMPARABLES (3)
+
+  every rate carries value / days / quantity / sample_size / note; value is
+  None with a reason rather than 0, which would read as "measured, and
+  nothing happened"
+
+  GET /activity/{activity_id}/productivity      404 on unknown activity
+
+  WHAT THE CORPUS SUPPORTS after D-086
+    38 of 120 activities have a measured quantity, 24 complete
+    observed_elapsed on 38 · observed_reported on 11
+    comparable prefixes with 3+: CIV-FDN (4), CIV-PLY (3)
+
+  CIV-FDN-1008: planned 8.00 · elapsed 12.00 · reported 90.00 m3/day
+                that spread is the honest width of the evidence
+  Pinned by server/test_productivity.py (13 tests).
+```
+
+---
+
+### Previous modification area (D-085, D-086)
+
 **Task:** Phase 1 of the Granularity Resolution Engine — the quantity ledger,
 and the write-path fix it prompted: `actual_qty` now holds a measurement or
 nothing, never a quantity back-derived from an asserted percentage.
