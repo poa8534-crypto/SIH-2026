@@ -34,9 +34,9 @@ import {
  * behind it. See D-031.
  */
 
-/** The only two the drop zone accepts. Narrower than the server, on purpose. */
-const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx'] as const;
-const ACCEPTED_LABEL = '.txt and .xlsx';
+/** The file formats accepted by the ingest drop zone. Supports digital & scanned formats. */
+const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx', '.csv', '.pdf', '.png', '.jpg', '.jpeg'] as const;
+const ACCEPTED_LABEL = '.pdf, .xlsx, .csv, .txt, .png, .jpg';
 
 /**
  * Milliseconds between trace lines.
@@ -206,7 +206,7 @@ type Status =
   | { kind: 'done'; job: JobResponse; bytes: number };
 
 export default function Ingest() {
-  usePageHeader('Ingest', 'Load a daily progress report or a discipline spreadsheet.', '/ingest');
+  usePageHeader('Ingest', 'Load a daily progress report, scanned site diary (PDF/Image), or discipline register.', '/ingest');
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [dragging, setDragging] = useState(false);

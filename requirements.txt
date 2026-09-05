@@ -23,8 +23,10 @@ pydantic==2.13.4
 # ── Persistence (server/db.py) ───────────────────────────────────────────────
 SQLAlchemy==2.0.52
 
-# ── Spreadsheet parsing (extraction/spreadsheet.py) ──────────────────────────
+# ── Document & Spreadsheet parsing (extraction/) ──────────────────────────────
 openpyxl==3.1.5
+pymupdf>=1.24.0
+pillow>=10.0.0
 
 # ── Matching pipeline (matching/) ────────────────────────────────────────────
 rank-bm25==0.2.2          # lexical retrieval

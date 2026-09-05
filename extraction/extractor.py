@@ -21,7 +21,10 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
+from .csv_parser import CSVParser
 from .llm_backend import LLMBackend, NullBackend, make_backend_from_env
+from .ocr import OCRUnavailableError, is_ocr_available, ocr_image_bytes
+from .pdf_parser import PDFParser
 from .textio import read_text
 from .models import (
     DateBasis,
@@ -120,6 +123,10 @@ class Extractor:
             return self._extract_text(str(path))
         elif suffix == ".csv":
             return self._extract_csv(str(path))
+        elif suffix == ".pdf":
+            return self._extract_pdf(str(path))
+        elif suffix in (".png", ".jpg", ".jpeg"):
+            return self._extract_image(str(path))
         else:
             result = ExtractionResult(source_file=path.name)
             result.errors.append(f"Unsupported file type: {suffix}")
@@ -580,14 +587,158 @@ class Extractor:
 
         return result
 
-    # ── CSV extraction (stub) ────────────────────────────────────────────────
+    # ── CSV extraction ───────────────────────────────────────────────────────
 
     def _extract_csv(self, filepath: str) -> ExtractionResult:
-        """Placeholder for future CSV parsing."""
-        result = ExtractionResult(source_file=Path(filepath).name)
-        result.errors.append("CSV extraction not yet implemented")
+        """Extract progress events from a CSV progress register or log export."""
+        path = Path(filepath)
+        result = ExtractionResult(source_file=path.name)
+        disc_map = {
+            "piping": Discipline.PIPING,
+            "civil": Discipline.CIVIL,
+            "electrical": Discipline.ELECTRICAL,
+            "instrument": Discipline.INSTRUMENTATION,
+            "hse": Discipline.HSE,
+        }
+        disc_override = None
+        for key, disc in disc_map.items():
+            if key in path.stem.lower():
+                disc_override = disc
+                break
+
+        parser = CSVParser(discipline_override=disc_override)
+        try:
+            result.events = parser.parse(filepath)
+        except Exception as e:
+            result.errors.append(f"CSV parse error: {e}")
+        return result
+
+    # ── PDF extraction (Digital + Scanned) ───────────────────────────────────
+
+    def _extract_pdf(self, filepath: str) -> ExtractionResult:
+        """Extract progress events from digital and scanned PDF daily reports."""
+        path = Path(filepath)
+        result = ExtractionResult(source_file=path.name)
+        parser = PDFParser(reference_date=self.reference_date)
+        text_spans, table_events, warnings = parser.parse(filepath)
+
+        result.warnings.extend(warnings)
+        result.events.extend(table_events)
+
+        if not text_spans and not table_events:
+            if not result.warnings:
+                result.warnings.append("No text or progress items found in PDF")
+            return result
+
+        # Filter out obvious header lines
+        filtered_spans = []
+        for text, page_num, line_num in text_spans:
+            stripped = text.strip()
+            upper = stripped.upper()
+            if any(
+                upper.startswith(k)
+                for k in (
+                    "DAILY PROGRESS REPORT",
+                    "PROJECT:",
+                    "WEATHER:",
+                    "CONTRACTOR:",
+                    "PAGE ",
+                    "PREPARED BY:",
+                )
+            ):
+                continue
+            filtered_spans.append((stripped, page_num, line_num))
+
+        if not filtered_spans:
+            return result
+
+        all_lines = [s[0] for s in text_spans[:15]]
+        report_date = self._extract_report_date(all_lines)
+
+        prepass_results = []
+        for span_text, page_num, line_num in filtered_spans:
+            hints = self._prepass_span(span_text, line_num, report_date)
+            prepass_results.append(hints)
+
+        llm_outputs = []
+        if self.llm.is_available():
+            text_bodies = [s[0] for s in filtered_spans]
+            llm_outputs = self.llm.extract_events(
+                text_bodies, self.schedule_context, prepass_results
+            )
+
+        for i, (span_text, page_num, line_num) in enumerate(filtered_spans):
+            hints = prepass_results[i]
+            llm_out = llm_outputs[i] if i < len(llm_outputs) else None
+            for warning in hints.get("date_warnings", []):
+                result.warnings.append(f"page:{page_num} line:{line_num} {warning}")
+
+            event = self._merge_event(
+                span_text, line_num, path.name, hints, llm_out, report_date
+            )
+            if event:
+                event.provenance.source_row = page_num
+                result.events.append(event)
+
+        return result
+
+    # ── Image extraction (Photographed logsheets) ────────────────────────────
+
+    def _extract_image(self, filepath: str) -> ExtractionResult:
+        """Extract progress events from photographed or scanned site log sheets."""
+        path = Path(filepath)
+        result = ExtractionResult(source_file=path.name)
+        mime_map = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+        }
+        mime = mime_map.get(path.suffix.lower(), "image/png")
+        try:
+            image_bytes = Path(filepath).read_bytes()
+            transcription = ocr_image_bytes(image_bytes, mime_type=mime)
+        except OCRUnavailableError as ue:
+            result.errors.append(str(ue))
+            return result
+        except Exception as e:
+            result.errors.append(f"Image transcription failed: {e}")
+            return result
+
+        lines = transcription.splitlines()
+        report_date = self._extract_report_date(lines)
+        spans = self._parse_text_spans(lines)
+
+        if not spans:
+            result.warnings.append("No progress items identified in transcribed image")
+            return result
+
+        prepass_results = []
+        for span_text, line_num in spans:
+            hints = self._prepass_span(span_text, line_num, report_date)
+            prepass_results.append(hints)
+
+        llm_outputs = []
+        if self.llm.is_available():
+            text_bodies = [s[0] for s in spans]
+            llm_outputs = self.llm.extract_events(
+                text_bodies, self.schedule_context, prepass_results
+            )
+
+        for i, (span_text, line_num) in enumerate(spans):
+            hints = prepass_results[i]
+            llm_out = llm_outputs[i] if i < len(llm_outputs) else None
+            event = self._merge_event(
+                span_text, line_num, path.name, hints, llm_out, report_date
+            )
+            if event:
+                event.provenance.method = (
+                    ExtractionMethod.LLM if llm_out else ExtractionMethod.REGEX
+                )
+                result.events.append(event)
+
         return result
 
 
 # Needed for re import in _parse_text_spans
 import re
+
