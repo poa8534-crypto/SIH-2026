@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Download, ListFilter, Lock, X } from 'lucide-react';
+import { CalendarRange, Download, Flame, LayoutList, ListFilter, Lock, X } from 'lucide-react';
 import { api, errorDetail, getBaseUrl } from '../lib/api';
 import {
   AuditRecord,
@@ -19,6 +19,7 @@ import {
 import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
+import { GanttChart } from '../components/GanttChart';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { auditActor, auditActorLabel } from '../lib/audit';
 import { Button, EmptyState, ErrorState, SectionTitle, Skeleton } from '../components/ui';
@@ -629,6 +630,8 @@ export default function Schedule() {
   const [search, setSearch] = useState('');
   const [onlyActuals, setOnlyActuals] = useState(false);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
+  const [onlyCritical, setOnlyCritical] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'gantt'>('table');
   // The Ingest screen links auto-linked events here as /schedule?activity=ID.
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinked = searchParams.get('activity');
@@ -672,8 +675,9 @@ export default function Schedule() {
     if (q) list = list.filter((a) => a.description.toLowerCase().includes(q));
     if (onlyActuals) list = list.filter((a) => a.actual_start || a.actual_finish);
     if (onlyFlagged) list = list.filter((a) => flaggedIds.has(a.activity_id));
+    if (onlyCritical) list = list.filter((a) => Boolean(a.critical));
     return list;
-  }, [data, search, onlyActuals, onlyFlagged, flaggedIds]);
+  }, [data, search, onlyActuals, onlyFlagged, onlyCritical, flaggedIds]);
 
   const selected = useMemo(
     () => data?.activities.find((a) => a.activity_id === selectedId) ?? null,
@@ -716,13 +720,28 @@ export default function Schedule() {
       {
         accessorKey: 'activity_id',
         header: 'Activity ID',
-        size: 130,
-        cell: (c) => <span className="font-mono text-fg">{c.getValue<string>()}</span>,
+        size: 140,
+        cell: (c) => {
+          const isCrit = c.row.original.critical;
+          return (
+            <span className="font-mono text-fg flex items-center gap-1.5">
+              {isCrit && (
+                <span title="Critical Path Activity (Float ≤ 0)" className="inline-flex">
+                  <Flame
+                    size={12}
+                    className="text-danger shrink-0 animate-pulse"
+                  />
+                </span>
+              )}
+              {c.getValue<string>()}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'description',
         header: 'Description',
-        size: 320,
+        size: 300,
         cell: (c) => <span className="block truncate">{c.getValue<string>()}</span>,
       },
       {
@@ -778,6 +797,26 @@ export default function Schedule() {
         header: 'Finish Var',
         size: 68,
         cell: (c) => <VarianceCell value={c.getValue<number | null>()} />,
+      },
+      {
+        accessorKey: 'total_float',
+        header: 'Float',
+        size: 60,
+        cell: (c) => {
+          const v = c.getValue<number | null | undefined>();
+          if (v === null || v === undefined) return <Absent />;
+          const isCrit = c.row.original.critical;
+          return (
+            <span
+              className={`font-mono tabular-nums ${
+                isCrit ? 'text-danger font-bold' : 'text-muted'
+              }`}
+              title={isCrit ? 'Critical activity (0 days float)' : `${v} days float`}
+            >
+              {v}d
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'percent_complete',
@@ -902,6 +941,34 @@ export default function Schedule() {
 
       {/* FILTER BAR */}
       <div className="shrink-0 h-11 px-4 border-b border-hair flex items-center gap-3">
+        {/* View Mode Switcher */}
+        <div className="flex items-center rounded border border-hair overflow-hidden mr-1">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-2.5 py-1 text-label font-mono flex items-center gap-1.5 transition-colors ${
+              viewMode === 'table'
+                ? 'bg-selected text-accent font-semibold'
+                : 'text-muted hover:text-fg'
+            }`}
+            title="Grid Table View"
+          >
+            <LayoutList size={12} />
+            Table
+          </button>
+          <button
+            onClick={() => setViewMode('gantt')}
+            className={`px-2.5 py-1 text-label font-mono border-l border-hair flex items-center gap-1.5 transition-colors ${
+              viewMode === 'gantt'
+                ? 'bg-selected text-accent font-semibold'
+                : 'text-muted hover:text-fg'
+            }`}
+            title="Interactive Dual-Bar CPM Gantt Chart"
+          >
+            <CalendarRange size={12} />
+            Gantt Chart
+          </button>
+        </div>
+
         <select
           value={discipline}
           onChange={(e) => setDiscipline(e.target.value)}
@@ -921,7 +988,7 @@ export default function Schedule() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search descriptions"
-          className="rounded-sm h-7 w-64 bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
+          className="rounded-sm h-7 w-56 bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
         />
 
         <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg">
@@ -931,7 +998,23 @@ export default function Schedule() {
             onChange={(e) => setOnlyActuals(e.target.checked)}
             className="rounded-sm accent-accent"
           />
-          Only activities with actuals
+          Actuals only
+        </label>
+
+        <label className="flex items-center gap-1.5 cursor-pointer font-mono text-label text-muted hover:text-fg">
+          <input
+            type="checkbox"
+            checked={onlyCritical}
+            onChange={(e) => setOnlyCritical(e.target.checked)}
+            className="rounded-sm accent-danger"
+          />
+          <Flame size={12} className={onlyCritical ? 'text-danger' : 'text-muted'} />
+          <span>Critical Path</span>
+          {data?.critical_activities ? (
+            <span className="text-[10px] bg-danger/15 text-danger font-bold px-1 rounded-xs">
+              {data.critical_activities}
+            </span>
+          ) : null}
         </label>
 
         <div className="ml-auto flex items-center gap-2">
@@ -941,7 +1024,7 @@ export default function Schedule() {
             <a
               href={exportState.url}
               download={exportState.name}
-              className="font-mono text-label text-ok max-w-[420px] truncate hover:underline"
+              className="font-mono text-label text-ok max-w-[320px] truncate hover:underline"
               title={`Downloaded ${exportState.name}. Click to download again.`}
             >
               Downloaded {exportState.name}
@@ -971,80 +1054,83 @@ export default function Schedule() {
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10 bg-raised">
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b border-hair">
-                {hg.headers.map((h) => (
-                  <th
-                    key={h.id}
-                    style={{ width: h.getSize() }}
-                    className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
-                  >
-                    {flexRender(h.column.columnDef.header, h.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-
-          <tbody>
-            {isLoading &&
-              Array.from({ length: 18 }).map((_, i) => (
-                <tr key={i} className="border-b border-hair">
-                  {columns.map((_c, j) => (
-                    <td key={j} className="px-3 py-3">
-                      <Skeleton height="h-3" />
-                    </td>
+      {/* MAIN VIEW: TABLE OR GANTT CHART */}
+      {viewMode === 'table' ? (
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full border-collapse">
+            <thead className="sticky top-0 z-10 bg-raised">
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id} className="border-b border-hair">
+                  {hg.headers.map((h) => (
+                    <th
+                      key={h.id}
+                      style={{ width: h.getSize() }}
+                      className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                    >
+                      {flexRender(h.column.columnDef.header, h.getContext())}
+                    </th>
                   ))}
                 </tr>
               ))}
+            </thead>
 
-            {!isLoading &&
-              table.getRowModel().rows.map((row) => {
-                const a = row.original;
-                // A row with an actual date is a fact; a planned-only row is a
-                // forecast. Dimming the whole planned row is what separates
-                // them at a glance, before any single cell is read.
-                const hasActual = Boolean(a.actual_start || a.actual_finish);
-                const isSelected = a.activity_id === selectedId;
-                return (
-                  <tr
-                    key={row.id}
-                    ref={(el) => {
-                      rowRefs.current[a.activity_id] = el;
-                    }}
-                    onClick={() => setSelectedId(a.activity_id)}
-                    /* Planned-only rows were `text-muted opacity-55`, which
-                       composites to about 2.9:1 on white — under the 4.5:1 the
-                       palette claims, and worse on a projector. `text-muted` at
-                       full opacity is 9.4:1 and still reads as secondary next
-                       to the `text-fg` rows that carry an actual. */
-                    className={`border-b border-hair cursor-pointer transition-colors ${
-                      isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
-                    } ${hasActual ? 'text-fg' : 'text-muted'}`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className="px-3 py-3 text-body whitespace-nowrap max-w-0"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            <tbody>
+              {isLoading &&
+                Array.from({ length: 18 }).map((_, i) => (
+                  <tr key={i} className="border-b border-hair">
+                    {columns.map((_c, j) => (
+                      <td key={j} className="px-3 py-3">
+                        <Skeleton height="h-3" />
                       </td>
                     ))}
                   </tr>
-                );
-              })}
-          </tbody>
-        </table>
+                ))}
 
-        {!isLoading && rows.length === 0 && (
-          <EmptyState>No activities match the filter.</EmptyState>
-        )}
-      </div>
+              {!isLoading &&
+                table.getRowModel().rows.map((row) => {
+                  const a = row.original;
+                  const hasActual = Boolean(a.actual_start || a.actual_finish);
+                  const isSelected = a.activity_id === selectedId;
+                  return (
+                    <tr
+                      key={row.id}
+                      ref={(el) => {
+                        rowRefs.current[a.activity_id] = el;
+                      }}
+                      onClick={() => setSelectedId(a.activity_id)}
+                      className={`border-b border-hair cursor-pointer transition-colors ${
+                        isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
+                      } ${hasActual ? 'text-fg' : 'text-muted'}`}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className="px-3 py-3 text-body whitespace-nowrap max-w-0"
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+
+          {!isLoading && rows.length === 0 && (
+            <EmptyState>No activities match the filter.</EmptyState>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0">
+          <GanttChart
+            activities={rows}
+            selectedId={selectedId}
+            onSelectActivity={(id) => setSelectedId(id)}
+            dataDate={data?.data_date}
+          />
+        </div>
+      )}
 
       {/* FOOTER */}
       <div className="shrink-0 h-7 border-t border-hair px-4 flex items-center gap-4 font-mono text-label uppercase tracking-wider text-muted">
@@ -1053,6 +1139,12 @@ export default function Schedule() {
         </span>
         <span>{data?.activities_with_actuals ?? 0} with actuals</span>
         <span>{data?.activities_completed ?? 0} completed</span>
+        {data?.critical_activities !== undefined && (
+          <span className="text-danger font-medium flex items-center gap-1">
+            <Flame size={10} />
+            {data.critical_activities} critical
+          </span>
+        )}
         {data?.average_start_variance !== null && data?.average_start_variance !== undefined && (
           <span>avg start var {data.average_start_variance}d</span>
         )}
