@@ -16,6 +16,9 @@ import Home from './pages/Home';
 import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
+import ReportStudio from './pages/field/ReportStudio';
+import UpdatesLedger from './pages/field/UpdatesLedger';
+import { FieldWorkspaceShell } from './pages/field/FieldWorkspaceShell';
 import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
 import Login from './pages/Login';
@@ -316,15 +319,17 @@ export default function App() {
     return (
       <SessionContext.Provider value={session}>
       <BrowserRouter>
-        <MobileShell>
+        <FieldWorkspaceShell>
           <Routes>
             <Route path="/field" element={<Field />} />
+            <Route path="/field/report" element={<ReportStudio />} />
             <Route path="/field/reports" element={<FieldReports />} />
+            <Route path="/field/reports/ledger" element={<UpdatesLedger />} />
             <Route path="/field/clarifications" element={<FieldClarifications />} />
             <Route path="/field/profile" element={<FieldProfile />} />
             <Route path="*" element={<Navigate to="/field" replace />} />
           </Routes>
-        </MobileShell>
+        </FieldWorkspaceShell>
       </BrowserRouter>
       </SessionContext.Provider>
     );

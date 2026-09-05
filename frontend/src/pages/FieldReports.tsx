@@ -62,11 +62,19 @@ export default function FieldReports() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-      <div>
-        <h1 className="text-h2 font-semibold leading-8 text-heading">My reports</h1>
-        <p className="text-lead text-muted mt-1 leading-6">
-          Updates you have submitted, newest first.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-h2 font-semibold leading-8 text-heading">My reports</h1>
+          <p className="text-lead text-muted mt-1 leading-6">
+            Updates you have submitted, newest first.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/field/reports/ledger')}
+          className="text-xs font-mono text-accent hover:underline cursor-pointer"
+        >
+          Audit Ledger View &rarr;
+        </button>
       </div>
 
       {/* Counts */}
