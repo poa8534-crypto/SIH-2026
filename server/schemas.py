@@ -693,6 +693,71 @@ class DelayEventOut(BaseModel):
     source_span: Optional[str] = None
 
 
+class QuantityContribution(BaseModel):
+    """One reported reading, and what the roll-up did with it.
+
+    `counted` false with a `reason_code` other than `no_quantity_reported` is a
+    REFUSAL - a decision the roll-up made and a planner may disagree with, not
+    an absence of data.
+    """
+
+    linked_event_id: str
+    job_id: Optional[str] = None
+    reported_date: Optional[date_t] = None
+    quantity: Optional[float] = None
+    uom: Optional[str] = None
+    percentage: Optional[float] = None
+    counted_quantity: Optional[float] = None
+    counted: bool = False
+    reason_code: str
+    reason: str
+    # The citation. A contribution without one is an assertion.
+    source_file: Optional[str] = None
+    source_line: Optional[int] = None
+    source_row: Optional[int] = None
+    source_span: Optional[str] = None
+    raw_text: Optional[str] = None
+    confidence: Optional[float] = None
+    reviewed: bool = False
+
+
+class QuantityLedgerResponse(BaseModel):
+    """The arithmetic behind one activity's installed quantity.
+
+    `counted_total` is the largest accumulation from any single ingest, because
+    the schedule writes `actual_qty = max(current, rolled-up installed)` and
+    never lets it decrease. `naive_sum_all_jobs` adds every accepted reading
+    regardless of ingest; where the two differ, the same work was reported
+    twice.
+
+    `stored_total_basis` says what kind of number the schedule is holding:
+    `counted_readings`, `derived_from_percentage` (no reading was counted, but
+    a percentage was asserted and a quantity computed from it), or
+    `unattributed`.
+    """
+
+    activity_id: str
+    description: Optional[str] = None
+    discipline: Optional[str] = None
+    uom: Optional[str] = None
+    planned_qty: float = 0.0
+    counted_total: float = 0.0
+    naive_sum_all_jobs: float = 0.0
+    reported_by_jobs: int = 0
+    stored_actual_qty: Optional[float] = None
+    totals_agree: bool = True
+    stored_total_basis: str
+    percent_complete_from_quantity: Optional[float] = None
+    # Uncapped, so an over-report is visible as one.
+    raw_percent_from_quantity: Optional[float] = None
+    contributions: list[QuantityContribution] = []
+    counted_events: int = 0
+    refused_events: int = 0
+    events_without_quantity: int = 0
+    total_note: str
+    refusal_note: str
+
+
 class DelayClassifyRequest(BaseModel):
     """A planner's ruling on who carries one delay.
 

@@ -1,16 +1,16 @@
 # Graph Report - SIH 2026  (2026-09-05)
 
 ## Corpus Check
-- 331 files · ~860,112 words
+- 331 files · ~862,759 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5920 nodes · 10375 edges · 419 communities (350 shown, 54 thin omitted)
+- 5951 nodes · 10435 edges · 416 communities (355 shown, 46 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 526 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `562173eb`
+- Built from commit: `fad55622`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,29 +18,29 @@
 - test_agent.py
 - main.py
 - extension.ts
-- Activity
+- test_server.py
 - get_pricing
 - parse_pmxml
 - interpret
 - test_delay_attribution.py
 - SIH26122_7Day_Build_Plan.md
-- TestExtractorPipeline
+- harness.py
 - get_dashboard_data
 - scan
 - parse_jsonl_file
 - Liability
 - 7. Known Limitations
 - index.ts
-- eval.py
+- Extractor
 - scanner.py
 - Audit-1.md
 - RollupAccumulator
 - Workflow
 - TestVersion
 - types.ts
-- main
+- eval.py
 - test_llm_guards.py
-- test_matching.py
+- test_learned.py
 - validate.py
 - CLAUDE.md — Repository Operating Rules
 - ScheduleIndex
@@ -51,10 +51,10 @@
 - Changelog
 - Field.tsx
 - caveman-compress/README.md
-- delay_evidence
+- raid.py
 - MatchingEngine
 - HybridRetriever
-- DateAssertion
+- drift_eval.py
 - _turn
 - devDependencies
 - TestHTMLTemplate
@@ -66,7 +66,7 @@
 - _import
 - compute_schedule
 - split_slip
-- compute_evm
+- test_evm.py
 - test_subagent.py
 - TestTheReport
 - Path
@@ -80,21 +80,21 @@
 - Caveman Help
 - Claude Code Usage — VS Code extension
 - extract_tags
-- ReviewQueueItem
-- api
-- test_baseline.py
+- Activity
+- Delay.tsx
+- test_extractor.py
 - make_graphs.py
 - healthcheck.py
 - vscode-extension/package.json
 - Caveman Compress
 - caveman/SKILL.md
-- _field_event
-- .parse
+- LinkedEvent
+- SpreadsheetParser
 - 15. Historical handoff — state at the end of the reconstruction session (2026-08-31)
 - Memory.tsx
 - 15. Implementation order
 - 15. Implementation order
-- OpenAICompatibleBackend
+- MiniLMEmbedder
 - TestScheduleEndpoint
 - TestAgentTurn
 - caveman-commit
@@ -110,7 +110,7 @@
 - test_scanner.py
 - qa_agent.py
 - providers.py
-- TestTagDigitWidth
+- extract_fractions
 - Ingest.tsx
 - ROADMAP.md — Senior PM review, decoded and architected
 - 1. Glossary — every term, with construction examples
@@ -123,8 +123,8 @@
 - 2026-09-01 / D-015 — `date_basis` is carried end to end, and a defaulted finish date is never written
 - 2026-09-01 / D-016 — A missing planned quantity is not a milestone
 - pre-2026-08-30 / D-009 — Agent/voice updates are proposals, never direct writes
-- TestCandidatesAreNeverAutoCommitted
-- LinkedEvent
+- evm.py
+- _now
 - JsonScheduleProvider
 - Review Caveman evidence
 - Manage eval-gated experiments
@@ -147,7 +147,7 @@
 - DESIGN.md
 - scripts
 - generate_duliajan_p6_schedule.py
-- TestIngestEndpoint
+- compute_evm
 - DAY 7 — Rehearsal, Hardening, and the Story
 - Evaluate an optimization observation
 - caveman-stats
@@ -271,7 +271,7 @@
 - code-review-graph
 - Experiment log — every number traces to a harness in research/data/
 - SIH judge analysis — 15-dimension self-scorecard
-- Raid.tsx
+- alias_key
 - TestHonestyFieldsArePresentAndStructured
 - NAVIS — Stitch prompts, rewritten for screen generation
 - scripts/__init__.py
@@ -290,22 +290,22 @@
 - crg-update.sh
 - JUDGE_QUESTIONS.md
 - claude-usage
-- PmxmlScheduleProvider
+- test_primavera.py
 - _validate_description
 - 2026-09-04 / D-077 — A delay becomes a row, so a planner has something to overrule
-- extract_quantities
+- prepass.py
 - 2026-09-01 / D-017 — A second baseline is adopted as a version, not as a replacement
 - 2026-09-01 / D-019 — Refuse to evaluate a baseline the ground truth does not describe
 - BaselineAgreement
-- TestMemoryQuery
+- _activity
 - cpm.py
 - test_terminology.py
 - 2026-09-04 / D-080 — The notice clock starts from a date a source asserted, and says which
 - .test_session_across_files_not_inflated
 - TestDashboardOnUnmigratedDB
-- compute_exposure
+- memory_query
 - 2026-09-04 / D-083 — The planner screen, and the design rule it could not follow
-- conftest.py
+- read_text
 - NAVIS — copy-paste Stitch prompt pack
 - 2026-09-04 / D-076 — The delay taxonomy is built, and liability is a lookup a human can audit
 - TestCrossDPRStatistics
@@ -316,15 +316,15 @@
 - storage.test.tsx
 - vocabulary.py
 - METRICS.md — the only place a number is defined
-- 2026-09-01 / D-018 — Baselines are read through a provider, never by `json.load` at the call site
+- infer_discipline
 - test_evidence.py
 - Reconcile.tsx
 - ErrorBoundary
-- test_agent_llm.py
+- _turn
 - 2026-09-04 / D-082 — Lateness is not delay: the slip is split against baseline float
 - embedcache.py
 - resolve
-- agent_llm.py
+- infer_status
 - VALIDATION — dataset/v2
 - 2026-09-03 / D-065 — An LLM-suggested description must be the supervisor's own words
 - NAVIS — backend-to-interface audit
@@ -335,7 +335,7 @@
 - 2026-09-02 / D-047 - Primavera PMXML and XER are read, not just written; FINDINGS F3 closed
 - 2026-09-02 / D-052 - An activity-type vocabulary from CFIHOS and Uniclass, built and deliberately not wired in
 - TestStandardCoverageIsHonest
-- llm_enabled
+- test_agent_llm.py
 - 2026-09-01 / D-022 — A tag's digit count is a numbering convention, not part of what a tag is
 - 2026-09-01 / D-024 - A near-miss is a mention with its discriminator removed
 - 2026-09-01 / D-030 - One design system: six type steps, six spacing steps, three radii, and five button jobs
@@ -377,32 +377,32 @@
 - 2026-09-03 / D-070 — The server migrates its own database, or the migration does not exist
 - 2026-09-04 / D-073 — The Reconcile screen speaks the server's resolve vocabulary
 - TestDescriptionLength
-- TestLifecycle
+- 2026-09-05 / D-084 — Earned value reads the quantity the roll-up already measured
 - delay_events.py
 - 2026-09-01 / D-029 - Confidence becomes a probability; the abstention model earns nothing on top of it
 - test_cpm.py
-- test_date_basis.py
+- TestPlannerResolvesAWithheldFinish
 - 2026-09-04 / D-079 — The report states its own provenance and its own limits
 - TestReviewQueue
 - TestBuiltFromTheBaseline
 - WSDOT C8078 candidate-link verification review
-- TestScheduleExport
+- TestOverInstallationIsCappedAndReported
 - Basics.md
 - TestStartupAppliesTheMigration
-- build_near_miss_families
+- 2026-09-04 / D-075 — D-061 is re-affirmed, and now pinned on the served engine
 - lucide-react
 - react-router-dom
 - @tanstack/react-table
 - typescript
-- make_tag_free
+- EVMFigures
 - TestMessageIdDedupIntegration
 - 2026-09-04 / D-081 — Concurrent delay is named, cited, and never apportioned
 - Planner lane — sign in as **Project Manager**
-- _raid_response
+- test_raid.py
 - 2026-09-01 / D-021 — Thresholds are tuned on dev and reported on test
-- .predecessor_links
+- parse_predecessors
 - NetworkSchedule
-- TestScheduleIndex
+- .test_spi_is_none_not_zero_and_never_raises
 - 2026-09-04 / D-078 — A liability becomes a finding only when a planner rules, and the ruling is audited
 - .test_a_parallel_branch_carries_the_difference_as_float
 - The numbers you may say out loud
@@ -410,29 +410,28 @@
 - 8. Risk engine and pattern analysis
 - TestDashboardSubagentData
 - 5. EVM in NAVIS — what is honestly possible
-- probe
+- agent_llm.py
 - .test_an_open_start_is_anchored_at_its_planned_start
 - TestNonBillableModelFallback
 - 12. Evaluation module
 - 7. The verification workflow
 - TestTheVocabularyStaysShared
-- TestJobsEndpoint
-- _date_plausibly_in
-- literal_tags
 
 ## God Nodes (most connected - your core abstractions)
-1. `Activity` - 96 edges
+1. `Activity` - 97 edges
 2. `MatchingEngine` - 92 edges
-3. `END OF PART 0 — the D-series resumes below` - 84 edges
+3. `END OF PART 0 — the D-series resumes below` - 85 edges
 4. `ScheduleIndex` - 53 edges
 5. `EngineConfig` - 52 edges
-6. `LinkedEvent` - 52 edges
+6. `LinkedEvent` - 51 edges
 7. `AuditRecord` - 48 edges
 8. `sync_delay_events()` - 47 edges
 9. `extract_tags()` - 45 edges
 10. `Thresholds` - 40 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `_build_event()` --uses--> `Extractor`  [INFERRED]
+  eval.py → extraction/extractor.py
 - `_dated()` --uses--> `DateBasis`  [INFERRED]
   eval.py → extraction/models.py
 - `main()` --uses--> `ScheduleIndex`  [INFERRED]
@@ -441,49 +440,51 @@
   server/main.py → extraction/extractor.py
 - `check_provider()` --uses--> `NullBackend`  [INFERRED]
   scripts/healthcheck.py → extraction/llm_backend.py
-- `TestLLMStatusRoute` --uses--> `NullBackend`  [INFERRED]
-  server/test_agent_llm.py → extraction/llm_backend.py
 
 ## Import Cycles
 - 3-file cycle: `matching/__init__.py -> matching/engine.py -> matching/retrieval.py -> matching/__init__.py`
 
-## Communities (419 total, 54 thin omitted)
+## Communities (416 total, 46 thin omitted)
 
 ### Community 0 - "test_agent.py"
 Cohesion: 0.03
-Nodes (83): AgentContext, AgentTurnRequest, AgentContext, _build(), choices_for(), discipline_choice_text(), discipline_label(), _find_unit() (+75 more)
+Nodes (87): AgentContext, AgentTurnRequest, AgentContext, _build(), choices_for(), discipline_choice_text(), discipline_label(), _find_unit() (+79 more)
 
 ### Community 1 - "main.py"
 Cohesion: 0.03
-Nodes (137): DurationDistribution, get, ProductivityMetric, agent_llm_status(), _baseline_response(), _compute_delay_reasons(), _compute_duration_distribution(), _compute_productivity() (+129 more)
+Nodes (158): get, post, parse_liability(), A liability named by a client, or `ValueError`. Accepts the enum's own values…, admin_reset(), agent_llm_status(), answer_clarification(), _apply_planned_fields() (+150 more)
 
 ### Community 2 - "extension.ts"
 Cohesion: 0.05
 Nodes (37): activate(), deactivate(), describeMode(), Extension, noInstallMessage(), noPythonMessage(), claudeUsageCandidateNames(), dashboardSpawnArgs() (+29 more)
 
-### Community 3 - "Activity"
-Cohesion: 0.03
-Nodes (76): DeclarativeBase, Activity, AliasLexicon, AuditRecord, Base, ConversationTurn, get_db(), IntegrityError (+68 more)
+### Community 3 - "test_server.py"
+Cohesion: 0.04
+Nodes (24): get_matching_engine(), Lazily build the schedule-linking engine. Built once per process. The MiniLM…, fixture, Comprehensive test suite for the FastAPI server. Tests every endpoint,…, Test POST /ingest with text files and spreadsheets., Create test DB, seed schedule, tear down after each test., Test POST /schedule/export., Test GET /memory/query. (+16 more)
 
 ### Community 4 - "get_pricing"
 Cohesion: 0.06
 Nodes (32): calc_cost(), cmd_dashboard(), cmd_scan(), cmd_stats(), cmd_today(), cmd_week(), fmt(), fmt_cost() (+24 more)
 
 ### Community 5 - "parse_pmxml"
-Cohesion: 0.05
-Nodes (47): Element, _attr(), _child_text(), _discipline_from_id(), _field(), _finish(), _iso(), _lag_days() (+39 more)
+Cohesion: 0.06
+Nodes (44): Element, _attr(), _child_text(), _discipline_from_id(), _field(), _finish(), _iso(), _lag_days() (+36 more)
 
 ### Community 6 - "interpret"
 Cohesion: 0.13
 Nodes (13): interpret(), Ask the model to read one message. Returns None on any problem. `backend` is…, _Output, The model's status is run through our parser, not taken as given., Stands in for LLMEventOutput., A rejected description must not take the rest of the turn with it., One span in, one event out. More than one is refused, never truncated., D-006, enforced rather than assumed. (+5 more)
 
 ### Community 7 - "test_delay_attribution.py"
-Cohesion: 0.07
-Nodes (29): DelayEvent, One delay, classified, with the sentence it was read from. ARCHITECTURE.md §2.7…, attribution(), network_summary(), Facts about the baseline network itself, for a report to state. Two finish…, The delay attribution matrix. Returns the classified rows plus two sets of…, _audit(), _clean() (+21 more)
+Cohesion: 0.08
+Nodes (22): attribution(), network_summary(), Facts about the baseline network itself, for a report to state. Two finish…, The delay attribution matrix. Returns the classified rows plus two sets of…, _audit(), Delay attribution: derived rows, planner rulings, totals, and the report.…, The clock is worth nothing if a reader has to compute it. A closed window is…, Give an activity a positive finish variance, the way a roll-up would. (+14 more)
 
 ### Community 8 - "SIH26122_7Day_Build_Plan.md"
 Cohesion: 0.04
 Nodes (48): 0. What We're Actually Building (Plain Language), Biggest Risks to This Timeline, Concepts each person should understand today, Concepts each person should understand today, Concepts each person should understand today, Concepts each person should understand today, Concepts each person should understand today, Concepts each person should understand today (+40 more)
+
+### Community 9 - "harness.py"
+Cohesion: 0.10
+Nodes (25): abstention_pairs(), bootstrap_ci(), bootstrap_delta(), brier(), calibration_arrays(), ece(), fmt_ci(), in_family_hits() (+17 more)
 
 ### Community 10 - "get_dashboard_data"
 Cohesion: 0.12
@@ -506,12 +507,12 @@ Cohesion: 0.05
 Nodes (42): 0. Five places I think you're wrong, 1. Component Diagram, 2.1 `ScheduleActivity`, 2.2 `RawInput`, 2.3 `ExtractedEvent`, 2.4 `LinkCandidate`, 2.5 `LinkDecision`, 2.6 `AuditRecord` (+34 more)
 
 ### Community 15 - "index.ts"
-Cohesion: 0.11
-Nodes (25): BaseProps, ButtonProps, ButtonSize, ButtonVariant, classesFor(), LinkProps, PILL_SIZE, RECT_SIZE (+17 more)
+Cohesion: 0.10
+Nodes (29): NeedsYourResponse(), RecentUpdates(), STATUS_ICON, STATUS_SHORT, when(), BaseProps, Button(), ButtonProps (+21 more)
 
-### Community 16 - "eval.py"
-Cohesion: 0.03
-Nodes (101): _build_event(), ground_truth_activity_ids(), load_ground_truth(), _open_ground_truth(), _parse_date(), date, ExtractedEvent, Evaluation harness for the matching engine against dataset/ground_truth.csv.… (+93 more)
+### Community 16 - "Extractor"
+Cohesion: 0.05
+Nodes (29): _basis_at(), Extractor, date, DateBasis, Discipline, ExtractedEvent, Extract progress events from a source file. Dispatches to the appropriate…, Extract from a text-based daily progress report. (+21 more)
 
 ### Community 17 - "scanner.py"
 Cohesion: 0.10
@@ -522,8 +523,8 @@ Cohesion: 0.06
 Nodes (34): APPENDIX — REPRODUCING EVERY NUMBER, Audit-1 — NAVIS vs SIH 26122 Problem Statement, CRITICAL FINDINGS, DEFECTS NOT IN THE EXISTING AUDIT, F-01 — The matching engine ranks worse than plain BM25, and the defense is buried, F-02 — At 50.4% coverage, half the manual reconciliation the PS complains about still happens, F-03 — The learning loop is open: the system cannot get better, F-04 — Institutional memory, the stated differentiator, is statistically empty (+26 more)
 
 ### Community 19 - "RollupAccumulator"
-Cohesion: 0.09
-Nodes (22): Aggregates many field mentions (AUTO_LINK decisions) into one L5/L6 schedule…, RollupAccumulator, Returns (score, line_locked). A full line+size+spec match sets line_locked=True…, _tag_overlap(), make_event(), date, fixture, A finish date nobody asserted must not reach the schedule. A DPR line that says… (+14 more)
+Cohesion: 0.11
+Nodes (19): Aggregates many field mentions (AUTO_LINK decisions) into one L5/L6 schedule…, RollupAccumulator, make_event(), date, A finish date nobody asserted must not reach the schedule. A DPR line that says…, Roll 1200 m2 - the full planned quantity of CIV-SIT-1001., The other half of the same defect: no finish claim at all, and the bare report…, completed yesterday' names a day. It is resolved, not defaulted. (+11 more)
 
 ### Community 20 - "Workflow"
 Cohesion: 0.06
@@ -534,20 +535,20 @@ Cohesion: 0.20
 Nodes (6): _changelog_top_version(), _package_json_version(), Tests for the single source-of-truth version (scanner.VERSION). The runtime…, Return the version from the first '## vX.Y.Z' heading in CHANGELOG.md., `python cli.py --version` prints the version and exits 0., TestVersion
 
 ### Community 22 - "types.ts"
-Cohesion: 0.06
-Nodes (45): ApiError, fetchWithHandler(), LIABILITIES, LIABILITY_CLASS, LIABILITY_LABEL, LIABILITY_WHO, NOTICE_CLASS, ABSORBED (+37 more)
+Cohesion: 0.08
+Nodes (38): ApiError, fetchWithHandler(), ANSWER, ITEM, ready(), wrap(), AgentContext, AgentTurnRequest (+30 more)
 
-### Community 23 - "main"
-Cohesion: 0.10
-Nodes (35): assert_baseline_matches_ground_truth(), _baseline_line(), _dated(), main(), pct(), print_calibration(), print_confusion(), print_date_basis() (+27 more)
+### Community 23 - "eval.py"
+Cohesion: 0.07
+Nodes (58): assert_baseline_matches_ground_truth(), _baseline_line(), calibrate(), _dated(), evaluate(), _gold_discipline(), ground_truth_activity_ids(), load_ground_truth() (+50 more)
 
 ### Community 24 - "test_llm_guards.py"
 Cohesion: 0.04
-Nodes (67): Load baseline schedule and build compact context string., _env(), LLMBackend, LLMBatchOutput, LLMEventOutput, make_backend_from_env(), NullBackend, OllamaBackend (+59 more)
+Nodes (69): _env(), LLMBackend, LLMBatchOutput, LLMEventOutput, make_backend_from_env(), NullBackend, OllamaBackend, OpenAICompatibleBackend (+61 more)
 
-### Community 25 - "test_matching.py"
-Cohesion: 0.04
-Nodes (97): calibrate(), _calibration_observations(), _decision_for(), evaluate(), _gold_discipline(), precision_at_coverage(), print_near_miss(), Grid search. Objective, precision-first: 1. maximise auto-link precision… (+89 more)
+### Community 25 - "test_learned.py"
+Cohesion: 0.05
+Nodes (61): _calibration_observations(), _decision_for(), Two views of the same predictions, for calibration and for F1. `pairs` is…, Feed AUTO_LINK decisions through the granularity accumulator., _rollup_from_decisions(), abstention_features(), _basis_for(), _basis_of() (+53 more)
 
 ### Community 26 - "validate.py"
 Cohesion: 0.13
@@ -558,12 +559,12 @@ Cohesion: 0.08
 Nodes (25): After implementing, Before implementing, CLAUDE.md — Repository Operating Rules, COMPLETION CHECKLIST, `DECISIONS.md` — WHY, Do not commit broken code to satisfy these rules, DOCUMENTATION RULES, During implementation (+17 more)
 
 ### Community 28 - "ScheduleIndex"
-Cohesion: 0.05
-Nodes (43): Hybrid candidate retrieval: exact tag + BM25 + dense + char n-gram + alias…, BaselineVersion, date, Schedule index: loads the baseline schedule and precomputes every lookup…, Build the BM25 index for these (k1, b), reusing it if unchanged. rank_bm25…, Precompute the term x document BM25 score matrix. Every factor in the Okapi…, BM25 scores for one query against every activity. Numerically identical to…, Fit the character n-gram TF-IDF matrix over the activity docs. `char_wb` keeps… (+35 more)
+Cohesion: 0.04
+Nodes (81): Score the whole candidate pool as a matrix, then wrap the result in the per-…, _area_match(), blend_matrix(), compute_features(), _date_proximity(), final_score(), matrix_to_vectors(), _predecessor_plausibility() (+73 more)
 
 ### Community 29 - "useSpeech.ts"
 Cohesion: 0.08
-Nodes (22): LANGUAGES, PROJECT, SUPERVISOR, useSession(), buildRecognition(), classifySpeechError(), getCtor(), langSubscribers (+14 more)
+Nodes (21): buildRecognition(), classifySpeechError(), getCtor(), langSubscribers, setSharedLang(), SPEECH_LANGUAGES, SpeechFailure, SpeechRecognitionAlternative (+13 more)
 
 ### Community 30 - "compress.py"
 Cohesion: 0.13
@@ -574,40 +575,40 @@ Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 32 - "App.tsx"
-Cohesion: 0.09
-Nodes (31): App(), DesktopShell(), EXECUTIVE_NAV, MobileShell(), NavItem, PLANNER_NAV, PageHeader, PageHeaderContext (+23 more)
+Cohesion: 0.08
+Nodes (31): App(), EXECUTIVE_NAV, NavItem, PLANNER_NAV, FieldNav(), TABS, Session, SessionContext (+23 more)
 
 ### Community 33 - "Changelog"
 Cohesion: 0.09
 Nodes (23): Changelog, Dashboard, Dashboard, Dashboard, Dashboard, Extension, Packaging, Packaging (+15 more)
 
 ### Community 34 - "Field.tsx"
-Cohesion: 0.10
-Nodes (31): NeedsYourResponse(), RecentUpdates(), STATUS_ICON, STATUS_SHORT, when(), Button(), agentContext(), ConversationStage() (+23 more)
+Cohesion: 0.12
+Nodes (25): agentContext(), ConversationStage(), MicUnavailable(), NotUnderstood(), ServerUnreachable(), Field(), IdleStage(), ListeningStage() (+17 more)
 
 ### Community 35 - "caveman-compress/README.md"
 Cohesion: 0.09
 Nodes (20): Before / After, Benchmarks, How It Work, <img src="../../docs/assets/dancing-rock.svg" width="20" height="20" alt="rock"/> Caveman (285 tokens), Install, Original (706 tokens), Part of Caveman, Security (+12 more)
 
-### Community 36 - "delay_evidence"
-Cohesion: 0.10
-Nodes (19): ObservationKey, delay_evidence(), delay_observations(), AuditRecord, Every distinct delay observation in the audit trail, with its evidence. **One…, How often each delay phrase actually appears in the field evidence. Aggregates…, _audit(), _clean_evidence() (+11 more)
+### Community 36 - "raid.py"
+Cohesion: 0.06
+Nodes (41): ObservationKey, patch, RaidItem, One entry in the Risk / Issue / Action / Decision register. ONE table, not…, The linked activity ids. Never raises on malformed stored JSON., create_raid_item(), get_raid_item(), list_raid() (+33 more)
 
 ### Community 37 - "MatchingEngine"
-Cohesion: 0.03
-Nodes (90): EngineConfig, production(), Configuration for retrieval and ranking. Every knob that an experiment might…, The configuration the ablation selected, if its artefacts are present. Row 8b:…, RetrievalConfig, _load_pickle(), MatchingEngine, Path (+82 more)
+Cohesion: 0.04
+Nodes (60): Roll one event onto one node and return the RollupResult., _rollup_one(), EngineConfig, Configuration for retrieval and ranking. Every knob that an experiment might…, RetrievalConfig, MatchingEngine, Cosine similarity of the dense channel for this candidate (None if the…, The one embedder for this process. Every construction path that does not pass… (+52 more)
 
 ### Community 38 - "HybridRetriever"
-Cohesion: 0.07
-Nodes (19): _hashed_embeddings(), HybridRetriever, MiniLMEmbedder, ndarray, Identity of what this embedder produces, for the on-disk cache. The hashed…, Encode and L2-normalise, so a dot product IS the cosine., Deterministic hashed character-ngram embeddings (offline fallback)., L2-normalised activity embeddings, read from disk when this exact (model,… (+11 more)
+Cohesion: 0.10
+Nodes (12): _load_pickle(), Path, HybridRetriever, L2-normalised activity embeddings, read from disk when this exact (model,…, Exact/near-exact tag match, ranked by match quality: full (line+size+spec) >…, Character 3-5 gram cosine. Robust to the spelling errors and abbreviations the…, Planner corrections, read back. A confirmed correction is the strongest…, The single activity an unambiguous tag resolves to, else None. 'Unambiguous'… (+4 more)
 
-### Community 39 - "DateAssertion"
-Cohesion: 0.13
-Nodes (13): _basis_for(), _basis_of(), _describe_conflicts(), DateBasis, _qty_swallowed_by_tag(), Consume one AUTO_LINK decision (others are ignored by design:…, The basis an event recorded for one of its dates. Defaults to EXPLICIT for…, The basis of the assertion that produced the value actually written. (+5 more)
+### Community 39 - "drift_eval.py"
+Cohesion: 0.20
+Nodes (20): categorise(), family_of(), gold_description(), gold_text(), jaccard(), load_drift_kinds(), longest_common_run(), main() (+12 more)
 
 ### Community 40 - "_turn"
-Cohesion: 0.08
-Nodes (17): client(), fixture, An API client sharing the seeded test database., The exact three-turn conversation the demo runs on., Part 17: 'Electrical' used to be rejected and the question repeated., `_next_missing` skips a slot it has asked about twice. That decision used to…, DEMO.md's own opener carried a quantity, which is what triggered it., The regression itself: abandoned, then asked again one turn later. (+9 more)
+Cohesion: 0.10
+Nodes (14): The exact three-turn conversation the demo runs on., Part 17: 'Electrical' used to be rejected and the question repeated., `_next_missing` skips a slot it has asked about twice. That decision used to…, DEMO.md's own opener carried a quantity, which is what triggered it., The regression itself: abandoned, then asked again one turn later., How many were planned in total?" accepted no plain answer at all., TestAConfirmIsNeverSilentlySwallowed, TestDemonstrationExchange (+6 more)
 
 ### Community 41 - "devDependencies"
 Cohesion: 0.10
@@ -638,8 +639,8 @@ Cohesion: 0.13
 Nodes (11): BaseDocTemplate, callout(), fig(), Path, Build research/NAVIS_SIH_FINAL_REPORT.pdf from repository evidence. Nothing…, Numbered data table with a caption; status_col cells are colour-coded., Image + numbered caption, kept together. Aspect ratio preserved., ReportDoc (+3 more)
 
 ### Community 48 - "_import"
-Cohesion: 0.07
-Nodes (15): _import(), Path, PMXML is now READ, not refused (D-047 closes FINDINGS F3). This used to assert…, Adding PMXML and XER must not have opened the door to everything., Half-loading a broken baseline is far harder to notice than a refusal, so…, Nothing is being replaced, so nothing needs consent., Deleting them would orphan their LinkedEvent and AuditRecord rows and silently…, The planned fields already match, so a re-import is a no-op beyond registering… (+7 more)
+Cohesion: 0.05
+Nodes (24): BaselineVersion, Which baseline schedule the activities table was built from. A metric is only…, get_active_baseline(), _matcher_baseline_drift(), BaselineVersion, Warn when the active baseline is not the one the matcher links against.…, The baseline the activities table was last built from, or None., _import() (+16 more)
 
 ### Community 49 - "compute_schedule"
 Cohesion: 0.17
@@ -649,9 +650,9 @@ Nodes (9): compute_schedule(), Forward and backward pass over the baseline. Acce
 Cohesion: 0.17
 Nodes (7): Divide a finish slip into float consumed and delay beyond float. Returns…, split_slip(), The conservative reading. Crediting slack that was never established would…, TestSplitSlip, Six days late with four days of float is two days of project delay, and only…, An activity already behind the network before it slipped has no slack to spend,…, The conservative reading. Crediting slack that was never established is the one…
 
-### Community 51 - "compute_evm"
-Cohesion: 0.06
-Nodes (31): compute_evm(), _event_percentages(), EVMFigures, planned_fraction(), planned_weight(), date, PV/EV/SV/SPI for one grouping, plus what produced the percentages., EV / PV, or None when PV is 0. Never 0.0 as a stand-in. (+23 more)
+### Community 51 - "test_evm.py"
+Cohesion: 0.16
+Nodes (11): planned_fraction(), planned_weight(), date, Planned duration in days, inclusive of both endpoints, minimum 1. An activity…, Share of the activity's planned duration elapsed by the data date. Wholly…, db(), fixture, EVM arithmetic, asserted to the decimal against hand-computed fixtures. ROADMAP… (+3 more)
 
 ### Community 52 - "test_subagent.py"
 Cohesion: 0.23
@@ -666,8 +667,8 @@ Cohesion: 0.15
 Nodes (17): compress_file(), file_lock(), is_sensitive_path(), lock_path_for(), LockTimeoutError, Path, Raised when another process holds the compress lock past LOCK_WAIT_SECONDS., Cross-session lock path keyed on the same (parent-dir-name, stem) identity… (+9 more)
 
 ### Community 55 - "test_providers.py"
-Cohesion: 0.09
-Nodes (20): normalize_activity(), normalize_wbs_level(), normalize_wbs_path(), parse_predecessor(), parse_predecessors(), PredecessorLink, Any, One predecessor entry, from either baseline shape. Accepts a bare id (`"CIV-… (+12 more)
+Cohesion: 0.13
+Nodes (12): normalize_activity(), normalize_wbs_level(), normalize_wbs_path(), A single displayable WBS path. v1 gives a dotted code (`"1.1.1.1"`); v2 gives…, The planning level, or None when the source does not state one. Deliberately…, One activity from any baseline, in the shape every consumer expects.…, Tests for schedule providers, baseline identity, and the agreement guard. Two…, v2 omits `detail` entirely; it is concatenated into the embedding document and… (+4 more)
 
 ### Community 56 - "Setup — Windows, from nothing"
 Cohesion: 0.11
@@ -702,20 +703,20 @@ Cohesion: 0.14
 Nodes (14): Build and install from source, Claude Code Usage — VS Code extension, Commands, From a prebuilt `.vsix` (no build step), From the VS Code Marketplace, How discovery works, Install, Privacy (+6 more)
 
 ### Community 64 - "extract_tags"
-Cohesion: 0.18
-Nodes (5): extract_tags(), Extract all equipment/line tags from free text., Tests for equipment/line tag regex patterns., TestTagExtraction, TestMaterialGrades
+Cohesion: 0.09
+Nodes (12): extract_tags(), Extract all equipment/line tags from free text., parametrize, A tag number's digit count is a numbering convention, not part of what a tag…, The bound is generous on purpose — the next baseline should not need another…, WHCP-2101 is a real v2 tag; a three-letter prefix bound dropped it., Longest match wins. Widening the equipment suffix to five digits also made this…, The prefix stays uppercase-only. Widening it to four letters would otherwise… (+4 more)
 
-### Community 65 - "ReviewQueueItem"
+### Community 65 - "Activity"
+Cohesion: 0.03
+Nodes (91): DeclarativeBase, RuntimeError, main(), Reset the demo database to a known seeded state. Safe to run while the server…, main(), Build a working database from scratch. Loads the 120-activity baseline…, client(), db_session() (+83 more)
+
+### Community 66 - "Delay.tsx"
+Cohesion: 0.12
+Nodes (13): Delay(), LIABILITIES, LIABILITY_CLASS, LIABILITY_LABEL, LIABILITY_WHO, NOTICE_CLASS, ABSORBED, CRITICAL (+5 more)
+
+### Community 67 - "test_extractor.py"
 Cohesion: 0.08
-Nodes (39): Session, on_event, main(), Reset the demo database to a known seeded state. Safe to run while the server…, main(), Build a working database from scratch. Loads the 120-activity baseline…, init_db(), Job (+31 more)
-
-### Community 66 - "api"
-Cohesion: 0.15
-Nodes (16): FieldNav(), TABS, PLANNER, SessionContext, api, Card(), FieldClarifications(), Filter (+8 more)
-
-### Community 67 - "test_baseline.py"
-Cohesion: 0.08
-Nodes (24): BaselineVersion, Which baseline schedule the activities table was built from. A metric is only…, _activate_baseline(), get_active_baseline(), get_matching_engine(), link_events_to_activities(), _matcher_baseline_drift(), BaselineVersion (+16 more)
+Nodes (49): _build_event(), _parse_date(), date, ExtractedEvent, Turn a labelled mention into an ExtractedEvent via the shared prepass., Main extraction orchestrator. Ties together: 1. Deterministic pre-pass (regex)…, DateBasis, Discipline (+41 more)
 
 ### Community 68 - "make_graphs.py"
 Cohesion: 0.36
@@ -737,21 +738,21 @@ Nodes (11): Boundaries, Caveman Compress, Compress, Compression Rules, Pattern, 
 Cohesion: 0.17
 Nodes (10): caveman, Example output, How to invoke, See also, What it does, Auto-Clarity, Boundaries, Intensity (+2 more)
 
-### Community 73 - "_field_event"
-Cohesion: 0.17
-Nodes (12): _activity(), _audit(), _field_event(), Rejecting writes no actual, so nothing points back at the event. This is the…, Only this supervisor's own submissions count — the same scoping /field/reports…, Null, not 0 — a 0 would read as "measured, and on plan".…, A submission from the supervisor — the same scoping /field/reports uses., planned finish 1 Sep, reported 3 Sep -> +2 days. (+4 more)
+### Community 73 - "LinkedEvent"
+Cohesion: 0.10
+Nodes (23): LinkedEvent, An extracted progress event linked to a schedule activity. Created by the…, The candidate activity ids, oldest callers' shape. The column stored a bare…, Every ranked candidate with its own score and rationale. Empty `rationale` and…, A LinkedEvent carrying the date the field report itself was for. The notice…, _reported(), _activity(), _audit() (+15 more)
 
-### Community 74 - ".parse"
-Cohesion: 0.14
-Nodes (10): coerce_date(), any, date, ExtractedEvent, Coerce various date representations to a date object. Handles: - datetime.date…, Parse an xlsx file and return ExtractedEvents., Find the actual data header row (skip merged group headers, titles). Returns…, Read a row using the column map. (+2 more)
+### Community 74 - "SpreadsheetParser"
+Cohesion: 0.10
+Nodes (16): coerce_date(), any, date, Discipline, ExtractedEvent, Coerce various date representations to a date object. Handles: - datetime.date…, Parse an EPC discipline progress spreadsheet into ExtractedEvents., Parse an xlsx file and return ExtractedEvents. (+8 more)
 
 ### Community 75 - "15. Historical handoff — state at the end of the reconstruction session (2026-08-31)"
 Cohesion: 0.17
 Nodes (12): 15. Historical handoff — state at the end of the reconstruction session (2026-08-31), Completed, Component status at handoff, Environment assumptions the next agent should verify first, Known bugs, Known failing tests, Known technical debt, Last major task attempted (+4 more)
 
 ### Community 76 - "Memory.tsx"
-Cohesion: 0.18
-Nodes (5): DISCIPLINE_ORDER, Overrun, DelayReasonRow, DurationDistribution, ProductivityMetric
+Cohesion: 0.07
+Nodes (20): DISCIPLINE_AXIS, PageHeader, PageHeaderContext, usePageHeader(), ExecutiveExposure(), bytesToGb(), caveatText(), ExecutiveProvenance() (+12 more)
 
 ### Community 77 - "15. Implementation order"
 Cohesion: 0.17
@@ -761,9 +762,9 @@ Nodes (12): 15. Implementation order, Phase 10 — Integration layer, Phase 11 �
 Cohesion: 0.17
 Nodes (12): 15. Implementation order, Phase 10 — Integration layer, Phase 11 — Risk engine, Phase 1 — Data model foundation, Phase 2 — Roles and permissions, Phase 3 — RAID, Phase 4 — EVM, Phase 5 — Verification screen completion (+4 more)
 
-### Community 79 - "OpenAICompatibleBackend"
-Cohesion: 0.27
-Nodes (4): OpenAICompatibleBackend, Backend for any OpenAI-compatible API (Claude, OpenAI, etc.)., Check API connectivity., Call the API to extract structured events.
+### Community 79 - "MiniLMEmbedder"
+Cohesion: 0.16
+Nodes (9): _hashed_embeddings(), MiniLMEmbedder, ndarray, Identity of what this embedder produces, for the on-disk cache. The hashed…, Encode and L2-normalise, so a dot product IS the cosine., Deterministic hashed character-ngram embeddings (offline fallback)., sentence-transformers all-MiniLM-L6-v2, offline-first. Loading is lazy:…, No code path may reload the sentence-transformers model. (+1 more)
 
 ### Community 80 - "TestScheduleEndpoint"
 Cohesion: 0.17
@@ -825,13 +826,13 @@ Nodes (47): _accept(), _allowed_numbers(), _build_facts(), _build_prompt(), _com
 Cohesion: 0.10
 Nodes (14): BaselineVersion, dangling_predecessors(), _PrimaveraProvider, ABC, Path, Schedule providers: where a baseline comes from, and what shape it arrives in.…, Predecessor ids that are not activities in the same baseline., A source of baseline schedule activities. Two methods, deliberately separate:… (+6 more)
 
-### Community 95 - "TestTagDigitWidth"
-Cohesion: 0.12
-Nodes (7): parametrize, A tag number's digit count is a numbering convention, not part of what a tag…, The bound is generous on purpose — the next baseline should not need another…, WHCP-2101 is a real v2 tag; a three-letter prefix bound dropped it., Longest match wins. Widening the equipment suffix to five digits also made this…, The prefix stays uppercase-only. Widening it to four letters would otherwise…, TestTagDigitWidth
+### Community 95 - "extract_fractions"
+Cohesion: 0.21
+Nodes (7): extract_fractions(), Extract progress fractions like '6 of 8'., A unit suffix is not a numerator. `FRACTION_RE` had no boundary before the…, dataset/v2 currently writes "40 of 120 m3" to route around this bug. That…, The v2 generator produced "1 m3 of 1 m3", which parsed as 3/1 = 300% and was…, The whole point: the derived percentage has to be usable, because it is what…, TestFractionUnitSuffix
 
 ### Community 96 - "Ingest.tsx"
 Cohesion: 0.09
-Nodes (24): ConfidenceBadge(), ConfidenceBadgeProps, DISCIPLINE_COLOR, DisciplineTag(), DisciplineTagProps, DISCIPLINE_AXIS, DISCIPLINE_LABEL, DISCIPLINE_META (+16 more)
+Nodes (26): DISCIPLINE_COLOR, DisciplineTag(), DisciplineTagProps, DISCIPLINE_LABEL, DISCIPLINE_META, DISCIPLINE_ORDER, DISCIPLINE_SHORT, DISCIPLINES (+18 more)
 
 ### Community 97 - "ROADMAP.md — Senior PM review, decoded and architected"
 Cohesion: 0.20
@@ -877,13 +878,13 @@ Nodes (9): 2026-09-01 / D-016 — A missing planned quantity is not a milestone,
 Cohesion: 0.22
 Nodes (9): Affected Areas, Alternatives Considered, Context, D-009a — *(superseded by D-009)* Agent updates written directly to the schedule, Decision, Future Notes, pre-2026-08-30 / D-009 — Agent/voice updates are proposals, never direct writes, Reason (+1 more)
 
-### Community 108 - "TestCandidatesAreNeverAutoCommitted"
+### Community 108 - "evm.py"
 Cohesion: 0.18
-Nodes (4): Mirrors D-009 for dates: the system proposes, a human commits., The whole rule, in one assertion., A delay that already happened is an issue. Inventing a probability for a past…, TestCandidatesAreNeverAutoCommitted
+Nodes (10): percent_complete(), quantity_ratio(), Schedule-side Earned Value Management: PV, EV, SV, SPI. ROADMAP §5.…, Installed over planned quantity as a percentage, uncapped, or None. Uncapped on…, Percent complete and which of the four rules produced it. `event_percentages`…, Rule 2: installed over planned quantity. Its absence was not a gap in coverage…, Mirrors the roll-up, which prefers a measured quantity over an asserted one for…, Rule 1 is unchanged. A finished node is 100% whatever the quantities say. (+2 more)
 
-### Community 109 - "LinkedEvent"
-Cohesion: 0.04
-Nodes (72): EventIndex, post, PydanticEvent, ResolveResponse, LinkedEvent, _now(), datetime, An extracted progress event linked to a schedule activity. Created by the… (+64 more)
+### Community 109 - "_now"
+Cohesion: 0.06
+Nodes (38): EventIndex, ResolveResponse, IntegrityError, IntegrityWarning, _now(), date, datetime, Exception (+30 more)
 
 ### Community 110 - "JsonScheduleProvider"
 Cohesion: 0.20
@@ -972,6 +973,10 @@ Nodes (8): scripts, build, clean, dev, lint, preview, test, test:watch
 ### Community 131 - "generate_duliajan_p6_schedule.py"
 Cohesion: 0.46
 Nodes (5): add_work(), is_work(), next_work(), sched(), sub_work()
+
+### Community 132 - "compute_evm"
+Cohesion: 0.15
+Nodes (9): compute_evm(), _event_percentages(), `activity_id -> max(LinkedEvent.percentage)`, in one pass. Mirrors…, Project and per-discipline EVM as of `data_date`. Read-only: no table is…, Four activities with arithmetic worked out in the comments. A 1-10 Sep (10 d)…, B alone: 20 days, 15 elapsed of 20 -> 15.0, not 0 and not 20., The point of the rule. A 10-day activity wholly before the data date, 800 of…, TestCostMetricsAbsent (+1 more)
 
 ### Community 133 - "DAY 7 — Rehearsal, Hardening, and the Story"
 Cohesion: 0.25
@@ -1118,8 +1123,8 @@ Cohesion: 0.33
 Nodes (6): Decision, Design choices inside it, and why, Ground-truth shape, pre-2026-08-28 / H-013 — One seeded generator builds the whole corpus, and the circularity is admitted, Risks / Limitations — stated, not hidden, Status
 
 ### Community 171 - "Current Modification Area"
-Cohesion: 0.17
-Nodes (12): Current Modification Area, Previous area (retained for context), Previous modification area (D-064 .. D-071), Previous modification area (D-072), Previous modification area (D-073 .. D-075), Previous modification area (D-076), Previous modification area (D-077), Previous modification area (D-078) (+4 more)
+Cohesion: 0.15
+Nodes (13): Current Modification Area, Previous area (retained for context), Previous modification area (D-064 .. D-071), Previous modification area (D-072), Previous modification area (D-073 .. D-075), Previous modification area (D-076), Previous modification area (D-077), Previous modification area (D-078) (+5 more)
 
 ### Community 172 - "states.test.tsx"
 Cohesion: 0.17
@@ -1158,8 +1163,8 @@ Cohesion: 0.29
 Nodes (6): AUDITED — read from code, not from documentation, Evidence index — what kind of claim each number in the report is, MEASURED — from runnable harnesses against the real engine + dataset, NOT CLAIMED, RUBRIC — reasoned judgement, labelled as such on the figure itself, Where the v2 / held-out evidence lives
 
 ### Community 181 - "learned.py"
-Cohesion: 0.09
-Nodes (22): AbstentionModel, Calibrator, _design(), _design_names(), fit_abstention(), fit_calibrator(), fit_ranker(), LearnedRanker (+14 more)
+Cohesion: 0.08
+Nodes (24): AbstentionModel, Calibrator, _design(), _design_names(), fit_abstention(), fit_calibrator(), fit_ranker(), LearnedRanker (+16 more)
 
 ### Community 182 - "TestFloatConsumption"
 Cohesion: 0.33
@@ -1278,8 +1283,8 @@ Cohesion: 0.40
 Nodes (5): 9. Knowledge handoff — design, How future projects retrieve it, How the AI decides something is a lesson [INFERRED], Separate module? Yes., What to store per lesson
 
 ### Community 212 - "test_evalstats_additions.py"
-Cohesion: 0.08
-Nodes (52): baseline_planned_mean(), evaluate_duration_predictions(), format_duration_report(), _metric_entry(), Evaluation of the duration-suggestion feature. The system suggests how long an…, Render evaluate_duration_predictions output as a fixed-width CLI table. WHY n…, Default predictor: the baseline plan's mean duration for the activity type.…, Score a duration predictor against observed actual_mean_days per activity type.… (+44 more)
+Cohesion: 0.09
+Nodes (50): baseline_planned_mean(), evaluate_duration_predictions(), format_duration_report(), _metric_entry(), Evaluation of the duration-suggestion feature. The system suggests how long an…, Render evaluate_duration_predictions output as a fixed-width CLI table. WHY n…, Default predictor: the baseline plan's mean duration for the activity type.…, Score a duration predictor against observed actual_mean_days per activity type.… (+42 more)
 
 ### Community 213 - "PS Analysis — SIH 26122 requirement coverage, audited against code"
 Cohesion: 0.40
@@ -1306,8 +1311,8 @@ Cohesion: 0.40
 Nodes (5): 9. Knowledge handoff — design, How future projects retrieve it, How the AI decides something is a lesson [INFERRED], Separate module? Yes., What to store per lesson
 
 ### Community 219 - "Schedule.tsx"
-Cohesion: 0.16
-Nodes (10): auditActor, auditActorLabel(), auditActorShort(), PLANNER_SOURCES, AuditTrail(), FIELD_LABEL, sourceLocation(), AuditRecord (+2 more)
+Cohesion: 0.14
+Nodes (14): DesktopShell(), MobileShell(), errorDetail(), getBaseUrl(), auditActor, auditActorLabel(), auditActorShort(), PLANNER_SOURCES (+6 more)
 
 ### Community 221 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -1346,8 +1351,8 @@ Cohesion: 0.50
 Nodes (4): default, description, type, claudeUsage.pythonPath
 
 ### Community 231 - "Home.tsx"
-Cohesion: 0.14
-Nodes (14): isUnresolved(), QueryLike, queryView, clock(), FeedRow, FIELD_LABEL, Home(), position() (+6 more)
+Cohesion: 0.16
+Nodes (12): isUnresolved(), QueryLike, queryView, clock(), FeedRow, FIELD_LABEL, Home(), position() (+4 more)
 
 ### Community 232 - "Innovation analysis — what is genuinely novel vs table stakes"
 Cohesion: 0.50
@@ -1358,8 +1363,8 @@ Cohesion: 0.50
 Nodes (3): Headline evaluation (all MEASURED, research/data/eval_output.txt), NAVIS Technical Audit — component-by-component status, read from code, Pipeline components
 
 ### Community 235 - "generate_v2_dataset.py"
-Cohesion: 0.16
-Nodes (22): abbreviate(), build_mention(), build_near_miss(), build_spreadsheet(), bullet(), core_phrases(), dpr_header(), main() (+14 more)
+Cohesion: 0.09
+Nodes (36): abbreviate(), build_mention(), build_near_miss(), build_near_miss_families(), build_near_miss_queue(), build_spreadsheet(), bullet(), core_phrases() (+28 more)
 
 ### Community 239 - "v1.2.0 — 2026-05-29"
 Cohesion: 0.67
@@ -1390,8 +1395,8 @@ Cohesion: 0.67
 Nodes (3): repository, type, url
 
 ### Community 248 - "eval_real.py"
-Cohesion: 0.06
-Nodes (57): Counter, boot_ci(), ci_str(), constructcie(), _f(), _iso(), load_csv(), load_jsonl() (+49 more)
+Cohesion: 0.15
+Nodes (31): Counter, boot_ci(), ci_str(), constructcie(), _f(), _iso(), load_csv(), load_jsonl() (+23 more)
 
 ### Community 250 - "0. Read this first"
 Cohesion: 0.67
@@ -1405,9 +1410,9 @@ Nodes (3): 10. MPP and Primavera — verified, MPP files, Primavera APIs — you
 Cohesion: 0.67
 Nodes (3): 12. Evaluation module, Metric per task, Module design
 
-### Community 257 - "Raid.tsx"
-Cohesion: 0.18
-Nodes (7): candidateKey(), KIND_LABEL, Raid(), ACCEPTED, CANDIDATE, RaidCandidate, RaidItem
+### Community 257 - "alias_key"
+Cohesion: 0.22
+Nodes (7): The server's write key and this read key must be one function. If they drift,…, An alias is a RETRIEVAL channel, never a decision. The mention text supports…, TestAliasChannel, alias_key(), Normalise a raw field mention to the key the alias lexicon is stored under.…, alias_lexicon_from(), Build an alias lexicon from CONFIRMED rows, in the shape the server writes. Fed…
 
 ### Community 258 - "TestHonestyFieldsArePresentAndStructured"
 Cohesion: 0.08
@@ -1417,9 +1422,9 @@ Nodes (10): needs_corpus, _clear_cache(), fixture, 1,661 CPWD reference work ite
 Cohesion: 0.07
 Nodes (27): Coverage and suggested order, Implementation guardrails — reference only; do not paste into Stitch, NAVIS — Stitch prompts, rewritten for screen generation, Prompt 01 — START HERE: Report Progress, desktop, Prompt 02 — Report Progress, mobile capture, Prompt 03 — Field Home, desktop, Prompt 04 — My Updates with selected report, Prompt 05 — Field Clarifications (+19 more)
 
-### Community 290 - "PmxmlScheduleProvider"
-Cohesion: 0.18
-Nodes (10): PmxmlScheduleProvider, PrimaveraXerScheduleProvider, Primavera P6 PMXML (`.xml`). Reads both the canonical Oracle shape, where…, Primavera `.xer`. Reads a real XER table dump - `%T` table, `%F` header, `%R`…, They used to raise NotImplementedError; F3 is closed., TestProviders, parametrize, These were stubs that raised NotImplementedError until D-047. This class used… (+2 more)
+### Community 290 - "test_primavera.py"
+Cohesion: 0.14
+Nodes (13): PmxmlScheduleProvider, PrimaveraXerScheduleProvider, Primavera P6 PMXML (`.xml`). Reads both the canonical Oracle shape, where…, Primavera `.xer`. Reads a real XER table dump - `%T` table, `%F` header, `%R`…, Primavera PMXML and XER reading — FINDINGS.md F3, D-047. Two fixtures under…, The two fixtures describe the same schedule, so the readers must too., They used to raise NotImplementedError; F3 is closed., TestBothFormatsAgree (+5 more)
 
 ### Community 291 - "_validate_description"
 Cohesion: 0.12
@@ -1429,9 +1434,9 @@ Nodes (11): The supervisor's own words, formalised — or None. Returns the clea
 Cohesion: 0.22
 Nodes (9): 2026-09-04 / D-077 — A delay becomes a row, so a planner has something to overrule, Affected Areas, Alternatives Considered, Context, Decision, Measured on the demo corpus, On `month`, Trade-offs / Consequences (+1 more)
 
-### Community 293 - "extract_quantities"
-Cohesion: 0.08
-Nodes (14): extract_quantities(), is_forecast_language(), _normalize_uom(), True when the span describes a plan or a schedule change rather than work…, Extract all (quantity, uom) pairs from free text., Normalize unit-of-measurement strings., Tests for quantity + UOM patterns., TestQuantityExtraction (+6 more)
+### Community 293 - "prepass.py"
+Cohesion: 0.06
+Nodes (27): extract_dates(), extract_dates_with_basis(), extract_dates_with_flags(), extract_quantities(), is_forecast_language(), _normalize_uom(), date, DateBasis (+19 more)
 
 ### Community 294 - "2026-09-01 / D-017 — A second baseline is adopted as a version, not as a replacement"
 Cohesion: 0.22
@@ -1445,13 +1450,17 @@ Nodes (7): 2026-09-01 / D-019 — Refuse to evaluate a baseline the ground truth
 Cohesion: 0.29
 Nodes (3): BaselineAgreement, How well a ground-truth file and a baseline describe the same project., The message a human needs to fix this, not just to know it broke.
 
+### Community 297 - "_activity"
+Cohesion: 0.24
+Nodes (7): _activity(), _event(), A finished activity is 100% even if its last report said 40%., The guard that stops a coverage artefact being read as performance., A alone: 10 days, all elapsed, 50% -> PV 10, EV 5, SPI 0.5. The whole-project…, TestEvidenceCoverage, TestPercentPrecedence
+
 ### Community 298 - "cpm.py"
 Cohesion: 0.20
 Nodes (8): ActivitySchedule, _duration_days(), date, Critical path: how much slack every activity had before it slipped. Phase 6 of…, Inclusive duration. A one-day activity is one day, not zero., Kahn's algorithm. Returns (ordered, unresolved-because-cyclic)., One activity's computed position in the network. Dates are inclusive: a one-day…, _topological_order()
 
 ### Community 299 - "test_terminology.py"
-Cohesion: 0.12
-Nodes (21): canonicalise(), expansion_tokens(), expansions(), mapping_count(), Controlled construction-terminology normalisation (field → schedule). Why this…, Canonical schedule-vocabulary phrases found in `text` (original kept)., `text` with canonical schedule vocabulary APPENDED. Expansion, not replacement:…, Tokens of the canonical phrases, for the BM25 query side. (+13 more)
+Cohesion: 0.15
+Nodes (17): canonicalise(), expansion_tokens(), expansions(), mapping_count(), Controlled construction-terminology normalisation (field → schedule). Why this…, Canonical schedule-vocabulary phrases found in `text` (original kept)., `text` with canonical schedule vocabulary APPENDED. Expansion, not replacement:…, Tokens of the canonical phrases, for the BM25 query side. (+9 more)
 
 ### Community 300 - "2026-09-04 / D-080 — The notice clock starts from a date a source asserted, and says which"
 Cohesion: 0.25
@@ -1461,17 +1470,17 @@ Nodes (8): 2026-09-04 / D-080 — The notice clock starts from a date a source a
 Cohesion: 0.40
 Nodes (3): Test that session totals are correct when the same session spans multiple files., Same session in 2 files with duplicate message_ids should not inflate totals., TestCrossFileSessionTotals
 
-### Community 303 - "compute_exposure"
-Cohesion: 0.24
-Nodes (5): compute_exposure(), `probability x impact_days`, or None when either side is unknown. None means…, A risk with no schedule impact scores 0.0 — a measured value., None means 'not calculable'. Confusing it with 0.0 would let an unscored risk…, TestExposure
+### Community 303 - "memory_query"
+Cohesion: 0.15
+Nodes (13): DurationDistribution, ProductivityMetric, _compute_delay_reasons(), _compute_duration_distribution(), _compute_productivity(), _compute_suggested_duration(), memory_query(), Institutional memory queries. Returns: - Actual vs planned duration… (+5 more)
 
 ### Community 304 - "2026-09-04 / D-083 — The planner screen, and the design rule it could not follow"
 Cohesion: 0.25
 Nodes (8): 2026-09-04 / D-083 — The planner screen, and the design rule it could not follow, Affected Areas, Alternatives Considered, Context, Decision, Trade-offs / Consequences, Two defects found while building it, Verification
 
-### Community 305 - "conftest.py"
-Cohesion: 0.10
-Nodes (19): Path, Reading source documents without losing characters. The supplied DPRs are…, Read a text document, preserving every character it actually contains., Read a JSON document. Same rules, named separately for intent., read_json_text(), read_text(), db_session(), Shared fixtures. `server/test_server.py` builds its own database with an… (+11 more)
+### Community 305 - "read_text"
+Cohesion: 0.28
+Nodes (7): Load baseline schedule and build compact context string., Path, Reading source documents without losing characters. The supplied DPRs are…, Read a text document, preserving every character it actually contains., Read a JSON document. Same rules, named separately for intent., read_json_text(), read_text()
 
 ### Community 306 - "NAVIS — copy-paste Stitch prompt pack"
 Cohesion: 0.09
@@ -1499,7 +1508,7 @@ Nodes (6): POST /delay/{id}/classify — the step that turns a proposal into a f
 
 ### Community 312 - "END OF PART 0 — the D-series resumes below"
 Cohesion: 0.09
-Nodes (23): 2026-09-02 / D-053 - The frontend had no React type checking at all, and now does, 2026-09-02 / D-054 - An error boundary, because a render throw was a white screen, 2026-09-02 / D-055 - localStorage access goes through one total helper, 2026-09-02 / D-056 - Enter and the Send button agree about when a turn may start, 2026-09-02 / D-057 - An unreachable API must never render as good news, 2026-09-02 / D-058 - Classification and regression metrics, and what each is allowed to measure, 2026-09-02 / D-059 - The baseline plan is a worse duration predictor than the mean, and now we can say so, 2026-09-02 / D-061 - The alias learning loop cannot help, and the reason is architectural (+15 more)
+Nodes (23): 2026-09-01 / D-018 — Baselines are read through a provider, never by `json.load` at the call site, 2026-09-02 / D-053 - The frontend had no React type checking at all, and now does, 2026-09-02 / D-054 - An error boundary, because a render throw was a white screen, 2026-09-02 / D-055 - localStorage access goes through one total helper, 2026-09-02 / D-056 - Enter and the Send button agree about when a turn may start, 2026-09-02 / D-057 - An unreachable API must never render as good news, 2026-09-02 / D-058 - Classification and regression metrics, and what each is allowed to measure, 2026-09-02 / D-059 - The baseline plan is a worse duration predictor than the mean, and now we can say so (+15 more)
 
 ### Community 313 - "storage.test.tsx"
 Cohesion: 0.26
@@ -1513,25 +1522,25 @@ Nodes (15): ActivityType, _baseline_types(), cfihos_disciplines(), _heads(), _ke
 Cohesion: 0.12
 Nodes (16): 1. Four different things, four different numbers, 2. What each metric means, 3.1 CURRENT PRODUCTION / DEMO — what the running server actually does, 3.2 HELD-OUT EVALUATION — the honest research number, 3.3 POOLED / 5-FOLD CV — the number with a usable denominator, 3.4 EXPERIMENTAL — measured, selected, and NOT deployed, 3.4a WHAT THE EVALUATION DOES **NOT** ESTABLISH, 3.5 RESEARCH CORPUS — real, public-source, no matcher accuracy claimed (+8 more)
 
-### Community 316 - "2026-09-01 / D-018 — Baselines are read through a provider, never by `json.load` at the call site"
-Cohesion: 0.33
-Nodes (6): 2026-09-01 / D-018 — Baselines are read through a provider, never by `json.load` at the call site, Affected Areas, Alternatives Considered, Context, Decision, Predecessor storage — the migration
+### Community 316 - "infer_discipline"
+Cohesion: 0.26
+Nodes (5): infer_discipline(), Discipline, Infer the most likely discipline from context keywords., Tests for discipline keyword classification., TestDisciplineInference
 
 ### Community 317 - "test_evidence.py"
-Cohesion: 0.15
-Nodes (13): RuntimeError, _caveats(), corpus_summary(), CorpusUnavailable, _load(), What the real corpus actually contains, read from its own manifests.…, The Evidence page's whole payload. Reads manifests only., The corpus manifests are not present. Names which file is missing. (+5 more)
+Cohesion: 0.16
+Nodes (12): _caveats(), corpus_summary(), CorpusUnavailable, _load(), What the real corpus actually contains, read from its own manifests.…, The Evidence page's whole payload. Reads manifests only., The corpus manifests are not present. Names which file is missing., Both manifests, read once. Raises `CorpusUnavailable` if either is gone. Cached… (+4 more)
 
 ### Community 318 - "Reconcile.tsx"
-Cohesion: 0.24
-Nodes (8): hasScore(), MatchReasoning(), SignalChips(), toCandidates(), PRIORITY_WEIGHT, Reconcile(), ReviewCandidate, ScheduleActivity
+Cohesion: 0.19
+Nodes (10): ConfidenceBadge(), ConfidenceBadgeProps, hasScore(), MatchReasoning(), SignalChips(), toCandidates(), PRIORITY_WEIGHT, Reconcile() (+2 more)
 
 ### Community 319 - "ErrorBoundary"
 Cohesion: 0.17
 Nodes (4): ErrorBoundary, Props, State, quiet
 
-### Community 320 - "test_agent_llm.py"
-Cohesion: 0.18
-Nodes (7): The LLM must be optional, bounded, and silent when it fails. Every test here…, Unplugging Ollama must not break the demonstration., No LLM-suggested value may set activity_id or confidence on a real turn., The final description is the baseline's own text, so the model cannot be…, TestD006EndToEnd, TestProvenanceReachesTheAuditTrail, _turn()
+### Community 320 - "_turn"
+Cohesion: 0.19
+Nodes (6): Unplugging Ollama must not break the demonstration., No LLM-suggested value may set activity_id or confidence on a real turn., The final description is the baseline's own text, so the model cannot be…, TestD006EndToEnd, TestProvenanceReachesTheAuditTrail, _turn()
 
 ### Community 321 - "2026-09-04 / D-082 — Lateness is not delay: the slip is split against baseline float"
 Cohesion: 0.20
@@ -1545,9 +1554,9 @@ Nodes (12): cache_dir(), content_key(), load(), ndarray, Path, On-disk cache for
 Cohesion: 0.21
 Nodes (7): Indexing only `label` would leave "Pedestal Concreting" unresolvable purely…, The id encodes the type as a fact; prose is an inference., A wrong activity type on a lesson learned is worse than none., Ordering is by keyword length, so the specific beats the general., TestResolver, The canonical activity type for a description, or None. Deterministic and…, resolve()
 
-### Community 324 - "agent_llm.py"
-Cohesion: 0.24
-Nodes (10): _attr(), configured_provider(), LLMSuggestion, Optional LLM interpretation for one conversational turn. The LLM is an…, Values the model proposed, already validated. All optional. `suggested_fields`…, Keep only values that survive the deterministic validators., The provider name the operator selected, normalised. Never a secret., _validate() (+2 more)
+### Community 324 - "infer_status"
+Cohesion: 0.33
+Nodes (4): infer_status(), Infer progress status and a rough confidence., Tests for status keyword classification., TestStatusInference
 
 ### Community 325 - "VALIDATION — dataset/v2"
 Cohesion: 0.15
@@ -1589,9 +1598,9 @@ Nodes (10): 2026-09-02 / D-052 - An activity-type vocabulary from CFIHOS and Uni
 Cohesion: 0.20
 Nodes (5): Uniclass is a BUILDING taxonomy. Most EPC work has no entry, and the response…, The specific overclaim this design refuses: mapping PIP-HYT onto Ac_10_40_67…, Where a mapping exists it resolves to the actual published title., CFIHOS has no macro discipline for either. Absent, not approximated., TestStandardCoverageIsHonest
 
-### Community 335 - "llm_enabled"
-Cohesion: 0.24
-Nodes (5): llm_enabled(), llm_timeout_seconds(), True when the operator has opted in to the LLM path., Disabled must mean no import, no client, no socket, no wait., TestFlag
+### Community 335 - "test_agent_llm.py"
+Cohesion: 0.22
+Nodes (6): llm_enabled(), llm_timeout_seconds(), True when the operator has opted in to the LLM path., The LLM must be optional, bounded, and silent when it fails. Every test here…, Disabled must mean no import, no client, no socket, no wait., TestFlag
 
 ### Community 336 - "2026-09-01 / D-022 — A tag's digit count is a numbering convention, not part of what a tag is"
 Cohesion: 0.22
@@ -1753,9 +1762,13 @@ Nodes (7): 2026-09-03 / D-070 — The server migrates its own database, or the m
 Cohesion: 0.29
 Nodes (7): 2026-09-04 / D-073 — The Reconcile screen speaks the server's resolve vocabulary, Affected Areas, Alternatives Considered, Context, Decision, Trade-offs / Consequences, Verification
 
+### Community 377 - "2026-09-05 / D-084 — Earned value reads the quantity the roll-up already measured"
+Cohesion: 0.25
+Nodes (8): 2026-09-05 / D-084 — Earned value reads the quantity the roll-up already measured, Affected Areas, Alternatives Considered, Context, Decision, Measured movement, Trade-offs / Consequences, Verification
+
 ### Community 378 - "delay_events.py"
 Cohesion: 0.08
-Nodes (43): DelayEvent, adjudicate(), ConcurrencyKind, ConcurrencyStatus, days_to_notice(), effective_liability(), _evidenced_on(), is_adjudicated() (+35 more)
+Nodes (45): DelayEvent, DelayEvent, One delay, classified, with the sentence it was read from. ARCHITECTURE.md §2.7…, adjudicate(), ConcurrencyKind, ConcurrencyStatus, days_to_notice(), effective_liability() (+37 more)
 
 ### Community 379 - "2026-09-01 / D-029 - Confidence becomes a probability; the abstention model earns nothing on top of it"
 Cohesion: 0.33
@@ -1765,33 +1778,33 @@ Nodes (6): 2026-09-01 / D-029 - Confidence becomes a probability; the abstention
 Cohesion: 0.33
 Nodes (3): The critical-path pass (D-082). The riskiest code in the delay layer: every…, A schedule dated by hand and tied up afterwards can state ties its own dates…, TestAuthoredDatesVersusStatedLogic
 
-### Community 381 - "test_date_basis.py"
-Cohesion: 0.11
-Nodes (10): clean_database(), _ingest(), ingested(), fixture, A defaulted finish date must not reach the schedule. `dataset/dpr_day_10.txt`…, Each test ingests the same report, so each needs its own database: a second…, The report that produced the defect, ingested., TestDefaultedFinishIsNotWritten (+2 more)
-
 ### Community 382 - "2026-09-04 / D-079 — The report states its own provenance and its own limits"
 Cohesion: 0.22
 Nodes (9): 2026-09-04 / D-079 — The report states its own provenance and its own limits, Affected Areas, Alternatives Considered, Context, Decision, On the shapes, Trade-offs / Consequences, Verification (+1 more)
 
 ### Community 383 - "TestReviewQueue"
-Cohesion: 0.27
+Cohesion: 0.26
 Nodes (3): Test GET /review-queue and POST /review/{id}/resolve., Ingest a file and return a review item ID., TestReviewQueue
 
 ### Community 385 - "WSDOT C8078 candidate-link verification review"
 Cohesion: 0.33
 Nodes (5): Decisions worth a second look, Preliminary metrics if these labels are approved, Proposed decisions, Review method, WSDOT C8078 candidate-link verification review
 
+### Community 386 - "TestOverInstallationIsCappedAndReported"
+Cohesion: 0.29
+Nodes (4): An activity installing more than its planned quantity is usually a quantity…, CIV-FDN-1008 on the seeded corpus is exactly this: a finished node scored 100%…, A different statement from the field being absent., TestOverInstallationIsCappedAndReported
+
 ### Community 387 - "Basics.md"
 Cohesion: 0.18
 Nodes (5): Basics — start at README.md, Decision index, DECISIONS.md — Why NAVIS is built this way, Provenance of the initial entries, The 2026-08-31 historical pass (H-001 … H-027)
 
-### Community 389 - "build_near_miss_families"
-Cohesion: 0.40
-Nodes (5): build_near_miss_families(), build_near_miss_queue(), _desc_tokens(), Every group of activities a mention could genuinely fail to separate. Returns…, A shuffled work queue of (family, gold) pairs to emit as near-misses. Families…
+### Community 389 - "2026-09-04 / D-075 — D-061 is re-affirmed, and now pinned on the served engine"
+Cohesion: 0.33
+Nodes (6): 2026-09-04 / D-075 — D-061 is re-affirmed, and now pinned on the served engine, Affected Areas, Alternatives Considered, Context, Decision, Verification
 
-### Community 394 - "make_tag_free"
-Cohesion: 0.50
-Nodes (4): make_tag_free(), Repair the doubled nouns that tag substitution creates. Replacing a tag with…, Rewrite a description so no line or equipment tag survives. A matcher that can…, _tidy_substitutions()
+### Community 394 - "EVMFigures"
+Cohesion: 0.33
+Nodes (3): EVMFigures, PV/EV/SV/SPI for one grouping, plus what produced the percentages., EV / PV, or None when PV is 0. Never 0.0 as a stand-in.
 
 ### Community 395 - "TestMessageIdDedupIntegration"
 Cohesion: 0.29
@@ -1805,13 +1818,17 @@ Nodes (8): 2026-09-04 / D-081 — Concurrent delay is named, cited, and never ap
 Cohesion: 0.29
 Nodes (7): 1. Home — the state of the project, 2. Ingest — watch the pipeline, 3. Reconcile — resolve one, 4. Schedule — confirm it landed, 4a. Exposure — adjudicate what the evidence proposes, 5. Memory — the half nobody else builds, Planner lane — sign in as **Project Manager**
 
-### Community 398 - "_raid_response"
-Cohesion: 0.11
-Nodes (17): patch, create_raid_item(), list_raid(), patch_raid_item(), RaidItem, _raid_response(), One register row, with its source evidence resolved at read time., The register, highest exposure first. A scored risk outranks an unscored item,… (+9 more)
+### Community 398 - "test_raid.py"
+Cohesion: 0.04
+Nodes (30): on_event, get_db(), FastAPI dependency for DB sessions., Initialize DB and seed baseline schedule. `init_db()` rather than a bare…, startup(), compute_exposure(), ValueError, RaidValidationError (+22 more)
 
 ### Community 399 - "2026-09-01 / D-021 — Thresholds are tuned on dev and reported on test"
 Cohesion: 0.33
 Nodes (6): 2026-09-01 / D-021 — Thresholds are tuned on dev and reported on test, Affected Areas, Context, Decision, Reason, Trade-offs
+
+### Community 400 - "parse_predecessors"
+Cohesion: 0.15
+Nodes (10): parse_predecessor(), parse_predecessors(), PredecessorLink, Any, One predecessor entry, from either baseline shape. Accepts a bare id (`"CIV-…, One logic tie into an activity. `rel` is the Primavera relationship type and…, A relationship type we cannot read is a weaker signal than a predecessor…, TestPredecessors (+2 more)
 
 ### Community 401 - "NetworkSchedule"
 Cohesion: 0.29
@@ -1837,9 +1854,9 @@ Nodes (6): 8. Risk engine and pattern analysis, The Risk → Action → Response
 Cohesion: 0.40
 Nodes (5): 5. EVM in NAVIS — what is honestly possible, The honest position to present, What you can compute today, What you cannot compute, and must not fake, Where it appears, and for whom
 
-### Community 410 - "probe"
-Cohesion: 0.18
-Nodes (7): Protocol, probe(), The part of LLMBackend this module uses., Answer whether the LLM path is on and whether it actually responds. Read-only…, SupportsExtract, make_backend_from_env falls back to NullBackend; that is not 'working'., TestLLMStatusRoute
+### Community 410 - "agent_llm.py"
+Cohesion: 0.11
+Nodes (15): Protocol, _attr(), configured_provider(), LLMSuggestion, probe(), Optional LLM interpretation for one conversational turn. The LLM is an…, The part of LLMBackend this module uses., Values the model proposed, already validated. All optional. `suggested_fields`… (+7 more)
 
 ### Community 413 - "12. Evaluation module"
 Cohesion: 0.67
@@ -1850,24 +1867,24 @@ Cohesion: 0.67
 Nodes (3): 7. The verification workflow, The evidence panel — twelve elements, in this order, The rule that makes it trustworthy
 
 ## Knowledge Gaps
-- **1738 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+1733 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3142 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **54 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1746 isolated node(s):** `name`, `version`, `license`, `private`, `type` (+1741 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3159 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **46 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Session` connect `ReviewQueueItem` to `App.tsx`?**
+- **Why does `Session` connect `App.tsx` to `Activity`?**
   _High betweenness centrality (0.060) - this node is a cross-community bridge._
-- **Why does `reset_demo()` connect `ReviewQueueItem` to `main.py`, `Activity`, `test_evidence.py`?**
+- **Why does `reset_demo()` connect `Activity` to `App.tsx`, `main.py`?**
   _High betweenness centrality (0.057) - this node is a cross-community bridge._
-- **Why does `MatchingEngine` connect `MatchingEngine` to `eval_real.py`, `main.py`, `test_baseline.py`, `healthcheck.py`, `HybridRetriever`, `generate_v2_dataset.py`, `test_terminology.py`, `eval.py`, `RollupAccumulator`, `learned.py`, `main`, `test_llm_guards.py`, `test_matching.py`, `ScheduleIndex`?**
+- **Why does `MatchingEngine` connect `MatchingEngine` to `alias_key`, `main.py`, `test_server.py`, `healthcheck.py`, `HybridRetriever`, `drift_eval.py`, `harness.py`, `generate_v2_dataset.py`, `test_terminology.py`, `MiniLMEmbedder`, `Extractor`, `RollupAccumulator`, `learned.py`, `eval.py`, `test_llm_guards.py`, `test_learned.py`, `ScheduleIndex`?**
   _High betweenness centrality (0.033) - this node is a cross-community bridge._
-- **Are the 64 inferred relationships involving `Activity` (e.g. with `main()` and `concurrency()`) actually correct?**
-  _`Activity` has 64 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 65 inferred relationships involving `Activity` (e.g. with `main()` and `concurrency()`) actually correct?**
+  _`Activity` has 65 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 18 inferred relationships involving `MatchingEngine` (e.g. with `EngineConfig` and `LinkCandidate`) actually correct?**
   _`MatchingEngine` has 18 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 22 inferred relationships involving `ScheduleIndex` (e.g. with `main()` and `MatchingEngine`) actually correct?**
   _`ScheduleIndex` has 22 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `version`, `license` to the rest of the system?**
-  _1738 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1746 weakly-connected nodes found - possible documentation gaps or missing edges._

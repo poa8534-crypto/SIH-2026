@@ -445,45 +445,29 @@ class RollupAccumulator:
         uom_act = normalize_uom(rec.uom)
         qty = event.quantity
 
-        if qty is not None and _qty_swallowed_by_tag(qty, event.tags):
-            acc["notes"].append(
-                f"ignored qty {qty:g} - digits belong to a tag, not a quantity"
-            )
-            qty = None
+        # One rule, shared with the ledger that explains this accumulation.
+        # A quantity with no unit cannot be measured against a planned one:
+        # the regex pre-pass always captures a unit alongside the number, so
+        # that refusal filters LLM-supplied quantities - a model reading
+        # "All 12 pockets grouted" returns 12 with no uom, and against a 48 m3
+        # node that would silently register 25% complete. The value stays on
+        # the event for display; it just cannot drive progress.
+        counted, reason_code, note = classify_quantity(
+            qty, event.uom, event.tags, rec.planned_qty, rec.uom
+        )
+        if reason_code != QTY_NO_QUANTITY:
+            acc["notes"].append(note)
+        qty = counted
 
-        if qty is not None and uom_ev and uom_act and uom_ev != uom_act:
-            acc["notes"].append(
-                f"uom mismatch ignored: event {qty} {uom_ev} vs planned {rec.uom}"
-            )
-            qty = None
-
-        # A quantity with no unit cannot be measured against a planned
-        # quantity. The regex pre-pass always captures a unit alongside the
-        # number, so this filters LLM-supplied quantities: a model reading
-        # "All 12 pockets grouted" returns 12 with no uom, and against a
-        # 48 m3 node that would silently register 25% complete. The value
-        # stays on the event for display; it just cannot drive progress.
-        if qty is not None and not uom_ev:
-            acc["notes"].append(
-                f"unitless qty {qty:g} excluded from percent-complete "
-                f"(planned in {rec.uom or 'unknown units'})"
-            )
-            qty = None
-
-        if qty is not None and rec.planned_qty > 0:
+        if qty is not None:
             acc["installed"] += qty
             acc["has_progress"] = True
-            acc["notes"].append(f"+{qty:g} {uom_act or uom_ev or '?'}")
-        elif qty is not None and rec.planned_qty <= 0:
+        elif reason_code == QTY_NO_PLANNED_QTY:
             # A quantity with nothing to measure it against. installed/planned
             # would be qty/0, so no percentage can be derived from it; the
             # quantity is recorded as progress and the node stays short of
             # complete until a source says otherwise.
             acc["has_progress"] = True
-            acc["notes"].append(
-                f"{qty:g} {uom_ev or uom_act or '?'} reported against a node "
-                f"with no planned quantity - percent complete not derived"
-            )
         elif event.percentage is not None:
             acc["pct_events"].append(event.percentage)
             acc["has_progress"] = True
@@ -725,6 +709,69 @@ def _describe_conflicts(
             + f" - applied {chosen.isoformat()}"
         )
     return conflicts
+
+
+#: Why a reported quantity was not counted towards percent complete. `COUNTED`
+#: is the accepting case; the rest are the four refusals.
+QTY_COUNTED = "counted"
+QTY_NO_QUANTITY = "no_quantity_reported"
+QTY_TAG_DIGITS = "digits_belong_to_a_tag"
+QTY_UOM_MISMATCH = "uom_mismatch"
+QTY_UNITLESS = "unitless"
+QTY_NO_PLANNED_QTY = "node_has_no_planned_quantity"
+
+
+def classify_quantity(
+    quantity: Optional[float],
+    event_uom: Optional[str],
+    tags: Optional[list],
+    planned_qty: float,
+    planned_uom: Optional[str],
+) -> tuple[Optional[float], str, str]:
+    """Should this reported quantity count towards percent complete?
+
+    Returns `(counted_quantity, reason_code, human_reason)`. The quantity is
+    None whenever the reason is a refusal, so a caller cannot accidentally
+    accumulate a rejected reading.
+
+    EXTRACTED SO THERE IS ONE RULE, NOT TWO.
+    `RollupAccumulator.add` applies these refusals when it accumulates, and
+    `server/quantity_ledger.py` applies them again when it explains what the
+    accumulation did. Re-implementing them in the ledger would put a second
+    derivation beside the first and let the explanation drift from the answer -
+    the mistake D-048 was written about. Pure and argument-only, so both
+    callers get identical answers and it can be tested without an engine.
+    """
+    if quantity is None:
+        return None, QTY_NO_QUANTITY, "no quantity reported on this event"
+
+    uom_ev = normalize_uom(event_uom)
+    uom_act = normalize_uom(planned_uom)
+
+    if _qty_swallowed_by_tag(quantity, list(tags or [])):
+        return None, QTY_TAG_DIGITS, (
+            f"ignored qty {quantity:g} - digits belong to a tag, not a quantity"
+        )
+
+    if uom_ev and uom_act and uom_ev != uom_act:
+        return None, QTY_UOM_MISMATCH, (
+            f"uom mismatch ignored: event {quantity} {uom_ev} vs planned "
+            f"{planned_uom}"
+        )
+
+    if not uom_ev:
+        return None, QTY_UNITLESS, (
+            f"unitless qty {quantity:g} excluded from percent-complete "
+            f"(planned in {planned_uom or 'unknown units'})"
+        )
+
+    if planned_qty is None or planned_qty <= 0:
+        return None, QTY_NO_PLANNED_QTY, (
+            f"{quantity:g} {uom_ev or uom_act or '?'} reported against a node "
+            f"with no planned quantity - percent complete not derived"
+        )
+
+    return quantity, QTY_COUNTED, f"+{quantity:g} {uom_act or uom_ev or '?'}"
 
 
 def _qty_swallowed_by_tag(qty: float, tags: list[str]) -> bool:

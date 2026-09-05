@@ -7,6 +7,7 @@ Endpoints:
   POST /review/{id}/resolve planner confirms/reassigns/creates activity
   GET  /schedule            planned vs actual, variance in days
   POST /schedule/export     emit PMXML (XER as stretch)
+  GET  /activity/{id}/quantity  the readings behind one activity's installed qty
   GET  /delay/attribution   delay attribution matrix (category, liability, citation)
   POST /delay/{id}/classify planner rules on who carries one delay
   POST /delay/{id}/notice   planner records contractual notice for one delay
@@ -52,6 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.textio import read_text
 from server import agent_llm
 from server import delay_report
+from server import quantity_ledger
 from server.delay_events import (
     adjudicate as adjudicate_delay,
     attribution as delay_attribution,
@@ -174,6 +176,8 @@ from .schemas import (
     DelayEventOut,
     DelayNoticeRequest,
     DelayNoticeResponse,
+    QuantityContribution,
+    QuantityLedgerResponse,
     DelayReason,
     DurationDistribution,
     AuditFeedItem,
@@ -3452,6 +3456,32 @@ def get_delay_report(
     return Response(
         content=delay_report.to_html(context),
         media_type="text/html; charset=utf-8",
+    )
+
+
+# ── GET /activity/{activity_id}/quantity ─────────────────────────────────────
+
+@app.get("/activity/{activity_id}/quantity", response_model=QuantityLedgerResponse)
+def get_quantity_ledger(activity_id: str, db: Session = Depends(get_db)):
+    """The arithmetic behind one activity's installed quantity.
+
+    Which report contributed how much, from which line of which file - and,
+    the part that was never visible anywhere in the product, **which readings
+    the roll-up refused to count and why**. A ledger showing 800 of 1200 m
+    without saying that another reading was thrown away for a unit mismatch is
+    a ledger hiding its own judgement.
+
+    Derived on every request from the linked events and the activity, using
+    `matching.engine.classify_quantity` - the same function the roll-up itself
+    calls, so the explanation cannot drift from the answer it explains.
+    """
+    data = quantity_ledger.ledger(db, activity_id)
+    if data is None:
+        raise HTTPException(404, f"Activity {activity_id} not found")
+    return QuantityLedgerResponse(
+        **{**data, "contributions": [
+            QuantityContribution(**c) for c in data["contributions"]
+        ]}
     )
 
 

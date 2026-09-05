@@ -7640,3 +7640,137 @@ coverage is 55%, below the 60% `HEADLINE_COVERAGE_MIN` threshold, so
 `spi_headline_safe` stays false and the executive screen keeps its banner. The
 fix raises coverage by ten points; it does not make the whole-project figure
 trustworthy, and nothing here pretends otherwise.
+
+---
+
+## 2026-09-05 / D-085 — The quantity ledger, and two things it found on its first run
+
+### Context
+Phase 1 of the Granularity Resolution Engine. `RollupAccumulator` has always
+answered "what portion of the planned activity does this field event
+represent", but nothing ever showed the arithmetic: which report contributed
+how much, from which line of which file, and — the part that matters more —
+**which readings it refused to count, and why**.
+
+Those refusals were computed on every ingest and dropped on the floor.
+`RollupResult.notes` carries them; `grep "\.notes" server/main.py` returned
+nothing.
+
+### Decision
+`GET /activity/{activity_id}/quantity`, served by
+`server/quantity_ledger.py`. Derived on every request from the linked events
+and the activity — nothing stored, so it cannot go stale against a baseline
+re-import, exactly as the RAID candidates and the Memory screen are derived.
+
+**One rule, not two.** The four refusals — tag digits, unit mismatch, unitless,
+no planned quantity — were inlined in `RollupAccumulator.add`. They are now
+`matching.engine.classify_quantity`, a pure function the accumulator calls when
+it accumulates and the ledger calls when it explains. An explanation derived by
+a second copy of the rules would drift from the answer it claims to explain,
+which is the mistake D-048 was written about. The extraction changed no
+behaviour: 194 matching tests and the full 1066 passed before the ledger was
+added.
+
+**A refusal is reported as a decision, not an absence.** An event that never
+carried a quantity is counted separately (`events_without_quantity`) from one
+the roll-up actively declined (`refused_events`), because presenting a silent
+event as a rejection would be as misleading as hiding a rejection.
+
+### What it found on the demo corpus, immediately
+
+**1. A refused reading that changes the answer.** `ELE-CBL-1076` reads 800 of
+1200 m — 66.7%. The ledger shows why it is not more: a second reading of
+**1.2 km** from `dpr_day_05.txt` was refused for a unit mismatch against a node
+planned in metres. 1.2 km is 1200 m, which would have completed the activity.
+The refusal is correct — the UOM map has no km→m conversion — but it was
+invisible to everyone, and it is exactly the kind of thing a ledger exists to
+surface.
+
+**2. `actual_qty` is not always a measurement.** `_apply_rollup_to_schedule`
+writes `new_qty = installed_qty`, and then:
+
+```python
+if new_qty <= 0 and r.percent_complete > 0 and act.planned_qty:
+    new_qty = round(r.percent_complete / 100.0 * act.planned_qty, 3)
+```
+
+So when no quantity was counted but a source asserted a PERCENTAGE, the
+schedule stores a quantity **back-derived from that percentage**.
+`PIP-SPL-1025` holds 18 of 18 nos with no quantity on any linked event at all,
+because one line said 100%. Across the corpus:
+
+```
+stored_total_basis        counted_readings         91
+                          derived_from_percentage  28
+                          unattributed              1
+```
+
+The ledger names which kind of number the schedule is holding rather than
+reporting a disagreement it does not have. The single `unattributed` row,
+`PIP-SPL-1026`, is both mechanisms at once: 8 nos counted in one ingest, 12
+stored from a percentage-derived write in another.
+
+**This qualifies D-084, shipped an hour earlier.** `percent_complete` labels
+its answer `installed_quantity` whenever `actual_qty / planned_qty` produces
+it — and for those 28 rows that label describes the arithmetic rather than the
+evidence, because the quantity was itself computed from an asserted percentage.
+The arithmetic is unchanged and correct; the provenance label is imprecise.
+Recorded here rather than quietly re-engineered, because changing what
+`actual_qty` means is a decision about the write path and deserves its own
+entry.
+
+### A correction made mid-phase
+The first version of this module summed every accepted reading and compared
+that against `actual_qty`. That is wrong: the schedule writes
+`actual_qty = max(current, rolled-up installed)` — monotonic, so a partial
+re-ingest can never wipe recorded progress — and across two ingests it
+therefore holds the LARGER accumulation, not their sum. The ledger now groups
+by job, sums within each, and compares the largest. `naive_sum_all_jobs` is
+reported beside it because the difference is meaningful: it is the quantity
+reported more than once, and on `CIV-FDN-1008` it is why that node reads 150%
+(120 m³ in one ingest, 180 m³ in another, `max` keeping 180 against a planned
+120).
+
+### Alternatives Considered
+- **Persist the roll-up's notes at ingest.** Rejected: they are fully
+  derivable from the linked events and the activity, and a stored explanation
+  would go stale the moment a baseline re-import changed a node's unit or
+  planned quantity.
+- **Re-implement the refusals in the ledger.** Rejected — see the shared-rule
+  argument above.
+- **Report only the counted readings.** Rejected. The refusals are the reason
+  the endpoint is worth having.
+- **Fix the percentage back-derivation now.** Deferred to its own decision. It
+  changes what `actual_qty` means across the EVM stack, the Schedule screen and
+  the roll-up, and folding it into a read-only reporting phase would have been
+  a schema-semantics change smuggled in under a ledger.
+
+### Verification
+`python -m pytest -q` — 1083 passed, up from 1066. The 17 new tests in
+`server/test_quantity_ledger.py` cover each of the five classifier outcomes
+plus the not-a-refusal case, the ledger explaining a counted total, every
+contribution carrying its citation, a refused reading shown with its reason and
+excluded from the total, the max-across-ingests rule with its naive sum beside
+it, an uncapped over-report, a percentage-derived total named as one, an
+unattributed total, and both endpoint paths.
+
+`scripts/reset_demo.py` then `scripts/healthcheck.py` against a running server
+— 35 endpoints exposed, expected 35; 31 checks passed. `matching/` behaviour is
+unchanged by the extraction and no threshold moved, so `eval.py` is not
+implicated.
+
+### Affected Areas
+`matching/engine.py` (`classify_quantity` and its reason codes, extracted from
+`RollupAccumulator.add`), `server/quantity_ledger.py` (new),
+`server/test_quantity_ledger.py` (new), `server/main.py` (endpoint),
+`server/schemas.py`, `scripts/healthcheck.py` (34 → 35).
+
+### Trade-offs / Consequences
+The ledger is O(events for one activity) per request and derived every time,
+which is right at this scale and would want caching on a project with thousands
+of readings against one node. More importantly, it can only explain what the
+`LinkedEvent` rows carry: where the roll-up counted a quantity the persisted
+event no longer holds, the ledger reports `derived_from_percentage` or
+`unattributed` rather than inventing an attribution. That is the honest answer,
+and the 28 rows it applies to are a prompt to fix the write path, not the
+reader.

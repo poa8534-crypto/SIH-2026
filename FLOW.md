@@ -1291,6 +1291,59 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 1 of the Granularity Resolution Engine — the quantity ledger.
+`GET /activity/{id}/quantity` shows which readings built an activity's
+installed quantity and, more to the point, which the roll-up refused and why.
+**Date:** 2026-09-05 · **Decision:** D-085
+
+```
+QUANTITY LEDGER — THE ARITHMETIC, AND THE REFUSALS          (D-085)
+
+  matching/engine.py  classify_quantity(qty, uom, tags, planned_qty,
+                                        planned_uom) -> (counted, code, note)
+    pure; no engine, no DB. EXTRACTED from RollupAccumulator.add so the
+    accumulation and its explanation cannot use different rules (D-048).
+      counted                     +34 m
+      digits_belong_to_a_tag      "P-1001" -> 1001 is not a quantity
+      uom_mismatch                1.2 km against a node planned in m
+      unitless                    "All 12 pockets grouted" -> 12, no unit
+      node_has_no_planned_quantity
+      no_quantity_reported        NOT a refusal - nothing to refuse
+
+  CALLED BY
+    matching/engine.py  RollupAccumulator.add()     when it accumulates
+    server/quantity_ledger.py  _contribution()      when it explains
+
+  server/quantity_ledger.py  ledger(db, activity_id)   derived, nothing stored
+      contributions[]   every linked event, counted or refused, each with
+                        job_id, quantity, uom, percentage, reason, and the
+                        file/line/row/span citation
+      counted_total     MAX of the per-job sums, because the schedule writes
+                        actual_qty = max(current, rolled-up installed)
+      naive_sum_all_jobs   every reading added; the difference from
+                           counted_total is work reported twice
+      stored_total_basis   counted_readings (91) / derived_from_percentage (28)
+                           / unattributed (1)
+                           -- _apply_rollup_to_schedule back-derives a quantity
+                              from an asserted percentage when nothing was
+                              counted, so a stored quantity is not always a
+                              measurement. Qualifies D-084's source label.
+      raw_percent_from_quantity   uncapped, so an over-report is visible
+
+  GET /activity/{activity_id}/quantity   404 on an unknown activity
+
+  FOUND ON THE CORPUS
+    ELE-CBL-1076  800/1200 m = 66.7%, and a 1.2 km reading REFUSED for a unit
+                  mismatch - 1200 m, which would have completed the node
+    CIV-FDN-1008  120 m3 in one ingest, 180 in another; max keeps 180 against
+                  a planned 120, which is the 150% D-084 caps
+  Pinned by server/test_quantity_ledger.py (17 tests).
+```
+
+---
+
+### Previous modification area (D-084)
+
 **Task:** Phase 0 of the Granularity Resolution Engine — earned value now reads
 the installed quantity the roll-up already measured. A defect fix: eleven
 in-progress activities were scoring 0% with reported quantity progress.
