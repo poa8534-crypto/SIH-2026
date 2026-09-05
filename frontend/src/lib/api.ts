@@ -26,7 +26,10 @@ import {
   ReviewItem,
   ScheduleResponse,
   TenderEstimateRequest,
-  TenderEstimateResponse
+  TenderEstimateResponse,
+  KnowledgeRule,
+  KnowledgeRulesResponse,
+  ScheduleAuditResponse,
 } from '../types';
 
 export class ApiError extends Error {
@@ -279,6 +282,17 @@ export const api = {
    */
   getExecutiveMetrics: (): Promise<ExecutiveMetricsResponse> => fetchWithHandler('/executive/metrics'),
 
+  /** AI Schedule Feasibility & Knowledge Auditor ("Schedule Doctor") */
+  getScheduleAudit: (): Promise<ScheduleAuditResponse> => fetchWithHandler('/schedule/audit'),
+
+  /** Institutional Knowledge Base & Domain Rules */
+  getKnowledgeRules: (): Promise<KnowledgeRulesResponse> => fetchWithHandler('/knowledge/rules'),
+  addKnowledgeRule: (rule: KnowledgeRule): Promise<{ status: string; rule_id: string }> =>
+    fetchWithHandler('/knowledge/rules', {
+      method: 'POST',
+      body: JSON.stringify(rule),
+      headers: { 'Content-Type': 'application/json' },
+    }),
 
   /**
    * The RAID register. Only entries a planner has accepted appear here;

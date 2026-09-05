@@ -55,6 +55,8 @@ from extraction.textio import read_text
 from server import agent_llm
 from server import delay_report
 from server import executive_metrics
+from server import schedule_auditor
+from server.knowledge_base import knowledge_base, KnowledgeRuleDef
 from server import productivity
 from server import quantity_ledger
 from server.delay_events import (
@@ -225,6 +227,10 @@ from .schemas import (
     ScheduleResponse,
     SuggestedDuration,
     SlotState,
+    KnowledgeRule,
+    KnowledgeRulesResponse,
+    ScheduleAuditFinding,
+    ScheduleAuditResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -2624,6 +2630,86 @@ def get_executive_metrics(db: Session = Depends(get_db)):
     and ground-truth evidence coverage.
     """
     return executive_metrics.compute_executive_metrics(db, DATA_DATE)
+
+
+# ── Schedule Feasibility & Knowledge Auditor ────────────────────────────────
+
+@app.get("/schedule/audit", response_model=ScheduleAuditResponse)
+def get_schedule_audit(db: Session = Depends(get_db)):
+    """Run comprehensive AI feasibility & knowledge audit on active baseline."""
+    activities = db.query(Activity).all()
+    version = get_active_baseline(db)
+    name = version.name if version else "OIL Pipeline Sector 04"
+    return schedule_auditor.audit_schedule(activities, schedule_name=name, db=db)
+
+
+@app.post("/schedule/audit", response_model=ScheduleAuditResponse)
+async def post_schedule_audit(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Audit an uploaded schedule file (.json, .xml, .xer) in-memory without baselining."""
+    import tempfile
+    filename = file.filename or "uploaded_schedule.json"
+    suffix = Path(filename).suffix.lower()
+    if suffix not in BASELINE_IMPORT_SUFFIXES:
+        raise HTTPException(
+            400,
+            f"Unsupported format '{suffix}'. Supported: {', '.join(BASELINE_IMPORT_SUFFIXES)}",
+        )
+    content = await file.read()
+    if not content:
+        raise HTTPException(400, "Uploaded schedule file is empty")
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        provider_cls = _BASELINE_PROVIDERS[suffix]
+        if provider_cls is JsonScheduleProvider:
+            provider = provider_cls(tmp_path, name=Path(filename).stem, filename=Path(filename).name)
+        else:
+            provider = provider_cls(tmp_path, name=Path(filename).stem)
+        activities = provider.read_activities()
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    if not activities:
+        raise HTTPException(400, "Schedule contains no activities")
+
+    return schedule_auditor.audit_schedule(activities, schedule_name=Path(filename).stem, db=db)
+
+
+@app.get("/knowledge/rules", response_model=KnowledgeRulesResponse)
+def get_knowledge_rules():
+    """Retrieve active institutional engineering, environmental, and DCMA rules."""
+    rules = knowledge_base.get_all()
+    categories = {}
+    for r in rules:
+        categories[r.category] = categories.get(r.category, 0) + 1
+    return KnowledgeRulesResponse(
+        rules=[KnowledgeRule(**r.to_dict()) for r in rules],
+        total_rules=len(rules),
+        categories=categories,
+    )
+
+
+@app.post("/knowledge/rules")
+def add_knowledge_rule(rule: KnowledgeRule):
+    """Register or update an institutional domain rule."""
+    r_def = KnowledgeRuleDef(
+        id=rule.id,
+        category=rule.category,
+        title=rule.title,
+        description=rule.description,
+        condition_trigger=rule.condition_trigger,
+        impact_recommendation=rule.impact_recommendation,
+        severity=rule.severity,
+        active=rule.active,
+    )
+    knowledge_base.add(r_def)
+    return {"status": "success", "rule_id": rule.id}
 # ── GET /field/notifications ────────────────────────────────────────────────
 
 @app.get("/field/notifications", response_model=list[FieldNotification])

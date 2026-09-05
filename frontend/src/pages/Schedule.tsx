@@ -7,7 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { CalendarRange, Download, Flame, LayoutList, ListFilter, Lock, X } from 'lucide-react';
+import { CalendarRange, Download, Flame, LayoutList, ListFilter, Lock, Sparkles, X } from 'lucide-react';
 import { api, errorDetail, getBaseUrl } from '../lib/api';
 import {
   AuditRecord,
@@ -20,6 +20,7 @@ import { DISCIPLINES } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { GanttChart } from '../components/GanttChart';
+import { ScheduleDoctor } from '../components/ScheduleDoctor';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { auditActor, auditActorLabel } from '../lib/audit';
 import { Button, EmptyState, ErrorState, SectionTitle, Skeleton } from '../components/ui';
@@ -631,7 +632,7 @@ export default function Schedule() {
   const [onlyActuals, setOnlyActuals] = useState(false);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
   const [onlyCritical, setOnlyCritical] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'gantt'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>('table');
   // The Ingest screen links auto-linked events here as /schedule?activity=ID.
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinked = searchParams.get('activity');
@@ -967,6 +968,18 @@ export default function Schedule() {
             <CalendarRange size={12} />
             Gantt Chart
           </button>
+          <button
+            onClick={() => setViewMode('doctor')}
+            className={`px-2.5 py-1 text-label font-mono border-l border-hair flex items-center gap-1.5 transition-colors ${
+              viewMode === 'doctor'
+                ? 'bg-selected text-accent font-semibold'
+                : 'text-muted hover:text-fg'
+            }`}
+            title="AI Schedule Feasibility & Knowledge Auditor"
+          >
+            <Sparkles size={12} className="text-amber-500" />
+            Schedule Doctor
+          </button>
         </div>
 
         <select
@@ -1121,7 +1134,7 @@ export default function Schedule() {
             <EmptyState>No activities match the filter.</EmptyState>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'gantt' ? (
         <div className="flex-1 min-h-0">
           <GanttChart
             activities={rows}
@@ -1129,6 +1142,10 @@ export default function Schedule() {
             onSelectActivity={(id) => setSelectedId(id)}
             dataDate={data?.data_date}
           />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <ScheduleDoctor />
         </div>
       )}
 

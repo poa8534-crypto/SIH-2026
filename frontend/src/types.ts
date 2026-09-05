@@ -945,3 +945,51 @@ export interface ExecutiveMetricsResponse {
   milestones: ExecutiveMilestone[];
 }
 
+// ── Schedule Feasibility & Knowledge Auditor ────────────────────────────────
+
+export interface KnowledgeRule {
+  id: string;
+  category: 'environmental' | 'engineering' | 'logistics' | 'dcma_quality' | 'contractor' | string;
+  title: string;
+  description: string;
+  condition_trigger: string;
+  impact_recommendation: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | string;
+  active: boolean;
+}
+
+export interface KnowledgeRulesResponse {
+  rules: KnowledgeRule[];
+  total_rules: number;
+  categories: Record<string, number>;
+}
+
+export interface ScheduleAuditFinding {
+  id: string;
+  activity_id?: string | null;
+  activity_description?: string | null;
+  discipline?: string | null;
+  category: 'duration_optimism' | 'dcma_logic' | 'monsoon_weather' | 'productivity_unrealistic' | 'engineering_rule' | string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  planned_value?: string | null;
+  benchmark_value?: string | null;
+  variance_pct?: number | null;
+  critique_message: string;
+  rule_reference?: string | null;
+  calibrated_recommendation?: string | null;
+}
+
+export interface ScheduleAuditResponse {
+  audit_id: string;
+  schedule_name: string;
+  data_date?: string | null;
+  total_activities: number;
+  feasibility_score: number;
+  feasibility_band: 'FEASIBLE' | 'MODERATE_RISK' | 'CRITICAL_RISK' | string;
+  score_breakdown: Record<string, number>;
+  summary: Record<string, number>;
+  findings: ScheduleAuditFinding[];
+  calibrated_schedule_snippet?: string | null;
+  audited_at: string;
+}
+

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { BookOpen, CheckCircle2, Layers, ShieldAlert, Sparkles, Umbrella } from 'lucide-react';
 import { api } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { EmptyState, ErrorState, Panel, Skeleton } from '../components/ui';
@@ -7,6 +8,8 @@ import { DISCIPLINE_AXIS, DISCIPLINE_ORDER } from '../config';
 import {
   DelayReasonRow,
   DurationDistribution,
+  KnowledgeRule,
+  KnowledgeRulesResponse,
   ProductivityMetric,
 } from '../types';
 import { TenderEstimator } from '../components/TenderEstimator';
@@ -387,11 +390,139 @@ function SuggestedDurationPanel({
   );
 }
 
+// ── Knowledge Base View ─────────────────────────────────────────────────────
+
+function KnowledgeBaseView() {
+  const [selectedCat, setSelectedCat] = useState<string>('all');
+  const { data: kbData, isLoading, error } = useQuery<KnowledgeRulesResponse>({
+    queryKey: ['knowledge-rules'],
+    queryFn: api.getKnowledgeRules,
+  });
+
+  if (isLoading) return <Skeleton height="h-64" className="w-full" />;
+  if (error || !kbData) return <ErrorState error={error ?? new Error('Failed to load rules')} />;
+
+  const rules = kbData.rules.filter(
+    (r) => selectedCat === 'all' || r.category === selectedCat
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Category Pills Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-raised border border-hair rounded-xl p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setSelectedCat('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            All Domain Rules ({kbData.total_rules})
+          </button>
+          <button
+            onClick={() => setSelectedCat('environmental')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'environmental' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            Environmental & Weather ({kbData.categories.environmental ?? 0})
+          </button>
+          <button
+            onClick={() => setSelectedCat('engineering')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'engineering' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            Engineering Specs ({kbData.categories.engineering ?? 0})
+          </button>
+          <button
+            onClick={() => setSelectedCat('dcma_quality')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'dcma_quality' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            DCMA 14-Point Standards ({kbData.categories.dcma_quality ?? 0})
+          </button>
+          <button
+            onClick={() => setSelectedCat('logistics')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'logistics' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            Logistics & Permits ({kbData.categories.logistics ?? 0})
+          </button>
+          <button
+            onClick={() => setSelectedCat('contractor')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCat === 'contractor' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            }`}
+          >
+            Contractor Benchmarks ({kbData.categories.contractor ?? 0})
+          </button>
+        </div>
+
+        <span className="text-xs text-muted font-mono flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          Active Enforced Guardrails
+        </span>
+      </div>
+
+      {/* Rules Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {rules.map((rule) => (
+          <div
+            key={rule.id}
+            className="border border-hair rounded-xl p-5 bg-raised shadow-xs flex flex-col justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase bg-surface text-muted border border-hair">
+                  {rule.id}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                    rule.severity === 'critical'
+                      ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                  }`}
+                >
+                  {rule.severity}
+                </span>
+              </div>
+              <h4 className="font-semibold text-body text-heading mb-1.5">
+                {rule.title}
+              </h4>
+              <p className="text-xs text-muted leading-relaxed">
+                {rule.description}
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-hair flex flex-col gap-2 text-xs">
+              <div className="bg-surface rounded-lg p-2.5 border border-hair">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-muted block mb-1">
+                  Schedule Audit Trigger:
+                </span>
+                <span className="text-fg">{rule.condition_trigger}</span>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/40 rounded-lg p-2.5 border border-blue-200 dark:border-blue-900/60 text-blue-900 dark:text-blue-300">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-blue-600 dark:text-blue-400 block mb-1">
+                  Enforced AI Prescription:
+                </span>
+                <span>{rule.impact_recommendation}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Memory() {
   usePageHeader('Memory', 'What past durations say about the ones still planned.', '/memory');
-  const [activeTab, setActiveTab] = useState<'historical' | 'estimator'>('historical');
+  const [activeTab, setActiveTab] = useState<'historical' | 'estimator' | 'knowledge'>('historical');
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['memory', 'all'],
     queryFn: () => api.queryMemory({ query_type: 'all' }),
@@ -431,7 +562,9 @@ export default function Memory() {
           <p className="text-body text-muted max-w-2xl leading-relaxed">
             {activeTab === 'historical'
               ? 'Execution metrics computed from verified site diaries and field measurements against baseline plans.'
-              : 'Empirical duration forecasts and delay buffer calibration for upcoming project tenders.'}
+              : activeTab === 'estimator'
+              ? 'Empirical duration forecasts and delay buffer calibration for upcoming project tenders.'
+              : 'Institutional domain rules, environmental weather constraints, and DCMA schedule standards enforced by NAVIS AI.'}
           </p>
         </div>
         <div className="inline-flex rounded-lg border border-hair bg-raised p-1 shadow-xs">
@@ -458,6 +591,19 @@ export default function Memory() {
             <span>Tender Estimator</span>
             <span className="px-1.5 py-0.2 rounded text-label bg-accent/20 text-accent font-mono">v2</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('knowledge')}
+            className={`px-3 py-1.5 text-label font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+              activeTab === 'knowledge'
+                ? 'bg-selected text-accent font-semibold shadow-xs'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Knowledge Base</span>
+            <span className="px-1.5 py-0.2 rounded text-label bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono">7</span>
+          </button>
         </div>
       </div>
 
@@ -479,8 +625,10 @@ export default function Memory() {
             <DelayCauses rows={delays} />
           </Panel>
         </div>
-      ) : (
+      ) : activeTab === 'estimator' ? (
         <TenderEstimator durations={durations} />
+      ) : (
+        <KnowledgeBaseView />
       )}
 
       {data && (

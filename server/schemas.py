@@ -1247,3 +1247,51 @@ class AgentTurnResponse(BaseModel):
     # supervisor's words. Surfaced so a client *can* mark them; no frontend
     # reads it yet. Always empty when the LLM is off, which is the default.
     llm_suggested_fields: list[str] = []
+
+
+# ── Knowledge Base & Schedule Feasibility Audit ──────────────────────────────
+
+class KnowledgeRule(BaseModel):
+    id: str
+    category: str  # environmental | engineering | logistics | dcma_quality | contractor
+    title: str
+    description: str
+    condition_trigger: str
+    impact_recommendation: str
+    severity: str  # critical | warning | advisory
+    active: bool = True
+
+
+class KnowledgeRulesResponse(BaseModel):
+    rules: list[KnowledgeRule] = []
+    total_rules: int = 0
+    categories: dict[str, int] = {}
+
+
+class ScheduleAuditFinding(BaseModel):
+    id: str
+    activity_id: Optional[str] = None
+    activity_description: Optional[str] = None
+    discipline: Optional[str] = None
+    category: str  # duration_optimism | dcma_logic | monsoon_weather | productivity_unrealistic | engineering_rule
+    severity: str  # critical | high | medium | low
+    planned_value: Optional[str] = None
+    benchmark_value: Optional[str] = None
+    variance_pct: Optional[float] = None
+    critique_message: str
+    rule_reference: Optional[str] = None
+    calibrated_recommendation: Optional[str] = None
+
+
+class ScheduleAuditResponse(BaseModel):
+    audit_id: str
+    schedule_name: str
+    data_date: Optional[str] = None
+    total_activities: int
+    feasibility_score: int
+    feasibility_band: str  # FEASIBLE | MODERATE_RISK | CRITICAL_RISK
+    score_breakdown: dict[str, int]
+    summary: dict[str, int]
+    findings: list[ScheduleAuditFinding] = []
+    calibrated_schedule_snippet: Optional[str] = None
+    audited_at: datetime
