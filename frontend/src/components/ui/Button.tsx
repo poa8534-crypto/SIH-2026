@@ -25,21 +25,21 @@ export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'icon
 export type ButtonSize = 'md' | 'sm' | 'xs';
 
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-accent-fg hover:bg-accent-hover',
-  secondary: 'bg-raised border border-accent text-accent hover:bg-selected',
-  danger: 'bg-raised border border-danger-line text-danger hover:bg-danger-bg',
-  ghost: 'text-accent hover:bg-selected',
+  primary: 'bg-accent text-accent-fg hover:bg-accent-hover font-medium shadow-none',
+  secondary: 'bg-raised border border-hair text-fg hover:bg-selected hover:border-strong font-medium shadow-none',
+  danger: 'bg-raised border border-danger-line text-danger hover:bg-danger-bg font-medium shadow-none',
+  ghost: 'text-muted hover:text-fg hover:bg-selected font-medium',
   icon: '',
 };
 
-/** Rectangular sizing. One padding pair per size, everywhere. */
+/** Rectangular sizing. Clean and restrained. */
 const RECT_SIZE: Record<ButtonSize, string> = {
-  md: 'text-lead font-semibold px-5 py-3',
-  sm: 'text-label font-mono font-bold uppercase px-5 py-3',
-  xs: 'text-label font-mono uppercase px-3 h-7',
+  md: 'text-lead font-medium px-4 py-2.5',
+  sm: 'text-body font-medium px-3 py-1.5',
+  xs: 'text-label font-medium px-2.5 h-7',
 };
 
-/** Pill sizing. Same two type steps, so a chip and a button agree. */
+/** Pill sizing. Same clean type steps. */
 const PILL_SIZE: Record<ButtonSize, string> = {
   md: 'text-lead font-medium px-4 py-2',
   sm: 'text-label font-medium px-3 py-1',
@@ -52,8 +52,8 @@ const PILL_SIZE: Record<ButtonSize, string> = {
  * the agent's suggestion chips from the filter chips above them.
  */
 const TOGGLE = {
-  on: 'border border-accent bg-selected text-accent',
-  off: 'border border-hair bg-raised text-muted hover:bg-selected hover:text-accent',
+  on: 'border border-strong bg-selected text-fg font-medium',
+  off: 'border border-hair bg-raised text-muted hover:bg-selected hover:text-fg',
 };
 
 interface BaseProps {

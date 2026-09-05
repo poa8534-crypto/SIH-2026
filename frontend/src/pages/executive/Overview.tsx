@@ -126,12 +126,12 @@ export default function ExecutiveOverview() {
   const dataDateX = dataDateIndex >= 0 ? getX(dataDateIndex) : getX(Math.floor(pointsCount / 2));
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 font-sans">
-      {/* Top Strategic Telemetry Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-6 font-sans">
+      {/* Top Strategic Context Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-hair">
         <div>
-          <div className="flex items-center gap-2 font-mono text-xs text-slate-500 mb-1">
-            <span className="font-bold text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
+            <span className="font-semibold text-fg">
               PORTFOLIO: SECTOR 04 // ONSHORE ASSETS
             </span>
             <span>·</span>
@@ -141,24 +141,24 @@ export default function ExecutiveOverview() {
                 : 'CONTRACT VALUE NOT SUPPLIED'}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-h1 font-semibold tracking-tight text-heading">
             Executive Schedule &amp; Financial Risk Intelligence
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-body text-muted leading-relaxed">
             Real-time C-suite governance: float erosion, EVM S-Curve trajectory, and FIDIC dispute liability.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-900">
+        <div className="flex flex-wrap items-center gap-2 text-label font-mono">
+          <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
             FIDIC 1999 CLAUSE 20.1 / 8.4
           </span>
-          <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+          <span className="px-2.5 py-1 rounded-full bg-surface text-muted font-medium border border-hair">
             PRIMAVERA P6 REV-08
           </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-900">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            Live Schedule Synchronization
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface text-ok font-medium border border-hair">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+            Verified P6 Baseline Active
           </span>
         </div>
       </div>
@@ -170,79 +170,75 @@ export default function ExecutiveOverview() {
           {/* Top 4 KPI Strategic Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: SPI */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+            <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase tracking-wider mb-2">
+                <div className="flex items-center justify-between text-label font-mono text-muted uppercase tracking-wider mb-2">
                   <span>Schedule Performance</span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                       kpis?.spi && kpis.spi >= 0.95
-                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                        ? 'border-ok/30 bg-ok/10 text-ok'
                         : kpis?.spi && kpis.spi >= 0.85
-                        ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                        : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                        ? 'border-warn/30 bg-warn/10 text-warn'
+                        : 'border-danger/30 bg-danger/10 text-danger'
                     }`}
                   >
                     {dash(kpis?.spi_band)}
                   </span>
                 </div>
-                <div className="text-4xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tight">
+                <div className="text-4xl font-extrabold text-heading font-mono tracking-tight">
                   {dash(kpis?.spi ?? null, 2)}
                 </div>
               </div>
-              <div className="mt-3 text-xs text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="mt-3 text-label text-muted pt-3 border-t border-hair flex items-center justify-between">
                 <span>Earned / Planned:</span>
-                <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                <span className="font-mono font-bold text-fg">
                   {Math.round(kpis?.ev_total ?? 0)} / {Math.round(kpis?.pv_total ?? 0)} days
                 </span>
               </div>
             </div>
 
             {/* KPI 2: Critical Path Float Drift */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+            <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase tracking-wider mb-2">
+                <div className="flex items-center justify-between text-label font-mono text-muted uppercase tracking-wider mb-2">
                   <span>Critical Path Drift</span>
-                  <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full border border-danger/30 bg-danger/10 text-danger text-[10px] font-bold">
                     {dash(kpis?.critical_activities_count)} Critical Acts
                   </span>
                 </div>
-                <div className="text-4xl font-extrabold text-rose-600 dark:text-rose-400 font-mono tracking-tight">
+                <div className="text-4xl font-extrabold text-danger font-mono tracking-tight">
                   {kpis?.float_drift_days === undefined
                     ? '—'
                     : `${kpis.float_drift_days > 0 ? '+' : ''}${kpis.float_drift_days}d`}
                 </div>
               </div>
-              <div className="mt-3 text-xs text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="mt-3 text-label text-muted pt-3 border-t border-hair flex items-center justify-between">
                 <span>COD Exposure:</span>
-                <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                <span className="font-mono font-bold text-danger">
                   {dash(forecast?.current_forecast_finish)}
                 </span>
               </div>
             </div>
 
             {/* KPI 3: Contractual Dispute Shield Exposure */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+            <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase tracking-wider mb-2">
+                <div className="flex items-center justify-between text-label font-mono text-muted uppercase tracking-wider mb-2">
                   <span>FIDIC Dispute Exposure</span>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full border border-hair bg-surface text-muted text-[10px] font-bold">
                     Clause 20.1
                   </span>
                 </div>
-                {/* Days, unless the operator supplied a contract to price
-                    them against. The unit is stated either way, because a
-                    bare number beside "FIDIC Dispute Exposure" reads as
-                    money. */}
-                <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono tracking-tight">
+                <div className="text-3xl font-extrabold text-fg font-mono tracking-tight">
                   {financial?.available && financial.employer_claim_cr !== null
                     ? `₹${financial.employer_claim_cr.toFixed(2)} Cr`
                     : `${dash(dispute?.employer_delay_days)} days`}
                 </div>
               </div>
-              <div className="mt-3 text-xs text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="mt-3 text-label text-muted pt-3 border-t border-hair flex items-center justify-between">
                 <span>Contractor LD Risk:</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                <span className="font-mono font-bold text-warn">
                   {financial?.available && financial.contractor_ld_risk_cr !== null
                     ? `₹${financial.contractor_ld_risk_cr.toFixed(2)} Cr`
                     : `${dash(dispute?.contractor_delay_days)} days`}
@@ -251,21 +247,21 @@ export default function ExecutiveOverview() {
             </div>
 
             {/* KPI 4: Evidence Integrity Coverage */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+            <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs font-mono text-slate-500 uppercase tracking-wider mb-2">
+                <div className="flex items-center justify-between text-label font-mono text-muted uppercase tracking-wider mb-2">
                   <span>Evidence Integrity</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-full border border-ok/30 bg-ok/10 text-ok text-[10px] font-bold">
                     Audit Grade
                   </span>
                 </div>
-                <div className="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                <div className="text-4xl font-extrabold text-ok font-mono tracking-tight">
                   {dash(kpis?.evidence_coverage_pct ?? null, 1)}%
                 </div>
               </div>
-              <div className="mt-3 text-xs text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="mt-3 text-label text-muted pt-3 border-t border-hair flex items-center justify-between">
                 <span>Evidenced Nodes:</span>
-                <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                <span className="font-mono font-bold text-fg">
                   {dash(kpis?.evidenced_activities)} of {dash(kpis?.total_activities)}
                 </span>
               </div>
@@ -273,14 +269,14 @@ export default function ExecutiveOverview() {
           </div>
 
           {/* S-Curve Trajectory Chart Panel */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-hair">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <TrendingUp size={18} className="text-blue-600" />
+                <h2 className="text-lead font-semibold text-heading flex items-center gap-2">
+                  <TrendingUp size={18} className="text-fg" />
                   Earned Value Management (EVM) Cumulative S-Curve
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-body text-muted mt-0.5">
                   Planned value against earned value measured from actual finish
                   dates, and beyond the data date, planned value extended at the
                   measured SPI.
@@ -288,22 +284,22 @@ export default function ExecutiveOverview() {
               </div>
 
               {/* Legend */}
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
+              <div className="flex flex-wrap items-center gap-4 text-label font-mono">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-6 bg-blue-600 rounded-full" />
-                  <span className="text-slate-700 dark:text-slate-300 font-semibold">Planned Value (PV)</span>
+                  <div className="h-1 w-5 bg-muted rounded-full" />
+                  <span className="text-muted font-medium">Planned Value (PV)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-6 bg-emerald-500 rounded-full" />
-                  <span className="text-slate-700 dark:text-slate-300 font-semibold">Earned Value (EV)</span>
+                  <div className="h-1.5 w-5 bg-ok rounded-full" />
+                  <span className="text-fg font-medium">Earned Value (EV)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-6 border-t-2 border-dashed border-purple-500" />
-                  <span className="text-slate-700 dark:text-slate-300 font-semibold">Projected EV</span>
+                  <div className="h-1 w-5 border-t border-dashed border-warn" />
+                  <span className="text-muted font-medium">Projected EV</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-3 w-0.5 bg-rose-500" />
-                  <span className="text-slate-500">Data Date</span>
+                  <div className="h-3 w-0.5 bg-danger" />
+                  <span className="text-danger font-medium">Data Date</span>
                 </div>
               </div>
             </div>
@@ -325,14 +321,14 @@ export default function ExecutiveOverview() {
                         x2={svgWidth - padding.right}
                         y2={y}
                         stroke="currentColor"
-                        className="text-slate-100 dark:text-slate-800"
+                        className="text-hair"
                         strokeDasharray="4 4"
                       />
                       <text
                         x={padding.left - 8}
                         y={y + 4}
                         textAnchor="end"
-                        className="font-mono text-[10px] fill-slate-400"
+                        className="font-mono text-[10px] fill-muted"
                       >
                         {level}%
                       </text>
@@ -346,7 +342,7 @@ export default function ExecutiveOverview() {
                   y1={padding.top}
                   x2={dataDateX}
                   y2={svgHeight - padding.bottom}
-                  stroke="#f43f5e"
+                  stroke="#DC2626"
                   strokeWidth="1.5"
                   strokeDasharray="3 3"
                 />
@@ -354,7 +350,7 @@ export default function ExecutiveOverview() {
                   x={dataDateX}
                   y={padding.top - 6}
                   textAnchor="middle"
-                  className="font-mono text-[9px] font-bold fill-rose-500 uppercase"
+                  className="font-mono text-[9px] font-bold fill-danger uppercase"
                 >
                   DATA DATE (15 SEP)
                 </text>
@@ -369,7 +365,7 @@ export default function ExecutiveOverview() {
                       x={x}
                       y={svgHeight - padding.bottom + 18}
                       textAnchor="middle"
-                      className="font-mono text-[9px] fill-slate-400 uppercase"
+                      className="font-mono text-[9px] fill-muted uppercase"
                     >
                       {pt.week_label}
                     </text>
@@ -381,8 +377,8 @@ export default function ExecutiveOverview() {
                 <path
                   d={projPath}
                   fill="none"
-                  stroke="#a855f7"
-                  strokeWidth="2.5"
+                  stroke="#D97706"
+                  strokeWidth="2"
                   strokeDasharray="5 5"
                 />
 
@@ -390,16 +386,16 @@ export default function ExecutiveOverview() {
                 <path
                   d={pvPath}
                   fill="none"
-                  stroke="#2563eb"
-                  strokeWidth="2.5"
+                  stroke="#737373"
+                  strokeWidth="2"
                 />
 
                 {/* Earned Value Curve */}
                 <path
                   d={evPath}
                   fill="none"
-                  stroke="#10b981"
-                  strokeWidth="3.5"
+                  stroke="#10A37F"
+                  strokeWidth="3"
                   strokeLinecap="round"
                 />
 
@@ -412,8 +408,8 @@ export default function ExecutiveOverview() {
                       key={pt.week_label}
                       cx={x}
                       cy={y}
-                      r="4"
-                      className="fill-white dark:fill-slate-900 stroke-emerald-500"
+                      r="3.5"
+                      className="fill-raised stroke-ok"
                       strokeWidth="2"
                     />
                   );
@@ -421,7 +417,7 @@ export default function ExecutiveOverview() {
               </svg>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between text-label text-muted font-mono pt-2 border-t border-hair">
               <span>EV: 0/100 ON ACTUAL FINISH, WEIGHTED BY PLANNED DURATION</span>
               <span>
                 {metrics?.kpis.spi !== null && metrics?.kpis.spi !== undefined
@@ -434,156 +430,148 @@ export default function ExecutiveOverview() {
           {/* FIDIC Contractual Dispute & Delay Shield Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: FIDIC Dispute Allocation (7 cols) */}
-            <div className="lg:col-span-7 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="lg:col-span-7 border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-3 border-b border-hair">
                 <div className="flex items-center gap-2">
-                  <Scale size={18} className="text-blue-600" />
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <Scale size={18} className="text-fg" />
+                  <h3 className="text-lead font-semibold text-heading">
                     FIDIC Contractual Dispute Shield (Clauses 8.4 / 20.1)
                   </h3>
                 </div>
-                <span className="font-mono text-xs font-bold text-slate-500">
+                <span className="font-mono text-label text-muted">
                   Adjudicated &amp; Proposed Liabilities
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Employer Liability */}
-                <div className="border border-blue-200 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl p-4 flex flex-col justify-between">
+                <div className="border border-hair bg-surface rounded-lg p-4 flex flex-col justify-between">
                   <div>
-                    <span className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">
+                    <span className="font-mono text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">
                       Employer Delay (EOT Claimable)
                     </span>
-                    <div className="text-3xl font-extrabold text-blue-700 dark:text-blue-300 font-mono">
+                    <div className="text-3xl font-extrabold text-fg font-mono">
                       {dash(dispute?.employer_delay_days)} Days
                     </div>
-                    <div className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200">
+                    <div className="mt-1 text-body font-semibold text-heading">
                       {financial?.available && financial.employer_claim_cr !== null
                         ? `₹${financial.employer_claim_cr.toFixed(2)} Cr Claim Value`
                         : 'No claim value — no contract sum supplied'}
                     </div>
-                    <div className="mt-1 font-mono text-[11px] text-blue-700 dark:text-blue-300">
+                    <div className="mt-1 font-mono text-label text-muted">
                       {dash(dispute?.employer_beyond_float_days)} beyond float
                     </div>
-                    {/* Was: an assertion that the cause was "delayed client
-                        drawings, site access constraints, and force majeure
-                        rainfall", which named three causes the corpus was
-                        never consulted about. */}
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <p className="mt-2 text-label text-muted leading-relaxed">
                       Delay the delay layer proposes as compensable, from causes
                       read out of the reports themselves. Only the days beyond
                       float can have moved completion.
                     </p>
                   </div>
-                  <div className="mt-4 pt-2 border-t border-blue-100 dark:border-blue-900/50 flex items-center justify-between font-mono text-[11px] text-blue-700 dark:text-blue-300">
+                  <div className="mt-4 pt-2 border-t border-hair flex items-center justify-between font-mono text-label text-muted">
                     <span>FIDIC Sub-Clause 8.4</span>
-                    <span className="font-bold">EOT Entitled</span>
+                    <span className="font-bold text-fg">EOT Entitled</span>
                   </div>
                 </div>
 
                 {/* Contractor Liability */}
-                <div className="border border-amber-200 dark:border-amber-900/60 bg-amber-50/20 dark:bg-amber-950/20 rounded-xl p-4 flex flex-col justify-between">
+                <div className="border border-hair bg-surface rounded-lg p-4 flex flex-col justify-between">
                   <div>
-                    <span className="font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block mb-1">
+                    <span className="font-mono text-[10px] font-bold text-warn uppercase tracking-wider block mb-1">
                       Contractor Delay (LD Exposure)
                     </span>
-                    <div className="text-3xl font-extrabold text-amber-700 dark:text-amber-300 font-mono">
+                    <div className="text-3xl font-extrabold text-warn font-mono">
                       {dash(dispute?.contractor_delay_days)} Days
                     </div>
-                    <div className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200">
+                    <div className="mt-1 text-body font-semibold text-heading">
                       {financial?.available && financial.contractor_ld_risk_cr !== null
                         ? `₹${financial.contractor_ld_risk_cr.toFixed(2)} Cr LD Risk`
                         : 'No LD figure — no contract sum supplied'}
                     </div>
-                    <div className="mt-1 font-mono text-[11px] text-amber-700 dark:text-amber-300">
+                    <div className="mt-1 font-mono text-label text-muted">
                       {dash(dispute?.contractor_beyond_float_days)} beyond float
                     </div>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <p className="mt-2 text-label text-muted leading-relaxed">
                       Liquidated damages accrue at {financial?.ld_pct_per_week ?? 0.5}% per
                       week of culpable slip, capped at {financial?.ld_cap_pct ?? 10}% of
                       contract value under Sub-Clause 8.7 — computed only against a
                       contract sum the operator supplies.
                     </p>
                   </div>
-                  <div className="mt-4 pt-2 border-t border-amber-100 dark:border-amber-900/50 flex items-center justify-between font-mono text-[11px] text-amber-700 dark:text-amber-300">
+                  <div className="mt-4 pt-2 border-t border-hair flex items-center justify-between font-mono text-label text-muted">
                     <span>FIDIC Sub-Clause 8.7</span>
-                    <span className="font-bold">Max LD 10%</span>
+                    <span className="font-bold text-warn">Max LD 10%</span>
                   </div>
                 </div>
               </div>
 
               {/* 28-Day Notice Meter */}
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+              <div className="p-4 rounded-lg bg-surface border border-hair flex flex-col gap-2">
+                <div className="flex items-center justify-between text-label font-mono">
+                  <span className="font-bold text-heading">
                     FIDIC CLAUSE 20.1 NOTICE TIME-BAR COMPLIANCE
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-bold text-ok">
                     {dispute?.notice_compliance_pct === null ||
                     dispute?.notice_compliance_pct === undefined
                       ? 'No notice windows'
                       : `${dispute.notice_compliance_pct.toFixed(1)}% within window`}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                <div className="h-1.5 w-full bg-hair rounded-full overflow-hidden flex">
                   <div
-                    className="bg-emerald-500 h-full"
+                    className="bg-ok h-full"
                     style={{ width: `${dispute?.notice_compliance_pct ?? 0}%` }}
                     title="Served, or still inside the window"
                   />
                   <div
-                    className="bg-rose-500 h-full"
+                    className="bg-danger h-full"
                     style={{ width: `${100 - (dispute?.notice_compliance_pct ?? 0)}%` }}
                     title="Window closed with no notice recorded"
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mt-1">
+                <div className="flex items-center justify-between text-label font-mono text-muted mt-1">
                   <span>Served: {dash(dispute?.notice_served_count)}</span>
                   <span>Open in window: {dash(dispute?.notice_open_count)}</span>
-                  <span className="text-rose-500 font-bold">Lapsed: {dash(dispute?.notice_lapsed_count)}</span>
+                  <span className="text-danger font-bold">Lapsed: {dash(dispute?.notice_lapsed_count)}</span>
                 </div>
               </div>
             </div>
 
             {/* Right: derived milestones and the computed completion range */}
-            <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="lg:col-span-5 border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-3 border-b border-hair">
                 <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-blue-600" />
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <Calendar size={18} className="text-fg" />
+                  <h3 className="text-lead font-semibold text-heading">
                     Derived Milestones
                   </h3>
                 </div>
-                {/* "Contractual" was a claim: the baseline carries no milestone
-                    flag, so these are derived and the panel says so. */}
-                <span className="font-mono text-xs text-slate-400">DERIVED FROM BASELINE</span>
+                <span className="font-mono text-label text-muted">DERIVED FROM BASELINE</span>
               </div>
 
               {/* Milestones list */}
               <div className="flex flex-col gap-2.5">
                 {milestones.map((m) => {
                   const isCritical = m.status === 'CRITICAL';
-                  // Was 'COMPLETED', a status the backend never emitted, so a
-                  // finished milestone rendered amber like a late one.
                   const isDone = m.status === 'COMPLETE';
                   return (
                     <div
                       key={m.name}
-                      className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-3 text-xs"
+                      className="p-3 rounded-md border border-hair bg-surface flex items-center justify-between gap-3 text-body"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold text-slate-900 dark:text-white truncate">
+                        <div className="font-semibold text-heading truncate">
                           {m.name}
                         </div>
                         {m.activity_description && (
-                          <div className="text-[11px] text-slate-500 truncate">
+                          <div className="text-label text-muted truncate">
                             {m.activity_description}
                           </div>
                         )}
-                        <div className="font-mono text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                        <div className="font-mono text-label text-muted flex items-center gap-2 mt-0.5">
                           <span>Base: {m.baseline_date ?? '—'}</span>
                           <span>→</span>
-                          <span className={isCritical ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-slate-300'}>
+                          <span className={isCritical ? 'text-danger font-bold' : 'text-fg'}>
                             {m.forecast_date ?? '—'}
                           </span>
                         </div>
@@ -591,21 +579,17 @@ export default function ExecutiveOverview() {
 
                       <div className="text-right shrink-0">
                         <span
-                          className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-bold uppercase ${
+                          className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-bold uppercase border ${
                             isDone
-                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                              ? 'border-ok/30 bg-ok/10 text-ok'
                               : isCritical
-                              ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
-                              : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                              ? 'border-danger/30 bg-danger/10 text-danger'
+                              : 'border-warn/30 bg-warn/10 text-warn'
                           }`}
                         >
                           {m.status}
                         </span>
-                        {/* Was a confidence percentage — 94.2%, 78.5%, 65.0% —
-                            for which nothing in this system calibrates a
-                            probability. Replaced by where the date came from,
-                            which is a fact. */}
-                        <div className="font-mono text-[10px] text-slate-400 mt-1">
+                        <div className="font-mono text-label text-muted mt-1">
                           {m.basis === 'actual_finish'
                             ? 'actual'
                             : m.basis === 'not_scheduled'
@@ -620,44 +604,40 @@ export default function ExecutiveOverview() {
                 })}
               </div>
 
-              {/* Three computed dates.
-                  This was P10 / P50 / P90, which the backend produced as
-                  drift−3 / drift / drift+14 and shipped beside a claim of
-                  1000 Monte Carlo runs. No percentile is computable here, so
-                  none is shown; each date below states its derivation. */}
-              <div className="mt-2 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 text-center font-mono">
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">Baseline</div>
-                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              {/* Three computed dates */}
+              <div className="mt-2 pt-3 border-t border-hair grid grid-cols-3 gap-2 text-center font-mono">
+                <div className="p-2 rounded-md bg-surface border border-hair">
+                  <div className="text-[10px] text-muted font-bold uppercase">Baseline</div>
+                  <div className="text-body font-bold text-ok mt-1">
                     {dash(forecast?.baseline_finish)}
                   </div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">as authored</div>
+                  <div className="text-[10px] text-muted mt-0.5">as authored</div>
                 </div>
-                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50">
-                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Logic</div>
-                  <div className="text-xs font-bold text-blue-700 dark:text-blue-300 mt-1">
+                <div className="p-2 rounded-md bg-surface border border-hair">
+                  <div className="text-[10px] text-fg font-bold uppercase">Logic</div>
+                  <div className="text-body font-bold text-fg mt-1">
                     {dash(forecast?.logic_finish)}
                   </div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">CPM over actuals</div>
+                  <div className="text-[10px] text-muted mt-0.5">CPM over actuals</div>
                 </div>
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">Exposed</div>
-                  <div className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-1">
+                <div className="p-2 rounded-md bg-surface border border-hair">
+                  <div className="text-[10px] text-danger font-bold uppercase">Exposed</div>
+                  <div className="text-body font-bold text-danger mt-1">
                     {dash(forecast?.exposed_finish)}
                   </div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">
+                  <div className="text-[10px] text-muted mt-0.5">
                     +{forecast?.open_critical_exposure_days ?? 0}d open exposure
                   </div>
                 </div>
               </div>
 
               {forecast?.logic_conflicts_note && (
-                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                <p className="text-label text-warn leading-relaxed">
                   {forecast.logic_conflicts_note}
                 </p>
               )}
               {metrics?.milestones_note && (
-                <p className="text-[11px] text-slate-500 leading-relaxed">
+                <p className="text-label text-muted leading-relaxed">
                   {metrics.milestones_note}
                 </p>
               )}
@@ -665,15 +645,15 @@ export default function ExecutiveOverview() {
           </div>
 
           {/* Interactive What-If Scenario Simulator */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-gradient-to-r from-slate-50 to-white dark:from-[#111827] dark:to-[#0f172a] shadow-sm flex flex-col gap-5">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-200/60 dark:border-slate-800">
+          <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-hair">
               <div className="flex items-center gap-2">
-                <Sliders size={20} className="text-blue-600" />
+                <Sliders size={18} className="text-fg" />
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                  <h3 className="text-lead font-semibold text-heading leading-tight">
                     Executive &ldquo;What-If&rdquo; Scenario Simulator
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-body text-muted">
                     Move the computed finish date by a hypothetical slip. The
                     network is not re-run and nothing here is written to the
                     schedule.
@@ -688,7 +668,7 @@ export default function ExecutiveOverview() {
                     setSimWeatherDays(0);
                     setSimVendorDays(0);
                   }}
-                  className="text-xs font-mono text-slate-500 hover:text-blue-600 transition-colors"
+                  className="text-label font-mono text-muted hover:text-fg transition-colors"
                 >
                   Reset Simulation
                 </button>
@@ -700,11 +680,11 @@ export default function ExecutiveOverview() {
               <div className="md:col-span-7 flex flex-col gap-4">
                 {/* Weather hold slider */}
                 <div>
-                  <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center justify-between text-label font-mono mb-1.5">
+                    <span className="font-semibold text-fg">
                       Monsoon / Flash Flooding Hold
                     </span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">
+                    <span className="font-bold text-fg">
                       +{simWeatherDays} Days
                     </span>
                   </div>
@@ -715,9 +695,9 @@ export default function ExecutiveOverview() {
                     step="1"
                     value={simWeatherDays}
                     onChange={(e) => setSimWeatherDays(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-1.5 bg-hair rounded-lg appearance-none cursor-pointer accent-fg"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
+                  <div className="flex justify-between text-[10px] font-mono text-muted mt-1">
                     <span>0d</span>
                     <span>15d</span>
                     <span>30d</span>
@@ -726,11 +706,11 @@ export default function ExecutiveOverview() {
 
                 {/* Vendor delivery slider */}
                 <div>
-                  <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center justify-between text-label font-mono mb-1.5">
+                    <span className="font-semibold text-fg">
                       Vendor Equipment Delivery Slip (Compressor Skid C-101)
                     </span>
-                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                    <span className="font-bold text-warn">
                       +{simVendorDays} Days
                     </span>
                   </div>
@@ -741,9 +721,9 @@ export default function ExecutiveOverview() {
                     step="1"
                     value={simVendorDays}
                     onChange={(e) => setSimVendorDays(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                    className="w-full h-1.5 bg-hair rounded-lg appearance-none cursor-pointer accent-fg"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
+                  <div className="flex justify-between text-[10px] font-mono text-muted mt-1">
                     <span>0d</span>
                     <span>15d</span>
                     <span>30d</span>
@@ -752,33 +732,28 @@ export default function ExecutiveOverview() {
               </div>
 
               {/* Simulation Result Callout (5 cols) */}
-              <div className="md:col-span-5 border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 rounded-xl p-5 flex flex-col justify-between">
+              <div className="md:col-span-5 border border-hair bg-surface rounded-lg p-5 flex flex-col justify-between">
                 <div>
-                  <span className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">
+                  <span className="font-mono text-[10px] font-bold text-muted uppercase tracking-wider block mb-1">
                     PROJECTED IMPACT ON COMPLETION
                   </span>
-                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white font-mono">
+                  <div className="text-3xl font-extrabold text-heading font-mono">
                     +{totalSimulatedSlip} Days
                   </div>
-                  {/* Was "Estimated Cost Escalation: ₹X Crores", computed in
-                      this component from a ₹12.5 lakh/day rate no contract in
-                      this system supplies. The slider now moves a date. */}
-                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <div className="mt-1 text-body text-muted">
                     Logic finish {dash(forecast?.logic_finish)} →{' '}
-                    <strong className="font-mono">{dash(simulatedFinish)}</strong>
+                    <strong className="font-mono text-fg">{dash(simulatedFinish)}</strong>
                   </div>
                   {financial?.available &&
                     financial.prolongation_lakhs_per_day !== null && (
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-1 text-label text-muted">
                         At the supplied ₹{financial.prolongation_lakhs_per_day} lakh/day:
                         ₹{((totalSimulatedSlip * financial.prolongation_lakhs_per_day) / 100).toFixed(2)} Cr
                       </div>
                     )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-900/50 text-xs text-slate-500 leading-snug">
-                  {/* Was a named mitigation on a named substation, neither of
-                      which was computed from anything. */}
+                <div className="mt-4 pt-3 border-t border-hair text-label text-muted leading-snug">
                   {totalSimulatedSlip > 0 ? (
                     <span>
                       Assumes the whole slip lands on a critical activity with no
@@ -799,27 +774,23 @@ export default function ExecutiveOverview() {
             {criticalDrivers.length === 0 ? (
               <EmptyState>No critical path slips detected.</EmptyState>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="divide-y divide-hair">
                 {criticalDrivers.map((act) => (
-                  <div key={act.activity_id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div key={act.activity_id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-body">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                        <span className="font-mono font-bold text-fg">
                           {act.activity_id}
                         </span>
                         <DisciplineTag discipline={act.discipline as Discipline} />
-                        <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-heading">
                           {act.description}
                         </span>
                       </div>
-                      {/* `driving_delay` used to be picked by matching "CIV",
-                          "PIP" or "ELE" in the activity id. It is now the worst
-                          delay actually recorded against the activity, with the
-                          document line it was read from — or nothing. */}
-                      <div className="mt-1 text-slate-500 font-mono text-[11px]">
+                      <div className="mt-1 text-muted font-mono text-label">
                         {act.driving_delay ? (
                           <>
-                            Cause: <strong>{act.driving_delay}</strong>
+                            Cause: <strong className="text-fg">{act.driving_delay}</strong>
                             {act.driving_delay_category && ` (${act.driving_delay_category})`}
                             {!act.driving_delay_adjudicated && ' · proposed, not adjudicated'}
                           </>
@@ -830,14 +801,14 @@ export default function ExecutiveOverview() {
                         {act.planned_finish ?? '—'}
                       </div>
                       {act.driving_delay_source && (
-                        <div className="text-slate-400 font-mono text-[10px]">
+                        <div className="text-muted font-mono text-label">
                           {act.driving_delay_source}
                         </div>
                       )}
                     </div>
 
                     <div className="shrink-0 flex items-center gap-3">
-                      <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
+                      <span className="font-mono font-bold text-danger text-body">
                         +{act.finish_variance_days}d slip
                       </span>
                     </div>
@@ -851,14 +822,14 @@ export default function ExecutiveOverview() {
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <Link
               to="/executive/exposure"
-              className="text-xs font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1.5 font-bold"
+              className="text-label font-mono uppercase tracking-wider text-accent hover:underline flex items-center gap-1.5 font-bold"
             >
               <span>Exposure Register</span>
               <ArrowRight size={13} />
             </Link>
             <Link
               to="/executive/provenance"
-              className="text-xs font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1.5 font-bold"
+              className="text-label font-mono uppercase tracking-wider text-accent hover:underline flex items-center gap-1.5 font-bold"
             >
               <span>Data Provenance &amp; Corpus Origin</span>
               <ArrowRight size={13} />

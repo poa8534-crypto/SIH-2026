@@ -29,7 +29,7 @@ export function SectionTitle({
 }) {
   return (
     <h3
-      className={`text-lead font-semibold uppercase tracking-[0.05em] text-heading ${className}`.trim()}
+      className={`text-body font-semibold text-heading tracking-tight ${className}`.trim()}
     >
       {children}
     </h3>
@@ -41,10 +41,7 @@ export function SectionTitle({
 /**
  * A bordered card with an optional header row.
  *
- * The header is `px-4 py-3` and nothing else. The audit found six paddings for
- * this exact row (`px-4 py-2.5`, `px-4 py-3`, `px-3 py-3`, `px-4 py-4`,
- * `px-5 py-4`, and a bare `h-10`), which is why panel headers never lined up
- * between two screens shown side by side.
+ * The header is `px-4 py-3` and nothing else.
  */
 export function PanelHeader({
   title,
@@ -58,15 +55,15 @@ export function PanelHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="px-4 py-3 border-b border-hair flex items-center justify-between gap-3">
-      <SectionTitle className="flex items-center gap-2">
-        {title}
+    <div className="px-4 py-3 border-b border-hair flex items-center justify-between gap-3 bg-surface/40">
+      <div className="flex items-center gap-2">
+        <SectionTitle>{title}</SectionTitle>
         {badge !== undefined && badge > 0 && (
-          <span className="bg-danger text-surface font-mono text-label px-2 py-1 rounded-full leading-none">
+          <span className="bg-danger-bg text-danger border border-danger-line/50 font-mono text-label px-2 py-0.5 rounded-full leading-none font-medium">
             {badge}
           </span>
         )}
-      </SectionTitle>
+      </div>
       {action}
       {right}
     </div>

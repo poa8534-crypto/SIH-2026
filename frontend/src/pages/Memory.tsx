@@ -465,49 +465,67 @@ function KnowledgeBaseView() {
       <div className="flex flex-wrap items-center justify-between gap-4 bg-raised border border-hair rounded-xl p-4">
         <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => setSelectedCat('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'all'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             All Domain Rules ({kbData.total_rules})
           </button>
           <button
+            type="button"
             onClick={() => setSelectedCat('environmental')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'environmental' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'environmental'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             Environmental & Weather ({kbData.categories.environmental ?? 0})
           </button>
           <button
+            type="button"
             onClick={() => setSelectedCat('engineering')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'engineering' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'engineering'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             Engineering Specs ({kbData.categories.engineering ?? 0})
           </button>
           <button
+            type="button"
             onClick={() => setSelectedCat('dcma_quality')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'dcma_quality' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'dcma_quality'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             DCMA 14-Point Standards ({kbData.categories.dcma_quality ?? 0})
           </button>
           <button
+            type="button"
             onClick={() => setSelectedCat('logistics')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'logistics' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'logistics'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             Logistics & Permits ({kbData.categories.logistics ?? 0})
           </button>
           <button
+            type="button"
             onClick={() => setSelectedCat('contractor')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCat === 'contractor' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-fg'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              selectedCat === 'contractor'
+                ? 'bg-fg text-surface shadow-xs'
+                : 'bg-surface text-muted hover:text-fg border border-hair'
             }`}
           >
             Contractor Benchmarks ({kbData.categories.contractor ?? 0})
@@ -515,7 +533,7 @@ function KnowledgeBaseView() {
         </div>
 
         <span className="text-xs text-muted font-mono flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="h-1.5 w-1.5 rounded-full bg-ok" />
           Active Enforced Guardrails
         </span>
       </div>
@@ -525,18 +543,16 @@ function KnowledgeBaseView() {
         {rules.map((rule) => (
           <div
             key={rule.id}
-            className="border border-hair rounded-xl p-5 bg-raised shadow-xs flex flex-col justify-between gap-4"
+            className="border border-hair rounded-xl p-5 bg-surface shadow-xs flex flex-col justify-between gap-4"
           >
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase bg-surface text-muted border border-hair">
+                <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase bg-raised text-muted border border-hair">
                   {rule.id}
                 </span>
                 <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                    rule.severity === 'critical'
-                      ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase border border-hair bg-raised ${
+                    rule.severity === 'critical' ? 'text-danger' : 'text-warn'
                   }`}
                 >
                   {rule.severity}
@@ -551,14 +567,14 @@ function KnowledgeBaseView() {
             </div>
 
             <div className="pt-3 border-t border-hair flex flex-col gap-2 text-xs">
-              <div className="bg-surface rounded-lg p-2.5 border border-hair">
+              <div className="bg-raised rounded-lg p-2.5 border border-hair">
                 <span className="text-[10px] uppercase font-mono tracking-wider text-muted block mb-1">
                   Schedule Audit Trigger:
                 </span>
                 <span className="text-fg">{rule.condition_trigger}</span>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-950/40 rounded-lg p-2.5 border border-blue-200 dark:border-blue-900/60 text-blue-900 dark:text-blue-300">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-blue-600 dark:text-blue-400 block mb-1">
+              <div className="bg-raised rounded-lg p-2.5 border border-hair text-fg">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-muted block mb-1">
                   Enforced AI Prescription:
                 </span>
                 <span>{rule.impact_recommendation}</span>

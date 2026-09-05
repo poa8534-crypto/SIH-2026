@@ -112,22 +112,22 @@ function Tile({
 }) {
   return (
     <div
-      className={`border border-hair bg-raised rounded-lg p-4 flex flex-col justify-between h-24 ${
-        accent ? 'border-l-2 border-l-danger' : ''
+      className={`border border-hair bg-raised rounded-lg p-4 flex flex-col justify-between min-h-[92px] ${
+        accent ? 'border-l-2 border-l-warn' : ''
       }`}
     >
+      <div className="text-label text-muted font-medium">{label}</div>
       {loading ? (
-        <Skeleton height="h-8" className="w-20 mt-1" />
+        <Skeleton height="h-7" className="w-16 my-1" />
       ) : (
         <div
-          className={`font-mono tabular-nums text-h1 leading-none mt-1 ${
-            error ? 'text-danger' : accent ? 'text-danger' : 'text-fg'
+          className={`font-mono tabular-nums text-h2 font-semibold leading-tight my-0.5 ${
+            error ? 'text-danger' : accent ? 'text-warn' : 'text-heading'
           }`}
         >
           {error ? '—' : value}
         </div>
       )}
-      <div className="font-mono text-label uppercase tracking-wider text-muted">{label}</div>
     </div>
   );
 }

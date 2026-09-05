@@ -16,119 +16,117 @@
    ========================================================================= */
 
 [data-theme="dark"] {
-  /* Surfaces, back to front */
-  --bg: #0C0C0C;          /* page                                    */
-  --bg-raised: #16181A;   /* cards, evidence block, inputs           */
-  --bg-selected: #24282D; /* selected card / row                     */
+  /* ChatGPT/Codex Minimalist Dark Tokens */
+  --bg: #212121;          /* canvas */
+  --bg-sidebar: #171717;  /* persistent left navigation */
+  --bg-raised: #2B2B2B;   /* cards, containers, subtle surface */
+  --bg-selected: #323232; /* selected row, subtle hover */
 
   /* Text */
-  --text: #F2F3F4;        /* primary          15.8:1 on --bg         */
-  --text-muted: #9BA1A8;  /* labels, metadata  6.7:1 on --bg         */
+  --text: #ECECEC;        /* primary */
+  --text-muted: #B4B4B4;  /* secondary / labels */
 
   /* Lines */
-  --border: #2C3033;      /* hairline dividers                       */
-  --border-strong: #7A8288; /* kbd, hover borders  5.0:1 on --bg     */
+  --border: #3A3A3A;      /* hairline dividers */
+  --border-strong: #555555; /* strong borders, focus */
 
-  /* Accent — selection, focus, primary action */
-  --accent: #7FB2E5;      /*                   8.0:1 on --bg         */
-  --accent-text: #0C0C0C; /* text on top of a solid --accent fill    */
-  --accent-hover: #A6CBF0;
+  /* Neutral Primary Action */
+  --accent: #ECECEC;
+  --accent-text: #212121;
+  --accent-hover: #FFFFFF;
 
-  /* Page and section titles. Distinct from --text so headings read as a
-     level, and from --accent so a title is never mistaken for a link. */
-  --heading: #BFD8F2;     /*                  12.8:1 on --bg         */
+  /* Headings */
+  --heading: #FFFFFF;
 
   /* Evidence-span highlight */
   --mark-bg: #4A3C12;
-  --mark-text: #FFE9A8;   /*                   9.1:1 on --mark-bg    */
+  --mark-text: #FFE9A8;
 
-  /* Status */
-  --ok: #56C4AC;
-  --warn: #E3C567;
-  --danger: #F2777A;
+  /* Status: Muted semantic colors accompanied by labels/icons */
+  --ok: #34D399;
+  --warn: #FBBF24;
+  --danger: #F87171;
   --danger-bg: #2A1416;
   --danger-border: #6B2E31;
 
-  /* Disciplines. Tuned bright so they clear 3:1 on --bg-raised.       */
-  --disc-civil: #8CC9EE;
-  --disc-piping: #DE9AD6;   /* was #AA4499 — 2.8:1, failed            */
-  --disc-seq: #EE9977;      /* was #882255 — 1.9:1, failed badly      */
-  --disc-ele: #DDCC77;
-  --disc-ins: #58C79A;      /* was #117733 — 3.3:1, marginal          */
-  --disc-hse: #EE8899;
+  /* Disciplines */
+  --disc-civil: #60A5FA;
+  --disc-piping: #C084FC;
+  --disc-seq: #FB923C;
+  --disc-ele: #FACC15;
+  --disc-ins: #2DD4BF;
+  --disc-hse: #FB7185;
 }
 
 [data-theme="light"] {
-  /* Technical Precision — Modern Corporate, flat and structured.
-     Content sits on the cool off-white background; containers pop in
-     pure white above it. */
-  --bg: #F7F8FC;
-  --bg-raised: #FFFFFF;
-  --bg-selected: #E8F0FF; /* pale-blue highlight: row hover, active nav */
+  /* ChatGPT/Codex Minimalist Light Tokens */
+  --bg: #FFFFFF;          /* canvas */
+  --bg-sidebar: #F7F7F8;  /* persistent left navigation */
+  --bg-raised: #FAFAFA;   /* cards, containers, subtle surface */
+  --bg-selected: #EFEFEF; /* selected row, subtle hover */
 
-  --text: #191C21;
-  --text-muted: #424752;
+  /* Text */
+  --text: #202123;        /* primary */
+  --text-muted: #666666;  /* secondary / labels */
 
-  --border: #D9E1EC;
-  --border-strong: #727784;
+  /* Lines */
+  --border: #E5E5E5;      /* hairline dividers */
+  --border-strong: #CCCCCC; /* strong borders, focus */
 
-  --accent: #0056B3;      /* Primary Blue                            */
+  /* Neutral Primary Action */
+  --accent: #202123;
   --accent-text: #FFFFFF;
-  --accent-hover: #003F87;
+  --accent-hover: #333333;
 
-  --heading: #0B3B75;     /* Heading Blue, DESIGN.md   9.8:1 on --bg */
+  /* Headings */
+  --heading: #111111;
 
-  --mark-bg: #FFD972;
-  --mark-text: #4A3200;
+  /* Evidence-span highlight */
+  --mark-bg: #FEF3C7;
+  --mark-text: #92400E;
 
-  /* --ok is deliberately Primary Blue, not green: DESIGN.md — "Do not use
-     green for complete states to avoid confusion with architectural safety
-     standards." */
-  --ok: #0056B3;
-  --warn: #983C00;
-  --danger: #BA1A1A;
-  --danger-bg: #FFDAD6;
-  --danger-border: #E8A9A4;
+  /* Status: Muted semantic colors accompanied by labels/icons */
+  --ok: #10A37F;
+  --warn: #D97706;
+  --danger: #DC2626;
+  --danger-bg: #FEF2F2;
+  --danger-border: #FCA5A5;
 
-  /* Darkened so they clear 3:1 on white and on --bg-raised. */
-  --disc-civil: #1A6191;
-  --disc-piping: #8E2F86;
-  --disc-seq: #9C4318;
-  --disc-ele: #6F5804;
-  --disc-ins: #0B6B4F;
-  --disc-hse: #A82834;
+  /* Disciplines */
+  --disc-civil: #2563EB;
+  --disc-piping: #9333EA;
+  --disc-seq: #EA580C;
+  --disc-ele: #CA8A04;
+  --disc-ins: #0D9488;
+  --disc-hse: #E11D48;
 }
 
-/* Default before useTheme stamps the attribute: match the light values so
-   there is no dark flash on first paint. Scoped with :not([data-theme]) so
-   it applies only until the attribute is stamped — a bare :root has the same
-   specificity as [data-theme="dark"] and, sitting later in the file, would
-   win on source order and make dark mode unreachable. */
 :root:not([data-theme]) {
-  --bg: #F7F8FC;
-  --bg-raised: #FFFFFF;
-  --bg-selected: #E8F0FF;
-  --text: #191C21;
-  --text-muted: #424752;
-  --border: #D9E1EC;
-  --border-strong: #727784;
-  --accent: #0056B3;
+  --bg: #FFFFFF;
+  --bg-sidebar: #F7F7F8;
+  --bg-raised: #FAFAFA;
+  --bg-selected: #EFEFEF;
+  --text: #202123;
+  --text-muted: #666666;
+  --border: #E5E5E5;
+  --border-strong: #CCCCCC;
+  --accent: #202123;
   --accent-text: #FFFFFF;
-  --accent-hover: #003F87;
-  --heading: #0B3B75;
-  --mark-bg: #FFD972;
-  --mark-text: #4A3200;
-  --ok: #0056B3;
-  --warn: #983C00;
-  --danger: #BA1A1A;
-  --danger-bg: #FFDAD6;
-  --danger-border: #E8A9A4;
-  --disc-civil: #1A6191;
-  --disc-piping: #8E2F86;
-  --disc-seq: #9C4318;
-  --disc-ele: #6F5804;
-  --disc-ins: #0B6B4F;
-  --disc-hse: #A82834;
+  --accent-hover: #333333;
+  --heading: #111111;
+  --mark-bg: #FEF3C7;
+  --mark-text: #92400E;
+  --ok: #10A37F;
+  --warn: #D97706;
+  --danger: #DC2626;
+  --danger-bg: #FEF2F2;
+  --danger-border: #FCA5A5;
+  --disc-civil: #2563EB;
+  --disc-piping: #9333EA;
+  --disc-seq: #EA580C;
+  --disc-ele: #CA8A04;
+  --disc-ins: #0D9488;
+  --disc-hse: #E11D48;
 }
 
 /* ============================================================================
@@ -139,6 +137,7 @@
 
 @theme {
   --color-surface: var(--bg);
+  --color-sidebar: var(--bg-sidebar);
   --color-raised: var(--bg-raised);
   --color-selected: var(--bg-selected);
 
@@ -205,8 +204,8 @@
      Tailwind utility. The namespace is not reset here because `rounded-full`
      is not part of it.
      ======================================================================= */
-  --radius-sm: 8px;
-  --radius-lg: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 8px;
 
   /* Legacy aliases. The original theme called muted text "text" and primary
      text "hl", which inverts the naming used above — so these are mapped

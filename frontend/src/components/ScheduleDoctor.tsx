@@ -93,57 +93,57 @@ export function ScheduleDoctor() {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-[1600px] mx-auto">
       {/* Top Banner: Feasibility Score & Health Summary */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-xl">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+      <div className="bg-raised text-fg rounded-lg p-6 border border-hair">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-hair">
           <div className="flex items-start gap-4">
             <div
-              className={`h-16 w-16 rounded-2xl flex items-center justify-center font-mono font-extrabold text-2xl border ${
+              className={`h-16 w-16 rounded-lg flex items-center justify-center font-mono font-bold text-2xl border ${
                 isCritical
-                  ? 'bg-rose-950/80 border-rose-500/40 text-rose-400'
+                  ? 'bg-danger-bg border-danger-line/60 text-danger'
                   : isModerate
-                  ? 'bg-amber-950/80 border-amber-500/40 text-amber-400'
-                  : 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400'
+                  ? 'bg-warn/10 border-warn/30 text-warn'
+                  : 'bg-ok/10 border-ok/30 text-ok'
               }`}
             >
               {score}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                <span className="text-label font-medium px-2 py-0.5 rounded-sm bg-surface border border-hair text-muted">
                   AI Schedule Feasibility & Knowledge Auditor
                 </span>
                 <span
-                  className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full ${
+                  className={`text-label font-medium px-2 py-0.5 rounded-full border ${
                     isCritical
-                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      ? 'bg-danger-bg text-danger border-danger-line/60'
                       : isModerate
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      ? 'bg-warn/10 text-warn border-warn/30'
+                      : 'bg-ok/10 text-ok border-ok/30'
                   }`}
                 >
                   {audit.feasibility_band.replace('_', ' ')}
                 </span>
               </div>
-              <h2 className="text-2xl font-bold tracking-tight mt-1 text-white">
-                {audit.schedule_name} · Schedule Feasibility Audit
+              <h2 className="text-h2 font-semibold tracking-tight mt-1 text-heading">
+                {audit.schedule_name} · Feasibility Audit
               </h2>
-              <p className="text-xs text-slate-400 mt-1 max-w-3xl">
+              <p className="text-body text-muted mt-1 max-w-3xl">
                 Auditing {audit.total_activities} activities against Upper Assam OIL historical durations (P50/P90), DCMA 14-point network logic, and monsoon weather risk.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setShowCalibratedModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-md transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-md bg-accent text-accent-fg hover:bg-accent-hover font-medium text-body transition-colors"
             >
-              <Sparkles className="h-4 w-4 text-blue-200" />
-              Generate Calibrated Baseline (P6)
+              <Sparkles className="h-4 w-4" />
+              <span>Generate Calibrated Baseline (P6)</span>
             </button>
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-raised hover:bg-selected text-fg text-body border border-hair transition-colors font-medium"
             >
               Re-Audit
             </button>
@@ -152,66 +152,66 @@ export function ScheduleDoctor() {
 
         {/* 4 Score Breakdown Pillars */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1">
+          <div className="bg-surface border border-hair rounded-lg p-3.5">
+            <div className="flex items-center justify-between text-label text-muted font-medium mb-1">
               <span>Empirical Realism</span>
-              <span className="font-bold text-slate-200">{audit.score_breakdown.empirical_realism}/100</span>
+              <span className="font-mono font-semibold text-heading">{audit.score_breakdown.empirical_realism}/100</span>
             </div>
-            <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-raised border border-hair h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-blue-400 h-full rounded-full"
+                className="bg-accent h-full rounded-full"
                 style={{ width: `${audit.score_breakdown.empirical_realism}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-label text-muted mt-2">
               Vs. Historical P50/P90 durations
             </p>
           </div>
 
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1">
+          <div className="bg-surface border border-hair rounded-lg p-3.5">
+            <div className="flex items-center justify-between text-label text-muted font-medium mb-1">
               <span>DCMA Logic Quality</span>
-              <span className="font-bold text-slate-200">{audit.score_breakdown.dcma_logic}/100</span>
+              <span className="font-mono font-semibold text-heading">{audit.score_breakdown.dcma_logic}/100</span>
             </div>
-            <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-raised border border-hair h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-emerald-400 h-full rounded-full"
+                className="bg-ok h-full rounded-full"
                 style={{ width: `${audit.score_breakdown.dcma_logic}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-label text-muted mt-2">
               Open ends, leads, & float checks
             </p>
           </div>
 
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1">
+          <div className="bg-surface border border-hair rounded-lg p-3.5">
+            <div className="flex items-center justify-between text-label text-muted font-medium mb-1">
               <span>Weather Buffer</span>
-              <span className="font-bold text-slate-200">{audit.score_breakdown.weather_buffer}/100</span>
+              <span className="font-mono font-semibold text-heading">{audit.score_breakdown.weather_buffer}/100</span>
             </div>
-            <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-raised border border-hair h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-amber-400 h-full rounded-full"
+                className="bg-warn h-full rounded-full"
                 style={{ width: `${audit.score_breakdown.weather_buffer}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-label text-muted mt-2">
               Assam monsoon (Jun 15 - Sep 15)
             </p>
           </div>
 
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1">
+          <div className="bg-surface border border-hair rounded-lg p-3.5">
+            <div className="flex items-center justify-between text-label text-muted font-medium mb-1">
               <span>Productivity Sanity</span>
-              <span className="font-bold text-slate-200">{audit.score_breakdown.productivity_sanity}/100</span>
+              <span className="font-mono font-semibold text-heading">{audit.score_breakdown.productivity_sanity}/100</span>
             </div>
-            <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-raised border border-hair h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-indigo-400 h-full rounded-full"
+                className="bg-accent h-full rounded-full"
                 style={{ width: `${audit.score_breakdown.productivity_sanity}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-label text-muted mt-2">
               Daily rates vs historical peak
             </p>
           </div>

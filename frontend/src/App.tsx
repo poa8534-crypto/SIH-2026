@@ -85,24 +85,34 @@ function DesktopShell({
   const subtitle = forThisRoute?.subtitle ?? '';
 
   return (
-    <div className="flex h-screen w-full bg-surface text-muted overflow-hidden font-sans">
-      <div className="w-[240px] flex-shrink-0 border-r border-hair flex flex-col">
-        {/* Project identity. The name is the real one off /schedule. */}
-        <div className="px-4 pt-5 pb-4">
+    <div className="flex h-screen w-full bg-surface text-fg overflow-hidden font-sans">
+      {/* Persistent Left Navigation Sidebar (ChatGPT / Reference Structural Model) */}
+      <aside className="w-[240px] flex-shrink-0 bg-sidebar border-r border-hair flex flex-col z-10">
+        {/* Project & Engine Identity */}
+        <div className="px-5 pt-5 pb-4 border-b border-hair/60">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label">
+              N
+            </span>
+            <span className="font-semibold text-heading text-body tracking-tight">
+              NAVIS Engine
+            </span>
+          </div>
           <h1
-            className={`text-h3 font-semibold leading-tight line-clamp-2 ${
+            className={`mt-2 text-label font-medium leading-tight truncate ${
               headerError ? 'text-danger' : 'text-heading'
             }`}
             title={headerError ? errorDetail(headerError) : projectName}
           >
             {headerError ? 'Project unavailable' : projectName}
           </h1>
-          <p className="text-label font-medium leading-4 tracking-[0.05em] text-muted truncate">
+          <p className="text-label text-muted truncate">
             {roleLabel}
           </p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto flex flex-col gap-1 py-2">
+        {/* Navigation Items */}
+        <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5 px-3 py-3">
           {navItems.map((item) => {
             const active = location.pathname.startsWith(item.path);
             const Icon = item.icon;
@@ -110,77 +120,79 @@ function DesktopShell({
               <Link
                 key={item.path}
                 to={item.path}
-                className={`mx-3 flex items-center gap-3 rounded-sm px-3 py-2 text-lead font-medium leading-6 transition-colors ${
+                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-body font-medium transition-colors ${
                   active
-                    ? 'bg-accent text-accent-fg'
-                    : 'text-muted hover:bg-selected hover:text-fg'
+                    ? 'bg-raised text-heading border border-hair shadow-xs'
+                    : 'text-muted hover:bg-selected hover:text-heading'
                 }`}
               >
-                <Icon size={20} strokeWidth={2} className="shrink-0" />
-                {item.label}
+                <Icon size={16} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-hair">
-          <div className="text-label font-mono uppercase mb-1 text-muted">Data Date</div>
-          <div
-            className={`font-mono ${headerError ? 'text-danger' : 'text-fg'}`}
-            title={headerError ? errorDetail(headerError) : undefined}
-          >
-            {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
+        {/* Sidebar Footer: Operational Metadata & Controls */}
+        <div className="p-4 border-t border-hair bg-sidebar/80 flex flex-col gap-2">
+          <div className="flex items-center justify-between text-label text-muted">
+            <span>Data Date</span>
+            <span
+              className={`font-mono font-medium ${headerError ? 'text-danger' : 'text-fg'}`}
+              title={headerError ? errorDetail(headerError) : undefined}
+            >
+              {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
+            </span>
           </div>
 
-          {/* There was a "Force Mobile View" button here. It set a device
-              override that the router read as "render the field lane", so a
-              Project Manager or Senior Management user who pressed it landed
-              in the Field Supervisor application while `navis.role` still said
-              otherwise. Seeing another role's screens is a role change, and a
-              role change goes through the picker. */}
-          <button
-            onClick={toggleTheme}
-            className="mt-4 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </button>
+          <div className="pt-2 border-t border-hair/50 flex flex-col gap-1">
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            </button>
 
-          <button
-            onClick={onSignOut}
-            className="mt-2 flex items-center gap-2 text-label font-mono uppercase text-muted hover:text-fg transition-colors"
-          >
-            <LogOut size={12} />
-            Switch Role
-          </button>
+            <button
+              onClick={onSignOut}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
+            >
+              <LogOut size={14} />
+              <span>Switch role</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </aside>
 
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-surface">
-        <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between gap-5 px-5">
-          <div className="min-w-0">
-            <h2 className="text-h2 font-semibold leading-9 tracking-[-0.01em] text-heading truncate">
+        {/* Compact Contextual Header */}
+        <header className="h-14 shrink-0 border-b border-hair flex items-center justify-between gap-4 px-6 bg-surface">
+          <div className="min-w-0 flex items-baseline gap-3">
+            <h2 className="text-body font-semibold text-heading truncate">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-body leading-5 text-muted truncate">{subtitle}</p>
+              <span className="text-label text-muted truncate hidden sm:inline">
+                · {subtitle}
+              </span>
             )}
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {headerError && (
-              <ErrorState error={headerError} mode="bare" className="max-w-[420px]" />
+              <ErrorState error={headerError} mode="bare" className="max-w-[360px]" />
             )}
-            {/* A PLANNER | FIELD toggle used to sit here. It predated roles,
-                it rendered for Senior Management too (who are neither), and
-                pressing Field dropped whoever clicked it into the field
-                application. The signed-in role is named in the sidebar and
-                changed with Switch Role. */}
+            <span className="hidden md:inline-flex items-center gap-1.5 text-label font-mono text-muted bg-raised px-2.5 py-1 rounded-md border border-hair">
+              <span>P6 Baseline</span>
+              <span className="text-heading font-semibold">Rev-08</span>
+            </span>
           </div>
         </header>
 
         <PageHeaderContext.Provider value={setPageHeader}>
-          <main className="flex-1 overflow-auto p-5">{children}</main>
+          <main className="flex-1 overflow-auto p-6">{children}</main>
         </PageHeaderContext.Provider>
       </div>
     </div>

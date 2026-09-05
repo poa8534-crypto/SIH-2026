@@ -27,36 +27,35 @@ export function IdleStage({
   contextBlock: React.ReactNode;
 }) {
   return (
-    <div className="w-full max-w-[920px] mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
-      {/* Centered Top Heading Card */}
+    <div className="w-full max-w-[880px] mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
+      {/* Centered Top Heading */}
       <div className="text-center flex flex-col items-center">
-        {/* Status Pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-mono text-[11px] font-bold uppercase tracking-wider mb-4 shadow-xs">
-          <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-          FIELD VOICE OS · GOOD AFTERNOON, J. GOGOI
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface border border-hair text-muted font-mono text-[11px] font-medium uppercase tracking-wider mb-3">
+          <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+          Field Voice · J. Gogoi · Shift B
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-h1 font-semibold text-heading tracking-tight">
           What happened on site today?
         </h1>
-        <p className="mt-2 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-xl">
-          Dictate or note down work log, deliveries, inspections, and blockages.
+        <p className="mt-1 text-body text-muted max-w-lg leading-relaxed">
+          Dictate or record progress, material arrivals, inspections, and site constraints.
         </p>
       </div>
 
       {fallback ?? (
-        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 bg-white dark:bg-slate-900 shadow-sm flex flex-col items-center gap-6 text-center">
+        <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col items-center gap-4 text-center">
           <button
             type="button"
             onClick={onStart}
-            className="group w-full max-w-md py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer"
+            className="w-full max-w-sm py-3.5 px-5 rounded-lg bg-fg hover:opacity-90 active:opacity-95 text-surface font-medium text-body shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer"
           >
-            <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Mic size={20} />
+            <div className="h-8 w-8 rounded-full bg-surface/20 flex items-center justify-center shrink-0">
+              <Mic size={18} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="leading-tight">Tap &amp; Speak</span>
-              <span className="text-[11px] font-normal text-blue-100">
+              <span className="leading-tight font-semibold">Tap &amp; Speak</span>
+              <span className="text-label text-surface/80">
                 Describe what happened on site
               </span>
             </div>
@@ -65,7 +64,7 @@ export function IdleStage({
       )}
 
       {/* Structured Text Input Component */}
-      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm">
+      <div className="border border-hair rounded-lg p-4 bg-raised shadow-xs">
         {textInput}
       </div>
 
@@ -73,41 +72,41 @@ export function IdleStage({
       {contextBlock}
 
       {/* 4 Quick Action Cards in 2x2 Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Link
           to="/field/clarifications"
-          className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500 dark:hover:border-blue-500 transition-all flex items-center justify-between gap-3 group shadow-xs"
+          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center justify-between gap-3 group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <MessageSquare size={18} />
+            <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
+              <MessageSquare size={16} />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
+              <div className="text-body font-semibold text-heading leading-tight truncate">
                 Answer planner queries
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              <div className="text-label text-muted truncate">
                 Pre-baseline technical holds
               </div>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-mono text-[10px] font-bold shrink-0">
+          <span className="px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn font-mono text-[10px] font-bold shrink-0">
             2 urgent
           </span>
         </Link>
 
         <Link
           to="/field/report"
-          className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500 dark:hover:border-blue-500 transition-all flex items-center gap-3 group shadow-xs"
+          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
-          <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Wrench size={18} />
+          <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
+            <Wrench size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
+            <div className="text-body font-semibold text-heading leading-tight truncate">
               Report Rig Mod 12 progress
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <div className="text-label text-muted truncate">
               Verify spool erection &amp; torque logs
             </div>
           </div>
@@ -115,16 +114,16 @@ export function IdleStage({
 
         <Link
           to="/field/reports"
-          className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500 dark:hover:border-blue-500 transition-all flex items-center gap-3 group shadow-xs"
+          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
-          <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Truck size={18} />
+          <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
+            <Truck size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
+            <div className="text-body font-semibold text-heading leading-tight truncate">
               Log materials &amp; deliveries
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <div className="text-label text-muted truncate">
               Pipe spools, valves &amp; fittings
             </div>
           </div>
@@ -132,16 +131,16 @@ export function IdleStage({
 
         <Link
           to="/field"
-          className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500 dark:hover:border-blue-500 transition-all flex items-center gap-3 group shadow-xs"
+          className="p-3.5 rounded-lg border border-hair bg-raised hover:bg-selected transition-colors flex items-center gap-3 group"
         >
-          <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-            <AlertTriangle size={18} />
+          <div className="h-9 w-9 rounded-md bg-surface border border-hair text-fg flex items-center justify-center shrink-0">
+            <AlertTriangle size={16} />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
+            <div className="text-body font-semibold text-heading leading-tight truncate">
               Flag site delay / weather hold
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <div className="text-label text-muted truncate">
               Monsoon shutdown &amp; equipment hold
             </div>
           </div>
@@ -152,15 +151,15 @@ export function IdleStage({
       <RecentUpdates />
 
       {/* Footer Disclaimer & Assistant Status */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200/80 dark:border-slate-800 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-hair text-label text-muted">
         <p className="flex items-center gap-2">
-          <ShieldCheck size={15} className="text-blue-600 shrink-0" />
+          <ShieldCheck size={14} className="text-fg shrink-0" />
           <span>Every submitted update requires Planning Engineer confirmation before schedule changes.</span>
         </p>
 
-        <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Field Update Assistant | ONLINE
+        <div className="flex items-center gap-1.5 font-mono text-[11px] font-medium text-ok">
+          <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+          Field Update Assistant · Online
         </div>
       </div>
     </div>

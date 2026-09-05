@@ -57,29 +57,29 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   ];
 
   return (
-    <div className="flex h-screen w-full bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-200 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-surface text-fg overflow-hidden font-sans">
       {/* Desktop/Tablet Sidebar (hidden on small mobile screens) */}
-      <aside className="hidden md:flex w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] flex-col justify-between">
-        <div className="p-5 flex flex-col gap-6">
+      <aside className="hidden md:flex w-64 shrink-0 border-r border-hair bg-sidebar flex-col justify-between z-10">
+        <div className="p-5 flex flex-col gap-5">
           {/* Brand Header */}
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
+            <div className="h-7 w-7 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label">
               N
             </div>
             <div>
-              <div className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white leading-none">
-                NAVIS
+              <div className="font-semibold text-body tracking-tight text-heading leading-none">
+                NAVIS Field
               </div>
-              <div className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 tracking-wider uppercase mt-0.5">
-                FIELD OS
+              <div className="text-label font-medium text-muted mt-0.5">
+                Site Capture OS
               </div>
             </div>
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex flex-col gap-1.5">
-            <div className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1">
-              OPERATIONS
+          <nav className="flex flex-col gap-0.5">
+            <div className="text-label font-medium text-muted px-3 mb-1">
+              Operations
             </div>
             {navItems.map((item) => (
               <NavLink
@@ -87,25 +87,25 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  `flex items-center justify-between px-3 py-2 rounded-md text-body font-medium transition-colors ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-raised text-heading border border-hair shadow-xs'
+                      : 'text-muted hover:bg-selected hover:text-heading'
                   }`
                 }
               >
                 <div className="flex items-center gap-2.5">
-                  <item.icon size={17} />
+                  <item.icon size={16} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span
-                    className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-label font-medium font-mono ${
                       item.badgeColor
                         ? item.badgeColor
                         : location.pathname === item.to
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        ? 'bg-selected text-heading'
+                        : 'bg-surface text-muted border border-hair'
                     }`}
                   >
                     {item.badge}
@@ -116,77 +116,74 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
           </nav>
         </div>
 
-        {/* Sidebar Footer: User Identity & Switch Role */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xs border border-blue-200 dark:border-blue-900">
-              JG
+        {/* Sidebar Footer: Supervisor Identity & Controls */}
+        <div className="p-4 border-t border-hair bg-sidebar/80 flex flex-col gap-2">
+          <div className="flex items-center gap-2.5 px-1 py-1">
+            <div className="h-7 w-7 rounded-md bg-raised border border-hair text-heading flex items-center justify-center font-bold text-label">
+              FS
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                J. Gogoi
+              <div className="text-body font-medium text-heading truncate">
+                Site Supervisor
               </div>
-              <div className="font-mono text-[10px] text-slate-400 truncate">
-                Sector 04 Field Lead
+              <div className="text-label text-muted truncate">
+                {scheduleData?.project ? scheduleData.project : 'Oil India Limited'}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="pt-2 border-t border-hair/50 flex flex-col gap-1">
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-1.5 text-xs font-mono text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
             >
-              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 text-xs font-mono text-rose-600 hover:text-rose-700 transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
             >
-              <LogOut size={13} />
-              <span>Switch Role</span>
+              <LogOut size={14} />
+              <span>Switch role</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface">
         {/* Top Header Bar */}
-        <header className="h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111827] px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
-            <MapPin size={14} className="text-blue-600 shrink-0" />
-            <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
-              OIL Well-Site Duliajan / Sector 04
+        <header className="h-14 shrink-0 border-b border-hair bg-surface px-4 sm:px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-body text-muted truncate">
+            <MapPin size={15} className="text-heading shrink-0" />
+            <span className="font-semibold text-heading truncate">
+              {scheduleData?.project ?? 'Oil India Limited · Pad 04'}
             </span>
-            <span>/</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">
+            <span>·</span>
+            <span className="text-label text-muted">
               {FIELD_ROLE}
-            </span>
-            <span className="hidden sm:inline text-slate-400">
-              (J. Gogoi)
             </span>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-mono text-xs text-slate-600 dark:text-slate-300">
-              <Calendar size={13} className="text-slate-400" />
-              <span>DATA DATE: {scheduleData?.data_date ?? '15 SEP 2026'}</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-raised border border-hair font-mono text-label text-muted">
+              <Calendar size={13} className="text-muted" />
+              <span>Data date: {scheduleData?.data_date ?? '2026-03-01'}</span>
             </div>
 
             <button
               onClick={signOut}
-              className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-600 dark:text-slate-300"
+              className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair text-label text-muted hover:text-heading hover:bg-selected"
             >
               <LogOut size={12} />
-              <span>Role</span>
+              <span>Switch role</span>
             </button>
           </div>
         </header>
 
         {/* Workspace Content View */}
-        <main className="flex-1 overflow-y-auto min-h-0 bg-[#f8fafc] dark:bg-[#0b0f19]">
+        <main className="flex-1 overflow-y-auto min-h-0 bg-surface">
           {children}
         </main>
 

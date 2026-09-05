@@ -164,19 +164,19 @@ export default function ReportStudio() {
 
   return (
     <div className="w-full max-w-[1380px] mx-auto p-4 sm:p-6 lg:p-8 font-sans">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
-          <Link to="/field" className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-hair">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted">
+          <Link to="/field" className="flex items-center gap-1 hover:text-fg transition-colors">
             <ArrowLeft size={14} /> Back to Field Voice OS
           </Link>
           <span>/</span>
-          <span className="text-slate-800 dark:text-slate-200 font-semibold">Report Progress Studio</span>
+          <span className="text-heading font-medium">Report Progress Studio</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
+          <span className="px-2 py-0.5 rounded bg-raised border border-hair text-fg font-medium">
             {PROJECT.code}
           </span>
-          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <span className="px-2 py-0.5 rounded bg-raised border border-hair text-muted">
             DATA DATE {PROJECT.dataDate}
           </span>
         </div>
@@ -184,19 +184,19 @@ export default function ReportStudio() {
 
       {submittedRef && submittedTurn ? (
         /* Reached only from a response carrying event_created AND a row id. */
-        <div className="mt-12 max-w-xl mx-auto border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-8 text-center shadow-sm">
-          <div className="h-14 w-14 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 size={32} />
+        <div className="mt-12 max-w-xl mx-auto border border-hair bg-raised rounded-xl p-8 text-center shadow-xs">
+          <div className="h-12 w-12 rounded-full bg-surface border border-hair text-ok flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={28} />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-heading">
             Sent for planner review
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Recorded as <strong className="font-mono">{submittedRef}</strong>
+          <p className="mt-2 text-sm text-muted leading-relaxed">
+            Recorded as <strong className="font-mono text-fg">{submittedRef}</strong>
             {submittedTurn.slots?.activity_id && (
               <>
                 {' '}against{' '}
-                <strong className="font-mono">{submittedTurn.slots.activity_id}</strong>
+                <strong className="font-mono text-fg">{submittedTurn.slots.activity_id}</strong>
               </>
             )}
             {submittedTurn.activity_description && (
@@ -204,52 +204,54 @@ export default function ReportStudio() {
             )}
             .
           </p>
-          <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+          <p className="mt-2 text-xs text-muted leading-relaxed">
             The schedule has not been changed. A Planning Engineer has to
             resolve this item before any actual date is written to it.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <button
+              type="button"
               onClick={() => navigate('/field/reports')}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-all"
+              className="px-4 py-2 rounded-md bg-fg text-surface text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
             >
               View in My Updates
             </button>
             <button
+              type="button"
               onClick={startOver}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-300 transition-all"
+              className="px-4 py-2 rounded-md border border-hair bg-surface hover:bg-raised text-sm font-medium text-fg transition-colors cursor-pointer"
             >
               Submit Another Report
             </button>
           </div>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ── Left: the report, and what the server made of it ── */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-heading">
                   Report Progress
                 </h1>
-                <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-mono text-[10px] font-bold uppercase">
+                <span className="px-2 py-0.5 rounded-full bg-raised border border-hair text-muted font-mono text-[10px] font-medium uppercase">
                   {turn ? 'STEP 2 OF 2' : 'STEP 1 OF 2'}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 Describe what happened on site. Nothing is written to the
                 schedule from this screen.
               </p>
             </div>
 
             {/* Step 1 — the supervisor's own words */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold flex items-center justify-center">
+            <div className="border border-hair rounded-xl p-5 bg-surface shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-3 border-b border-hair">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-6 w-6 rounded-full bg-raised border border-hair text-muted font-mono text-xs font-semibold flex items-center justify-center">
                     1
                   </span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  <span className="text-sm font-semibold text-heading">
                     Your report
                   </span>
                 </div>
@@ -261,19 +263,19 @@ export default function ReportStudio() {
                 rows={3}
                 placeholder="What work was done? e.g. “Poured 40 m3 on the raft at Pad-04” or “24”-P-1001-A1A hydrotest complete”"
                 aria-label="What work was done"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-y"
+                className="w-full rounded-md border border-hair bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-muted focus:outline-none focus:border-fg transition-colors resize-y font-sans"
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-medium text-muted uppercase tracking-wider">
                     Work front
                   </span>
                   <select
                     value={workFront}
                     onChange={(e) => setWorkFront(e.target.value)}
                     aria-label="Work front"
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-slate-900 dark:text-white"
+                    className="rounded-md border border-hair bg-surface px-2 py-1.5 text-fg focus:outline-none focus:border-fg transition-colors"
                   >
                     {WORK_FRONTS.map((f) => (
                       <option key={f} value={f}>{f}</option>
@@ -282,14 +284,14 @@ export default function ReportStudio() {
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-medium text-muted uppercase tracking-wider">
                     Discipline
                   </span>
                   <select
                     value={discipline}
                     onChange={(e) => setDiscipline(e.target.value as Discipline)}
                     aria-label="Discipline"
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-slate-900 dark:text-white"
+                    className="rounded-md border border-hair bg-surface px-2 py-1.5 text-fg focus:outline-none focus:border-fg transition-colors"
                   >
                     {DISCIPLINES.map((d) => (
                       <option key={d.value} value={d.value}>{d.label}</option>
@@ -298,52 +300,51 @@ export default function ReportStudio() {
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-medium text-muted uppercase tracking-wider">
                     Reported work date
                   </span>
-                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5">
-                    <Calendar size={13} className="text-slate-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 rounded-md border border-hair bg-surface px-2 py-1.5">
+                    <Calendar size={13} className="text-muted shrink-0" />
                     <input
                       type="date"
                       value={workDate}
                       onChange={(e) => setWorkDate(e.target.value)}
                       aria-label="Reported work date"
-                      className="bg-transparent border-0 p-0 text-slate-900 dark:text-white focus:ring-0 w-full"
+                      className="bg-transparent border-0 p-0 text-fg focus:ring-0 w-full text-xs font-mono"
                     />
                   </div>
                 </label>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   type="button"
                   disabled={busy || !report.trim()}
                   onClick={() => send(report)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold text-sm shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+                  className="px-4 py-2 rounded-md bg-fg text-surface font-medium text-xs shadow-xs transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
                 >
                   {busy ? 'Sending…' : turn ? 'Send again' : 'Parse this report'}
                 </button>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-muted">
                   The matcher runs on the server. Nothing is stored yet.
                 </span>
               </div>
             </div>
 
             {/* Step 2 — strictly what came back */}
-            <div className="border border-blue-200/80 dark:border-blue-900/60 rounded-2xl p-5 bg-blue-50/20 dark:bg-blue-950/10 shadow-sm flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-blue-600 text-white font-mono text-xs font-bold flex items-center justify-center">
+            <div className="border border-hair rounded-xl p-5 bg-surface shadow-xs flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-hair">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-6 w-6 rounded-full bg-fg text-surface font-mono text-xs font-semibold flex items-center justify-center">
                     2
                   </span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  <span className="text-sm font-semibold text-heading">
                     NAVIS understood
                   </span>
                 </div>
-                {/* The matcher's own figure, or nothing. This was a hardcoded
-                    "98.4% Confidence match against Primavera P6". */}
+                {/* The matcher's own figure, or nothing. */}
                 {turn && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-mono text-[10px] font-bold">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-raised border border-hair text-fg font-mono text-[11px] font-medium">
                     {turn.confidence > 0
                       ? `${(turn.confidence * 100).toFixed(1)}% match confidence`
                       : 'no confidence reported'}
@@ -353,7 +354,7 @@ export default function ReportStudio() {
               </div>
 
               {!turn ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-muted">
                   Nothing parsed yet. Write the report above and send it — this
                   panel fills in from the server's reply, not before.
                 </p>
@@ -375,23 +376,23 @@ export default function ReportStudio() {
                     <Chip label="Location" value={slots?.location ?? null} />
                   </div>
 
-                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 flex flex-col gap-2">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <div className="border border-hair rounded-lg p-4 bg-raised flex flex-col gap-2">
+                    <h3 className="text-sm font-semibold text-heading">
                       {turn.activity_description ?? 'No activity matched'}
                     </h3>
                     <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-                      <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+                      <span className="px-2 py-0.5 rounded bg-surface border border-hair text-muted font-medium">
                         ACTIVITY ID: {slots?.activity_id ?? '—'}
                       </span>
                     </div>
                     {slots?.quantity_over_planned && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                      <p className="text-[11px] text-warn">
                         Reported quantity exceeds the planned quantity on this
                         activity. The planner will see this flagged.
                       </p>
                     )}
                     {turn.pending_slots.length > 0 && (
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-muted">
                         Still needed: {turn.pending_slots.join(', ')}. Answer in
                         the assistant panel.
                       </p>
@@ -403,13 +404,13 @@ export default function ReportStudio() {
               {failure && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 px-3.5 py-3 text-xs text-rose-700 dark:text-rose-300"
+                  className="flex items-start gap-2.5 rounded-lg border border-hair bg-raised px-3.5 py-3 text-xs text-danger"
                 >
                   <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-bold">Not submitted</div>
+                    <div className="font-semibold text-heading">Not submitted</div>
                     <p className="mt-0.5 leading-relaxed">{failure}</p>
-                    <p className="mt-1 leading-relaxed text-rose-600/80 dark:text-rose-400/80">
+                    <p className="mt-1 leading-relaxed text-muted">
                       Your report is still on this screen. Nothing was sent and
                       nothing was stored anywhere.
                     </p>
@@ -422,45 +423,45 @@ export default function ReportStudio() {
                   type="button"
                   disabled={busy || !readyToSend}
                   onClick={() => send('', { confirm: true })}
-                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-md bg-fg text-surface font-medium text-xs shadow-xs transition-opacity hover:opacity-90 active:opacity-100 flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <Send size={15} />
+                  <Send size={13} />
                   <span>{busy ? 'Submitting…' : 'Send to planner review'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={startOver}
-                  className="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-3.5 py-2 rounded-md border border-hair bg-surface hover:bg-raised text-fg font-medium text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <RotateCcw size={15} />
+                  <RotateCcw size={13} />
                   <span>Start over</span>
                 </button>
                 {!readyToSend && (
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-muted">
                     {turn
                       ? 'The server has not said this is complete yet.'
                       : 'Parse a report first.'}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 italic">
+              <p className="text-[11px] text-muted italic">
                 * The schedule changes strictly after formal planner approval.
               </p>
             </div>
           </div>
 
           {/* ── Right: the real transcript ── */}
-          <div className="lg:col-span-4 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm overflow-hidden flex flex-col h-[680px]">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                  <Bot size={18} />
+          <div className="lg:col-span-4 border border-hair rounded-xl bg-surface shadow-xs overflow-hidden flex flex-col h-[680px]">
+            <div className="p-3.5 border-b border-hair flex items-center justify-between bg-raised">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-md bg-surface border border-hair text-fg flex items-center justify-center">
+                  <Bot size={15} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  <h2 className="text-xs font-semibold text-heading leading-tight">
                     Field Update Assistant
                   </h2>
-                  <div className="text-[10px] font-mono text-slate-400">
+                  <div className="text-[10px] font-mono text-muted">
                     {messages.length === 0
                       ? 'No turns yet'
                       : `${messages.length} message${messages.length === 1 ? '' : 's'} this session`}
@@ -469,9 +470,9 @@ export default function ReportStudio() {
               </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-xs">
+            <div className="flex-1 p-3.5 overflow-y-auto flex flex-col gap-2.5 text-xs">
               {messages.length === 0 && (
-                <p className="text-slate-400 text-center mt-8 leading-relaxed">
+                <p className="text-muted text-center mt-8 leading-relaxed text-xs">
                   The assistant answers here once you send a report. Every line
                   in this thread is a real request and a real reply.
                 </p>
@@ -481,17 +482,17 @@ export default function ReportStudio() {
                 return (
                   <div
                     key={idx}
-                    className={`flex flex-col ${isUser ? 'items-end self-end' : 'items-start self-start'} max-w-[88%]`}
+                    className={`flex flex-col ${isUser ? 'items-end self-end' : 'items-start self-start'} max-w-[90%]`}
                   >
-                    <div className="flex items-center gap-1.5 mb-1 text-[10px] font-mono text-slate-400">
+                    <div className="flex items-center gap-1 mb-1 text-[10px] font-mono text-muted">
                       <span>{isUser ? 'You' : 'NAVIS'}</span>
                       <span>{msg.at}</span>
                     </div>
                     <div
-                      className={`rounded-2xl p-3.5 leading-relaxed ${
+                      className={`rounded-lg p-2.5 leading-relaxed text-xs ${
                         isUser
-                          ? 'bg-blue-600 text-white rounded-br-xs font-semibold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-xs'
+                          ? 'bg-fg text-surface font-medium'
+                          : 'bg-raised border border-hair text-fg'
                       }`}
                     >
                       {msg.text}
@@ -508,7 +509,7 @@ export default function ReportStudio() {
                       type="button"
                       disabled={busy}
                       onClick={() => send(c)}
-                      className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-[11px] font-mono text-slate-600 dark:text-slate-300 transition-colors cursor-pointer disabled:opacity-40"
+                      className="px-2 py-1 rounded-md border border-hair bg-surface hover:bg-raised text-[11px] font-mono text-fg transition-colors cursor-pointer disabled:opacity-40"
                     >
                       {c}
                     </button>
@@ -522,23 +523,23 @@ export default function ReportStudio() {
                 e.preventDefault();
                 send(reply);
               }}
-              className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20"
+              className="p-2.5 border-t border-hair bg-surface"
             >
               <div className="relative flex items-center">
                 <input
                   type="text"
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
-                  placeholder="Reply or provide additional site details..."
-                  className="w-full py-2.5 pl-3 pr-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="Reply or clarify details..."
+                  className="w-full py-2 pl-2.5 pr-9 rounded-md border border-hair bg-surface text-xs text-fg placeholder:text-muted focus:outline-none focus:border-fg"
                 />
                 <button
                   type="submit"
                   title="Send message"
                   disabled={busy || !reply.trim()}
-                  className="absolute right-1.5 p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-40"
+                  className="absolute right-1 p-1 bg-fg text-surface rounded hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-40"
                 >
-                  <Send size={13} />
+                  <Send size={12} />
                 </button>
               </div>
             </form>
@@ -553,13 +554,13 @@ export default function ReportStudio() {
  *  read a value is a different thing from the value being blank. */
 function Chip({ label, value }: { label: string; value: string | null }) {
   return (
-    <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-white dark:bg-slate-900">
-      <span className="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+    <div className="border border-hair rounded-lg p-2.5 bg-raised">
+      <span className="font-mono text-[10px] font-medium text-muted uppercase tracking-wider block mb-0.5">
         {label}
       </span>
       <span
-        className={`font-mono text-xs font-bold ${
-          value ? 'text-slate-900 dark:text-white' : 'text-slate-400'
+        className={`font-mono text-xs font-medium ${
+          value ? 'text-fg' : 'text-muted'
         }`}
       >
         {value ?? '—'}

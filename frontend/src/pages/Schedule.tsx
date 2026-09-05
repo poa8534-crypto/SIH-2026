@@ -943,42 +943,42 @@ export default function Schedule() {
       {/* FILTER BAR */}
       <div className="shrink-0 h-11 px-4 border-b border-hair flex items-center gap-3">
         {/* View Mode Switcher */}
-        <div className="flex items-center rounded border border-hair overflow-hidden mr-1">
+        <div className="flex items-center rounded-md border border-hair overflow-hidden mr-1 bg-surface/50">
           <button
             onClick={() => setViewMode('table')}
-            className={`px-2.5 py-1 text-label font-mono flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors ${
               viewMode === 'table'
-                ? 'bg-selected text-accent font-semibold'
-                : 'text-muted hover:text-fg'
+                ? 'bg-raised text-heading font-semibold shadow-xs'
+                : 'text-muted hover:text-heading'
             }`}
             title="Grid Table View"
           >
-            <LayoutList size={12} />
-            Table
+            <LayoutList size={13} />
+            <span>Table</span>
           </button>
           <button
             onClick={() => setViewMode('gantt')}
-            className={`px-2.5 py-1 text-label font-mono border-l border-hair flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors ${
               viewMode === 'gantt'
-                ? 'bg-selected text-accent font-semibold'
-                : 'text-muted hover:text-fg'
+                ? 'bg-raised text-heading font-semibold shadow-xs'
+                : 'text-muted hover:text-heading'
             }`}
             title="Interactive Dual-Bar CPM Gantt Chart"
           >
-            <CalendarRange size={12} />
-            Gantt Chart
+            <CalendarRange size={13} />
+            <span>Gantt Chart</span>
           </button>
           <button
             onClick={() => setViewMode('doctor')}
-            className={`px-2.5 py-1 text-label font-mono border-l border-hair flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors ${
               viewMode === 'doctor'
-                ? 'bg-selected text-accent font-semibold'
-                : 'text-muted hover:text-fg'
+                ? 'bg-raised text-heading font-semibold shadow-xs'
+                : 'text-muted hover:text-heading'
             }`}
             title="AI Schedule Feasibility & Knowledge Auditor"
           >
-            <Sparkles size={12} className="text-amber-500" />
-            Schedule Doctor
+            <Sparkles size={13} className="text-warn" />
+            <span>Schedule Doctor</span>
           </button>
         </div>
 
