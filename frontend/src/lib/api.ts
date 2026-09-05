@@ -16,10 +16,12 @@ import {
   RaidCandidate,
   RaidItem,
   ResolveResponse,
+  ActivityProductivity,
   DelayAttribution,
   DelayClassifyResponse,
   DelayNoticeResponse,
   Liability,
+  QuantityLedger,
   ReviewItem,
   ScheduleResponse
 } from '../types';
@@ -160,6 +162,32 @@ export const api = {
     const query = new URLSearchParams({ format });
     if (discipline) query.set('discipline', discipline);
     return `${getBaseUrl()}/delay/report?${query.toString()}`;
+  },
+
+  /**
+   * Which readings built this activity's installed quantity, and which the
+   * roll-up refused. GET /activity/{id}/quantity.
+   *
+   * Derived on every request from the same classifier the roll-up itself
+   * uses, so the explanation cannot drift from the answer (D-085).
+   */
+  getQuantityLedger: (activityId: string): Promise<QuantityLedger> => {
+    return fetchWithHandler(
+      `/activity/${encodeURIComponent(activityId)}/quantity`
+    );
+  },
+
+  /**
+   * How fast this activity went and therefore when it finishes.
+   * GET /activity/{id}/productivity.
+   *
+   * Three rates, none of them THE rate, and a forecast from every one that
+   * can produce one (D-087, D-088). Nothing here is written to the schedule.
+   */
+  getActivityProductivity: (activityId: string): Promise<ActivityProductivity> => {
+    return fetchWithHandler(
+      `/activity/${encodeURIComponent(activityId)}/productivity`
+    );
   },
 
   getReviewQueue: (status: string = 'pending'): Promise<ReviewItem[]> => {

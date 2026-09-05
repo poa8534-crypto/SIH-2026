@@ -8117,3 +8117,116 @@ cannot start until a permit arrives forecasts as though it can. The critical
 path exists (D-082) and is not consulted here, so these are ACTIVITY forecasts
 and never a project completion date. Saying which of those two a number is
 matters more than the number.
+
+---
+
+## 2026-09-05 / D-089 — The engine surfaces in the drawer that already answers "why"
+
+### Context
+Phase 4, and the last of the Granularity Resolution Engine. D-085 to D-088
+built the ledger, the rates and the forecast; all of it was reachable only
+through the API.
+
+### Decision
+Two sections added to the Schedule screen's existing `AuditDrawer` —
+**Quantity Ledger** and **Productivity & Forecast** — rather than a new screen.
+The drawer is already the answer to "why does this activity say what it says",
+and a forecast belongs beside the audit trail that explains the progress it was
+computed from.
+
+Each section fetches its own endpoint on its own query key, so opening the
+drawer costs two requests and the table behind it costs none.
+
+**Same design gate as D-083, same answer.** There is no mockup in `Design/`
+for these sections, so they are assembled from the vocabulary the drawer
+already uses — its `Field`, its `SectionTitle`, its tokens, its skeleton and
+error states. Nothing new was invented, and both components say so at the top.
+
+**What the screen must not drop.** The numbers are the backend's and are
+tested there; what the frontend can quietly lose is everything that keeps them
+honest, so the tests assert exactly that:
+
+- a REFUSED reading appears with its reason and its citation, because the
+  refusals are the reason the ledger exists
+- every rate is listed including the ones the forecast did not use, and an
+  unavailable rate prints why rather than a zero
+- the forecast names the rate it used and carries its evidence line
+- a refusal to forecast is stated rather than leaving a blank panel
+- the caveat text comes from the API's own `refusal_note` and `forecast_note`
+  rather than being restated in the frontend, so the screen cannot drift from
+  what the endpoint says
+
+### What it shows on the live corpus
+Opening `ELE-CBL-1076` in the drawer, against the running API:
+
+```
+QUANTITY LEDGER
+  800 / 1200 m = 66.7%
+  COUNTED  800 m   2026-08-11   +800 m
+                   dpr_day_03.txt, line 25
+  REFUSED  1.2 km  2026-08-19   uom mismatch ignored: event 1.2 km vs planned m
+                   dpr_day_05.txt, line 26
+
+PRODUCTIVITY & FORECAST
+  2026-10-04   vs baseline 2026-08-18   +47d
+  from observed_elapsed at 22.222 m/day · 400 m remaining
+  PLANNED           85.714 m/d over 14d
+  OBSERVED ELAPSED  22.222 m/d over 36d
+  OBSERVED REPORTED —  needs readings on at least 2 distinct days; this has 1
+  1 reading over 1 reported day · 800 m confirmed · 0 comparables
+
+AUDIT TRAIL
+  SOURCE CONFLICT — finish asserted, but the evidence accounts for only 0.0%
+  of the node's planned quantity (1200 m) — Actual Finish withheld, scope is
+  partial: 2026-08-19 from dpr_day_05.txt line 26 "HT cable laying complete —
+  full 1.2 km from substation to MCC trench"
+```
+
+The three sections turn out to tell one story, which is the argument for
+putting them in this drawer rather than on a screen of their own. The DPR said
+the cable run was complete. The roll-up refused the finish date because the
+evidence accounted for 0% of the planned quantity. The ledger now says why:
+the reading was 1.2 km against a node planned in metres, and the UOM map has
+no km→m conversion. A planner reading top to bottom can see the refusal, the
+consequence, and the fix.
+
+### Alternatives Considered
+- **A screen of its own.** Rejected: it would separate the forecast from the
+  audit trail that explains the progress behind it, and the drawer already
+  answers this exact question for dates.
+- **One combined request.** Rejected: two endpoints answer two questions, and
+  a client that wanted only the ledger would pay for the critical-path pass
+  behind the forecast.
+- **Restate the caveats in the frontend.** Rejected — it is how a screen drifts
+  from its API. The notes are rendered from the payload.
+
+### Verification
+`npx vitest run` — 129 passed, up from 120. The 9 new tests in
+`frontend/src/test/schedule-granularity.test.tsx` cover the refused reading and
+its reason, the citation, the refusal note coming from the API, the forecast
+with its baseline and variance, the rate it used and why, every rate listed
+including the uncomputable one with its reason, the evidence line, the
+never-written statement, and a refusal to forecast being stated.
+
+`npx tsc --noEmit` clean, `npx vite build` clean, `python -m pytest -q` — 1108
+passed. The drawer was then opened against the running API and returned the
+output above.
+
+One test defect was found and fixed while writing them: `openDrawer` waited for
+the section heading, which renders immediately while both queries are still
+showing skeletons, so every assertion raced the fetch. It now waits for content
+from each section — the same class of flake as the one D-083 fixed in
+`reconcile.test.tsx`.
+
+### Affected Areas
+`frontend/src/pages/Schedule.tsx` (`QuantityLedgerSection`,
+`ForecastSection`, two sections in `AuditDrawer`), `frontend/src/types.ts`,
+`frontend/src/lib/api.ts`, `frontend/src/test/schedule-granularity.test.tsx`
+(new).
+
+### Trade-offs / Consequences
+The drawer now makes three requests when it opens — audit, ledger, productivity
+— and the productivity one runs the critical-path pass behind
+`percent_complete`. At 120 activities that is imperceptible; on a large
+schedule it is the cache D-082 already names as the next step, and the drawer
+is where it would first be felt.

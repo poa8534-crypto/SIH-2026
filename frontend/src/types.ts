@@ -61,6 +61,133 @@ export interface ReviewItem {
   match_method?: string;
 }
 
+/** ── Granularity resolution: quantity, productivity, forecast ──────────────
+ *
+ *  The ledger answers "which readings built this activity's installed
+ *  quantity, and which did the roll-up refuse". A refused reading is a
+ *  DECISION the planner may disagree with, not an absence of data — which is
+ *  why `reason_code` distinguishes a refusal from an event that simply never
+ *  carried a quantity. See D-085.
+ */
+export interface QuantityContribution {
+  linked_event_id: string;
+  job_id: string | null;
+  reported_date: string | null;
+  quantity: number | null;
+  uom: string | null;
+  percentage: number | null;
+  counted_quantity: number | null;
+  counted: boolean;
+  reason_code: string;
+  reason: string;
+  source_file: string | null;
+  source_line: number | null;
+  source_row: number | null;
+  source_span: string | null;
+  raw_text: string | null;
+  confidence: number | null;
+  reviewed: boolean;
+}
+
+export interface QuantityLedger {
+  activity_id: string;
+  description: string | null;
+  discipline: string | null;
+  uom: string | null;
+  planned_qty: number;
+  /** The largest accumulation from any single ingest — what the schedule
+   *  holds, because `actual_qty` is written as max(current, rolled-up). */
+  counted_total: number;
+  /** Every accepted reading added together. Larger than `counted_total`
+   *  exactly when the same work was reported by more than one ingest. */
+  naive_sum_all_jobs: number;
+  reported_by_jobs: number;
+  stored_actual_qty: number | null;
+  totals_agree: boolean;
+  stored_total_basis: string;
+  percent_complete_from_quantity: number | null;
+  /** Uncapped, so an over-report is visible as one. */
+  raw_percent_from_quantity: number | null;
+  contributions: QuantityContribution[];
+  counted_events: number;
+  refused_events: number;
+  events_without_quantity: number;
+  total_note: string;
+  refusal_note: string;
+}
+
+/** One rate, or an honest absence of one: `value` is null with a `note`
+ *  saying why, because a zero would read as "measured, and nothing
+ *  happened". See D-087. */
+export interface ProductivityRate {
+  basis: 'planned' | 'observed_elapsed' | 'observed_reported';
+  value: number | null;
+  days: number | null;
+  quantity: number | null;
+  sample_size: number;
+  note: string;
+}
+
+export interface ProductivityComparables {
+  activity_type: string;
+  count: number;
+  members: string[];
+  median_qty_per_day: number | null;
+  mean_qty_per_day: number | null;
+  enough: boolean;
+  note: string;
+}
+
+/** When this activity finishes according to one rate. Every rate that can
+ *  produce a forecast produces one; a single figure would hide that the same
+ *  evidence supports a range. See D-088. */
+export interface ForecastCandidate {
+  basis: string;
+  rate: number;
+  remaining_days: number;
+  forecast_finish: string;
+  baseline_finish: string | null;
+  variance_days: number | null;
+  sample_size: number;
+  /** Present only on the nominated forecast: why this rate and not another. */
+  why: string | null;
+}
+
+export interface ForecastEvidence {
+  readings_counted: number;
+  reported_days: number;
+  measured_quantity: number;
+  uom: string | null;
+  comparable_activities: number;
+}
+
+export interface ActivityProductivity {
+  activity_id: string;
+  description: string | null;
+  discipline: string | null;
+  uom: string | null;
+  planned_qty: number;
+  counted_qty: number;
+  percent_complete: number;
+  percent_complete_source: string;
+  remaining_qty: number;
+  actual_start: string | null;
+  actual_finish: string | null;
+  as_of: string;
+  reported_days: number;
+  rates: ProductivityRate[];
+  comparables: ProductivityComparables;
+  calendar_basis: string;
+  basis_note: string;
+  baseline_finish: string | null;
+  /** Null when no forecast could be made; `reason` says which refusal. */
+  forecast: ForecastCandidate | null;
+  candidates: ForecastCandidate[];
+  reason: string | null;
+  evidence: ForecastEvidence;
+  forecast_note: string;
+}
+
 /** ── Delay attribution (the Contractor Dispute Shield) ────────────────────
  *
  *  Liability is a PROPOSAL until a planner rules. `liability_proposed` is the

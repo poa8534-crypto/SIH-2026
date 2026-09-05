@@ -276,6 +276,186 @@ function AuditTrail({ activityId }: { activityId: string }) {
   );
 }
 
+/**
+ * Which readings built this activity's installed quantity, and which the
+ * roll-up refused.
+ *
+ * The refusals are the reason this section exists. A ledger showing 800 of
+ * 1200 m without saying that another reading was thrown away for a unit
+ * mismatch would be hiding its own judgement — and on `ELE-CBL-1076` that
+ * discarded reading is 1.2 km, which is 1200 m and would have completed the
+ * activity. See D-085.
+ *
+ * NOTE ON THE DESIGN. There is no mockup in `Design/` for these two sections,
+ * so they are assembled from the vocabulary this drawer already uses — its
+ * `Field`, its `SectionTitle`, its tokens. Nothing new was invented; if a
+ * mockup arrives, this reproduces it instead.
+ */
+function QuantityLedgerSection({ activityId }: { activityId: string }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['quantityLedger', activityId],
+    queryFn: () => api.getQuantityLedger(activityId),
+  });
+
+  if (isLoading) return <Skeleton height="h-20" />;
+  if (error) return <ErrorState error={error} mode="bare" />;
+  if (!data || data.contributions.length === 0) {
+    return (
+      <span className="font-mono text-label text-muted">
+        No readings linked to this activity.
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-baseline gap-2 flex-wrap font-mono text-body">
+        <span className="text-fg">
+          {data.counted_total}
+          <span className="text-muted"> / {data.planned_qty} {data.uom}</span>
+        </span>
+        {data.percent_complete_from_quantity !== null && (
+          <span className="text-muted">
+            = {data.percent_complete_from_quantity}%
+          </span>
+        )}
+        {/* Above 100 means more was reported than the node was planned to
+            hold — usually a quantity from different work matched onto it. */}
+        {data.raw_percent_from_quantity !== null &&
+          data.raw_percent_from_quantity > 100 && (
+            <span className="text-danger text-label uppercase tracking-wider">
+              reported {data.raw_percent_from_quantity}% — over planned scope
+            </span>
+          )}
+      </div>
+
+      <div className="border border-hair rounded-sm divide-y divide-hair">
+        {data.contributions.map((c) => (
+          <div key={c.linked_event_id} className="px-3 py-2 flex flex-col gap-0.5">
+            <div className="flex items-baseline gap-2 flex-wrap font-mono text-label">
+              <span className={c.counted ? 'text-ok' : 'text-danger'}>
+                {c.counted ? 'COUNTED' : 'REFUSED'}
+              </span>
+              <span className="text-fg">
+                {c.quantity ?? '—'} {c.uom ?? ''}
+              </span>
+              <span className="text-muted">{c.reported_date ?? ''}</span>
+            </div>
+            <span className="text-label text-muted break-words">{c.reason}</span>
+            <span className="font-mono text-label text-muted break-words">
+              {c.source_file}
+              {c.source_row !== null
+                ? `, row ${c.source_row}`
+                : c.source_line !== null
+                  ? `, line ${c.source_line}`
+                  : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-label text-muted leading-relaxed">
+        {data.refusal_note}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * How fast the work went, and therefore when it finishes.
+ *
+ * Three rates and none of them is THE rate: the elapsed reading is punished by
+ * reporting gaps, the reported reading ignores them, and the planned rate is
+ * what the schedule assumed. The forecast names which one it used, and every
+ * rate that disagreed is shown beside it — a single figure would hide that the
+ * same evidence supports a range. Nothing here is written to the schedule.
+ * See D-087, D-088.
+ */
+function ForecastSection({ activityId }: { activityId: string }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['activityProductivity', activityId],
+    queryFn: () => api.getActivityProductivity(activityId),
+  });
+
+  if (isLoading) return <Skeleton height="h-20" />;
+  if (error) return <ErrorState error={error} mode="bare" />;
+  if (!data) return null;
+
+  const forecast = data.forecast;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {forecast ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-2 flex-wrap font-mono text-body">
+            <span className="text-fg">{forecast.forecast_finish}</span>
+            <span className="text-muted">vs baseline {forecast.baseline_finish}</span>
+            {forecast.variance_days !== null && (
+              <span className={forecast.variance_days > 0 ? 'text-danger' : 'text-ok'}>
+                {forecast.variance_days > 0 ? '+' : ''}
+                {forecast.variance_days}d
+              </span>
+            )}
+          </div>
+          <span className="font-mono text-label text-muted">
+            from {forecast.basis} at {forecast.rate} {data.uom}/day ·{' '}
+            {data.remaining_qty} {data.uom} remaining
+          </span>
+          {forecast.why && (
+            <span className="text-label text-muted leading-relaxed">
+              {forecast.why}
+            </span>
+          )}
+        </div>
+      ) : (
+        // "We cannot say" and "we did not look" are different answers, so the
+        // refusal is shown rather than an empty panel.
+        <span className="font-mono text-label text-muted">
+          No forecast: {data.reason?.replace(/_/g, ' ')}
+        </span>
+      )}
+
+      {/* Every rate, including the ones the forecast did not use. */}
+      <div className="border border-hair rounded-sm divide-y divide-hair">
+        {data.rates.map((r) => (
+          <div key={r.basis} className="px-3 py-2 flex items-baseline gap-2 flex-wrap">
+            <span className="font-mono text-label uppercase tracking-wider text-muted">
+              {r.basis.replace(/_/g, ' ')}
+            </span>
+            <span className="font-mono text-body text-fg">
+              {r.value === null ? '—' : `${r.value} ${data.uom}/d`}
+            </span>
+            {r.days !== null && (
+              <span className="font-mono text-label text-muted">
+                over {r.days}d
+              </span>
+            )}
+            {r.value === null && (
+              <span className="text-label text-muted break-words">{r.note}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* The evidence line: one reading is a thin basis for a claim in weeks,
+          and the reader is told rather than left to assume. */}
+      <span className="font-mono text-label text-muted break-words">
+        {data.evidence.readings_counted} reading
+        {data.evidence.readings_counted === 1 ? '' : 's'} over{' '}
+        {data.evidence.reported_days} reported day
+        {data.evidence.reported_days === 1 ? '' : 's'} ·{' '}
+        {data.evidence.measured_quantity} {data.evidence.uom} confirmed ·{' '}
+        {data.comparables.count} comparable
+        {data.comparables.count === 1 ? '' : 's'}
+      </span>
+
+      <p className="text-label text-muted leading-relaxed">
+        {data.forecast_note}
+      </p>
+    </div>
+  );
+}
+
 // ── Drawer ──────────────────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -417,6 +597,18 @@ function AuditDrawer({
               )}
             </div>
           </div>
+        </section>
+
+        {/* QUANTITY LEDGER */}
+        <section>
+          <SectionTitle className="mb-3">Quantity Ledger</SectionTitle>
+          <QuantityLedgerSection activityId={activity.activity_id} />
+        </section>
+
+        {/* PRODUCTIVITY AND FORECAST */}
+        <section>
+          <SectionTitle className="mb-3">Productivity &amp; Forecast</SectionTitle>
+          <ForecastSection activityId={activity.activity_id} />
         </section>
 
         {/* AUDIT TRAIL */}

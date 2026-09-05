@@ -1291,6 +1291,47 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Phase 4 — the engine surfaces in the Schedule drawer. Completes the
+Granularity Resolution Engine (Phases 0–4).
+**Date:** 2026-09-05 · **Decision:** D-089
+
+```
+SCHEDULE DRAWER — WHERE THE ENGINE SURFACES                        (D-089)
+
+  frontend/src/pages/Schedule.tsx  AuditDrawer
+      DETAIL            (existing)
+      QUANTITY LEDGER   QuantityLedgerSection
+          useQuery ['quantityLedger', id] -> GET /activity/{id}/quantity
+          counted total / planned, over-report flagged when raw > 100
+          every contribution: COUNTED or REFUSED, its reason, its citation
+          refusal_note rendered FROM THE PAYLOAD, never restated here
+      PRODUCTIVITY & FORECAST   ForecastSection
+          useQuery ['activityProductivity', id]
+              -> GET /activity/{id}/productivity
+          forecast finish · baseline · variance · the rate used and why
+          all three rates, an unavailable one printing its reason not a zero
+          the evidence line: readings, reported days, confirmed qty,
+            comparables
+          "never written to the schedule" from forecast_note
+          a refusal prints "No forecast: <reason>", never a blank panel
+      AUDIT TRAIL       (existing)
+
+  No mockup exists for these two sections, so they are assembled from the
+  drawer's own vocabulary and both components say so (same gate as D-083).
+
+  ONE STORY, TOP TO BOTTOM, on ELE-CBL-1076:
+    ledger    1.2 km REFUSED against a node planned in m
+    forecast  +47d, from the elapsed rate, on 1 reading
+    audit     finish withheld - evidence accounts for 0.0% of planned qty
+  The DPR said the run was complete; the ledger says why nothing counted.
+
+  Pinned by frontend/src/test/schedule-granularity.test.tsx (9 tests).
+```
+
+---
+
+### Previous modification area (D-088)
+
 **Task:** Phase 3 of the Granularity Resolution Engine — the forecast.
 Remaining quantity over a named rate, with every rate that disagreed listed
 beside it, and five refusals that each carry a reason.
