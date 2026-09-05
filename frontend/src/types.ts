@@ -872,3 +872,76 @@ export interface RaidCandidate {
   source_note: string | null;
   committed: boolean;
 }
+
+// ── Executive Intelligence & S-Curve ─────────────────────────────────────────
+
+export interface ExecutiveSCurvePoint {
+  date: string;
+  week_label: string;
+  pv_cumulative: number;
+  ev_cumulative: number | null;
+  ev_projected: number | null;
+  is_future: boolean;
+}
+
+export interface ExecutiveMilestone {
+  name: string;
+  baseline_date: string;
+  forecast_date: string;
+  variance_days: number;
+  status: string;
+  confidence: string;
+}
+
+export interface ExecutiveCriticalDriver {
+  activity_id: string;
+  description: string;
+  discipline: string;
+  planned_finish: string | null;
+  actual_finish: string | null;
+  finish_variance_days: number;
+  driving_delay: string;
+  critical: boolean;
+}
+
+export interface ExecutiveMetricsResponse {
+  as_of: string;
+  kpis: {
+    spi: number | null;
+    spi_band: string;
+    pv_total: number;
+    ev_total: number;
+    float_drift_days: number;
+    critical_activities_count: number;
+    evidence_coverage_pct: number;
+    total_activities: number;
+    evidenced_activities: number;
+    unevidenced_activities: number;
+  };
+  dispute_shield: {
+    employer_delay_days: number;
+    contractor_delay_days: number;
+    concurrent_delay_days: number;
+    neutral_delay_days: number;
+    employer_claim_cr: number;
+    contractor_ld_risk_cr: number;
+    contract_value_cr: number;
+    notice_compliance_pct: number;
+    notice_served_count: number;
+    notice_open_count: number;
+    notice_lapsed_count: number;
+  };
+  completion_forecast: {
+    baseline_finish: string | null;
+    current_forecast_finish: string | null;
+    variance_days: number;
+    p10_finish: string;
+    p50_finish: string;
+    p90_finish: string;
+    monte_carlo_runs: number;
+  };
+  s_curve: ExecutiveSCurvePoint[];
+  critical_drivers: ExecutiveCriticalDriver[];
+  milestones: ExecutiveMilestone[];
+}
+

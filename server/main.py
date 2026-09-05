@@ -54,6 +54,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from extraction.textio import read_text
 from server import agent_llm
 from server import delay_report
+from server import executive_metrics
 from server import productivity
 from server import quantity_ledger
 from server.delay_events import (
@@ -2611,6 +2612,18 @@ def get_evm(db: Session = Depends(get_db)):
     no table, no migration, nothing stored.
     """
     return compute_evm(db, DATA_DATE)
+
+# ── GET /executive/metrics ──────────────────────────────────────────────────
+
+@app.get("/executive/metrics")
+def get_executive_metrics(db: Session = Depends(get_db)):
+    """Portfolio oversight intelligence for senior management.
+
+    Returns high-level KPIs, cumulative EVM S-Curve (PV vs EV), critical path float
+    drift, milestone health, contractual FIDIC dispute liability breakdown in ₹ Crores,
+    and ground-truth evidence coverage.
+    """
+    return executive_metrics.compute_executive_metrics(db, DATA_DATE)
 # ── GET /field/notifications ────────────────────────────────────────────────
 
 @app.get("/field/notifications", response_model=list[FieldNotification])

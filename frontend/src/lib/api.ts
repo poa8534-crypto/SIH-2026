@@ -12,6 +12,7 @@ import {
   MemoryQueryResponse,
   SourceConflict,
   EvmResponse,
+  ExecutiveMetricsResponse,
   EvidenceCorpus,
   RaidCandidate,
   RaidItem,
@@ -271,6 +272,13 @@ export const api = {
    * ACWP, which no daily progress report carries. See D-046.
    */
   getEvm: (): Promise<EvmResponse> => fetchWithHandler('/evm'),
+
+  /**
+   * Executive intelligence suite: cumulative EVM S-Curve, FIDIC dispute risk in ₹ Cr,
+   * critical path float drift, milestone health, and evidence coverage.
+   */
+  getExecutiveMetrics: (): Promise<ExecutiveMetricsResponse> => fetchWithHandler('/executive/metrics'),
+
 
   /**
    * The RAID register. Only entries a planner has accepted appear here;
