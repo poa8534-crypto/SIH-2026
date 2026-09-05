@@ -901,11 +901,23 @@ def _apply_rollup_to_schedule(db: Session, results,
                 )
                 audits += 1
 
-        # Installed quantity (quantity-based percent complete lives in
-        # percent_complete = actual_qty / planned_qty, computed on read)
+        # Installed quantity: what sources actually MEASURED, and nothing
+        # else. Percent complete is derived from it on read
+        # (server/evm.py percent_complete rule 2).
+        #
+        # This used to back-derive a quantity from an asserted percentage when
+        # nothing was counted - `percent_complete / 100 * planned_qty` - which
+        # put a synthesised number in a column named for a measurement. On the
+        # seeded corpus that was 29 of 120 activities: PIP-SPL-1025 held 18 of
+        # 18 nos with no quantity on any linked event, because one line said
+        # 100%. The quantity ledger could not attribute those totals to any
+        # reading, and D-084 labelled their percent complete `installed_quantity`
+        # when the evidence was an asserted percentage (D-085, D-086).
+        #
+        # Nothing is lost by refusing to synthesise: an activity with only a
+        # percentage still scores through `percent_complete` rule 3, from the
+        # LinkedEvent the percentage was asserted on, and now says so.
         new_qty = r.installed_qty
-        if new_qty <= 0 and r.percent_complete > 0 and act.planned_qty:
-            new_qty = round(r.percent_complete / 100.0 * act.planned_qty, 3)
         if new_qty > (act.actual_qty or 0.0):
             _write_audit(
                 db, r.activity_id,

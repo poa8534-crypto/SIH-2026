@@ -1291,10 +1291,39 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Phase 1 of the Granularity Resolution Engine — the quantity ledger.
-`GET /activity/{id}/quantity` shows which readings built an activity's
-installed quantity and, more to the point, which the roll-up refused and why.
-**Date:** 2026-09-05 · **Decision:** D-085
+**Task:** Phase 1 of the Granularity Resolution Engine — the quantity ledger,
+and the write-path fix it prompted: `actual_qty` now holds a measurement or
+nothing, never a quantity back-derived from an asserted percentage.
+**Date:** 2026-09-05 · **Decisions:** D-085, D-086
+
+```
+actual_qty — A MEASUREMENT, OR NOTHING                            (D-086)
+
+  server/main.py  _apply_rollup_to_schedule()
+    was:  new_qty = installed_qty
+          if new_qty <= 0 and percent_complete > 0 and planned_qty:
+              new_qty = percent_complete / 100 * planned_qty   <- SYNTHESISED
+    now:  new_qty = installed_qty                              <- only that
+          (still max(current, new) across ingests - monotonic)
+
+  Nothing lost: all 29 affected activities carry a persisted
+  LinkedEvent.percentage, so each still scores through percent_complete rule 3
+  and now carries the label that names its evidence.
+
+  MEASURED by re-ingesting the corpus
+    EV 640.4 -> 640.407 · SPI 0.4984 -> 0.4984 · evidenced SPI unchanged
+    installed_quantity      28 -> 14
+    linked_event_percentage  1 -> 15      the 14 relabelled
+    stored_total_basis   counted_readings 91 -> 120, the other two empty
+
+  Every project figure identical; every stored quantity now attributable to a
+  reading. Matters before Phase 2: dividing a percentage-derived quantity by
+  elapsed days would be an invented rate in measured units.
+```
+
+---
+
+### Phase 1 detail (D-085)
 
 ```
 QUANTITY LEDGER — THE ARITHMETIC, AND THE REFUSALS          (D-085)

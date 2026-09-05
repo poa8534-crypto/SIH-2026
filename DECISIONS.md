@@ -7774,3 +7774,103 @@ event no longer holds, the ledger reports `derived_from_percentage` or
 `unattributed` rather than inventing an attribution. That is the honest answer,
 and the 28 rows it applies to are a prompt to fix the write path, not the
 reader.
+
+---
+
+## 2026-09-05 / D-086 — `actual_qty` holds a measurement, or nothing
+
+### Context
+D-085's ledger found that `_apply_rollup_to_schedule` writes:
+
+```python
+new_qty = r.installed_qty
+if new_qty <= 0 and r.percent_complete > 0 and act.planned_qty:
+    new_qty = round(r.percent_complete / 100.0 * act.planned_qty, 3)
+```
+
+When no quantity was counted but a source asserted a PERCENTAGE, the schedule
+stored a quantity **back-derived from that percentage**. On the seeded corpus
+that was 29 of 120 activities: `PIP-SPL-1025` held 18 of 18 nos with no
+quantity on any linked event at all, because one line said 100%.
+
+Two things followed. The quantity ledger could not attribute those totals to
+any reading — it reported `derived_from_percentage` for 28 and `unattributed`
+for one. And D-084's `percent_complete` labelled their source
+`installed_quantity` when the evidence was an asserted percentage: the
+arithmetic was right and the provenance was not.
+
+It also matters ahead of the productivity phase, where installed quantity gets
+divided by elapsed time. Dividing a percentage-derived number by days and
+calling the result a production rate would be an invented figure wearing a
+measured one's units.
+
+### Decision
+The write no longer synthesises. `actual_qty` is what sources measured, or
+nothing.
+
+**Nothing is lost, and this was verified before the change rather than
+asserted after it.** Every one of the 29 activities carries a persisted
+`LinkedEvent.percentage`, so each still scores through `percent_complete` rule
+3 — from the event the percentage was actually asserted on, and now labelled as
+such. The round trip was lossless in the first place: `PIP-SPL-1027` stored
+9.94 of 14 nos, which is 71.0%, against an asserted 71.0%. The synthesis added
+nothing but ambiguity about what the column meant.
+
+### Measured, by re-ingesting the whole corpus
+```
+                            BEFORE      AFTER
+earned value                 640.4    640.407
+project SPI                 0.4984     0.4984
+evidenced SPI               0.9033     0.9033
+evidence coverage              55%      54.5%
+activities with evidence        67         67
+quantity overruns                1          1
+
+percent_source_counts
+  actual_finish                 38         38
+  installed_quantity            28         14
+  linked_event_percentage        1         15
+  no_evidence_floor             53         53
+
+stored_total_basis      counted_readings 91 -> 120   (all of them)
+                        derived_from_percentage 28 -> 0
+                        unattributed 1 -> 0
+```
+
+**Every figure that measures the project is unchanged, and fourteen labels are
+now accurate.** The fourteen are the unfinished derived activities; the other
+fifteen were already scored 100% by `actual_finish`, so their label never
+depended on this. Every stored quantity in the schedule is now attributable to
+readings a source actually made.
+
+### Alternatives Considered
+- **Keep the synthesis and add a basis column.** Rejected: a column named
+  `actual_qty` holding two kinds of number, plus a second column to say which,
+  is worse than a column that holds one kind and is null when it has none.
+- **Keep it and only fix the label.** Rejected for the same reason, and it
+  would leave the productivity phase dividing a synthetic quantity by time.
+- **Migrate the existing rows.** Not needed: `actual_qty` is derived data,
+  `scripts/reset_demo.py` re-ingests, and the project's standing preference is
+  a reset over a migration for regenerable data.
+
+### Verification
+`python -m pytest -q` — 1085 passed, up from 1083. The two new tests in
+`server/test_evm.py` pin the read end: a percentage-only activity scores
+through rule 3 with the `linked_event_percentage` label, and earns exactly the
+weight it earned before, so the fix cannot silently become a progress
+regression.
+
+`scripts/reset_demo.py` then the EVM comparison above; `scripts/healthcheck.py`
+against a running server — 35 endpoints, 31 checks passed. `matching/` and
+`extraction/` untouched, so `eval.py` is not implicated.
+
+### Affected Areas
+`server/main.py` (`_apply_rollup_to_schedule`), `server/test_evm.py`.
+
+### Trade-offs / Consequences
+An activity reported only as a percentage now has `actual_qty` NULL where it
+previously held a number. Anything reading that column for a quantity gets
+nothing instead of a plausible-looking fiction, which is the intended
+direction — `server/main.py :: _compute_productivity` already guards on
+`a.actual_qty and a.actual_qty > 0` and so simply stops counting those rows,
+which is correct: they never had a measured quantity to build a rate from.

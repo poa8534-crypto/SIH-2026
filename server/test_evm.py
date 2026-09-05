@@ -384,6 +384,41 @@ class TestQuantityScoresProgress:
         assert r["evidence_coverage"]["activities_with_evidence"] == 1
 
 
+class TestAPercentageIsNotDressedUpAsAQuantity:
+    """D-086. `_apply_rollup_to_schedule` used to back-derive a quantity from
+    an asserted percentage when nothing was counted, so a synthesised number
+    sat in a column named for a measurement and rule 2 then labelled its
+    percent complete `installed_quantity`. On the seeded corpus that was 29 of
+    120 activities. The write no longer synthesises, and these pin the
+    consequence at the read end."""
+
+    def test_a_percentage_only_activity_scores_through_rule_3(self, db):
+        act = _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                        planned_qty=18, actual_qty=None, uom="nos")
+        _event(db, "A", 100.0)
+        db.commit()
+
+        pct, source = percent_complete(act, {"A": 100.0})
+        assert pct == 100.0
+        # The label names the evidence, not the arithmetic.
+        assert source == SOURCE_LINKED_EVENT
+
+    def test_it_earns_exactly_what_it_did_before(self, db):
+        """Nothing is lost by refusing to synthesise. A 10-day activity wholly
+        before the data date at 100% earns its full weight either way; only
+        the source label changes."""
+        _activity(db, "A", date(2026, 9, 1), date(2026, 9, 10),
+                  planned_qty=18, actual_qty=None, uom="nos")
+        _event(db, "A", 100.0)
+        db.commit()
+
+        r = compute_evm(db, DATA_DATE)
+        assert r["project"]["earned_value"] == pytest.approx(10.0)
+        counts = r["project"]["percent_source_counts"]
+        assert counts[SOURCE_LINKED_EVENT] == 1
+        assert counts[SOURCE_QUANTITY] == 0
+
+
 class TestOverInstallationIsCappedAndReported:
     """An activity installing more than its planned quantity is usually a
     quantity from different work matched onto the node - a linking fault, not
