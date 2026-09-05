@@ -1059,3 +1059,20 @@ export interface ScheduleAuditResponse {
   audited_at: string;
 }
 
+export interface BaselineImportResponse {
+  baseline?: {
+    name: string;
+    filename: string;
+    imported_at: string;
+    activity_count: number;
+    sha256: string;
+    source_format: string;
+    source: string;
+  } | null;
+  activities_created: number;
+  activities_updated: number;
+  activities_in_file: number;
+  replaced: boolean;
+  message: string;
+}
+

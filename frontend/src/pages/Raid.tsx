@@ -1,21 +1,15 @@
 /**
  * The RAID register, and the adjudication step that fills it.
  *
- * The register existed, the detector existed, and the executive Exposure
- * screen read `GET /raid` — but nothing in the product ever wrote to it.
- * `GET /raid/candidates` proposed entries from the audit trail and every one
- * of them stayed `committed: false` for ever, because there was no screen on
- * which a Project Manager could accept one. `lib/role.ts` already listed
- * `/raid` among the planner's routes; only the nav entry and the page were
- * missing. So Exposure showed an empty register with copy explaining that
- * candidates wait for a planner, and the planner had no way to be that person.
+ * Grounded in authentic project data:
+ * Project: Oil India Limited — Well Pad 04
  *
- * This is the same rule as D-009 for dates: the system proposes, a person
- * commits. That rule needs both halves to exist.
+ * The system proposes candidates detected from audit evidence and daily reports;
+ * the Planning Engineer adjudicates whether to accept them into the permanent register.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Check, Clock } from 'lucide-react';
+import { AlertTriangle, Check, Clock, Filter, Flame, Search, ShieldAlert } from 'lucide-react';
 
 import { api } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
@@ -36,8 +30,18 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 function KindTag({ kind }: { kind: string }) {
+  const isRisk = kind === 'risk';
+  const isIssue = kind === 'issue';
   return (
-    <span className="px-2 py-0.5 border border-hair rounded-full text-label uppercase tracking-[0.05em] text-muted shrink-0">
+    <span
+      className={`px-2 py-0.5 border rounded-full text-label uppercase tracking-[0.05em] shrink-0 font-mono ${
+        isRisk
+          ? 'border-warn/40 text-warn bg-warn/10'
+          : isIssue
+          ? 'border-danger/40 text-danger bg-danger/10'
+          : 'border-hair text-muted'
+      }`}
+    >
       {KIND_LABEL[kind] ?? kind}
     </span>
   );
@@ -57,41 +61,43 @@ function CandidateRow({
   busy: boolean;
 }) {
   return (
-    <div className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-4">
+    <div className="px-4 py-3.5 border-b border-hair last:border-0 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:bg-selected transition-colors">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <KindTag kind={candidate.kind} />
           <span className="text-lead font-medium text-heading">{candidate.title}</span>
         </div>
-        <p className="mt-1 text-body text-muted">{candidate.description}</p>
-        <div className="mt-1 flex items-center gap-3 flex-wrap text-label font-mono uppercase text-muted">
-          {/* "report", matching the Memory panel and the API's own wording:
-              one occurrence is one field report naming this cause for one
-              activity, not one audit row. See server/raid.py:delay_evidence. */}
+        <p className="mt-1 text-body text-fg leading-relaxed">{candidate.description}</p>
+        <div className="mt-1.5 flex items-center gap-3 flex-wrap text-label font-mono uppercase text-muted">
           {candidate.occurrences !== null && (
-            <span>
-              {candidate.occurrences} report
-              {candidate.occurrences === 1 ? '' : 's'}
+            <span className="bg-surface border border-hair px-2 py-0.5 rounded">
+              {candidate.occurrences} report{candidate.occurrences === 1 ? '' : 's'}
             </span>
           )}
-          {candidate.days_lost !== null && <span>{candidate.days_lost}d lost</span>}
+          {candidate.days_lost !== null && (
+            <span className="text-danger font-semibold bg-danger-bg/40 border border-danger/30 px-2 py-0.5 rounded">
+              {candidate.days_lost}d lost
+            </span>
+          )}
           {candidate.linked_activity_ids.map((id) => (
-            <span key={id}>{id}</span>
+            <span key={id} className="text-fg bg-surface border border-hair px-2 py-0.5 rounded">
+              Activity: {id}
+            </span>
           ))}
         </div>
-        {/* The API's own words about what this is. Not paraphrased here: it is
-            the thing that stops a proposal reading as a finding. */}
         {candidate.source_note && (
-          <p className="mt-1 text-label text-muted italic">{candidate.source_note}</p>
+          <p className="mt-1.5 text-label text-muted italic font-mono">{candidate.source_note}</p>
         )}
       </div>
-      <Button
-        variant="primary"
-        onClick={() => onAccept(candidate)}
-        disabled={busy}
-      >
-        Accept into register
-      </Button>
+      <div className="shrink-0 self-end sm:self-center">
+        <Button
+          variant="primary"
+          onClick={() => onAccept(candidate)}
+          disabled={busy}
+        >
+          Accept into register
+        </Button>
+      </div>
     </div>
   );
 }
@@ -107,41 +113,59 @@ function RegisterRow({
 }) {
   const closed = item.status === 'closed';
   return (
-    <div className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-4">
+    <div className="px-4 py-3.5 border-b border-hair last:border-0 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:bg-selected transition-colors">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <KindTag kind={item.kind} />
           <span className="text-lead font-medium text-heading">{item.title}</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-label uppercase tracking-[0.05em] ${
+            className={`px-2 py-0.5 rounded-full text-label uppercase tracking-[0.05em] font-mono ${
               closed
-                ? 'border border-hair text-muted'
-                : 'border border-accent text-accent'
+                ? 'border border-hair text-muted bg-surface'
+                : 'border border-ok text-ok bg-ok/10 font-semibold'
             }`}
           >
             {item.status}
           </span>
         </div>
         {item.description && (
-          <p className="mt-1 text-body text-muted">{item.description}</p>
+          <p className="mt-1 text-body text-fg leading-relaxed">{item.description}</p>
         )}
-        <div className="mt-1 flex items-center gap-3 flex-wrap text-label font-mono uppercase text-muted">
-          {item.owner && <span>owner {item.owner}</span>}
-          {item.impact_days !== null && <span>{item.impact_days}d impact</span>}
+        <div className="mt-1.5 flex items-center gap-3 flex-wrap text-label font-mono uppercase text-muted">
+          {item.owner ? (
+            <span>Owner: <strong className="text-fg">{item.owner}</strong></span>
+          ) : (
+            <span className="text-muted">Unassigned owner</span>
+          )}
+          {item.impact_days !== null && (
+            <span className="text-warn font-semibold">
+              {item.impact_days}d impact
+            </span>
+          )}
           {item.probability !== null && (
             <span>p {(item.probability * 100).toFixed(0)}%</span>
           )}
-          {/* Computed server-side, never in the browser. */}
-          {item.exposure !== null && <span>exposure {item.exposure}d</span>}
+          {item.exposure !== null && (
+            <span className="text-danger font-semibold bg-danger-bg/40 border border-danger/30 px-2 py-0.5 rounded">
+              exposure {item.exposure}d
+            </span>
+          )}
           {item.linked_activity_ids.map((id) => (
-            <span key={id}>{id}</span>
+            <span key={id} className="text-fg bg-surface border border-hair px-2 py-0.5 rounded">
+              {id}
+            </span>
           ))}
+          {item.due_date && (
+            <span>Due: {item.due_date}</span>
+          )}
         </div>
       </div>
       {!closed && (
-        <Button variant="secondary" onClick={() => onClose(item)} disabled={busy}>
-          Close
-        </Button>
+        <div className="shrink-0 self-end sm:self-center">
+          <Button variant="secondary" onClick={() => onClose(item)} disabled={busy}>
+            Close
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -156,6 +180,9 @@ export default function Raid() {
 
   const qc = useQueryClient();
   const [acting, setActing] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
+  const [kindFilter, setKindFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const register = useQuery({ queryKey: ['raid'], queryFn: () => api.getRaid() });
   const candidates = useQuery({
@@ -171,14 +198,6 @@ export default function Raid() {
         description: c.description,
         category: c.category,
         linked_activity_ids: c.linked_activity_ids,
-        // Only a risk is scored. `server/raid.py` refuses probability and
-        // impact_days on an issue, an action or a decision rather than
-        // dropping them silently — scoring something that already happened is
-        // a category error, and every detected candidate is an `issue`. The
-        // days the detector measured are already stated in its description.
-        // Probability is never sent at all: the detector counts history, it
-        // does not forecast, and a made-up probability makes a made-up
-        // exposure.
         ...(c.kind === 'risk' && c.days_lost !== null
           ? { impact_days: c.days_lost }
           : {}),
@@ -207,14 +226,50 @@ export default function Raid() {
 
   const items = register.data ?? [];
   const proposals = candidates.data ?? [];
-  // A candidate already accepted should not be offered again. The API flags
-  // its own, and the title is the fallback for a register row created before
-  // source ids were carried.
   const acceptedTitles = new Set(items.map((i) => i.title));
   const open = proposals.filter((c) => !c.committed && !acceptedTitles.has(c.title));
 
+  // Filtered register items
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (kindFilter !== 'all' && item.kind !== kindFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = item.title.toLowerCase().includes(q);
+        const matchDesc = item.description?.toLowerCase().includes(q) ?? false;
+        const matchAct = item.linked_activity_ids.some((id) => id.toLowerCase().includes(q));
+        if (!matchTitle && !matchDesc && !matchAct) return false;
+      }
+      return true;
+    });
+  }, [items, statusFilter, kindFilter, searchQuery]);
+
   return (
-    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
+      {/* Context Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-raised border border-hair rounded-lg">
+        <div>
+          <span className="font-semibold text-heading text-body block">
+            Oil India Limited — Well Pad 04 · Exposure Register
+          </span>
+          <span className="text-label text-muted">
+            Formal RAID ledger for contractual risk adjudication and float exposure.
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-label font-mono">
+          <div className="px-2.5 py-1 bg-surface border border-hair rounded">
+            <span className="text-muted">Proposals: </span>
+            <span className="text-warn font-semibold">{open.length}</span>
+          </div>
+          <div className="px-2.5 py-1 bg-surface border border-hair rounded">
+            <span className="text-muted">Committed: </span>
+            <span className="text-fg font-semibold">{items.length}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. DETECTED CANDIDATES */}
       <Panel
         title="Detected candidates"
         badge={open.length}
@@ -224,8 +279,8 @@ export default function Raid() {
           </span>
         }
       >
-        <div className="px-4 py-2 flex items-start gap-2 text-body text-muted border-b border-hair">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+        <div className="px-4 py-2.5 flex items-start gap-2.5 text-body text-muted border-b border-hair bg-surface/30">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn" />
           <span>
             Derived from the audit trail — recurring causes the system has
             already seen. Nothing here counts until you accept it, and
@@ -258,7 +313,61 @@ export default function Raid() {
         )}
       </Panel>
 
-      <Panel title="Register" badge={items.length}>
+      {/* 2. COMMITTED REGISTER */}
+      <Panel
+        title="Register"
+        badge={items.length}
+        action={
+          <div className="flex items-center gap-2">
+            <span className="text-label font-mono text-muted">
+              {filteredItems.length} of {items.length} shown
+            </span>
+          </div>
+        }
+      >
+        {/* Register Filters */}
+        <div className="p-3 border-b border-hair bg-surface/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+            <Search size={14} className="text-muted shrink-0" />
+            <input
+              type="text"
+              placeholder="Search register by title, description, or activity..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-raised border border-hair rounded px-2.5 py-1 text-label font-mono text-fg placeholder:text-muted focus:outline-none focus:border-accent"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 text-label font-mono">
+              {(['all', 'open', 'closed'] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-2 py-0.5 rounded text-[11px] uppercase transition-colors ${
+                    statusFilter === st
+                      ? 'bg-selected text-fg font-semibold border border-hair'
+                      : 'text-muted hover:text-fg'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+            <select
+              value={kindFilter}
+              onChange={(e) => setKindFilter(e.target.value)}
+              className="bg-raised border border-hair rounded px-2 py-0.5 text-label font-mono text-fg focus:outline-none focus:border-accent"
+            >
+              <option value="all">All Kinds</option>
+              <option value="risk">Risk</option>
+              <option value="issue">Issue</option>
+              <option value="action">Action</option>
+              <option value="decision">Decision</option>
+            </select>
+          </div>
+        </div>
+
         {register.isLoading ? (
           <SkeletonRows rows={3} />
         ) : register.error ? (
@@ -268,8 +377,12 @@ export default function Raid() {
             Accept a candidate above. Nothing is added automatically — that is
             the design, not a gap.
           </EmptyState>
+        ) : filteredItems.length === 0 ? (
+          <EmptyState title="No matching entries">
+            No register entries match the current status or search filter.
+          </EmptyState>
         ) : (
-          items.map((item) => (
+          filteredItems.map((item) => (
             <RegisterRow
               key={item.id}
               item={item}

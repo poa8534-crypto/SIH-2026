@@ -4,12 +4,17 @@ import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
   Check,
+  Database,
+  FileSpreadsheet,
   FileText,
   Info,
+  Layers,
+  ShieldAlert,
+  ShieldCheck,
   Upload,
 } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
-import { ExtractedEvent, JobResponse } from '../types';
+import { BaselineImportResponse, ExtractedEvent, JobResponse } from '../types';
 import { isDiscipline } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
@@ -24,28 +29,18 @@ import {
 } from '../components/ui';
 
 /**
- * QUESTION:  What did the system just do with my file?
- * ACTION:    Go deal with the events that need a human.
+ * INGEST — TWO-CHANNEL DATA PIPELINE
  *
- * Every number on this screen comes from the POST /ingest response and the
- * follow-up GET /jobs/{id}. The event table's Why column renders
- * `LinkedEventResponse.rationale` — the matcher's own deterministic feature
- * names, per D-003 — so a confidence figure is never shown without the reason
- * behind it. See D-031.
+ * Channel 1: Field Progress Reports (heterogeneous site progress: DPRs, spreadsheets, OCR)
+ * Channel 2: Baseline Schedule Import (Primavera P6 XML/XER baseline import & dry-run validation)
  */
 
-/** The file formats accepted by the ingest drop zone. Supports digital & scanned formats. */
-const ACCEPTED_EXTENSIONS = ['.txt', '.xlsx', '.csv', '.pdf', '.png', '.jpg', '.jpeg'] as const;
-const ACCEPTED_LABEL = '.pdf, .xlsx, .csv, .txt, .png, .jpg';
+const FIELD_ACCEPTED_EXTENSIONS = ['.txt', '.xlsx', '.csv', '.pdf', '.png', '.jpg', '.jpeg'] as const;
+const FIELD_ACCEPTED_LABEL = '.pdf, .xlsx, .csv, .txt, .png, .jpg';
 
-/**
- * Milliseconds between trace lines.
- *
- * Was 550, which put 1.65s of manufactured delay on the one moment the whole
- * screen exists for — and by its own comment the data was already complete
- * before the first line appeared. At 130 the four stages still resolve in
- * order, which is the only thing the stagger was for, in under 400ms total.
- */
+const BASELINE_ACCEPTED_EXTENSIONS = ['.xml', '.xer', '.json'] as const;
+const BASELINE_ACCEPTED_LABEL = '.xml (Primavera PMXML), .xer (Primavera XER), .json';
+
 const TRACE_BEAT = 130;
 
 function extensionOf(name: string): string {
@@ -57,7 +52,6 @@ function formatBytes(n: number): string {
   return `${n.toLocaleString()} bytes`;
 }
 
-/** Where in the source this event was found. */
 function positionOf(ev: ExtractedEvent): string {
   if (ev.source_line !== null) return `L${ev.source_line}`;
   if (ev.source_row !== null) return `R${ev.source_row}`;
@@ -68,15 +62,6 @@ function positionOf(ev: ExtractedEvent): string {
 
 type TraceLine = { label: string; detail: React.ReactNode };
 
-/**
- * The four stages of one ingest, revealed one at a time.
- *
- * Every number comes from the POST /ingest response and the follow-up
- * GET /jobs/{id}; nothing here is computed optimistically or estimated. The
- * stagger is presentational only — the data is already complete before the
- * first line appears, so a slow render can never show a number that later
- * turns out to be wrong.
- */
 function PipelineTrace({ lines }: { lines: TraceLine[] }) {
   const [shown, setShown] = useState(0);
 
@@ -92,7 +77,7 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
   if (lines.length === 0) return null;
 
   return (
-    <Panel title="Pipeline">
+    <Panel title="Pipeline Execution Trace">
       <div className="p-4 flex flex-col gap-2">
         {lines.map((line, i) => {
           const visible = i < shown;
@@ -107,7 +92,7 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
                 size={12}
                 className={`shrink-0 self-center ${visible ? 'text-ok' : 'text-transparent'}`}
               />
-              <span className="w-[76px] shrink-0 text-fg tracking-wider">{line.label}</span>
+              <span className="w-[84px] shrink-0 text-fg tracking-wider font-semibold">{line.label}</span>
               <span className="text-muted">{line.detail}</span>
             </div>
           );
@@ -119,7 +104,6 @@ function PipelineTrace({ lines }: { lines: TraceLine[] }) {
 
 // ── Outcome ─────────────────────────────────────────────────────────────────
 
-/** AUTO-LINKED rows carry a link through to that activity on the Schedule. */
 function Outcome({ ev }: { ev: ExtractedEvent }) {
   if (ev.decision === 'AUTO_LINK' && ev.activity_id) {
     return (
@@ -142,9 +126,6 @@ function Outcome({ ev }: { ev: ExtractedEvent }) {
   if (ev.decision === 'REJECTED') {
     return <span className="font-mono text-label uppercase text-muted">Rejected</span>;
   }
-  // These are the rows that need a human, and they were the only outcome with
-  // no way through to the screen that deals with them. Reconcile resolves
-  // `?event=` against the queue's `linked_event_id`.
   return (
     <Link
       to={`/reconcile?event=${encodeURIComponent(ev.id)}`}
@@ -157,14 +138,6 @@ function Outcome({ ev }: { ev: ExtractedEvent }) {
   );
 }
 
-/**
- * The matcher's reasoning, as it recorded it.
- *
- * `rationale` is a list of deterministic feature names (D-003 — never LLM
- * prose), `margin` is top-1 minus top-2, and `match_method` is which path
- * produced the answer. All three are already on `LinkedEventResponse` and none
- * of them was rendered anywhere in the product before this.
- */
 function Reasoning({ ev }: { ev: ExtractedEvent }) {
   if (ev.rationale.length === 0 && !ev.match_method) {
     return <span className="font-mono text-label text-muted italic">no signals recorded</span>;
@@ -197,7 +170,7 @@ function Reasoning({ ev }: { ev: ExtractedEvent }) {
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
-type Status =
+type FieldStatus =
   | { kind: 'idle' }
   | { kind: 'rejected'; message: string }
   | { kind: 'uploading'; filename: string }
@@ -205,12 +178,34 @@ type Status =
   | { kind: 'error'; detail: string }
   | { kind: 'done'; job: JobResponse; bytes: number };
 
+type BaselineStatus =
+  | { kind: 'idle' }
+  | { kind: 'uploading'; filename: string }
+  | { kind: 'error'; detail: string }
+  | { kind: 'done'; response: BaselineImportResponse; isDryRun: boolean };
+
 export default function Ingest() {
-  usePageHeader('Ingest', 'Load a daily progress report, scanned site diary (PDF/Image), or discipline register.', '/ingest');
+  usePageHeader(
+    'Data Ingest',
+    'Import field progress reports or Primavera P6 baseline schedules.',
+    '/ingest'
+  );
+
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [channel, setChannel] = useState<'field' | 'baseline'>('field');
+
+  // Field Progress Channel State
+  const [status, setStatus] = useState<FieldStatus>({ kind: 'idle' });
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Baseline Schedule Channel State
+  const [baselineStatus, setBaselineStatus] = useState<BaselineStatus>({ kind: 'idle' });
+  const [baselineDragging, setBaselineDragging] = useState(false);
+  const [baselineDryRun, setBaselineDryRun] = useState(true);
+  const [baselineReplace, setBaselineReplace] = useState(false);
+  const [baselineNote, setBaselineNote] = useState('');
+  const baselineInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data: history,
@@ -221,13 +216,13 @@ export default function Ingest() {
     queryFn: () => api.listJobs(50),
   });
 
-  const upload = useCallback(
+  const uploadFieldFile = useCallback(
     async (file: File) => {
       const ext = extensionOf(file.name);
-      if (!(ACCEPTED_EXTENSIONS as readonly string[]).includes(ext)) {
+      if (!(FIELD_ACCEPTED_EXTENSIONS as readonly string[]).includes(ext as any)) {
         setStatus({
           kind: 'rejected',
-          message: `${file.name} is not an accepted file type. This screen accepts ${ACCEPTED_LABEL} only.`,
+          message: `${file.name} is not an accepted file type. This channel accepts ${FIELD_ACCEPTED_LABEL} only.`,
         });
         return;
       }
@@ -236,15 +231,11 @@ export default function Ingest() {
       try {
         const res = await api.ingestFile(file);
 
-        // The server answers a duplicate with 200 and an explanatory message
-        // rather than an error, returning the ORIGINAL job's id. That is the
-        // signal: content already ingested, nothing written a second time.
         if (res.message.startsWith('Duplicate upload ignored')) {
           setStatus({ kind: 'duplicate', filename: file.name, jobId: res.job_id });
           return;
         }
 
-        // Every trace number comes from here, not from the upload response.
         const job = await api.getJob(res.job_id);
         setStatus({ kind: 'done', job, bytes: file.size });
         queryClient.invalidateQueries({ queryKey: ['jobs'] });
@@ -260,11 +251,57 @@ export default function Ingest() {
     [queryClient]
   );
 
-  const onDrop = (e: React.DragEvent) => {
+  const uploadBaselineFile = useCallback(
+    async (file: File) => {
+      const ext = extensionOf(file.name);
+      if (!(BASELINE_ACCEPTED_EXTENSIONS as readonly string[]).includes(ext as any)) {
+        setBaselineStatus({
+          kind: 'error',
+          detail: `${file.name} is not an accepted baseline format. Accepts ${BASELINE_ACCEPTED_LABEL} only.`,
+        });
+        return;
+      }
+
+      setBaselineStatus({ kind: 'uploading', filename: file.name });
+      try {
+        const res = await api.importSchedule(file, {
+          dry_run: baselineDryRun,
+          replace: baselineReplace,
+          note: baselineNote.trim() || undefined,
+        });
+
+        setBaselineStatus({
+          kind: 'done',
+          response: res,
+          isDryRun: baselineDryRun,
+        });
+
+        if (!baselineDryRun) {
+          queryClient.invalidateQueries({ queryKey: ['schedule'] });
+          queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
+        }
+      } catch (e) {
+        setBaselineStatus({
+          kind: 'error',
+          detail: errorDetail(e),
+        });
+      }
+    },
+    [baselineDryRun, baselineReplace, baselineNote, queryClient]
+  );
+
+  const onFieldDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) upload(file);
+    if (file) uploadFieldFile(file);
+  };
+
+  const onBaselineDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setBaselineDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadBaselineFile(file);
   };
 
   const job = status.kind === 'done' ? status.job : null;
@@ -323,269 +360,477 @@ export default function Ingest() {
   );
 
   return (
-    /* The shell's <main> already scrolls; this used to add a second one. */
-    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5">
-        {/* DROP ZONE */}
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
-          }}
-          className={`border border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-            dragging ? 'border-accent bg-selected' : 'border-strong bg-raised hover:bg-selected'
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
+      {/* CHANNEL SELECTOR TABS */}
+      <div className="border border-hair bg-raised rounded-lg p-1.5 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setChannel('field')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md font-mono text-label transition-colors ${
+            channel === 'field'
+              ? 'bg-selected text-heading font-semibold shadow-xs border border-hair'
+              : 'text-muted hover:text-fg'
           }`}
         >
-          <Upload size={20} className={dragging ? 'text-accent' : 'text-muted'} />
-          <div className="font-mono text-body text-fg">
-            Drop a file here, or click to browse
-          </div>
-          <div className="font-mono text-label text-muted uppercase tracking-wider">
-            Accepts {ACCEPTED_LABEL} only
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPTED_EXTENSIONS.join(',')}
-            className="rounded-sm hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) upload(file);
-              e.target.value = '';
+          <FileSpreadsheet size={15} />
+          <span>Channel 1: Field Progress Reports</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setChannel('baseline')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md font-mono text-label transition-colors ${
+            channel === 'baseline'
+              ? 'bg-selected text-heading font-semibold shadow-xs border border-hair'
+              : 'text-muted hover:text-fg'
+          }`}
+        >
+          <Database size={15} />
+          <span>Channel 2: Baseline Schedule Import (P6 XML / XER)</span>
+        </button>
+      </div>
+
+      {channel === 'field' ? (
+        <>
+          {/* CHANNEL 1: FIELD PROGRESS REPORTS */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
             }}
-          />
-        </div>
-
-        {/* STATES */}
-        {status.kind === 'rejected' && (
-          <ErrorState error={new Error(status.message)} />
-        )}
-
-        {status.kind === 'error' && <ErrorState error={new Error(status.detail)} />}
-
-        {/* A duplicate is the guard working, not a failure — styled as
-            information rather than as an error. */}
-        {status.kind === 'duplicate' && (
-          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label flex items-start gap-2">
-            <Info size={12} className="mt-0.5 shrink-0 text-accent" />
-            <span className="text-muted">
-              <span className="text-fg">This file has already been ingested.</span> Identical
-              content was matched by hash against job{' '}
-              <span className="text-fg">{status.jobId}</span>, so nothing was read a second
-              time. This is what stops the same progress being counted twice and inflating
-              the schedule.
-            </span>
-          </div>
-        )}
-
-        {status.kind === 'uploading' && (
-          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label text-muted flex items-center gap-2">
-            <FileText size={12} className="shrink-0" />
-            Reading {status.filename}…
-          </div>
-        )}
-
-        {/* PIPELINE TRACE */}
-        {job && <PipelineTrace lines={traceLines} />}
-
-        {/* The one number on this screen that is a task rather than a fact.
-            It was previously readable only as body text inside the MATCHED
-            trace line, with no way to act on it. */}
-        {job && job.review_count > 0 && (
-          <div className="border border-hair bg-raised rounded-lg px-4 py-3 flex items-center justify-between gap-4">
-            <span className="flex items-baseline gap-3 min-w-0">
-              <span className="font-mono text-h2 text-warn leading-none">
-                {job.review_count}
-              </span>
-              <span className="text-body text-muted">
-                event{job.review_count === 1 ? '' : 's'} the matcher could not link
-                on its own
-              </span>
-            </span>
-            <Button variant="primary" size="sm" to="/reconcile">
-              Reconcile
-              <ArrowUpRight size={12} />
-            </Button>
-          </div>
-        )}
-
-        {/* Parsed but nothing extractable — a real outcome, worth naming. */}
-        {job && job.event_count === 0 && (
-          <div className="border border-hair bg-raised rounded-lg px-3 py-3 font-mono text-label flex items-start gap-2">
-            <Info size={12} className="mt-0.5 shrink-0 text-warn" />
-            <span className="text-muted">
-              <span className="text-fg">No progress events were extracted.</span> The file
-              parsed without error, but nothing in it matched a reportable progress
-              statement. Nothing was written to the schedule.
-            </span>
-          </div>
-        )}
-
-        {/* EVENT TABLE */}
-        {job && sortedEvents.length > 0 && (
-          <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-            <PanelHeader
-              title="Extracted events"
-              right={
-                <span className="font-mono text-label text-muted shrink-0">
-                  {sortedEvents.length} from {job.filename}
-                </span>
-              }
-            />
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-hair">
-                    {['Pos', 'Raw text', 'Extracted', 'Conf', 'Why', 'Outcome'].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedEvents.map((ev) => (
-                    <tr key={ev.id} className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors">
-                      <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
-                        {positionOf(ev)}
-                      </td>
-                      <td className="px-3 py-3 text-body text-fg min-w-[280px] max-w-[420px]">
-                        {ev.raw_text}
-                      </td>
-                      <td className="px-3 py-3 min-w-[220px]">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {isDiscipline(ev.discipline) ? (
-                            <DisciplineTag discipline={ev.discipline} />
-                          ) : (
-                            <span className="font-mono text-label text-muted border border-hair px-2 rounded-full uppercase">
-                              {ev.discipline || 'unknown'}
-                            </span>
-                          )}
-                          {ev.tags.map((t) => (
-                            <span
-                              key={t}
-                              className="font-mono text-label bg-selected text-accent px-2 rounded-full"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="mt-1 font-mono text-label text-muted space-x-2">
-                          {ev.asserted_start && (
-                            <span>
-                              start <span className="text-fg">{ev.asserted_start}</span>
-                            </span>
-                          )}
-                          {ev.asserted_finish && (
-                            <span>
-                              finish <span className="text-fg">{ev.asserted_finish}</span>
-                            </span>
-                          )}
-                          {ev.quantity !== null && (
-                            <span>
-                              qty{' '}
-                              <span className="text-fg">
-                                {ev.quantity}
-                                {ev.uom ? ` ${ev.uom}` : ''}
-                              </span>
-                            </span>
-                          )}
-                          {!ev.asserted_start &&
-                            !ev.asserted_finish &&
-                            ev.quantity === null && <span className="italic">no date or quantity</span>}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <ConfidenceBadge value={ev.confidence} />
-                      </td>
-                      {/* A confidence number with no reason beside it is not
-                          auditable. This is the matcher's own record. */}
-                      <td className="px-3 py-3 min-w-[200px]">
-                        <Reasoning ev={ev} />
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Outcome ev={ev} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            onDragLeave={() => setDragging(false)}
+            onDrop={onFieldDrop}
+            onClick={() => inputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+            }}
+            className={`border border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+              dragging ? 'border-accent bg-selected' : 'border-strong bg-raised hover:bg-selected'
+            }`}
+          >
+            <Upload size={22} className={dragging ? 'text-accent' : 'text-muted'} />
+            <div className="font-mono text-body text-fg">
+              Drop field report here, or click to browse
             </div>
-          </section>
-        )}
+            <div className="font-mono text-label text-muted uppercase tracking-wider">
+              Accepts {FIELD_ACCEPTED_LABEL}
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={FIELD_ACCEPTED_EXTENSIONS.join(',')}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFieldFile(file);
+                e.target.value = '';
+              }}
+            />
+          </div>
 
-        {/* HISTORY */}
-        <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-          <PanelHeader title="Previously ingested" />
-          {historyError ? (
-            <ErrorState error={historyError} mode="bare" className="px-3 py-4" />
-          ) : historyLoading ? (
-            <SkeletonRows rows={3} height="h-5" />
-          ) : !history || history.length === 0 ? (
-            <EmptyState>
-              No files have been ingested yet. Drop a .txt or .xlsx above and it
-              will appear here.
-            </EmptyState>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-hair">
-                    {['File', 'Ingested', 'Events', 'Linked', 'Review', 'Status'].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((j) => (
-                    <tr key={j.id} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
-                      <td className="px-3 py-3 font-mono text-label text-fg whitespace-nowrap">
-                        {j.filename}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
-                        {new Date(j.created_at).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-label text-fg">
-                        {j.event_count}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-label text-fg">
-                        {j.linked_count}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-label text-muted">
-                        {j.review_count}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-label whitespace-nowrap">
-                        {j.status === 'completed' ? (
-                          <span className="text-muted">{j.status}</span>
-                        ) : (
-                          <span className="text-danger">
-                            {j.status}
-                            {j.error_message ? ` — ${j.error_message}` : ''}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* FIELD STATES */}
+          {status.kind === 'rejected' && (
+            <ErrorState error={new Error(status.message)} />
+          )}
+
+          {status.kind === 'error' && <ErrorState error={new Error(status.detail)} />}
+
+          {status.kind === 'duplicate' && (
+            <div className="border border-hair bg-raised rounded-lg px-4 py-3 font-mono text-label flex items-start gap-2">
+              <Info size={14} className="mt-0.5 shrink-0 text-accent" />
+              <span className="text-muted leading-relaxed">
+                <strong className="text-fg">Deduplication Safeguard:</strong> This file has already
+                been ingested. Content was matched by cryptographic hash against job{' '}
+                <span className="text-fg font-semibold">{status.jobId}</span>. Re-reading was suppressed
+                to prevent double-counting progress and distorting the baseline schedule.
+              </span>
             </div>
           )}
-        </section>
+
+          {status.kind === 'uploading' && (
+            <div className="border border-hair bg-raised rounded-lg px-4 py-3 font-mono text-label text-muted flex items-center gap-2">
+              <FileText size={14} className="shrink-0 animate-pulse text-accent" />
+              Reading &amp; extracting progress from {status.filename}…
+            </div>
+          )}
+
+          {/* PIPELINE TRACE */}
+          {job && <PipelineTrace lines={traceLines} />}
+
+          {/* REVIEW BANNER */}
+          {job && job.review_count > 0 && (
+            <div className="border border-hair bg-raised rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+              <span className="flex items-baseline gap-3 min-w-0">
+                <span className="font-mono text-h2 text-warn leading-none">
+                  {job.review_count}
+                </span>
+                <span className="text-body text-muted">
+                  event{job.review_count === 1 ? '' : 's'} require human planner decision
+                </span>
+              </span>
+              <Button variant="primary" size="sm" to="/reconcile">
+                Reconcile
+                <ArrowUpRight size={12} />
+              </Button>
+            </div>
+          )}
+
+          {job && job.event_count === 0 && (
+            <div className="border border-hair bg-raised rounded-lg px-4 py-3 font-mono text-label flex items-start gap-2">
+              <Info size={14} className="mt-0.5 shrink-0 text-warn" />
+              <span className="text-muted">
+                <span className="text-fg font-medium">No progress events extracted:</span> File parsed
+                successfully, but contained no recognized construction progress statements. Schedule
+                baseline untouched.
+              </span>
+            </div>
+          )}
+
+          {/* EXTRACTED EVENTS TABLE */}
+          {job && sortedEvents.length > 0 && (
+            <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+              <PanelHeader
+                title="Extracted progress events"
+                right={
+                  <span className="font-mono text-label text-muted shrink-0">
+                    {sortedEvents.length} from {job.filename}
+                  </span>
+                }
+              />
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-hair">
+                      {['Pos', 'Raw text', 'Extracted metadata', 'Confidence', 'Matcher Rationale', 'Outcome'].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedEvents.map((ev) => (
+                      <tr key={ev.id} className="border-b border-hair last:border-0 align-top even:bg-surface hover:bg-selected transition-colors">
+                        <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
+                          {positionOf(ev)}
+                        </td>
+                        <td className="px-3 py-3 text-body text-fg min-w-[280px] max-w-[420px]">
+                          {ev.raw_text}
+                        </td>
+                        <td className="px-3 py-3 min-w-[220px]">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {isDiscipline(ev.discipline) ? (
+                              <DisciplineTag discipline={ev.discipline} />
+                            ) : (
+                              <span className="font-mono text-label text-muted border border-hair px-2 rounded-full uppercase">
+                                {ev.discipline || 'unknown'}
+                              </span>
+                            )}
+                            {ev.tags.map((t) => (
+                              <span
+                                key={t}
+                                className="font-mono text-label bg-selected text-accent px-2 rounded-full"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="mt-1 font-mono text-label text-muted space-x-2">
+                            {ev.asserted_start && (
+                              <span>
+                                start <span className="text-fg">{ev.asserted_start}</span>
+                              </span>
+                            )}
+                            {ev.asserted_finish && (
+                              <span>
+                                finish <span className="text-fg">{ev.asserted_finish}</span>
+                              </span>
+                            )}
+                            {ev.quantity !== null && (
+                              <span>
+                                qty{' '}
+                                <span className="text-fg">
+                                  {ev.quantity}
+                                  {ev.uom ? ` ${ev.uom}` : ''}
+                                </span>
+                              </span>
+                            )}
+                            {!ev.asserted_start &&
+                              !ev.asserted_finish &&
+                              ev.quantity === null && <span className="italic">no date or quantity</span>}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <ConfidenceBadge value={ev.confidence} />
+                        </td>
+                        <td className="px-3 py-3 min-w-[200px]">
+                          <Reasoning ev={ev} />
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <Outcome ev={ev} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* HISTORY TABLE */}
+          <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+            <PanelHeader title="Previously ingested field files" />
+            {historyError ? (
+              <ErrorState error={historyError} mode="bare" className="px-3 py-4" />
+            ) : historyLoading ? (
+              <SkeletonRows rows={3} height="h-5" />
+            ) : !history || history.length === 0 ? (
+              <EmptyState>
+                No files have been ingested yet. Drop a .txt, .pdf, or .xlsx above to start.
+              </EmptyState>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-hair">
+                      {['File', 'Ingested', 'Events', 'Linked', 'Review', 'Status'].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-3 py-3 whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((j) => (
+                      <tr key={j.id} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+                        <td className="px-3 py-3 font-mono text-label text-fg whitespace-nowrap">
+                          {j.filename}
+                        </td>
+                        <td className="px-3 py-3 font-mono text-label text-muted whitespace-nowrap">
+                          {new Date(j.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-3 font-mono text-label text-fg">
+                          {j.event_count}
+                        </td>
+                        <td className="px-3 py-3 font-mono text-label text-fg">
+                          {j.linked_count}
+                        </td>
+                        <td className="px-3 py-3 font-mono text-label text-muted">
+                          {j.review_count}
+                        </td>
+                        <td className="px-3 py-3 font-mono text-label whitespace-nowrap">
+                          {j.status === 'completed' ? (
+                            <span className="text-ok font-mono">{j.status}</span>
+                          ) : (
+                            <span className="text-danger">
+                              {j.status}
+                              {j.error_message ? ` — ${j.error_message}` : ''}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      ) : (
+        <>
+          {/* CHANNEL 2: BASELINE SCHEDULE IMPORT */}
+          <div className="border border-hair bg-raised rounded-lg p-5 flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <Database size={20} className="text-accent shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-heading text-body">
+                  Primavera P6 Baseline Schedule Importer
+                </h3>
+                <p className="text-label text-muted leading-relaxed mt-0.5">
+                  Import a full schedule baseline from Oracle Primavera P6 (PMXML or XER format) or NAVIS JSON.
+                  A dry run validates network topology, WBS levels, and activity counts without touching the database.
+                </p>
+              </div>
+            </div>
+
+            {/* Import Controls */}
+            <div className="p-4 bg-surface border border-hair rounded-lg flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-5">
+                <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-fg">
+                  <input
+                    type="checkbox"
+                    checked={baselineDryRun}
+                    onChange={(e) => setBaselineDryRun(e.target.checked)}
+                    className="rounded-sm accent-accent"
+                  />
+                  <span>Validate only (Dry Run — writes nothing)</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-fg">
+                  <input
+                    type="checkbox"
+                    checked={baselineReplace}
+                    onChange={(e) => setBaselineReplace(e.target.checked)}
+                    className="rounded-sm accent-danger"
+                  />
+                  <span className={baselineReplace ? 'text-danger font-semibold' : ''}>
+                    Allow replacing active baseline (Explicit consent)
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-label text-muted">Revision Note:</span>
+                <input
+                  type="text"
+                  placeholder="e.g. Primavera P6 rev 2.1 — March update"
+                  value={baselineNote}
+                  onChange={(e) => setBaselineNote(e.target.value)}
+                  className="flex-1 px-3 py-1.5 bg-raised border border-hair rounded font-mono text-label text-fg placeholder:text-muted focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+
+            {/* Baseline Drop Zone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setBaselineDragging(true);
+              }}
+              onDragLeave={() => setBaselineDragging(false)}
+              onDrop={onBaselineDrop}
+              onClick={() => baselineInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') baselineInputRef.current?.click();
+              }}
+              className={`border border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+                baselineDragging ? 'border-accent bg-selected' : 'border-strong bg-raised hover:bg-selected'
+              }`}
+            >
+              <Upload size={22} className={baselineDragging ? 'text-accent' : 'text-muted'} />
+              <div className="font-mono text-body text-fg">
+                Drop Primavera .xml, .xer, or .json baseline file here
+              </div>
+              <div className="font-mono text-label text-muted uppercase tracking-wider">
+                Accepts {BASELINE_ACCEPTED_LABEL}
+              </div>
+              <input
+                ref={baselineInputRef}
+                type="file"
+                accept={BASELINE_ACCEPTED_EXTENSIONS.join(',')}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadBaselineFile(file);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+
+            {/* Baseline Status Feedback */}
+            {baselineStatus.kind === 'uploading' && (
+              <div className="border border-hair bg-raised rounded-lg px-4 py-3 font-mono text-label text-muted flex items-center gap-2">
+                <Database size={14} className="shrink-0 animate-pulse text-accent" />
+                Parsing and validating baseline: {baselineStatus.filename}…
+              </div>
+            )}
+
+            {baselineStatus.kind === 'error' && (
+              <ErrorState error={new Error(baselineStatus.detail)} />
+            )}
+
+            {baselineStatus.kind === 'done' && (
+              <div className="border border-hair bg-raised rounded-lg p-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {baselineStatus.isDryRun ? (
+                      <ShieldCheck size={18} className="text-accent" />
+                    ) : (
+                      <Check size={18} className="text-ok" />
+                    )}
+                    <span className="font-semibold text-heading text-body">
+                      {baselineStatus.isDryRun
+                        ? 'Dry Run Validation Completed'
+                        : 'Baseline Successfully Committed'}
+                    </span>
+                  </div>
+                  <span className="font-mono text-label px-2 py-0.5 bg-selected rounded border border-hair text-muted">
+                    {baselineStatus.isDryRun ? 'Dry Run Mode' : 'Committed Revision'}
+                  </span>
+                </div>
+
+                <p className="font-mono text-body text-fg leading-relaxed">
+                  {baselineStatus.response.message}
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-label mt-2">
+                  <div className="p-3 bg-surface border border-hair rounded">
+                    <span className="text-muted block mb-1">ACTIVITIES IN FILE</span>
+                    <span className="text-h2 font-semibold text-fg">
+                      {baselineStatus.response.activities_in_file}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-surface border border-hair rounded">
+                    <span className="text-muted block mb-1">NEW ACTIVITIES</span>
+                    <span className="text-h2 font-semibold text-ok">
+                      {baselineStatus.response.activities_created}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-surface border border-hair rounded">
+                    <span className="text-muted block mb-1">ACTIVITIES UPDATED</span>
+                    <span className="text-h2 font-semibold text-fg">
+                      {baselineStatus.response.activities_updated}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-surface border border-hair rounded">
+                    <span className="text-muted block mb-1">BASELINE REPLACED</span>
+                    <span className="text-h2 font-semibold text-fg">
+                      {baselineStatus.response.replaced ? 'YES' : 'NO'}
+                    </span>
+                  </div>
+                </div>
+
+                {baselineStatus.response.baseline && (
+                  <div className="p-3 bg-surface border border-hair rounded font-mono text-label text-muted flex flex-col gap-1 mt-1">
+                    <div>
+                      <span className="text-muted">Revision: </span>
+                      <span className="text-fg font-semibold">{baselineStatus.response.baseline.name}</span>
+                      <span className="text-muted"> ({baselineStatus.response.baseline.filename})</span>
+                    </div>
+                    <div>
+                      <span className="text-muted">SHA-256: </span>
+                      <span className="text-fg">{baselineStatus.response.baseline.sha256}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 mt-2">
+                  <Button variant="secondary" size="sm" to="/schedule">
+                    View Baseline on Schedule
+                    <ArrowUpRight size={12} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Baseline Policy Note */}
+            <div className="p-3.5 bg-surface/50 border border-hair rounded-lg text-label font-mono text-muted leading-relaxed">
+              <span className="text-fg font-semibold">Safe Baseline Policy:</span> Activities
+              absent from the new file are left in place to preserve historic actuals and
+              audit trails. Replacing updates planned dates, but never modifies verified actual dates or quantities.
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
   AgentTurnResponse,
   AuditFeedItem,
   AuditRecord,
+  BaselineImportResponse,
   Clarification,
   FieldReport,
   ExportResponse,
@@ -95,6 +96,21 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
     return fetchWithHandler('/ingest', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  importSchedule: (
+    file: File,
+    options?: { replace?: boolean; dry_run?: boolean; note?: string }
+  ): Promise<BaselineImportResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.replace) formData.append('replace', 'true');
+    if (options?.dry_run) formData.append('dry_run', 'true');
+    if (options?.note) formData.append('note', options.note);
+    return fetchWithHandler('/schedule/import', {
       method: 'POST',
       body: formData,
     });

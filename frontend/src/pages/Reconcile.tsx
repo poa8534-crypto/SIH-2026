@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ApiError, api, errorDetail } from '../lib/api';
-import { ReviewCandidate, ScheduleActivity } from '../types';
+import { ReviewCandidate, ReviewItem, ScheduleActivity } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
-import { ArrowUpRight, Check, MessageCircleQuestion, Plus, X } from 'lucide-react';
+import { ArrowUpRight, Check, MessageCircleQuestion, Plus, Search, X } from 'lucide-react';
 import { usePageHeader } from '../hooks/usePageHeader';
 import {
   MatchReasoning,
@@ -75,6 +75,93 @@ function Key({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ImpactDiff({
+  activity,
+  reviewItem,
+}: {
+  activity: ScheduleActivity | undefined;
+  reviewItem: ReviewItem;
+}) {
+  if (!activity) {
+    return (
+      <div className="p-4 bg-surface border border-hair rounded-lg text-label text-muted">
+        Select a candidate activity above to inspect the schedule difference.
+      </div>
+    );
+  }
+
+  const isDefaultedFinish = reviewItem.reason === DEFAULTED_FINISH_REASON;
+  const eventDate = reviewItem.created_at ? reviewItem.created_at.split('T')[0] : '2026-03-01';
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="overflow-x-auto border border-hair rounded-lg bg-surface">
+        <table className="w-full text-label border-collapse">
+          <thead>
+            <tr className="border-b border-hair bg-raised text-heading uppercase tracking-wider font-mono">
+              <th className="text-left px-3 py-2.5 font-medium">Attribute</th>
+              <th className="text-left px-3 py-2.5 font-medium">Current Baseline / Stored</th>
+              <th className="text-left px-3 py-2.5 font-medium">Proposed Field Value</th>
+              <th className="text-left px-3 py-2.5 font-medium">Float & CPM Consequence</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-hair font-mono">
+            <tr>
+              <td className="px-3 py-2.5 text-muted font-sans font-medium">Activity State</td>
+              <td className="px-3 py-2.5 text-muted">
+                {activity.actual_finish ? 'Completed' : activity.actual_start ? 'In Progress' : 'Not Started'}
+              </td>
+              <td className="px-3 py-2.5 text-ok font-semibold">
+                {isDefaultedFinish ? 'Completed (Finish recorded)' : 'Progress verified'}
+              </td>
+              <td className="px-3 py-2.5 text-fg font-sans">
+                {activity.critical ? 'Critical Path (Zero Float)' : `Total Float: ${activity.total_float ?? 'N/A'} days`}
+              </td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2.5 text-muted font-sans font-medium">Actual Start</td>
+              <td className="px-3 py-2.5 text-muted">{activity.actual_start || activity.planned_start || '—'}</td>
+              <td className="px-3 py-2.5 text-fg">
+                {activity.actual_start ? activity.actual_start : eventDate}
+              </td>
+              <td className="px-3 py-2.5 text-muted font-sans">
+                {activity.actual_start ? 'Existing start preserved' : 'Sets verified start date'}
+              </td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2.5 text-muted font-sans font-medium">Actual Finish</td>
+              <td className="px-3 py-2.5 text-muted">{activity.actual_finish || '—'}</td>
+              <td className="px-3 py-2.5 text-fg font-semibold">
+                {isDefaultedFinish ? eventDate : activity.actual_finish || (activity.actual_start ? eventDate : '—')}
+              </td>
+              <td className="px-3 py-2.5 text-muted font-sans">
+                {isDefaultedFinish ? 'Resolves withheld completion date' : 'Preserves ongoing progress'}
+              </td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2.5 text-muted font-sans font-medium">Installed Quantity</td>
+              <td className="px-3 py-2.5 text-muted">
+                {activity.actual_qty ?? 0} / {activity.planned_qty} {activity.uom}
+              </td>
+              <td className="px-3 py-2.5 text-fg">
+                Verified against field reading ({activity.planned_qty} {activity.uom})
+              </td>
+              <td className="px-3 py-2.5 text-muted font-sans">
+                Recalculates physical % complete
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="p-3 bg-raised border border-hair rounded-lg text-label text-muted flex items-center justify-between">
+        <span className="font-mono text-fg text-[11px] leading-relaxed">
+          <strong className="text-heading">Explicit Consequence:</strong> Confirming writes an immutable entry into the append-only audit trail and advances downstream float.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function Reconcile() {
   usePageHeader('Reconcile', 'Field reports the matcher could not link on its own.', '/reconcile');
   const queryClient = useQueryClient();
@@ -86,9 +173,16 @@ export default function Reconcile() {
   const [question, setQuestion] = useState('');
   const [resolvedCount, setResolvedCount] = useState(0);
   const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepItem = searchParams.get('item');
+  const deepEvent = searchParams.get('event');
+
   const [actionError, setActionError] = useState<string | null>(null);
-  /** Set once a destructive key is pressed; the second press commits. */
   const [rejectArmed, setRejectArmed] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'high' | 'needs_review' | 'mismatch'>(() => {
+    return searchParams.get('filter') === 'needs_review' ? 'needs_review' : 'all';
+  });
+  const [searchQuery, setSearchQuery] = useState('');
   /**
    * What the last resolve actually did, so the success state can link
    * straight to the schedule row it wrote rather than leaving the planner to
@@ -99,12 +193,6 @@ export default function Reconcile() {
     message: string;
   } | null>(null);
   const queueRef = useRef<HTMLDivElement>(null);
-
-  // Home links here as ?item=<review item id>; Ingest as ?event=<linked event
-  // id>, which is the only id an extracted event knows about itself.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const deepItem = searchParams.get('item');
-  const deepEvent = searchParams.get('event');
 
   const addToast = (message: string) => {
     const id = Date.now();
@@ -180,6 +268,29 @@ export default function Reconcile() {
   const selectedItem = useMemo(() => {
     return sortedQueue.find((item) => item.id === selectedId) || null;
   }, [sortedQueue, selectedId]);
+
+  const displayQueue = useMemo(() => {
+    return sortedQueue.filter((item) => {
+      if (filter === 'high' && item.confidence < 0.75) return false;
+      if (filter === 'needs_review' && item.confidence >= 0.75) return false;
+      if (
+        filter === 'mismatch' &&
+        item.reason !== DEFAULTED_FINISH_REASON &&
+        item.reason !== 'source_conflict'
+      ) {
+        return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchText = item.raw_text.toLowerCase().includes(q);
+        const matchId = item.activity_id.toLowerCase().includes(q);
+        const matchSugg = item.suggested_activity_id?.toLowerCase().includes(q);
+        if (!matchText && !matchId && !matchSugg) return false;
+      }
+      return true;
+    });
+  }, [sortedQueue, filter, searchQuery]);
 
   /**
    * The ranked candidates, each with its own score and rationale.
@@ -592,8 +703,47 @@ export default function Reconcile() {
             </span>
           }
         />
+        {/* Scannable Queue Filter and Search Strip */}
+        <div className="p-2.5 border-b border-hair bg-surface/60 flex flex-col gap-2 shrink-0">
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-2.5 text-muted pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Filter queue by text or activity ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-2.5 py-1.5 bg-raised border border-hair rounded text-label font-mono text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+            />
+          </div>
+          <div className="flex items-center gap-1 overflow-x-auto text-label font-mono">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'high', label: 'High (≥75%)' },
+              { id: 'needs_review', label: 'Needs Review' },
+              { id: 'mismatch', label: 'Withheld' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilter(tab.id as any)}
+                className={`px-2 py-1 rounded text-[11px] whitespace-nowrap transition-colors ${
+                  filter === tab.id
+                    ? 'bg-selected text-fg font-semibold border border-hair'
+                    : 'text-muted hover:text-fg'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto" ref={queueRef}>
-          {sortedQueue.map((item) => {
+          {displayQueue.length === 0 ? (
+            <div className="p-6 text-center text-label text-muted">
+              No items match the active filter or search.
+            </div>
+          ) : (
+            displayQueue.map((item) => {
             const isSelected = item.id === selectedId;
             const suggAct = item.suggested_activity_id ? activityMap.get(item.suggested_activity_id) : null;
             return (
@@ -626,7 +776,7 @@ export default function Reconcile() {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
         {/* Every bound key appears here. `N` and `R` were bound and undocumented,
             and `R` rejected irreversibly on one press. */}
@@ -654,6 +804,18 @@ export default function Reconcile() {
                 the matcher think so", and both halves of that are answerable
                 without scrolling. */}
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+              {/* Site Context / Provenance Strip */}
+              <div className="px-3.5 py-2.5 bg-surface border border-hair rounded-lg flex flex-wrap items-center justify-between gap-3 text-label font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted">Origin:</span>
+                  <span className="text-fg font-medium">Field Supervisor · {selectedItem.discipline ? selectedItem.discipline.toUpperCase() : 'GENERAL'}</span>
+                </div>
+                <div className="flex items-center gap-4 text-muted">
+                  <span>Linked Event: <span className="text-fg">{selectedItem.linked_event_id}</span></span>
+                  <span>Logged: <span className="text-fg">{new Date(selectedItem.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span>
+                </div>
+              </div>
+
               <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2 min-w-0">
                   <div className="flex items-center justify-between gap-3">
@@ -815,6 +977,14 @@ export default function Reconcile() {
                     </div>
                   )}
                 </div>
+              </section>
+
+              <section className="pb-28">
+                <SectionTitle className="mb-3">What will change if accepted (Schedule Impact)</SectionTitle>
+                <ImpactDiff
+                  activity={selectedCandidate ? activityMap.get(selectedCandidate) : undefined}
+                  reviewItem={selectedItem}
+                />
               </section>
             </div>
 

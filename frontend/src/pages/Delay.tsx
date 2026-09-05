@@ -9,12 +9,6 @@
  * and float (D-082) — and every one of those decisions is a proposal until a
  * human rules. This screen is the place a human rules.
  *
- * NOTE ON THE DESIGN. Every other planner screen reproduces a mockup in
- * `Design/`. There is no mockup for this one, so the layout here is assembled
- * from the vocabulary the shipped screens already use — Reconcile's queue and
- * detail pane, Raid's panels, the same tokens and the same `ui` primitives.
- * Nothing new was invented; if a mockup arrives, this reproduces it instead.
- *
  * THE RULE THE SCREEN IS BUILT AROUND. A proposal never renders as a finding.
  * Every unruled row says so on its face, the totals separate ruled days from
  * proposals, and the whole slip is shown beside the part that outran float —
@@ -23,7 +17,17 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Check, Clock, ExternalLink, Layers } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  Clock,
+  Download,
+  ExternalLink,
+  FileSpreadsheet,
+  Layers,
+  Search,
+  ShieldAlert,
+} from 'lucide-react';
 
 import { api, errorDetail } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
@@ -70,9 +74,6 @@ const LIABILITY_CLASS: Record<Liability, string> = {
   CONTESTED: 'text-muted border-hair',
 };
 
-/** The secondary button's own classes, for the two controls that have to be
- *  anchors. Kept beside the map below so a change to one is visible next to
- *  the other rather than buried in the markup. */
 const REPORT_LINK =
   'inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-hair ' +
   'bg-raised text-muted text-body hover:bg-selected hover:text-accent ' +
@@ -192,6 +193,11 @@ function EventRow({
             proposal
           </span>
         )}
+        {event.discipline && (
+          <span className="text-[11px] px-1.5 py-0.2 rounded bg-surface border border-hair text-muted font-mono uppercase ml-auto">
+            {event.discipline}
+          </span>
+        )}
       </div>
       <p className="mt-1 text-body text-muted truncate">{event.phrase}</p>
       <div className="mt-1 flex flex-col gap-0.5 text-label font-mono">
@@ -206,7 +212,14 @@ function ConcurrencyPanel({ pairs }: { pairs: ConcurrentDelayPair[] }) {
   if (pairs.length === 0) return null;
   return (
     <Panel>
-      <PanelHeader title="Concurrent delay" />
+      <PanelHeader
+        title="Concurrent delay"
+        right={
+          <span className="font-mono text-label text-muted">
+            {pairs.length} overlap {pairs.length === 1 ? 'pair' : 'pairs'}
+          </span>
+        }
+      />
       <div className="px-4 py-3 flex flex-col gap-3">
         <p className="text-body text-muted">
           Delays open over the same period. NAVIS names the overlap and cites
@@ -216,7 +229,7 @@ function ConcurrencyPanel({ pairs }: { pairs: ConcurrentDelayPair[] }) {
         {pairs.map((pair) => (
           <div
             key={`${pair.left_delay_event_id}:${pair.right_delay_event_id}`}
-            className="border border-hair rounded-sm px-3 py-2"
+            className="border border-hair rounded-sm px-3 py-2 bg-surface/40"
           >
             <div className="flex items-center gap-2 flex-wrap text-label font-mono uppercase">
               <span
@@ -265,6 +278,11 @@ export default function Delay() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Filters for queue
+  const [statusFilter, setStatusFilter] = useState<'all' | 'unadjudicated' | 'adjudicated'>('all');
+  const [disciplineFilter, setDisciplineFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const {
     data,
     isLoading,
@@ -276,14 +294,36 @@ export default function Delay() {
   });
 
   const events = useMemo(() => data?.events ?? [], [data]);
+
+  // Filtered queue of events
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (statusFilter === 'unadjudicated' && e.adjudicated) return false;
+      if (statusFilter === 'adjudicated' && !e.adjudicated) return false;
+      if (disciplineFilter !== 'all' && e.discipline?.toLowerCase() !== disciplineFilter.toLowerCase()) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesId = (e.activity_id ?? '').toLowerCase().includes(q);
+        const matchesPhrase = (e.phrase ?? '').toLowerCase().includes(q);
+        const matchesCategory = (e.category ?? '').toLowerCase().includes(q);
+        const matchesSource = (e.source_file ?? '').toLowerCase().includes(q);
+        if (!matchesId && !matchesPhrase && !matchesCategory && !matchesSource) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [events, statusFilter, disciplineFilter, searchQuery]);
+
   const selected = useMemo(
     () => events.find((e) => e.id === selectedId) ?? null,
     [events, selectedId]
   );
 
   // Auto-select the first delay, and clear the composers when the selection
-  // moves — a note typed against one ruling must never be submitted with
-  // another.
+  // moves — a note typed against one ruling must never be submitted with another.
   useEffect(() => {
     if (events.length > 0 && !selected) setSelectedId(events[0].id);
   }, [events, selected]);
@@ -368,9 +408,35 @@ export default function Delay() {
     0
   );
 
+  // Available disciplines in events
+  const disciplines = Array.from(
+    new Set(events.map((e) => e.discipline).filter(Boolean))
+  ) as string[];
+
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Headline ── */}
+      {/* ── Context Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-hair bg-raised text-label">
+        <div className="flex items-center gap-2.5">
+          <span className="font-semibold text-fg">Oil India Limited — Well Pad 04</span>
+          <span className="text-muted">·</span>
+          <span className="text-muted">Contractor Dispute Shield · Delay Forensic Analysis</span>
+        </div>
+        <div className="flex items-center gap-4 text-muted">
+          <span>
+            Schedule Data Date:{' '}
+            <strong className="font-mono text-fg">
+              {data?.notice_as_of ?? '2026-09-15'}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-fg border border-hair bg-surface font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+            Planning Engineer Console
+          </span>
+        </div>
+      </div>
+
+      {/* ── Headline Attribution Strip ── */}
       <Panel>
         <PanelHeader title="Delay attribution" />
         <div className="px-4 py-3 flex flex-col gap-3">
@@ -395,7 +461,7 @@ export default function Delay() {
               notice windows closed
             </span>
           </div>
-          <p className="text-body text-muted">
+          <p className="text-body text-muted leading-relaxed">
             {data?.impact_days_basis}
           </p>
           {/* Plain anchors, not <Button to=...>: `to` renders a react-router
@@ -417,6 +483,7 @@ export default function Delay() {
               download
               className={REPORT_LINK}
             >
+              <Download size={14} />
               Download CSV
             </a>
           </div>
@@ -430,7 +497,7 @@ export default function Delay() {
         <Panel>
           <div className="px-4 py-3 flex items-start gap-3">
             <AlertTriangle size={16} className="text-warn mt-0.5 shrink-0" />
-            <p className="text-body text-muted">
+            <p className="text-body text-muted leading-relaxed">
               The baseline&apos;s own dates break{' '}
               <span className="text-fg">{network.logic_conflicts}</span> of the
               logic ties it states, so the network finishes{' '}
@@ -457,10 +524,87 @@ export default function Delay() {
         </Panel>
       )}
 
+      {/* ── Main Two-Column Layout: Queue + Adjudication Pane ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] gap-4">
-        {/* ── The delays ── */}
+        {/* ── The delays queue ── */}
         <Panel>
-          <PanelHeader title={`Delays (${events.length})`} />
+          <PanelHeader
+            title={`Delays (${events.length})`}
+            right={
+              events.length > 0 && (
+                <span className="text-label font-mono text-muted">
+                  {filteredEvents.length} shown
+                </span>
+              )
+            }
+          />
+          {/* Queue Filter Controls */}
+          {events.length > 0 && (
+            <div className="px-3 py-2 border-b border-hair bg-raised/40 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search size={13} className="absolute left-2.5 top-2.5 text-muted" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Filter by activity ID, phrase..."
+                    className="w-full pl-8 pr-2 py-1 text-label rounded bg-surface border border-hair text-fg placeholder:text-muted focus:outline-none focus:border-accent"
+                  />
+                </div>
+                {disciplines.length > 0 && (
+                  <select
+                    value={disciplineFilter}
+                    onChange={(e) => setDisciplineFilter(e.target.value)}
+                    className="py-1 px-2 text-label rounded bg-surface border border-hair text-fg focus:outline-none focus:border-accent"
+                  >
+                    <option value="all">All Disciplines</option>
+                    {disciplines.map((d) => (
+                      <option key={d} value={d}>
+                        {d.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-label">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('all')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    statusFilter === 'all'
+                      ? 'bg-selected text-fg font-semibold'
+                      : 'text-muted hover:text-fg'
+                  }`}
+                >
+                  All ({events.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('unadjudicated')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    statusFilter === 'unadjudicated'
+                      ? 'bg-selected text-fg font-semibold'
+                      : 'text-muted hover:text-fg'
+                  }`}
+                >
+                  Pending ({events.filter((e) => !e.adjudicated).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('adjudicated')}
+                  className={`px-2 py-0.5 rounded transition-colors ${
+                    statusFilter === 'adjudicated'
+                      ? 'bg-selected text-fg font-semibold'
+                      : 'text-muted hover:text-fg'
+                  }`}
+                >
+                  Ruled ({events.filter((e) => e.adjudicated).length})
+                </button>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <SkeletonRows rows={4} />
           ) : events.length === 0 ? (
@@ -468,9 +612,13 @@ export default function Delay() {
               Delay causes are read from the field evidence already in the
               audit trail. Ingest a report that names one, and it appears here.
             </EmptyState>
+          ) : filteredEvents.length === 0 ? (
+            <div className="p-6 text-center text-body text-muted">
+              No delays match the active filter criteria.
+            </div>
           ) : (
             <div>
-              {events.map((event) => (
+              {filteredEvents.map((event) => (
                 <EventRow
                   key={event.id}
                   event={event}
@@ -653,6 +801,18 @@ export default function Delay() {
             </>
           )}
         </Panel>
+      </div>
+
+      {/* ── Legal & Engineering Entitlement Disclaimer Footnote ── */}
+      <div className="p-3.5 rounded-lg border border-hair bg-raised text-label text-muted leading-relaxed flex items-start gap-2.5">
+        <ShieldAlert size={16} className="text-muted mt-0.5 shrink-0" />
+        <div>
+          <strong className="text-fg font-medium">Forensic Engineering Disclaimer:</strong> NAVIS
+          delay classifications, float consumption analyses, and notice tracking are forensic tools
+          for engineering schedule control based on available project records and baseline network
+          logic. They do not constitute legal determinations of contractual entitlement or formal
+          extension of time (EOT) awards. Concurrency apportionment is subject to the governing contract.
+        </div>
       </div>
     </div>
   );

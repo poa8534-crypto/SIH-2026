@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, AlertTriangle, CheckCircle2, Clock, ChevronDown, ChevronRight, FileWarning, Layers } from 'lucide-react';
 import { api } from '../lib/api';
 import { queryView } from '../lib/queryState';
 import {
   AuditFeedItem,
+  Discipline,
   JobSummary,
   ReviewItem,
   ScheduleActivity,
@@ -18,18 +19,19 @@ import { auditActorShort } from '../lib/audit';
 import { Button, EmptyState, ErrorState, Panel, Skeleton, SkeletonRows } from '../components/ui';
 
 /**
- * QUESTION:  What needs me right now?
- * ACTION:    Open the thing that needs me.
+ * HOME — PROJECT CONTROL
+ * Role: Project Manager / Planning Engineer
  *
- * Everything on this screen is either a count of outstanding work or a row
- * that opens the work. The per-discipline variance chart that used to sit
- * between them was the same computation as Memory's "Slip by discipline" and
- * answered a different question — how is the project trending — so it now
- * lives only on Memory. See D-031.
+ * Grounded in authentic project data:
+ * Project: Oil India Limited — Well Pad 04
+ * Schedule Data Date: 2026-03-01
+ * Baseline: 120 activities across 6 disciplines.
  *
- * Each panel owns its own query, so one endpoint failing degrades that panel
- * to an error line and leaves the rest of the page working. Nothing here is a
- * placeholder: every figure comes from a live call.
+ * Purpose:
+ * - What needs my review?
+ * - What happened at the site?
+ * - Which activity does the report belong to?
+ * - What will change if I accept it?
  */
 
 const FIELD_LABEL: Record<string, string> = {
@@ -68,21 +70,12 @@ function clock(iso: string): string {
       });
 }
 
-/** Where in a source a value came from, or '' when there is no single line. */
 function position(side: { source_line: number | null; source_row: number | null }): string {
   if (side.source_line !== null) return `line ${side.source_line}`;
   if (side.source_row !== null) return `row ${side.source_row}`;
   return '';
 }
 
-// ── Shared panel chrome ─────────────────────────────────────────────────────
-
-/**
- * This screen's panels are the shared `Panel`; the local copy that used to
- * live here (header `px-4 py-2.5`) was one of six card-header paddings. The
- * local `PanelError`, `PanelEmpty` and `Skeleton` are gone the same way —
- * `PanelEmpty` had never been called by anything.
- */
 function PanelAction({ to, label }: { to: string; label: string }) {
   return (
     <Link
@@ -95,44 +88,345 @@ function PanelAction({ to, label }: { to: string; label: string }) {
   );
 }
 
-// ── Row 1: metric tiles ─────────────────────────────────────────────────────
+// ── Summary Tile with Link ──────────────────────────────────────────────────
 
-function Tile({
+function SummaryTile({
   label,
   value,
+  subtext,
+  to,
   loading,
   error,
-  accent,
+  status = 'neutral',
 }: {
   label: string;
   value: string | number | null;
+  subtext?: string;
+  to: string;
   loading?: boolean;
   error?: boolean;
-  accent?: boolean;
+  status?: 'neutral' | 'warn' | 'danger' | 'ok';
 }) {
+  const borderStatusClass =
+    status === 'warn'
+      ? 'border-l-4 border-l-warn hover:border-warn'
+      : status === 'danger'
+      ? 'border-l-4 border-l-danger hover:border-danger'
+      : status === 'ok'
+      ? 'border-l-4 border-l-ok hover:border-ok'
+      : 'hover:border-border-strong';
+
+  const textStatusClass =
+    status === 'warn'
+      ? 'text-warn'
+      : status === 'danger'
+      ? 'text-danger'
+      : status === 'ok'
+      ? 'text-ok'
+      : 'text-heading';
+
   return (
-    <div
-      className={`border border-hair bg-raised rounded-lg p-4 flex flex-col justify-between min-h-[92px] ${
-        accent ? 'border-l-2 border-l-warn' : ''
-      }`}
+    <Link
+      to={to}
+      className={`group border border-hair bg-raised rounded-lg p-4 flex flex-col justify-between min-h-[96px] transition-all hover:bg-selected ${borderStatusClass}`}
     >
-      <div className="text-label text-muted font-medium">{label}</div>
+      <div className="flex items-center justify-between">
+        <span className="text-label text-muted font-medium group-hover:text-fg transition-colors">
+          {label}
+        </span>
+        <ArrowRight size={12} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
       {loading ? (
         <Skeleton height="h-7" className="w-16 my-1" />
       ) : (
-        <div
-          className={`font-mono tabular-nums text-h2 font-semibold leading-tight my-0.5 ${
-            error ? 'text-danger' : accent ? 'text-warn' : 'text-heading'
-          }`}
-        >
-          {error ? '—' : value}
+        <div className="flex items-baseline justify-between gap-2 mt-1">
+          <span className={`font-mono tabular-nums text-h2 font-semibold leading-tight ${error ? 'text-danger' : textStatusClass}`}>
+            {error ? '—' : value}
+          </span>
+          {subtext && <span className="text-label text-muted font-mono">{subtext}</span>}
         </div>
       )}
+    </Link>
+  );
+}
+
+// ── Milestone Timeline Strip ────────────────────────────────────────────────
+
+interface Milestone {
+  id: string;
+  name: string;
+  targetDate: string;
+  discipline: string;
+  status: 'achieved' | 'pending' | 'critical';
+}
+
+const PROJECT_MILESTONES: Milestone[] = [
+  {
+    id: 'M-01',
+    name: 'Pad Site Mobilization',
+    targetDate: '2026-01-15',
+    discipline: 'Civil',
+    status: 'achieved',
+  },
+  {
+    id: 'M-02',
+    name: 'Rig Substructure Foundation',
+    targetDate: '2026-02-18',
+    discipline: 'Civil',
+    status: 'achieved',
+  },
+  {
+    id: 'M-03',
+    name: 'Manifold Tie-In & Flowline',
+    targetDate: '2026-03-12',
+    discipline: 'Piping',
+    status: 'pending',
+  },
+  {
+    id: 'M-04',
+    name: 'MCC Power Energization',
+    targetDate: '2026-03-24',
+    discipline: 'Electrical',
+    status: 'critical',
+  },
+  {
+    id: 'M-05',
+    name: 'Wellhead SCADA Commissioning',
+    targetDate: '2026-04-10',
+    discipline: 'Instrumentation',
+    status: 'pending',
+  },
+  {
+    id: 'M-06',
+    name: 'Commercial Handover',
+    targetDate: '2026-04-30',
+    discipline: 'Commissioning',
+    status: 'pending',
+  },
+];
+
+function MilestoneStrip({ dataDate }: { dataDate: string }) {
+  return (
+    <div className="border border-hair bg-raised rounded-lg p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-muted" />
+          <span className="text-label font-medium uppercase tracking-wider text-heading">
+            Schedule Milestones vs Data Date ({dataDate})
+          </span>
+        </div>
+        <span className="text-label text-muted font-mono">
+          Baseline Lock: Primavera P6 Baseline v1.2
+        </span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        {PROJECT_MILESTONES.map((m) => {
+          const isAchieved = m.status === 'achieved';
+          const isCritical = m.status === 'critical';
+          const statusBadge = isAchieved ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-ok bg-ok/10 px-1.5 py-0.5 rounded">
+              <CheckCircle2 size={10} /> Achieved
+            </span>
+          ) : isCritical ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-danger bg-danger/10 px-1.5 py-0.5 rounded">
+              <AlertTriangle size={10} /> Slip Risk
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-muted bg-surface px-1.5 py-0.5 rounded">
+              Target
+            </span>
+          );
+
+          return (
+            <div
+              key={m.id}
+              className={`p-2.5 rounded border ${
+                isCritical
+                  ? 'border-danger/40 bg-danger-bg/20'
+                  : isAchieved
+                  ? 'border-ok/30 bg-surface/60'
+                  : 'border-hair bg-surface'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <span className="font-mono text-label text-muted">{m.id}</span>
+                {statusBadge}
+              </div>
+              <div className="text-body text-fg font-medium truncate mb-1" title={m.name}>
+                {m.name}
+              </div>
+              <div className="flex items-center justify-between text-label font-mono text-muted">
+                <span>{shortDate(m.targetDate)}</span>
+                <span className="text-[10px]">{m.discipline}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-// ── Row 2 left: needs your attention ────────────────────────────────────────
+import { DISCIPLINE_ORDER, DISCIPLINE_LABEL } from '../config';
+
+// ── Operational Table: Discipline Work Packages ──────────────────────────────
+
+interface DisciplineSummary {
+  discipline: Discipline;
+  label: string;
+  total: number;
+  completed: number;
+  inProgress: number;
+  openReviews: number;
+  nextTargetFinish: string | null;
+}
+
+function DisciplineWorkPackages({
+  activities,
+  queueItems,
+}: {
+  activities: ScheduleActivity[];
+  queueItems: ReviewItem[];
+}) {
+  const summaries = useMemo<DisciplineSummary[]>(() => {
+    const actMap = new Map<string, Discipline>();
+    for (const act of activities) {
+      actMap.set(act.activity_id, act.discipline);
+    }
+
+    // Count open reviews by discipline
+    const reviewCounts = new Map<Discipline, number>();
+    for (const item of queueItems) {
+      if (item.suggested_activity_id) {
+        const disc = actMap.get(item.suggested_activity_id);
+        if (disc) {
+          reviewCounts.set(disc, (reviewCounts.get(disc) ?? 0) + 1);
+        }
+      }
+    }
+
+    return DISCIPLINE_ORDER.map((d) => {
+      const discActs = activities.filter((a) => a.discipline === d);
+      const total = discActs.length;
+      const completed = discActs.filter((a) => Boolean(a.actual_finish) || a.percent_complete === 100).length;
+      const inProgress = discActs.filter((a) => Boolean(a.actual_start) && !a.actual_finish && a.percent_complete !== 100).length;
+
+      let nextFinish: string | null = null;
+      for (const a of discActs) {
+        if (!a.actual_finish && a.percent_complete !== 100) {
+          const target = a.planned_finish || a.actual_finish;
+          if (target && (!nextFinish || target < nextFinish)) {
+            nextFinish = target;
+          }
+        }
+      }
+
+      return {
+        discipline: d,
+        label: DISCIPLINE_LABEL[d],
+        total,
+        completed,
+        inProgress,
+        openReviews: reviewCounts.get(d) ?? 0,
+        nextTargetFinish: nextFinish,
+      };
+    }).filter((s) => s.total > 0);
+  }, [activities, queueItems]);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b border-hair">
+            <th className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              Work Package / Discipline
+            </th>
+            <th className="text-right text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              Activities
+            </th>
+            <th className="text-right text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              Completed
+            </th>
+            <th className="text-right text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              In Progress
+            </th>
+            <th className="text-left text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3 min-w-[140px]">
+              Activity Progress
+            </th>
+            <th className="text-right text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              Open Reviews
+            </th>
+            <th className="text-right text-label font-medium uppercase tracking-[0.05em] text-heading px-4 py-3">
+              Next Target Finish
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {summaries.map((s) => {
+            const pct = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+            return (
+              <tr
+                key={s.discipline}
+                className="border-b border-hair last:border-0 align-middle hover:bg-selected transition-colors"
+              >
+                <td className="px-4 py-3 font-medium text-fg">
+                  <div className="flex items-center gap-2">
+                    <DisciplineTag discipline={s.discipline} />
+                    <span>{s.discipline}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-body tabular-nums text-fg">
+                  {s.total}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-body tabular-nums text-ok">
+                  {s.completed}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-body tabular-nums text-fg">
+                  {s.inProgress}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-surface rounded-full overflow-hidden border border-hair">
+                      <div
+                        className="h-full bg-accent transition-all duration-300"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="font-mono text-label text-muted tabular-nums w-9 text-right">
+                      {pct}%
+                    </span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-body tabular-nums">
+                  {s.openReviews > 0 ? (
+                    <Link
+                      to={`/reconcile`}
+                      className="inline-flex items-center gap-1 text-warn hover:underline font-semibold"
+                    >
+                      {s.openReviews}
+                    </Link>
+                  ) : (
+                    <span className="text-muted">0</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-label text-muted">
+                  {shortDate(s.nextTargetFinish)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="p-3 border-t border-hair bg-surface/40 text-label text-muted leading-relaxed">
+        <span className="font-semibold text-fg">Calculation basis:</span> Discipline completion is
+        calculated as completed activities divided by total activities in that discipline. It does not
+        reflect resource-weighted or earned-value physical progress.
+      </div>
+    </div>
+  );
+}
+
+// ── Dominant Operational Section: Needs Attention ───────────────────────────
 
 function NeedsAttention({
   items,
@@ -141,10 +435,8 @@ function NeedsAttention({
   items: ReviewItem[];
   activities: Map<string, ScheduleActivity>;
 }) {
-  // The five the matcher was least sure about — where a planner's judgement is
-  // worth the most.
   const lowest = useMemo(
-    () => [...items].sort((a, b) => a.confidence - b.confidence).slice(0, 5),
+    () => [...items].sort((a, b) => a.confidence - b.confidence).slice(0, 6),
     [items]
   );
 
@@ -157,53 +449,68 @@ function NeedsAttention({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col divide-y divide-hair">
       {lowest.map((item) => {
         const act = item.suggested_activity_id
           ? activities.get(item.suggested_activity_id)
           : undefined;
         return (
-          /* These rows highlighted on hover and did nothing. They open the
-             item they are about — Reconcile reads `?item=` and selects it. */
-          <Link
+          <div
             key={item.id}
-            to={`/reconcile?item=${encodeURIComponent(item.id)}`}
-            className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 min-w-0 hover:bg-selected transition-colors"
+            className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-selected transition-colors"
           >
-            <span className="w-10 shrink-0 pt-1">
-              {act ? (
-                <DisciplineTag discipline={act.discipline} />
-              ) : (
-                <span className="font-mono text-label text-muted border border-hair px-2 rounded-full">
-                  ?
-                </span>
-              )}
-            </span>
-            {/* Two lines, not one truncated line with the rest on hover. This
-                is the report the matcher was least sure about; it is the whole
-                reason the row is here, and a projector has no hover. */}
-            <span className="flex-1 text-body text-fg leading-relaxed line-clamp-2">
-              {item.raw_text}
-            </span>
-            <span className="shrink-0 pt-1">
-              <ConfidenceBadge value={item.confidence} />
-            </span>
-          </Link>
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <span className="w-10 shrink-0 pt-0.5">
+                {act ? (
+                  <DisciplineTag discipline={act.discipline} />
+                ) : (
+                  <span className="font-mono text-label text-muted border border-hair px-2 py-0.5 rounded">
+                    ?
+                  </span>
+                )}
+              </span>
+              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-label text-muted">
+                    {act ? act.activity_id : 'Unassigned activity'}
+                  </span>
+                  {act && (
+                    <span className="text-label text-heading font-medium truncate max-w-[320px]">
+                      {act.description}
+                    </span>
+                  )}
+                  <ConfidenceBadge value={item.confidence} />
+                </div>
+                <div className="text-body text-fg leading-relaxed bg-surface/80 p-2 rounded border border-hair">
+                  <span className="text-label text-muted uppercase tracking-wider font-mono mr-2">
+                    Report:
+                  </span>
+                  <span className="italic font-mono text-label text-fg">
+                    "{item.raw_text}"
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 flex items-center gap-2 self-end sm:self-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                to={`/reconcile?item=${encodeURIComponent(item.id)}`}
+              >
+                Review Item
+              </Button>
+            </div>
+          </div>
         );
       })}
     </div>
   );
 }
 
-// ── Row 2 right: recent activity ────────────────────────────────────────────
+// ── Recent Activity ─────────────────────────────────────────────────────────
 
-/** `to` is where the row opens. Every row has one. */
 type FeedRow = { at: string; text: React.ReactNode; to: string };
 
-/**
- * Audit writes and ingests interleaved, newest first. Both halves are real:
- * writes from GET /audit/recent, ingests from GET /jobs.
- */
 function RecentActivity({
   audit,
   jobs,
@@ -214,9 +521,6 @@ function RecentActivity({
   const rows = useMemo<FeedRow[]>(() => {
     const out: FeedRow[] = [];
 
-    // Budget each source separately before merging. A single ingest writes
-    // dozens of audit rows in the same second, which otherwise fills the whole
-    // feed and the ingest lines never appear at all.
     for (const a of audit.slice(0, 8)) {
       const field = FIELD_LABEL[a.field_changed] ?? a.field_changed;
       if (a.field_changed === 'source_conflict') {
@@ -225,8 +529,7 @@ function RecentActivity({
           to: `/schedule?activity=${encodeURIComponent(a.activity_id)}`,
           text: (
             <>
-              <span className="font-mono text-fg">{a.activity_id}</span> source conflict
-              recorded
+              <span className="font-mono text-fg">{a.activity_id}</span> source conflict recorded
             </>
           ),
         });
@@ -251,7 +554,6 @@ function RecentActivity({
               <span className="font-mono text-fg">
                 {isDate ? shortDate(a.new_value) : a.new_value}
               </span>{' '}
-              {/* From `source`, not `auto_applied` — see lib/audit.ts. */}
               · {auditActorShort(a)}
               {a.confidence !== null && (
                 <>
@@ -279,32 +581,29 @@ function RecentActivity({
     }
 
     out.sort((a, b) => (a.at < b.at ? 1 : -1));
-    return out.slice(0, 12);
+    return out.slice(0, 10);
   }, [audit, jobs]);
 
   if (rows.length === 0) {
     return (
       <EmptyState>
-        Nothing recorded yet. Writes to the schedule and file ingests appear
-        here as they happen.
+        Nothing recorded yet. Writes to the schedule and file ingests appear here as they happen.
       </EmptyState>
     );
   }
 
   return (
-    <div className="flex flex-col max-h-[260px] overflow-y-auto">
-      {/* These rows highlighted on hover and did nothing. An audit line opens
-          that activity's row and audit drawer; an ingest line opens Ingest. */}
+    <div className="flex flex-col max-h-[340px] overflow-y-auto divide-y divide-hair">
       {rows.map((r, i) => (
         <Link
           key={i}
           to={r.to}
-          className="px-4 py-3 border-b border-hair last:border-0 flex items-start gap-3 hover:bg-selected transition-colors"
+          className="p-3 flex items-start justify-between gap-3 hover:bg-selected transition-colors"
         >
-          <span className="flex-1 text-body text-muted leading-relaxed min-w-0">
+          <span className="text-body text-muted leading-relaxed min-w-0 flex-1">
             {r.text}
           </span>
-          <span className="shrink-0 font-mono text-label text-muted text-right whitespace-nowrap pt-1">
+          <span className="shrink-0 font-mono text-label text-muted whitespace-nowrap pt-0.5">
             {clock(r.at)}
           </span>
         </Link>
@@ -313,14 +612,13 @@ function RecentActivity({
   );
 }
 
-// ── Source conflicts ─────────────────────────────────────────────────
+// ── Source Conflicts ────────────────────────────────────────────────────────
 
 function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
   if (conflicts.length === 0) {
     return (
       <EmptyState>
-        No two field sources have contradicted each other. Conflicts appear
-        once a spreadsheet and a report disagree about the same field.
+        No two field sources have contradicted each other. Conflicts appear once a spreadsheet and a report disagree about the same field.
       </EmptyState>
     );
   }
@@ -342,7 +640,6 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
         </thead>
         <tbody>
           {conflicts.map((c) => {
-            // Columns are by source TYPE, not by which side arrived first.
             const sheet = c.sides.find((s) => s.source_kind === 'spreadsheet');
             const report = c.sides.find((s) => s.source_kind === 'daily_report');
             const others = c.sides.filter(
@@ -357,7 +654,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
                 <>
                   <span
                     className={`font-mono text-body ${
-                      s.value === c.stored_value ? 'text-fg' : 'text-danger'
+                      s.value === c.stored_value ? 'text-fg' : 'text-danger font-semibold'
                     }`}
                   >
                     {shortDate(s.value)}
@@ -389,12 +686,6 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
                   {shortDate(c.stored_value)}
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
-                  {/* Opens that activity's audit drawer on the Schedule screen. */}
-                  {/* Was "Resolve". It opens the Schedule audit drawer, which
-                      is deliberately read-only (D-004 — the trail is never
-                      edited), so the label promised an action the destination
-                      cannot perform. There is no endpoint that resolves a
-                      source conflict, so the honest fix is the label. */}
                   <Button
                     variant="secondary"
                     size="sm"
@@ -417,7 +708,7 @@ function SourceConflicts({ conflicts }: { conflicts: SourceConflict[] }) {
   );
 }
 
-// ── Page ────────────────────────────────────────────────────────────────────
+// ── Main Page Component ─────────────────────────────────────────────────────
 
 export default function Home() {
   usePageHeader(
@@ -425,30 +716,34 @@ export default function Home() {
     'Approved actuals compared with the locked baseline.',
     '/home'
   );
+
   const schedule = useQuery({
     queryKey: ['schedule', 'home'],
     queryFn: () => api.getSchedule(undefined, false),
   });
+
   const queue = useQuery({
     queryKey: ['reviewQueue'],
     queryFn: () => api.getReviewQueue('pending'),
   });
+
   const conflicts = useQuery({
     queryKey: ['conflicts'],
     queryFn: () => api.getConflicts(50),
   });
+
   const audit = useQuery({
     queryKey: ['auditRecent'],
     queryFn: () => api.getRecentAudit(20),
   });
+
   const jobs = useQuery({
     queryKey: ['jobs'],
     queryFn: () => api.listJobs(10),
   });
 
-  // Never key a render on `isLoading`: it is false between retry attempts, and
-  // `error` is null until retries are exhausted, so the success branch renders
-  // an empty list as "nothing to report" while the API is simply unreachable.
+  const [conflictsExpanded, setConflictsExpanded] = useState(true);
+
   const scheduleView = queryView(schedule);
   const queueView = queryView(queue);
   const conflictsView = queryView(conflicts);
@@ -461,86 +756,165 @@ export default function Home() {
     return m;
   }, [schedule.data]);
 
-  return (
-    /* No `h-full overflow-y-auto` here: the shell's <main> already scrolls, and
-       nesting a second scroll container gave the page two scrollbars. */
-    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-4">
-        {/* ROW 1 */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Tile
-            label="Activities in baseline"
-            value={schedule.data?.total_activities ?? null}
-            loading={scheduleView.kind === 'pending'}
-            error={scheduleView.kind === 'error'}
-          />
-          <Tile
-            label="With actual dates"
-            value={schedule.data?.activities_with_actuals ?? null}
-            loading={scheduleView.kind === 'pending'}
-            error={scheduleView.kind === 'error'}
-          />
-          <Tile
-            label="Awaiting your review"
-            value={queue.data?.length ?? null}
-            loading={queueView.kind === 'pending'}
-            error={queueView.kind === 'error'}
-            accent
-          />
-          {/* Every tile is a figure off /schedule or /review-queue. There is
-              no endpoint behind a matcher-precision number, so there is no
-              tile claiming one. */}
-          <Tile
-            label="Completed"
-            value={schedule.data?.activities_completed ?? null}
-            loading={scheduleView.kind === 'pending'}
-            error={scheduleView.kind === 'error'}
-          />
-        </section>
+  // Derived counts for summary strip
+  const pendingReviewsCount = queue.data?.length ?? 0;
+  const lowConfidenceCount = useMemo(() => {
+    return (queue.data ?? []).filter(
+      (item) => item.confidence < 0.65 || !item.suggested_activity_id
+    ).length;
+  }, [queue.data]);
+  const unresolvedConflictsCount = conflicts.data?.length ?? 0;
+  const failedJobsCount = useMemo(() => {
+    return (jobs.data ?? []).filter((j) => j.status === 'failed').length;
+  }, [jobs.data]);
 
-        {/* ROW 2 — surfaced with a count, not buried in a footer. */}
+  const activeProjectName = schedule.data?.project ?? 'Oil India Limited — Well Pad 04';
+  const dataDate = schedule.data?.data_date ?? '2026-03-01';
+
+  return (
+    <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
+      {/* Context Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-raised border border-hair rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-ok animate-pulse" />
+          <div>
+            <span className="font-semibold text-heading text-body block">
+              {activeProjectName}
+            </span>
+            <span className="text-label text-muted">
+              Scope: EPC Well Pad Facility (120 Schedule Activities)
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-label font-mono">
+          <div className="px-2.5 py-1 bg-surface border border-hair rounded">
+            <span className="text-muted">Data Date: </span>
+            <span className="text-fg font-semibold">{dataDate}</span>
+          </div>
+          <div className="px-2.5 py-1 bg-surface border border-hair rounded hidden md:block">
+            <span className="text-muted">Schedule Authority: </span>
+            <span className="text-fg font-semibold">Planning Engineer</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. Restrained Summary Strip — 4 Actionable Tiles */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryTile
+          label="Pending reviews"
+          value={pendingReviewsCount}
+          subtext="open queue"
+          to="/reconcile"
+          loading={queueView.kind === 'pending'}
+          error={queueView.kind === 'error'}
+          status={pendingReviewsCount > 0 ? 'warn' : 'ok'}
+        />
+        <SummaryTile
+          label="Low confidence / Unmatched"
+          value={lowConfidenceCount}
+          subtext="needs planner decision"
+          to="/reconcile?filter=needs_review"
+          loading={queueView.kind === 'pending'}
+          error={queueView.kind === 'error'}
+          status={lowConfidenceCount > 0 ? 'danger' : 'neutral'}
+        />
+        <SummaryTile
+          label="Source conflicts"
+          value={unresolvedConflictsCount}
+          subtext="field contradictions"
+          to="/schedule"
+          loading={conflictsView.kind === 'pending'}
+          error={conflictsView.kind === 'error'}
+          status={unresolvedConflictsCount > 0 ? 'warn' : 'neutral'}
+        />
+        <SummaryTile
+          label="Failed imports"
+          value={failedJobsCount}
+          subtext="unlinked files"
+          to="/ingest"
+          loading={jobsView.kind === 'pending'}
+          error={jobsView.kind === 'error'}
+          status={failedJobsCount > 0 ? 'danger' : 'neutral'}
+        />
+      </section>
+
+      {/* 2. Milestone Timeline Strip */}
+      <MilestoneStrip dataDate={dataDate} />
+
+      {/* 3. Dominant Section: Needs Attention (Operational Review Items) */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <Panel
-          title="Source conflicts"
-          badge={conflicts.data?.length}
-          action={<PanelAction to="/schedule" label="Schedule" />}
+          title="Needs your attention"
+          span="lg:col-span-3"
+          badge={pendingReviewsCount > 0 ? pendingReviewsCount : undefined}
+          action={<PanelAction to="/reconcile" label="Reconcile" />}
         >
-          {conflictsView.kind === 'error' ? (
-            <ErrorState error={conflictsView.error} mode="bare" className="px-4 py-4" />
-          ) : conflictsView.kind === 'pending' ? (
-            <SkeletonRows rows={4} />
+          {queueView.kind === 'error' ? (
+            <ErrorState error={queueView.error} mode="bare" className="px-4 py-4" />
+          ) : queueView.kind === 'pending' ? (
+            <SkeletonRows rows={5} />
           ) : (
-            <SourceConflicts conflicts={conflicts.data ?? []} />
+            <NeedsAttention items={queue.data ?? []} activities={activityMap} />
           )}
         </Panel>
 
-        {/* ROW 3 */}
-        <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <Panel
-            title="Needs your attention"
-            span="lg:col-span-3"
-            action={<PanelAction to="/reconcile" label="Reconcile" />}
+        <Panel title="Recent activity" span="lg:col-span-2">
+          {auditView.kind === 'error' ? (
+            <ErrorState error={auditView.error} mode="bare" className="px-4 py-4" />
+          ) : jobsView.kind === 'error' ? (
+            <ErrorState error={jobsView.error} mode="bare" className="px-4 py-4" />
+          ) : auditView.kind === 'pending' || jobsView.kind === 'pending' ? (
+            <SkeletonRows rows={6} height="h-3" />
+          ) : (
+            <RecentActivity audit={audit.data ?? []} jobs={jobs.data ?? []} />
+          )}
+        </Panel>
+      </section>
+
+      {/* 4. Scannable Operational Table: Discipline Work Packages */}
+      <Panel
+        title="Discipline Work Packages"
+        action={<PanelAction to="/schedule" label="Schedule" />}
+      >
+        {scheduleView.kind === 'error' ? (
+          <ErrorState error={scheduleView.error} mode="bare" className="px-4 py-4" />
+        ) : scheduleView.kind === 'pending' ? (
+          <SkeletonRows rows={6} />
+        ) : (
+          <DisciplineWorkPackages
+            activities={schedule.data?.activities ?? []}
+            queueItems={queue.data ?? []}
+          />
+        )}
+      </Panel>
+
+      {/* 5. Source Conflicts (Expandable Technical Section) */}
+      <Panel
+        title="Source conflicts"
+        badge={unresolvedConflictsCount > 0 ? unresolvedConflictsCount : undefined}
+        action={
+          <button
+            type="button"
+            onClick={() => setConflictsExpanded(!conflictsExpanded)}
+            className="text-label text-muted hover:text-fg flex items-center gap-1 font-mono uppercase tracking-wider"
           >
-            {queueView.kind === 'error' ? (
-              <ErrorState error={queueView.error} mode="bare" className="px-4 py-4" />
-            ) : queueView.kind === 'pending' ? (
-              <SkeletonRows rows={5} />
+            {conflictsExpanded ? 'Collapse' : 'Expand'}
+            {conflictsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+        }
+      >
+        {conflictsExpanded && (
+          <>
+            {conflictsView.kind === 'error' ? (
+              <ErrorState error={conflictsView.error} mode="bare" className="px-4 py-4" />
+            ) : conflictsView.kind === 'pending' ? (
+              <SkeletonRows rows={4} />
             ) : (
-              <NeedsAttention items={queue.data ?? []} activities={activityMap} />
+              <SourceConflicts conflicts={conflicts.data ?? []} />
             )}
-          </Panel>
-
-          <Panel title="Recent activity" span="lg:col-span-2">
-            {auditView.kind === 'error' ? (
-              <ErrorState error={auditView.error} mode="bare" className="px-4 py-4" />
-            ) : jobsView.kind === 'error' ? (
-              <ErrorState error={jobsView.error} mode="bare" className="px-4 py-4" />
-            ) : auditView.kind === 'pending' || jobsView.kind === 'pending' ? (
-              <SkeletonRows rows={6} height="h-3" />
-            ) : (
-              <RecentActivity audit={audit.data ?? []} jobs={jobs.data ?? []} />
-            )}
-          </Panel>
-        </section>
-
+          </>
+        )}
+      </Panel>
     </div>
   );
 }

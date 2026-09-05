@@ -493,131 +493,154 @@ function AuditDrawer({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* DETAIL */}
-        <section>
-          <SectionTitle className="mb-3">Detail</SectionTitle>
-
-          <div className="grid grid-cols-2 gap-x-5 gap-y-3">
-            <Field label="WBS Path">{activity.wbs_path}</Field>
-            {activity.wbs_level !== null && (
-              <Field label="WBS Level">L{activity.wbs_level}</Field>
-            )}
-            {activity.calendar && (
-              <Field label="Calendar">{activity.calendar}</Field>
-            )}
-            <Field label="Discipline">
-              <DisciplineTag discipline={activity.discipline} />
-            </Field>
-          </div>
-
-          {/* Planned against actual. Planned is read-only baseline and is
-              rendered muted so the actual column is the one that reads. */}
-          <div className="mt-3 border border-hair rounded-sm overflow-hidden">
-            <div className="grid grid-cols-3 border-b border-hair bg-raised">
-              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted" />
-              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
-                Planned
-              </div>
-              <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
-                Actual
-              </div>
-            </div>
-            <div className="grid grid-cols-3 border-b border-hair">
-              <div className="px-2 py-2 font-mono text-label text-muted">Start</div>
-              <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
-                {activity.planned_start ?? <Absent />}
-              </div>
-              <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
-                <DateCell
-                  value={activity.actual_start}
-                  basis={activity.actual_start_basis}
-                  solid
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-3">
-              <div className="px-2 py-2 font-mono text-label text-muted">Finish</div>
-              <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
-                {activity.planned_finish ?? <Absent />}
-              </div>
-              <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
-                <DateCell
-                  value={activity.actual_finish}
-                  basis={activity.actual_finish_basis}
-                  solid
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-5 gap-y-3 mt-3">
-            <Field label="Planned Qty">
-              {activity.planned_qty} {activity.uom}
-            </Field>
-            <Field label="Actual Qty">
-              {activity.actual_qty !== null ? (
-                <>
-                  {activity.actual_qty} {activity.uom}
-                </>
-              ) : (
-                <Absent />
-              )}
-            </Field>
-            <Field label="Percent Complete">
-              {activity.percent_complete !== null ? (
-                `${activity.percent_complete.toFixed(1)}%`
-              ) : (
-                <Absent />
-              )}
-            </Field>
-            <Field label="Confidence">
-              {activity.link_confidence !== null ? (
-                <ConfidenceBadge value={activity.link_confidence} />
-              ) : (
-                <Absent />
-              )}
-            </Field>
-          </div>
-
-          <div className="mt-3">
-            <span className="font-mono text-label uppercase tracking-wider text-muted">
-              Predecessors
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* TIER 1: BASELINE PLAN */}
+        <div className="border border-hair rounded-lg p-3.5 bg-surface/40 flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-hair pb-1.5">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-accent font-semibold">
+              Tier 1: Baseline Plan
             </span>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {activity.predecessors.length > 0 ? (
-                activity.predecessors.map((p) => (
-                  <span
-                    key={p}
-                    className="font-mono text-label text-accent bg-selected rounded-full px-2 py-1"
-                  >
-                    {p}
-                  </span>
-                ))
-              ) : (
-                <span className="font-mono text-label text-muted">None</span>
-              )}
-            </div>
+            <span className="font-mono text-[10px] text-muted">Primavera Locked Baseline</span>
           </div>
-        </section>
+          <section>
+            <SectionTitle className="mb-3">Detail</SectionTitle>
 
-        {/* QUANTITY LEDGER */}
-        <section>
-          <SectionTitle className="mb-3">Quantity Ledger</SectionTitle>
-          <QuantityLedgerSection activityId={activity.activity_id} />
-        </section>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+              <Field label="WBS Path">{activity.wbs_path}</Field>
+              {activity.wbs_level !== null && (
+                <Field label="WBS Level">L{activity.wbs_level}</Field>
+              )}
+              {activity.calendar && (
+                <Field label="Calendar">{activity.calendar}</Field>
+              )}
+              <Field label="Discipline">
+                <DisciplineTag discipline={activity.discipline} />
+              </Field>
+            </div>
 
-        {/* PRODUCTIVITY AND FORECAST */}
-        <section>
-          <SectionTitle className="mb-3">Productivity &amp; Forecast</SectionTitle>
-          <ForecastSection activityId={activity.activity_id} />
-        </section>
+            {/* Planned against actual. Planned is read-only baseline and is
+                rendered muted so the actual column is the one that reads. */}
+            <div className="mt-3 border border-hair rounded-sm overflow-hidden">
+              <div className="grid grid-cols-3 border-b border-hair bg-raised">
+                <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted" />
+                <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
+                  Planned
+                </div>
+                <div className="px-2 py-1 font-mono text-label uppercase tracking-wider text-muted border-l border-hair">
+                  Actual
+                </div>
+              </div>
+              <div className="grid grid-cols-3 border-b border-hair">
+                <div className="px-2 py-2 font-mono text-label text-muted">Start</div>
+                <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
+                  {activity.planned_start ?? <Absent />}
+                </div>
+                <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
+                  <DateCell
+                    value={activity.actual_start}
+                    basis={activity.actual_start_basis}
+                    solid
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3">
+                <div className="px-2 py-2 font-mono text-label text-muted">Finish</div>
+                <div className="px-2 py-2 font-mono text-label text-muted border-l border-hair">
+                  {activity.planned_finish ?? <Absent />}
+                </div>
+                <div className="px-2 py-2 font-mono text-label text-fg border-l border-hair">
+                  <DateCell
+                    value={activity.actual_finish}
+                    basis={activity.actual_finish_basis}
+                    solid
+                  />
+                </div>
+              </div>
+            </div>
 
-        {/* AUDIT TRAIL */}
-        <section>
-          <SectionTitle className="mb-3">Audit Trail</SectionTitle>
-          <AuditTrail activityId={activity.activity_id} />
-        </section>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3 mt-3">
+              <Field label="Planned Qty">
+                {activity.planned_qty} {activity.uom}
+              </Field>
+              <Field label="Actual Qty">
+                {activity.actual_qty !== null ? (
+                  <>
+                    {activity.actual_qty} {activity.uom}
+                  </>
+                ) : (
+                  <Absent />
+                )}
+              </Field>
+              <Field label="Percent Complete">
+                {activity.percent_complete !== null ? (
+                  `${activity.percent_complete.toFixed(1)}%`
+                ) : (
+                  <Absent />
+                )}
+              </Field>
+              <Field label="Confidence">
+                {activity.link_confidence !== null ? (
+                  <ConfidenceBadge value={activity.link_confidence} />
+                ) : (
+                  <Absent />
+                )}
+              </Field>
+            </div>
+
+            <div className="mt-3">
+              <span className="font-mono text-label uppercase tracking-wider text-muted">
+                Predecessors
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {activity.predecessors.length > 0 ? (
+                  activity.predecessors.map((p) => (
+                    <span
+                      key={p}
+                      className="font-mono text-label text-accent bg-selected rounded-full px-2 py-1"
+                    >
+                      {p}
+                    </span>
+                  ))
+                ) : (
+                  <span className="font-mono text-label text-muted">None</span>
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* TIER 2: FIELD PROPOSALS & FORECAST */}
+        <div className="border border-hair rounded-lg p-3.5 bg-surface/40 flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-hair pb-1.5">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-warn font-semibold">
+              Tier 2: Field Proposals &amp; Forecast
+            </span>
+            <span className="font-mono text-[10px] text-muted">Observed Progress</span>
+          </div>
+          <section>
+            <SectionTitle className="mb-3">Productivity &amp; Forecast</SectionTitle>
+            <ForecastSection activityId={activity.activity_id} />
+          </section>
+        </div>
+
+        {/* TIER 3: COMMITTED ACTUALS & AUDIT TRAIL */}
+        <div className="border border-hair rounded-lg p-3.5 bg-surface/40 flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-hair pb-1.5">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-ok font-semibold">
+              Tier 3: Committed Actuals &amp; Audit Trail
+            </span>
+            <span className="font-mono text-[10px] text-muted">Immutable Ledger</span>
+          </div>
+          <section>
+            <SectionTitle className="mb-3">Quantity Ledger</SectionTitle>
+            <QuantityLedgerSection activityId={activity.activity_id} />
+          </section>
+
+          <section className="pt-2 border-t border-hair">
+            <SectionTitle className="mb-3">Audit Trail</SectionTitle>
+            <AuditTrail activityId={activity.activity_id} />
+          </section>
+        </div>
       </div>
     </aside>
   );
@@ -1055,15 +1078,21 @@ export default function Schedule() {
             <option value="pmxml">PMXML</option>
             <option value="xer">XER</option>
           </select>
-          <Button
-            variant="secondary"
-            size="xs"
-            onClick={handleExport}
-            disabled={exportState.kind === 'busy'}
-          >
-            <Download size={12} />
-            {exportState.kind === 'busy' ? 'Exporting…' : 'Export'}
-          </Button>
+          <div className="group relative">
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={handleExport}
+              disabled={exportState.kind === 'busy'}
+            >
+              <Download size={12} />
+              {exportState.kind === 'busy' ? 'Exporting…' : 'Export'}
+            </Button>
+            <div className="hidden group-hover:block absolute right-0 top-full mt-1.5 w-72 p-2.5 bg-raised border border-hair rounded-lg shadow-lg text-label text-muted font-mono z-30 pointer-events-none">
+              <span className="text-fg font-semibold block mb-1">P6 Export Policy:</span>
+              Only confirmed actuals and planner-approved adjustments are written into the XER/PMXML payload. Uncommitted field proposals remain quarantined in NAVIS.
+            </div>
+          </div>
         </div>
       </div>
 

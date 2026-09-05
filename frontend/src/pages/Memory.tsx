@@ -1,6 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, CheckCircle2, Layers, ShieldAlert, Sparkles, Umbrella } from 'lucide-react';
+import {
+  BookOpen,
+  CheckCircle2,
+  Database,
+  Layers,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
+  Umbrella,
+} from 'lucide-react';
 import { api } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { EmptyState, ErrorState, Panel, Skeleton } from '../components/ui';
@@ -24,13 +34,6 @@ import { TenderEstimator } from '../components/TenderEstimator';
  * says so in words rather than drawing an empty chart.
  */
 
-/**
- * Said in words, per the constraint against empty charts.
- *
- * This used to be a left-aligned block of its own while every other "nothing
- * here yet" on the screen was centred; it is the shared `EmptyState` now, so
- * an empty Memory screen reads the same way as an empty queue.
- */
 function NoData({ children }: { children: React.ReactNode }) {
   return <EmptyState>{children}</EmptyState>;
 }
@@ -66,6 +69,8 @@ interface Overrun extends DurationDistribution {
 const MIN_ACTUALS_FOR_DELTA = 3;
 
 function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
+  const [filterQuery, setFilterQuery] = useState('');
+
   const { withActuals, thin, withoutActuals } = useMemo(() => {
     const ok: Overrun[] = [];
     const weak: DurationDistribution[] = [];
@@ -93,6 +98,18 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
     return { withActuals: ok, thin: weak, withoutActuals: missing };
   }, [rows]);
 
+  const filteredWithActuals = useMemo(() => {
+    if (!filterQuery.trim()) return withActuals;
+    const q = filterQuery.toLowerCase();
+    return withActuals.filter((r) => r.activity_type.toLowerCase().includes(q));
+  }, [withActuals, filterQuery]);
+
+  const filteredThin = useMemo(() => {
+    if (!filterQuery.trim()) return thin;
+    const q = filterQuery.toLowerCase();
+    return thin.filter((r) => r.activity_type.toLowerCase().includes(q));
+  }, [thin, filterQuery]);
+
   if (withActuals.length === 0 && thin.length === 0) {
     return <NoData>No activity type has both an actual start and finish yet.</NoData>;
   }
@@ -109,9 +126,21 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
 
   return (
     <>
+      {rows.length > 5 && (
+        <div className="px-3 py-2 border-b border-hair bg-raised/40 flex items-center gap-2">
+          <Search size={13} className="text-muted shrink-0" />
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Filter activity type..."
+            className="w-full bg-transparent text-label text-fg placeholder:text-muted focus:outline-none"
+          />
+        </div>
+      )}
       <div className="overflow-auto max-h-[420px]">
         <table className="w-full border-collapse tabular-nums">
-          <thead className="sticky top-0 bg-raised">
+          <thead className="sticky top-0 bg-raised z-10">
             <tr className="border-b border-hair">
               <Th>Activity type</Th>
               <Th right>Planned avg</Th>
@@ -121,11 +150,14 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
             </tr>
           </thead>
           <tbody>
-            {withActuals.map((r) => {
+            {filteredWithActuals.map((r) => {
               const late = r.deltaDays > 0;
               const flat = Math.abs(r.deltaDays) < 0.05;
               return (
-                <tr key={r.activity_type} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+                <tr
+                  key={r.activity_type}
+                  className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors"
+                >
                   <td className="px-3 py-3 font-mono text-body text-fg whitespace-nowrap">
                     {r.activity_type}
                   </td>
@@ -152,7 +184,7 @@ function PlannedVsActual({ rows }: { rows: DurationDistribution[] }) {
                 </tr>
               );
             })}
-            {thin.map((r) => (
+            {filteredThin.map((r) => (
               <tr
                 key={r.activity_type}
                 className="border-b border-hair last:border-0 even:bg-surface"
@@ -292,7 +324,10 @@ function DelayCauses({ rows }: { rows: DelayReasonRow[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.reason} className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors">
+            <tr
+              key={r.reason}
+              className="border-b border-hair last:border-0 even:bg-surface hover:bg-selected transition-colors"
+            >
               <td className="px-3 py-3 text-body text-fg capitalize">{r.reason}</td>
               <td className="px-3 py-3 font-mono text-body text-fg text-right">
                 {r.frequency}
@@ -625,6 +660,24 @@ export default function Memory() {
 
   return (
     <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5">
+      {/* ── Context Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-hair bg-raised text-label">
+        <div className="flex items-center gap-2.5">
+          <span className="font-semibold text-fg">Oil India Limited — Well Pad 04</span>
+          <span className="text-muted">·</span>
+          <span className="text-muted">Execution Intelligence & Institutional Memory</span>
+        </div>
+        <div className="flex items-center gap-4 text-muted">
+          <span>
+            Basis: <strong className="font-mono text-fg">Verified Site Records (Not Simulated)</strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-fg border border-hair bg-surface font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+            Planning Engineer Console
+          </span>
+        </div>
+      </div>
+
       {/* Navigation View Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-hair pb-4">
         <div>
@@ -642,7 +695,7 @@ export default function Memory() {
             onClick={() => setActiveTab('historical')}
             className={`px-3 py-1.5 text-label font-medium rounded-md transition-colors ${
               activeTab === 'historical'
-                ? 'bg-selected text-fg shadow-xs'
+                ? 'bg-selected text-fg shadow-xs font-semibold'
                 : 'text-muted hover:text-fg'
             }`}
           >
