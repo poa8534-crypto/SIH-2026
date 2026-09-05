@@ -8430,3 +8430,164 @@ decorative telemetry — `LATENCY: 18MS`, `98.4% NOMINAL ALIGNMENT`,
 `VOL: +3.2%`, `EARNED VALUE: 100%` on a named activity. It is marketing chrome
 rather than a reported metric, but it is the same class of thing on the first
 screen anyone sees, and it should be reviewed before the demo.
+
+---
+
+## 2026-09-05 / D-091 — A success message is a claim about the database
+
+### Context
+`frontend/src/pages/field/ReportStudio.tsx` ended its submit handler like this:
+
+```tsx
+} catch {
+  // In case of offline/network, show success locally
+  setSubmitted(true);
+}
+```
+
+Any failure — a refused connection, a 500, a dropped cable — produced
+**"Dispatched to Project Controls"**, complete with an invented reference
+number. This is the most serious defect this repository has contained. A
+supervisor who is told their update was filed stops thinking about it; the
+record they believe exists is precisely the one nobody goes looking for, and
+the work silently leaves the project's account of itself. Every other refusal
+in this codebase — an Actual Finish withheld because the evidence covers only
+part of the scope (D-008), a liability left unadjudicated (D-077), a cost
+metric not emitted because its denominator would have to be invented — exists
+to prevent a smaller version of exactly this.
+
+The rest of the screen was static in the same way. It submitted a fixed
+sentence about `ACT-PIP-201-04`, an activity id that appears in no baseline
+this project ships, and ignored the one field a supervisor could edit. It
+asserted a **98.4% confidence** match, a **GPS VERIFIED** geo-stamped
+photograph at 27.3592° N 95.3197° E, torque logs "attached automatically",
+and linkage into "Primavera P6 Rev-08 baseline staging". There is no EXIF
+reader, no photo store and no P6 write path anywhere in this repository; a
+`grep -i exif server/ extraction/ matching/` returns nothing. The chat panel
+answered itself on a `setTimeout`.
+
+`POST /agent/turn` — the endpoint the screen was nominally calling — already
+did all of this correctly. It fills slots, runs the real matcher, refuses a
+`confirm` while a slot is still open, is idempotent across a retried
+submission, and returns `event_created` only after committing a `LinkedEvent`
+and a review item. `frontend/src/pages/Field.tsx` has consumed it honestly
+since it was built. The studio was a parallel mock-up that bypassed both.
+
+### Decision
+
+**Success is gated on the server's own statement of persistence.**
+`persistedReference()` returns a reference only when `event_created` is true
+*and* the response carries a `review_item_id` or `linked_event_id`. Either
+half alone is not persistence: a flag with no row is not something a planner
+can open. The success screen is reachable from nowhere else.
+
+**A failure keeps the draft and says what happened.** Both failure modes are
+distinguished and both are stated:
+
+- the request threw — `errorDetail()` names the server and the reason, and the
+  supervisor's message is pulled back out of the transcript so it is not left
+  looking like it was received;
+- the request succeeded and the server declined to write — the agent's own
+  `agent_message` explains what is still missing.
+
+In both cases the textarea, the date, the discipline and the work front are
+untouched. The banner says "Nothing was sent and nothing was stored anywhere",
+because there is no offline queue in this system and implying one would be the
+same lie in a quieter voice.
+
+**Submission is disabled until the server says the report is complete.** The
+button is live only on `awaiting_confirmation`. This is not defensive UI: the
+server refuses such a confirm anyway (`"I need one more thing before I can
+send this"`), and a button that looks armed and then refuses reads as broken.
+
+**Every figure comes from the response.** The confidence is
+`turn.confidence` with `match_outcome` beside it, or the words "no confidence
+reported". The activity is the one the matcher chose, or "No activity
+matched". An unfilled slot renders an em dash, because the agent not having
+read a value and the value being blank are different facts.
+
+**The unsupported claims are deleted, not softened.** The photo card, the GPS
+coordinates, the Exif line, the P6 baseline-staging sentence, the "Schedule
+Delta: 0 Days Variance" badge, the "100% FINAL" chip, "V4.2 CONNECTED" and the
+scripted assistant replies are gone. What replaced them is a form: a textarea
+for what happened, and selects for work front, discipline and work date, all
+of which are sent.
+
+### Alternatives Considered
+- **Queue failed submissions in `localStorage` and sync later.** Rejected. It
+  is a real feature and a defensible one, but it is not what the code did, and
+  building it here would mean the success message stays true only if a sync
+  path that does not exist yet is later written correctly. Until there is one,
+  the honest answer to a failed submission is that it failed.
+- **Keep the demo content and only fix the `catch`.** Rejected: the screen
+  would still submit a hardcoded sentence about an activity the baseline does
+  not contain, so the "success" would be true about a record nobody wanted.
+- **Redirect the studio to `Field.tsx` and delete it.** Tempting, and it is
+  the smaller diff. Rejected because the two are genuinely different surfaces —
+  a phone flow and a wide-screen review flow — and the wide layout is the one a
+  planner-facing demo uses.
+
+### What it does on the live corpus
+Typed into the studio against the running API:
+
+```
+"Bored piling for pipe rack P1 to P12 finished, 12 of 12 piles complete"
+  -> NAVIS: "Which date was it completed?"     submit stays disabled
+"14 September 2026"
+  -> 62.3% match confidence · REVIEW
+     CIV-PLY-1004  Bored Piling — Pipe Rack P1–P12
+     quantity 12 nos · reported date 2026-09-14
+  -> Sent for planner review
+     Recorded as c41ec518-ae1d-48a9-b003-8174f9d723e6
+```
+
+`GET /review-queue` then contains that id, against `CIV-PLY-1004`, carrying
+the supervisor's sentence verbatim.
+
+The failure path was then exercised in the same browser by replacing
+`window.fetch` with a rejecting stub and pressing submit:
+
+```
+Not submitted
+Could not reach the API at http://localhost:8000 — Failed to fetch
+Your report is still on this screen. Nothing was sent and nothing was
+stored anywhere.
+```
+
+No success screen, and the parsed report — `ELE-FLT-1085`, 800 m, 58.3% —
+still on the page.
+
+### Verification
+`cd frontend && npx vitest run` — 162 passed, up from 156.
+`frontend/src/test/fieldStudio.test.tsx` was rewritten from 5 tests to 11. The
+old ones asserted the fabricated content (`IMG_8821_joint.jpg`, `GPS
+VERIFIED`, `ACT-PIP-201-04`, the scripted reply) and one of them asserted that
+a mocked-successful submit reached "Dispatched to Project Controls" — none of
+them could have caught the `catch`. The new ones pin the acceptance condition
+directly: a rejected `agentTurn` must not produce a success screen, must keep
+the textarea's value, and must render the failure. Separate tests cover a
+200-that-did-not-persist, the disabled-until-ready button, that the message
+sent is the text actually typed with the chosen date and discipline, that only
+the second turn carries `confirm: true`, and that the removed claims are
+absent from the DOM.
+
+`npx tsc --noEmit` clean. The backend was not touched, so `pytest` and
+`eval.py` were not re-run for this change.
+
+### Affected Areas
+`frontend/src/pages/field/ReportStudio.tsx` (rewritten),
+`frontend/src/test/fieldStudio.test.tsx` (rewritten).
+
+### Trade-offs / Consequences
+The studio now requires a running API to do anything at all, and shows less
+than it used to: no photograph, no coordinates, no torque logs, and a
+confidence in the 50–70% band rather than 98.4%. That band is the real one for
+a free-text sentence matched against 120 activities, and a REVIEW outcome
+routing to a planner is the product working, not failing.
+
+**Not fixed here, and flagged rather than hidden:** `View in My Updates` leads
+to `frontend/src/pages/field/UpdatesLedger.tsx`, which is still a static
+mock-up of the same kind — a hardcoded P-201 update with an Exif photo panel
+and a fabricated review outcome. The route a supervisor takes immediately
+after a real submission therefore still shows invented content. It is the next
+thing to fix on this surface.

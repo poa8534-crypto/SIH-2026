@@ -1291,6 +1291,55 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The Report Studio stops reporting false success — it now submits
+what was typed, and shows success only when the server confirms it persisted.
+**Date:** 2026-09-05 · **Decision:** D-091
+
+```
+REPORT STUDIO — THE SUBMIT PATH                                   (D-091)
+
+  frontend/src/pages/field/ReportStudio.tsx :: send(text, {confirm})
+      api.agentTurn({ session_id, message, confirm, context })
+          message = what the supervisor typed, verbatim
+          context = agentContext(workFront, discipline)
+                    with data_date overridden by the date field
+      -> POST /agent/turn  (server/main.py :: agent_turn)
+
+  PROPOSE TURN   confirm: false
+      slot filling, then _match_slots runs the real matcher
+      awaiting_confirmation true only when no slot is open
+      renders: turn.confidence, turn.match_outcome, slots.activity_id,
+               activity_description, quantity/uom, date, tags, location
+               an unfilled slot renders an em dash, never a placeholder
+
+  COMMIT TURN    confirm: true       enabled ONLY on awaiting_confirmation
+      _existing_agent_submission  -> idempotent on a retry
+      _create_event_from_slots    -> LinkedEvent + ReviewQueueItem
+      response carries event_created + review_item_id/linked_event_id
+
+  THE GATE       persistedReference(turn)
+      event_created AND (review_item_id ?? linked_event_id)
+      null  -> failure banner, draft untouched, nothing claimed
+      id    -> success screen, naming that id and the matched activity
+
+  FAILURE MODES, both stated and both non-destructive:
+      request threw          errorDetail(e) names the host and the reason
+      200 without a write    the agent's own agent_message says what is
+                             missing
+
+  There is no offline queue, so a failed submission is never described as
+  saved. Was: `catch { setSubmitted(true) }`, which turned a pulled cable
+  into "Dispatched to Project Controls".
+
+  Pinned by frontend/src/test/fieldStudio.test.tsx (11 tests), whose first
+  case is the acceptance condition: a rejected agentTurn cannot produce a
+  success screen.
+```
+
+---
+
+### Previous modification area (D-090)
+
 **Task:** The executive layer stops inventing figures — eight fabricated
 numbers removed from `executive_metrics.py` and the Overview screen, and money
 made opt-in.
