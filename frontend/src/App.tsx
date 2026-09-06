@@ -125,7 +125,7 @@ function DesktopShell({
               N
             </span>
             <span className="font-semibold text-heading text-body tracking-tight">
-              NAVIS Engine
+              NAVIS
             </span>
           </div>
           <h1
@@ -154,7 +154,7 @@ function DesktopShell({
                 to={item.path}
                 className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-body font-medium transition-colors ${
                   active
-                    ? 'bg-raised text-heading border border-hair shadow-xs'
+                    ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
                     : 'text-muted hover:bg-selected hover:text-heading'
                 }`}
               >

@@ -9257,3 +9257,59 @@ verified at 375x812 with the on-screen keyboard absent. A real device with the
 keyboard raised shortens the viewport further, and the fixed action bar sits
 above the bottom nav rather than above the keyboard; that needs a device test
 before the demo.
+
+---
+
+## 2026-09-06 / D-096 — Clarifications is an actionable work queue, not a KPI dashboard
+
+### Status
+Active.
+
+### Context
+The original Field Supervisor `/field/clarifications` screen featured three giant
+metric cards (`0 NEEDS RESPONSE`, `0 ANSWERED`, `0 TOTAL`), three pill filters,
+and an enormous 100%-width bordered empty-state card. When zero clarifications
+existed, almost the entire screen was wasted just rendering "0", mimicking a
+dashboard rather than functioning as an operational inbox.
+
+Furthermore, the sidebar item for Clarifications in `FieldWorkspaceShell.tsx` had
+fallback logic defaulting to `2` when the query resolved or was empty, giving
+a false impression of urgent pending actions, and the respond flow on individual
+cards embedded textareas directly inside every card without focused interaction.
+
+### Decision
+1. **Eliminate Dashboard KPI Tiles**: The 3 oversized stat cards were deleted.
+   Quantitative status is compactly integrated near the page title (`2 require
+   your response · 7 answered`) and inside segmented filter chips (`[ All (9) ]
+   [ Needs response (2) ] [ Answered (7) ]`).
+2. **Compact Centered Empty State**: Removed the full-width boxed container.
+   Zero clarifications displays a clean, centered, natural-whitespace message:
+   `✓ No clarifications needed · Planning hasn't requested any additional information`.
+3. **Sidebar Badge Dynamic Guard**: In `FieldWorkspaceShell.tsx`, `unanswered`
+   count is derived strictly from real query data and defaults to `0`. If `0`,
+   no badge is rendered. When `> 0`, it displays an amber warning badge.
+4. **Question-First Information Hierarchy**: The question asked by Planning is
+   the most prominent element (`text-lg font-semibold text-heading`). The original
+   field report snippet and linked activity are presented in a dedicated context
+   callout beneath it, followed by Planning Engineer attribution and a direct
+   `[ Respond ]` action button.
+5. **Slideout Respond Drawer**: Clicking `[ Respond ]` or navigating with
+   `?item=<id>` opens a dedicated slideout drawer presenting Planning's question,
+   verbatim original update context, response textarea, voice transcription
+   controls (`useSpeech`), and action buttons (`Cancel` / `Send Response`).
+   Submitting sends `POST /field/clarifications/{id}/respond`, triggers query
+   invalidation, displays a success toast (`Response sent to Planning Engineer`),
+   and preserves the answered item under `Answered` for traceability.
+6. **Cross-Page Deep Linking**: `My Updates` items needing clarification route
+   directly to `/field/clarifications?item=<id>`, automatically opening the drawer.
+
+### Verification
+`python -m pytest -q` — 1196 passed. `npm test -- --run` — 223 passed (23 files).
+`npx tsc --noEmit` — 0 errors. Vite production build — clean in 2.51s.
+
+### Affected Areas
+- `frontend/src/pages/FieldClarifications.tsx` (redesigned)
+- `frontend/src/pages/field/FieldWorkspaceShell.tsx` (badge logic)
+- `frontend/src/pages/FieldReports.tsx` (deep links)
+- `frontend/src/test/field.test.tsx` (test update)
+

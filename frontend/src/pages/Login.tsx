@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { HardHat, ClipboardCheck, LineChart, ArrowRight, ShieldCheck, Database, FileSpreadsheet, Check } from 'lucide-react';
+import { HardHat, ClipboardCheck, LineChart, ArrowRight, ShieldCheck, Database, FileSpreadsheet, Check, Sun, Moon } from 'lucide-react';
 import { ROLE_PROFILES, type Role } from '../lib/role';
 import { Button } from '../components/ui';
+import { useTheme } from '../hooks/useTheme';
 
 interface LoginProps {
   onPick: (role: Role) => void;
@@ -45,9 +46,59 @@ const ROLES_DATA: RoleCardData[] = [
 
 export default function Login({ onPick }: LoginProps) {
   const [selected, setSelected] = useState<Role>('planner');
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="min-h-screen w-full bg-surface text-fg font-sans flex flex-col justify-between p-6 sm:p-10">
+      {/* Top Header Bar with NAVIS Brand & Theme Selector */}
+      <div className="w-full max-w-[1180px] mx-auto mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-7 h-7 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label shadow-xs">
+            N
+          </span>
+          <span className="font-semibold text-heading text-body tracking-tight">
+            NAVIS
+          </span>
+          <span className="text-label text-muted font-mono hidden sm:inline-block">
+            // Project Controls &amp; Site Capture
+          </span>
+        </div>
+
+        {/* Theme Selector Toggle */}
+        <div className="flex items-center p-0.5 rounded-lg border border-hair bg-raised shadow-xs" role="radiogroup" aria-label="Theme selector">
+          <button
+            type="button"
+            onClick={() => setTheme('light')}
+            className={`px-3 py-1.5 rounded-md text-label font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+              theme === 'light'
+                ? 'bg-accent text-accent-fg shadow-xs'
+                : 'text-muted hover:text-heading'
+            }`}
+            title="Switch to Light Theme"
+            aria-checked={theme === 'light'}
+            role="radio"
+          >
+            <Sun size={13} />
+            <span>Light</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('dark')}
+            className={`px-3 py-1.5 rounded-md text-label font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+              theme === 'dark'
+                ? 'bg-accent text-accent-fg shadow-xs'
+                : 'text-muted hover:text-heading'
+            }`}
+            title="Switch to Dark Theme"
+            aria-checked={theme === 'dark'}
+            role="radio"
+          >
+            <Moon size={13} />
+            <span>Dark</span>
+          </button>
+        </div>
+      </div>
+
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
           

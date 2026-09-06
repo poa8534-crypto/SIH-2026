@@ -19,6 +19,7 @@ import { ListeningStage } from './field/ListeningStage';
 import { TranscriptStage } from './field/TranscriptStage';
 import { ConversationStage } from './field/ConversationStage';
 import { SubmittedStage } from './field/SubmittedStage';
+import ReportStudio from './field/ReportStudio';
 
 /**
  * QUESTION:  What happened on site?
@@ -52,10 +53,22 @@ export default function Field() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
-  const [contextOpen, setContextOpen] = useState(false);
   const [workFront, setWorkFront] = useState<string>(WORK_FRONTS[0]);
   const [discipline, setDiscipline] = useState<Discipline>(SUPERVISOR.discipline);
+  const [shift, setShift] = useState<string>('Day Shift (06:00 - 18:00)');
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
+  const [isReportFlowOpen, setIsReportFlowOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<'progress' | 'material' | 'delay' | 'inspection' | null>(null);
+  const [successToast, setSuccessToast] = useState<{ message: string; reference: string } | null>(null);
   const threadEnd = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!successToast) return;
+    const t = setTimeout(() => setSuccessToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [successToast]);
 
   // The review queue is not rendered here — the "Needs Your Response" and
   // "Recent Updates" blocks read their own endpoints — but this screen has
@@ -96,14 +109,38 @@ export default function Field() {
     setTurn(null);
     setDraftTranscript('');
     setTyped('');
+    setAttachments([]);
+    setOfflineMessage(null);
     setServerError(null);
     setStage('idle');
   };
 
-
   const send = async (text: string, opts: { confirm?: boolean } = {}) => {
     const clean = text.trim();
     if (!clean && !opts.confirm) return;
+
+    if (isOffline) {
+      try {
+        const raw = window.localStorage.getItem('navis.field.offline_queue');
+        const existing = raw ? JSON.parse(raw) : [];
+        existing.unshift({
+          id: `OFF-${Date.now()}`,
+          text: clean,
+          attachments,
+          timestamp: new Date().toISOString(),
+          workFront,
+          discipline,
+          shift,
+        });
+        window.localStorage.setItem('navis.field.offline_queue', JSON.stringify(existing));
+      } catch {
+        /* ignore localStorage restrictions */
+      }
+      setOfflineMessage('✓ Saved on device · Will sync when connection returns.');
+      setTyped('');
+      setAttachments([]);
+      return;
+    }
 
     if (clean) {
       setMessages((m) => [...m, { from: 'supervisor', text: clean, at: clockTime() }]);
@@ -111,6 +148,7 @@ export default function Field() {
     setStage('conversation');
     setThinking(true);
     setServerError(null);
+    setOfflineMessage(null);
 
     try {
       // Context travels as structured request data, never as a fake
@@ -136,6 +174,7 @@ export default function Field() {
         setStage('ready');
       }
       setTyped('');
+      setAttachments([]);
     } catch (e) {
       // No offline storage: never claim it was saved, and keep his text.
       setServerError(errorDetail(e));
@@ -258,52 +297,66 @@ export default function Field() {
 
   const contextBlock = (
     <ContextBlock
-      open={contextOpen}
-      onToggle={() => setContextOpen((v) => !v)}
       workFront={workFront}
       onWorkFront={setWorkFront}
       discipline={discipline}
       onDiscipline={setDiscipline}
+      shift={shift}
+      onShift={setShift}
     />
   );
 
   return (
     <div className="flex flex-col h-full w-full bg-surface overflow-hidden">
-      {/* Context sub-header */}
-      <div className="shrink-0 px-4 py-2 bg-raised border-b border-hair flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 min-w-0">
-          <MapPin size={14} className="text-muted shrink-0" />
-          <span className="text-body text-muted truncate">{workFront}</span>
-        </span>
-        <div className="flex items-center gap-1 shrink-0">
-          {SPEECH_LANGUAGES.map((l) => (
-            <Button
-              key={l.code}
-              variant="secondary"
-              size="sm"
-              shape="pill"
-              active={speech.lang === l.code}
-              onClick={() => speech.setLang(l.code)}
-            >
-              {l.short}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <main className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+      <main className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-col gap-4">
         {stage === 'idle' && (
-          <IdleStage
-            fallback={fallback}
-            onStart={() => {
-              speech.clearFailure();
-              speech.start();
-              setStage('listening');
-            }}
-            textInput={textInput}
-            serverError={serverErrorBox}
-            contextBlock={contextBlock}
-          />
+          <>
+            {successToast && (
+              <div className="w-full max-w-[780px] mx-auto px-1 mb-1">
+                <div className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between shadow-xs transition-all animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">✓ {successToast.message}</span>
+                    <span>·</span>
+                    <span className="font-mono font-bold text-heading">{successToast.reference}</span>
+                    <span className="hidden sm:inline text-muted">· Sent for planner review</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSuccessToast(null)}
+                    className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 p-1 rounded-md cursor-pointer"
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+            <IdleStage
+              fallback={fallback}
+              onStart={() => {
+                speech.clearFailure();
+                speech.start();
+                setStage('listening');
+              }}
+              composerValue={typed}
+              onComposerChange={setTyped}
+              onSend={() => send(typed)}
+              onOpenSubmissionFlow={() => {
+                if (typed.trim()) setIsReportFlowOpen(true);
+              }}
+              selectedPreset={selectedPreset}
+              onSelectPreset={setSelectedPreset}
+              submitting={thinking || submitting}
+              attachments={attachments}
+              onAddAttachment={(name) => setAttachments((prev) => [...prev, name])}
+              onRemoveAttachment={(idx) => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+              serverError={serverErrorBox}
+              contextBlock={contextBlock}
+              discipline={discipline}
+              isOffline={isOffline}
+              offlineMessage={offlineMessage}
+            />
+          </>
         )}
 
         {stage === 'listening' && (
@@ -370,9 +423,35 @@ export default function Field() {
         )}
 
         {stage === 'submitted' && (
-          <SubmittedStage reference={reference} onReturn={resetSession} />
+          <SubmittedStage reference={reference} turn={turn} onReturn={resetSession} />
         )}
       </main>
+
+      <ReportStudio
+        mode="overlay"
+        isOpen={isReportFlowOpen}
+        onClose={() => setIsReportFlowOpen(false)}
+        onSuccess={(ref) => {
+          setIsReportFlowOpen(false);
+          setTyped('');
+          setAttachments([]);
+          setSelectedPreset(null);
+          setSuccessToast({
+            message: 'Site update submitted',
+            reference: ref,
+          });
+          queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+          queryClient.invalidateQueries({ queryKey: ['fieldReports'] });
+        }}
+        initialReport={typed}
+        initialAttachments={attachments.map((name) => ({
+          name,
+          type: name.match(/\.(jpg|jpeg|png)$/i) ? 'photo' : 'file',
+        }))}
+        initialWorkFront={workFront}
+        initialDiscipline={discipline}
+        initialPreset={selectedPreset}
+      />
     </div>
   );
 }

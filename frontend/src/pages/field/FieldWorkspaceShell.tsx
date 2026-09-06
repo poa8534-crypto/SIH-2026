@@ -18,7 +18,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSession } from '../../hooks/useSession';
 import { api } from '../../lib/api';
 import { FieldNav } from '../../components/FieldNav';
-import { FIELD_ROLE } from '../../config';
+import { FIELD_ROLE, LANGUAGES, PROJECT, SUPERVISOR } from '../../config';
 import { AskNavisChat } from '../../components/AskNavisChat';
 
 interface FieldWorkspaceShellProps {
@@ -30,6 +30,8 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   const { signOut } = useSession();
   const location = useLocation();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [selectedLang, setSelectedLang] = useState<string>('en-IN');
 
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule', 'header'],
@@ -41,18 +43,29 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
     queryKey: ['clarifications', 'unanswered'],
     queryFn: () => api.getClarifications(true),
   });
-  const unanswered = clarifications?.length ?? 2;
+  const unanswered = clarifications ? clarifications.filter((c) => !c.answered).length : 0;
+
+  const { data: fieldReports } = useQuery({
+    queryKey: ['fieldReports'],
+    queryFn: () => api.getFieldReports(),
+  });
+  const reportsCount = fieldReports?.length;
 
   const navItems = [
     { to: '/field', label: 'Home', icon: Home, end: true },
-    { to: '/field/report', label: 'Report Progress', icon: Sparkles, badge: 'F1', end: false },
-    { to: '/field/reports', label: 'My Updates', icon: FileText, badge: '14', end: false },
+    {
+      to: '/field/reports',
+      label: 'My Updates',
+      icon: FileText,
+      badge: reportsCount && reportsCount > 0 ? String(reportsCount) : undefined,
+      end: false,
+    },
     {
       to: '/field/clarifications',
       label: 'Clarifications',
       icon: MessageSquare,
       badge: unanswered > 0 ? String(unanswered) : undefined,
-      badgeColor: 'bg-rose-500 text-white',
+      badgeColor: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold',
       end: false,
     },
     { to: '/field/profile', label: 'Preferences', icon: Settings, end: false },
@@ -91,7 +104,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
                 className={({ isActive }) =>
                   `flex items-center justify-between px-3 py-2 rounded-md text-body font-medium transition-colors ${
                     isActive
-                      ? 'bg-raised text-heading border border-hair shadow-xs'
+                      ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
                       : 'text-muted hover:bg-selected hover:text-heading'
                   }`
                 }
@@ -126,7 +139,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-body font-medium text-heading truncate">
-                Site Supervisor
+                {FIELD_ROLE}
               </div>
               <div className="text-label text-muted truncate">
                 {scheduleData?.project ? scheduleData.project : 'Oil India Limited'}
@@ -157,21 +170,49 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface">
         {/* Top Header Bar */}
         <header className="h-14 shrink-0 border-b border-hair bg-surface px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-body text-muted truncate">
-            <MapPin size={15} className="text-heading shrink-0" />
-            <span className="font-semibold text-heading truncate">
-              {scheduleData?.project ?? 'Oil India Limited · Pad 04'}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <MapPin size={15} className="text-accent shrink-0" />
+            <span className="font-semibold text-heading text-sm truncate">
+              {PROJECT.location}
             </span>
-            <span>·</span>
-            <span className="text-label text-muted">
-              {FIELD_ROLE}
+            <span className="text-xs text-muted">·</span>
+            <span className="text-xs font-medium text-muted truncate">
+              Piping · {FIELD_ROLE}
             </span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-raised border border-hair font-mono text-label text-muted">
-              <Calendar size={13} className="text-muted" />
-              <span>Data date: {scheduleData?.data_date ?? '2026-03-01'}</span>
+            {/* Offline indicator toggle */}
+            <button
+              type="button"
+              onClick={() => setIsOffline(!isOffline)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold border transition-colors cursor-pointer ${
+                isOffline
+                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+              }`}
+              title="Click to toggle simulated offline sync mode"
+            >
+              <span className={`h-2 w-2 rounded-full ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+              <span className="hidden xs:inline">{isOffline ? 'Offline — auto-sync' : 'Online'}</span>
+            </button>
+
+            {/* Multilingual Selector */}
+            <div className="hidden sm:flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setSelectedLang(l.code)}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                    selectedLang === l.code
+                      ? 'bg-surface text-heading font-semibold shadow-xs'
+                      : 'text-muted hover:text-heading'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
             </div>
 
             <button

@@ -236,6 +236,17 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
         activity_ids = found["activity_ids"]
         days_lost = found["days_lost"]
         occurrences = found["occurrences"]
+        records = found.get("records") or []
+        first_rec = records[0] if records else None
+        source_file = first_rec.source_file if first_rec else None
+        source_line = first_rec.source_line if first_rec else None
+        source_row = first_rec.source_row if first_rec else None
+        source_span = first_rec.source_span if first_rec else None
+        detected_date = (
+            first_rec.timestamp.strftime("%Y-%m-%d")
+            if first_rec and getattr(first_rec, "timestamp", None)
+            else None
+        )
         proposals.append(
             {
                 "kind": "issue",
@@ -247,8 +258,9 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
                     f"'{phrase}' appears in {occurrences} field report"
                     f"{'' if occurrences == 1 else 's'} across "
                     f"{len(activity_ids)} activit"
-                    f"{'y' if len(activity_ids) == 1 else 'ies'}, accounting for "
-                    f"{days_lost} day{'' if days_lost == 1 else 's'} of finish slip."
+                    f"{'y' if len(activity_ids) == 1 else 'ies'}, associated with "
+                    f"{'an activity' if len(activity_ids) == 1 else 'activities'} currently showing "
+                    f"{days_lost} day{'' if days_lost == 1 else 's'} of finish variance."
                 ),
                 # The REGISTER category ("equipment", "supply"), which is a
                 # governance grouping and deliberately not the contractual
@@ -267,6 +279,11 @@ def propose_candidates(db: Session, limit: int = 20) -> list[dict]:
                 # Said in the payload, not only in the docs, so a client cannot
                 # mistake a proposal for a stored row.
                 "committed": False,
+                "source_file": source_file,
+                "source_line": source_line,
+                "source_row": source_row,
+                "source_span": source_span,
+                "detected_date": detected_date,
             }
         )
 

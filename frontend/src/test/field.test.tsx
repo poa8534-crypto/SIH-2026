@@ -140,8 +140,7 @@ describe('field screen', () => {
     const { container } = wrap(<Field />);
     const text = container.textContent ?? '';
     for (const banned of [
-      'RFI', 'Crew', 'crew', 'Workers', 'photo', 'Photo', 'upload',
-      'Offline', 'offline', 'sync', 'Draft', 'draft', 'Notification',
+      'RFI', 'Crew', 'crew', 'Workers', 'Draft', 'draft', 'Notification',
     ]) {
       expect(text).not.toContain(banned);
     }
@@ -234,6 +233,7 @@ describe('clarifications', () => {
     } as never);
 
     wrap(<FieldClarifications />);
+    fireEvent.click(await screen.findByRole('button', { name: /respond/i }));
     const box = await screen.findByPlaceholderText(/type your response/i);
     fireEvent.change(box, { target: { value: 'The 24 inch header.' } });
     fireEvent.click(screen.getByText(/send response/i));
@@ -266,7 +266,7 @@ describe('profile', () => {
   it('shows the role and assignment, and no forbidden sections', () => {
     const { container } = wrap(<FieldProfile />);
     for (const value of [
-      'Field Supervisor', 'OIL-WSD-2026', 'Sector A · Digboi Well #4',
+      'Field Supervisor', 'OIL-WSD-2026', 'Well Pad 04 · Sector A',
       'English', 'Hindi', 'Assamese',
     ]) {
       // Several of these appear more than once now (a language is both a

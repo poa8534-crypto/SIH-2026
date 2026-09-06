@@ -67,7 +67,7 @@ const SAMPLE_UPDATES: UpdateItem[] = [
     questionsCount: 1,
     rawNote: 'P-201 spool erection is complete on Rack P1. 12 studs torqued to specification.',
     audioDuration: '0:04s',
-    location: 'Sector A · Digboi Well #4',
+    location: 'Well Pad 04 · Sector A',
     source: 'Voice Audio Transcription',
     schedule: {
       matchedActivity: 'Spool Erection — Rack P1',

@@ -134,13 +134,16 @@ export function ScheduleDoctor() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => setShowCalibratedModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-md bg-accent text-accent-fg hover:bg-accent-hover font-medium text-body transition-colors"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Generate Calibrated Baseline (P6)</span>
-            </button>
+            <div className="group relative">
+              <button
+                onClick={() => setShowCalibratedModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-md bg-accent text-accent-fg hover:bg-accent-hover font-medium text-body transition-colors"
+                title="Generates an advisory XML proposal. Existing baseline remains unchanged until reviewed and approved by the Planning Engineer."
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Generate Proposed Baseline Revision</span>
+              </button>
+            </div>
             <button
               onClick={() => refetch()}
               className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-raised hover:bg-selected text-fg text-body border border-hair transition-colors font-medium"
@@ -454,7 +457,7 @@ export function ScheduleDoctor() {
             </div>
 
             <p className="text-xs text-muted">
-              This snippet applies empirical P50 historical durations, resolves open logic ties, and injects Upper Assam monsoon buffers. You can import this directly into Oracle Primavera P6 or NAVIS.
+              This prescription is a proposed recommendation only. It applies empirical P50 historical durations, resolves open DCMA logic ties, and injects Upper Assam monsoon buffers. It does NOT mutate the locked project baseline without explicit Planning Engineer approval.
             </p>
 
             <div className="relative">

@@ -532,6 +532,11 @@ class RaidCandidate(BaseModel):
     source_id: str
     source_note: str
     committed: bool = False
+    source_file: Optional[str] = None
+    source_line: Optional[int] = None
+    source_row: Optional[int] = None
+    source_span: Optional[str] = None
+    detected_date: Optional[str] = None
 
 
 class RaidCandidatesResponse(BaseModel):
@@ -1066,6 +1071,17 @@ class DelayAttributionResponse(BaseModel):
     computed_at: datetime
 
 
+class CompletedRun(BaseModel):
+    activity_id: str
+    description: str = ""
+    planned_days: int = 0
+    actual_days: int = 0
+    actual_start: Optional[str] = None
+    actual_finish: Optional[str] = None
+    source: str = "Verified Site Diary"
+    verified_by: str = "Resident Planning Engineer"
+
+
 class SuggestedDuration(BaseModel):
     activity_type_pattern: str
     # Activities of this type in the baseline.
@@ -1078,6 +1094,16 @@ class SuggestedDuration(BaseModel):
     median_actual_days: Optional[float] = None
     p80_actual_days: Optional[float] = None
     recommendation: str = ""
+    # Calibrated planning insights
+    current_planned_days: Optional[float] = None
+    group_planned_mean_days: Optional[float] = None
+    min_actual_days: Optional[float] = None
+    max_actual_days: Optional[float] = None
+    evidence_strength: str = "LOW"
+    evidence_label: str = ""
+    planning_suggestion: str = ""
+    observation: str = ""
+    completed_runs: list[CompletedRun] = []
 
 
 class MemoryQueryResponse(BaseModel):

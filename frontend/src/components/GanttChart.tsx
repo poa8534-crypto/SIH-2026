@@ -144,17 +144,42 @@ export function GanttChart({
 
   // Scroll to selected activity or Data Date initially
   useEffect(() => {
-    if (selectedId && rowRefs.current[selectedId]) {
-      rowRefs.current[selectedId]?.scrollIntoView({ block: 'nearest' });
+    if (selectedId) {
+      if (typeof rowRefs.current[selectedId]?.scrollIntoView === 'function') {
+        rowRefs.current[selectedId]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+      const act = activities.find((a) => a.activity_id === selectedId);
+      const dateStr = act?.actual_start || act?.planned_start;
+      if (dateStr && scrollContainerRef.current && minTimestamp !== Infinity) {
+        const t = parseISODate(dateStr);
+        if (!isNaN(t)) {
+          const offsetDays = Math.max(0, Math.round((t - minTimestamp) / MS_PER_DAY));
+          const offsetPx = offsetDays * pxPerDay;
+          const targetLeft = Math.max(0, offsetPx - 240);
+          if (typeof scrollContainerRef.current.scrollTo === 'function') {
+            scrollContainerRef.current.scrollTo({
+              left: targetLeft,
+              behavior: 'smooth',
+            });
+          } else {
+            scrollContainerRef.current.scrollLeft = targetLeft;
+          }
+        }
+      }
     }
-  }, [selectedId]);
+  }, [selectedId, activities, minTimestamp, pxPerDay]);
 
   const scrollToDataDate = () => {
     if (scrollContainerRef.current && dataDateOffsetPx !== null) {
-      scrollContainerRef.current.scrollTo({
-        left: Math.max(0, dataDateOffsetPx - 300),
-        behavior: 'smooth',
-      });
+      const targetLeft = Math.max(0, dataDateOffsetPx - 300);
+      if (typeof scrollContainerRef.current.scrollTo === 'function') {
+        scrollContainerRef.current.scrollTo({
+          left: targetLeft,
+          behavior: 'smooth',
+        });
+      } else {
+        scrollContainerRef.current.scrollLeft = targetLeft;
+      }
     }
   };
 

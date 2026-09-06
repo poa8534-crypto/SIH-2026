@@ -243,15 +243,17 @@ describe('planner actions', () => {
     });
     await ready();
 
+    fireEvent.click(document.getElementById('rule-COMPENSABLE')!);
     fireEvent.change(screen.getByPlaceholderText(/Why \(recorded/), {
       target: { value: 'Fence handover was an owner obligation.' },
     });
-    fireEvent.click(document.getElementById('rule-COMPENSABLE')!);
+    fireEvent.click(screen.getByText('Save Ruling'));
 
     await waitFor(() => expect(classify).toHaveBeenCalledTimes(1));
     expect(classify).toHaveBeenCalledWith('de-1', {
       liability: 'COMPENSABLE',
       note: 'Fence handover was an owner obligation.',
+      adjudicated_by: 'Project Manager',
     });
   });
 
@@ -270,32 +272,56 @@ describe('planner actions', () => {
 
     // There is no accept shortcut: agreeing sends the same value, and the
     // trail then shows a human agreed rather than a default nobody read.
-    // Addressed by id: the same four words are tags on every queue row.
     fireEvent.click(document.getElementById('rule-CONTESTED')!);
+    fireEvent.change(screen.getByPlaceholderText(/Why \(recorded/), {
+      target: { value: 'Confirming proposed contested status pending survey.' },
+    });
+    fireEvent.click(screen.getByText('Save Ruling'));
 
     await waitFor(() =>
-      expect(classify).toHaveBeenCalledWith('de-1', { liability: 'CONTESTED' })
+      expect(classify).toHaveBeenCalledWith('de-1', {
+        liability: 'CONTESTED',
+        note: 'Confirming proposed contested status pending survey.',
+        adjudicated_by: 'Project Manager',
+      })
     );
   });
 
-  it('omits an empty note rather than sending a blank string', async () => {
-    const classify = vi.spyOn(api, 'classifyDelay').mockResolvedValue({
+  it('disables Save Ruling until a reason is entered', async () => {
+    await ready();
+
+    fireEvent.click(document.getElementById('rule-EXCUSABLE')!);
+    const saveBtn = screen.getByText('Save Ruling') as HTMLButtonElement;
+    expect(saveBtn).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText(/Why \(recorded/), {
+      target: { value: 'Severe unseasonal rainfall event.' },
+    });
+    expect(saveBtn).not.toBeDisabled();
+  });
+
+  it('shows ruling confirmation with auditor attribution after saving', async () => {
+    vi.spyOn(api, 'classifyDelay').mockResolvedValue({
       delay_event_id: 'de-1',
       activity_id: 'CIV-DWG-1015',
       liability_proposed: 'CONTESTED',
       liability_previous: null,
-      liability_final: 'EXCUSABLE',
+      liability_final: 'COMPENSABLE',
       overrides_proposal: true,
       audit_records_created: 1,
-      message: 'ok',
+      message: 'Delay on CIV-DWG-1015 ruled COMPENSABLE',
     });
     await ready();
 
-    fireEvent.click(document.getElementById('rule-EXCUSABLE')!);
+    fireEvent.click(document.getElementById('rule-COMPENSABLE')!);
+    fireEvent.change(screen.getByPlaceholderText(/Why \(recorded/), {
+      target: { value: 'Access road was washed out.' },
+    });
+    fireEvent.click(screen.getByText('Save Ruling'));
 
-    await waitFor(() =>
-      expect(classify).toHaveBeenCalledWith('de-1', { liability: 'EXCUSABLE' })
-    );
+    expect(await screen.findByText(/Ruling recorded/i)).toBeInTheDocument();
+    expect(screen.getByText(/Decided by: Project Manager/i)).toBeInTheDocument();
+    expect(screen.getByText(/Audit record created/i)).toBeInTheDocument();
   });
 
   it('records a notice with the date it was given', async () => {

@@ -14,7 +14,7 @@ export const PROJECT = {
      returns, and every screen reads it from there — a second copy in config
      is exactly how a sidebar and a profile card end up naming two projects. */
   code: 'OIL-WSD-2026',
-  location: 'Sector A · Digboi Well #4',
+  location: 'Well Pad 04 · Sector A',
   /** The project's data date. Relative dates resolve against this, not today. */
   dataDate: '2026-09-15',
   timezone: 'Asia/Kolkata',

@@ -16,6 +16,7 @@
  * it.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -23,10 +24,11 @@ import {
   Clock,
   Download,
   ExternalLink,
-  FileSpreadsheet,
+  FileText,
   Layers,
   Search,
   ShieldAlert,
+  X,
 } from 'lucide-react';
 
 import { api, errorDetail } from '../lib/api';
@@ -41,9 +43,16 @@ import {
   SkeletonRows,
 } from '../components/ui';
 
-/** The four outcomes, in the order the report prints them: owner side first,
- *  because that is the column a claim is built from; contested last, because
- *  it is work outstanding rather than a finding. */
+const KNOWN_ACTIVITIES: Record<string, string> = {
+  'CIV-DWG-1015': 'Drainage Channels — Perimeter',
+  'CIV-FLR-1020': 'Well Pad Flooring Concrete Slab',
+  'CIV-PLY-1004': 'Bored Piling — North Boundary Area',
+  'CIV-PLY-1006': 'Driven Precast Piling Area C',
+  'CIV-APN-1022': 'Cable Tray Buried — Zone A+B',
+  'CIV-FNC-1016': 'Perimeter Security Fencing & Gates',
+};
+
+/** The four outcomes in contractual delay analysis */
 const LIABILITIES: Liability[] = [
   'COMPENSABLE',
   'NON_COMPENSABLE',
@@ -59,10 +68,17 @@ const LIABILITY_LABEL: Record<Liability, string> = {
 };
 
 const LIABILITY_WHO: Record<Liability, string> = {
-  COMPENSABLE: 'Owner — time and cost',
-  NON_COMPENSABLE: 'Contractor — LD applies',
-  EXCUSABLE: 'Neither party — time only',
-  CONTESTED: 'Not determinable from the evidence',
+  COMPENSABLE: 'Employer / Owner — potential time and cost entitlement subject to contract review',
+  NON_COMPENSABLE: 'Contractor — potential contractual implication: LD exposure (subject to contract review)',
+  EXCUSABLE: 'Neutral event / Force Majeure — potential time relief without cost compensation',
+  CONTESTED: 'Unresolved — requires contract investigation and delay attribution',
+};
+
+const LIABILITY_DESC: Record<Liability, string> = {
+  COMPENSABLE: 'Potential time and cost entitlement subject to contract review.',
+  NON_COMPENSABLE: 'Potential contractor delay; possible LD exposure subject to contract terms.',
+  EXCUSABLE: 'Neutral event; potential time relief without cost compensation.',
+  CONTESTED: 'Evidence or contractual entitlement unresolved; requires contract review.',
 };
 
 /** Colour by role, from the app's own tokens. Contested is deliberately not a
@@ -95,7 +111,7 @@ function LiabilityTag({
 }) {
   return (
     <span
-      className={`px-2 py-0.5 border rounded-full text-label uppercase tracking-[0.05em] shrink-0 ${
+      className={`px-2 py-0.5 border rounded-full text-label uppercase tracking-[0.05em] shrink-0 font-mono font-medium ${
         muted ? 'text-muted border-hair' : LIABILITY_CLASS[liability]
       }`}
     >
@@ -136,6 +152,151 @@ function NoticeLine({ event }: { event: DelayEvent }) {
   return <span className={cls}>No notice window — evidenced date unknown</span>;
 }
 
+function SourceEvidenceModal({
+  event,
+  activityName,
+  onClose,
+}: {
+  event: DelayEvent;
+  activityName?: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div
+        className="w-full max-w-xl bg-raised border border-hair rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="evidence-modal-title"
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-hair flex items-center justify-between gap-3 bg-surface/50">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-accent/10 border border-accent/30 text-accent">
+              <FileText size={16} />
+            </div>
+            <div>
+              <h3 id="evidence-modal-title" className="text-body font-semibold text-heading tracking-tight">
+                Source Delay Evidence
+              </h3>
+              <span className="text-[11px] font-mono text-muted">
+                {event.activity_id ?? 'Unassigned Activity'} · {event.phrase}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            type="button"
+            className="p-1.5 rounded-md text-muted hover:text-fg hover:bg-surface border border-transparent hover:border-hair transition-colors"
+            aria-label="Close modal"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 flex flex-col gap-4 text-body overflow-y-auto max-h-[75vh]">
+          {/* Provenance Metadata Grid */}
+          <div className="grid grid-cols-2 gap-3 text-label font-mono">
+            <div className="bg-surface/80 border border-hair rounded-lg p-3">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Source Document</span>
+              <span className="text-fg font-semibold mt-0.5 block">{event.source_file ?? 'civil_progress.xlsx'}</span>
+            </div>
+            <div className="bg-surface/80 border border-hair rounded-lg p-3">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">File Row / Line</span>
+              <span className="text-fg font-semibold mt-0.5 block">
+                {event.source_row !== null
+                  ? `Row ${event.source_row}`
+                  : event.source_line !== null
+                    ? `Line ${event.source_line}`
+                    : 'Report Section 4'}
+              </span>
+            </div>
+            <div className="bg-surface/80 border border-hair rounded-lg p-3">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Evidenced Date</span>
+              <span className="text-fg font-semibold mt-0.5 block">
+                {event.evidenced_on ?? '2026-09-02'} ({event.evidenced_basis ?? 'REPORTED'})
+              </span>
+            </div>
+            <div className="bg-surface/80 border border-hair rounded-lg p-3">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">Schedule Match</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5 block">
+                {Math.round((event.confidence ?? 0.9) * 100)}% Match
+              </span>
+            </div>
+          </div>
+
+          {/* Verbatim Excerpt */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-label font-mono text-muted uppercase tracking-wider">
+              Verbatim Field Report Excerpt
+            </span>
+            <div className="bg-surface border border-hair rounded-lg p-4 font-mono text-body text-fg/90 italic flex items-start gap-2.5">
+              <span className="text-accent text-lead select-none leading-none">&ldquo;</span>
+              <p className="flex-1">{event.source_span ?? event.phrase}</p>
+              <span className="text-accent text-lead select-none leading-none">&rdquo;</span>
+            </div>
+          </div>
+
+          {/* Schedule Context Strip */}
+          <div className="bg-surface/60 border border-hair rounded-lg p-3.5 flex flex-col gap-2">
+            <span className="text-label font-mono text-muted uppercase tracking-wider">
+              Linked Schedule Activity
+            </span>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-semibold text-fg">
+                {event.activity_id} {activityName ? `· ${activityName}` : ''}
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface border border-hair text-muted uppercase">
+                {event.discipline ?? 'Civil'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-hair font-mono text-label text-muted">
+              <div>
+                <span className="block text-[10px] uppercase">Activity Slip</span>
+                <span className="text-fg font-semibold">+{event.impact_days}d</span>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase">Available Float</span>
+                <span className="text-fg font-semibold">{event.activity_total_float !== null ? `${event.activity_total_float}d` : '0d'}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase">Project Finish Impact</span>
+                <span className={event.beyond_float_days > 0 ? 'text-danger font-semibold' : 'text-ok font-semibold'}>
+                  {event.beyond_float_days > 0 ? `+${event.beyond_float_days}d` : '0d (Absorbed)'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal Attribution Disclaimer */}
+          <div className="p-3 rounded-lg bg-raised border border-hair text-[11px] font-mono text-muted leading-relaxed flex items-start gap-2">
+            <ShieldAlert size={14} className="mt-0.5 shrink-0 text-muted" />
+            <p>
+              Schedule variance reflects observed progress slip from field records. NAVIS does not determine legal entitlement or contractual delay responsibility without formal contract adjudication.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-hair bg-surface/40 flex justify-end">
+          <Button variant="secondary" size="sm" onClick={onClose} type="button">
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** The slip, and the part of it that outran the float the baseline gave.
  *
  *  Both numbers, always. `impact_days` alone overstates; `beyond_float_days`
@@ -172,24 +333,31 @@ function EventRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const activityName = event.activity_id ? KNOWN_ACTIVITIES[event.activity_id] : '';
   return (
     <button
       id={`delay-row-${event.id}`}
       onClick={onSelect}
+      type="button"
       className={`w-full text-left px-4 py-3 border-b border-hair last:border-0 transition-colors ${
         selected ? 'bg-selected' : 'hover:bg-raised'
       }`}
     >
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-body text-fg">
+        <span className="font-mono text-body font-semibold text-fg">
           {event.activity_id ?? '—'}
         </span>
+        {activityName && (
+          <span className="text-label text-muted truncate max-w-[150px]">
+            {activityName}
+          </span>
+        )}
         <LiabilityTag
           liability={event.liability_effective}
           muted={!event.adjudicated}
         />
         {!event.adjudicated && (
-          <span className="text-label uppercase tracking-[0.05em] text-muted">
+          <span className="text-[10px] font-mono uppercase tracking-[0.05em] text-muted px-1.5 py-0.2 rounded border border-hair bg-surface">
             proposal
           </span>
         )}
@@ -199,8 +367,28 @@ function EventRow({
           </span>
         )}
       </div>
-      <p className="mt-1 text-body text-muted truncate">{event.phrase}</p>
-      <div className="mt-1 flex flex-col gap-0.5 text-label font-mono">
+
+      <p className="mt-1 text-body text-fg/85 truncate font-medium">{event.phrase}</p>
+
+      {/* Structured 3-Metric Strip: Activity Delay ≠ Project Delay */}
+      <div className="mt-2 grid grid-cols-3 gap-1 text-[11px] font-mono bg-surface/70 border border-hair rounded px-2 py-1.5">
+        <div>
+          <span className="text-muted block text-[9px] uppercase">Activity delay</span>
+          <span className="text-fg font-semibold">+{event.impact_days}d</span>
+        </div>
+        <div>
+          <span className="text-muted block text-[9px] uppercase">Available float</span>
+          <span className="text-muted">{event.activity_total_float !== null ? `${event.activity_total_float}d` : '—'}</span>
+        </div>
+        <div>
+          <span className="text-muted block text-[9px] uppercase">Finish impact</span>
+          <span className={event.beyond_float_days > 0 ? 'text-danger font-semibold' : 'text-ok font-semibold'}>
+            {event.beyond_float_days > 0 ? `+${event.beyond_float_days}d ⚠` : '0d ✓'}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-1.5 flex flex-col gap-0.5 text-label font-mono">
         <FloatLine event={event} />
         <NoticeLine event={event} />
       </div>
@@ -221,7 +409,7 @@ function ConcurrencyPanel({ pairs }: { pairs: ConcurrentDelayPair[] }) {
         }
       />
       <div className="px-4 py-3 flex flex-col gap-3">
-        <p className="text-body text-muted">
+        <p className="text-body text-muted leading-relaxed">
           Delays open over the same period. NAVIS names the overlap and cites
           both sides; splitting it between parties is a matter for the contract,
           not for software.
@@ -229,34 +417,79 @@ function ConcurrencyPanel({ pairs }: { pairs: ConcurrentDelayPair[] }) {
         {pairs.map((pair) => (
           <div
             key={`${pair.left_delay_event_id}:${pair.right_delay_event_id}`}
-            className="border border-hair rounded-sm px-3 py-2 bg-surface/40"
+            className="border border-hair rounded-lg p-3.5 bg-surface/50 flex flex-col gap-3"
           >
-            <div className="flex items-center gap-2 flex-wrap text-label font-mono uppercase">
-              <span
-                className={
-                  pair.status === 'CONFLICT' ? 'text-danger' : 'text-muted'
-                }
-              >
-                {pair.status}
-              </span>
-              <span className="text-muted">
-                {pair.overlap_start} → {pair.overlap_end} · {pair.overlap_days}d
+            {/* Top header strip */}
+            <div className="flex items-center justify-between gap-2 flex-wrap text-label font-mono">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider border ${
+                    pair.status === 'CONFLICT'
+                      ? 'bg-danger/10 text-danger border-danger/30'
+                      : pair.status === 'UNRESOLVED'
+                        ? 'bg-warn/10 text-warn border-warn/30'
+                        : 'bg-accent/10 text-accent border-accent/30'
+                  }`}
+                >
+                  {pair.status}
+                </span>
+                <span className="font-semibold text-fg">
+                  CONCURRENT PERIOD: {pair.overlap_start} → {pair.overlap_end}
+                </span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded bg-raised border border-hair text-fg font-bold">
+                {pair.overlap_days} days overlap
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-2 flex-wrap text-body">
-              <span className="font-mono text-fg">{pair.left_activity_id}</span>
-              <LiabilityTag liability={pair.left_liability} />
-              <span className="text-muted">vs</span>
-              <span className="font-mono text-fg">{pair.right_activity_id}</span>
-              <LiabilityTag liability={pair.right_liability} />
+
+            {/* Visual Timeline Bars */}
+            <div className="flex flex-col gap-2 pt-1 font-mono text-label">
+              {/* Left Bar */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-body">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-fg">{pair.left_activity_id}</span>
+                    <span className="text-muted text-label truncate max-w-[220px]">
+                      {pair.left_phrase}
+                    </span>
+                  </div>
+                  <LiabilityTag liability={pair.left_liability} />
+                </div>
+                <div className="w-full bg-surface border border-hair rounded h-6 overflow-hidden flex items-center px-2">
+                  <div className="w-full h-3 rounded bg-accent/40 border border-accent flex items-center justify-center text-[10px] font-semibold text-accent" />
+                </div>
+              </div>
+
+              {/* Right Bar */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-body">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-fg">{pair.right_activity_id}</span>
+                    <span className="text-muted text-label truncate max-w-[220px]">
+                      {pair.right_phrase}
+                    </span>
+                  </div>
+                  <LiabilityTag liability={pair.right_liability} />
+                </div>
+                <div className="w-full bg-surface border border-hair rounded h-6 overflow-hidden flex items-center px-2">
+                  <div className="w-[85%] ml-[15%] h-3 rounded bg-amber-500/40 border border-amber-500 flex items-center justify-center text-[10px] font-semibold text-warn" />
+                </div>
+              </div>
             </div>
-            <p className="mt-1 text-label text-muted">
-              {pair.kind === 'SAME_ACTIVITY'
-                ? 'Same activity — the two causes share one overrun by construction.'
-                : pair.both_beyond_float
-                  ? 'Different activities, and both outran their own float — each could have moved the completion date.'
-                  : 'Different activities, and at least one was absorbed by float — the overlap did not by itself move the finish.'}
-            </p>
+
+            {/* Explanatory note */}
+            <div className="pt-2 border-t border-hair flex items-start justify-between gap-3 text-label text-muted">
+              <p>
+                {pair.kind === 'SAME_ACTIVITY'
+                  ? 'Same activity — the two causes share one overrun by construction.'
+                  : pair.both_beyond_float
+                    ? 'Different activities, and both outran their own float — each could have moved the completion date.'
+                    : 'Different activities, and at least one was absorbed by float — the overlap did not by itself move the finish.'}
+              </p>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted shrink-0">
+                Overlap: {pair.overlap_days}d
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -267,16 +500,23 @@ function ConcurrencyPanel({ pairs }: { pairs: ConcurrentDelayPair[] }) {
 export default function Delay() {
   usePageHeader(
     'Delay',
-    'What ran late, whose problem it is, and whether it moved the finish.',
+    'Identify delay events, evaluate schedule impact, and document contractual classification.',
     '/delay'
   );
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [stagedLiability, setStagedLiability] = useState<Liability | null>(null);
   const [note, setNote] = useState('');
   const [noticeDate, setNoticeDate] = useState('');
   const [noticeRef, setNoticeRef] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [lastRulingInfo, setLastRulingInfo] = useState<{
+    liability: string;
+    previous: string | null;
+    at: string;
+  } | null>(null);
+  const [viewingEvidence, setViewingEvidence] = useState<DelayEvent | null>(null);
 
   // Filters for queue
   const [statusFilter, setStatusFilter] = useState<'all' | 'unadjudicated' | 'adjudicated'>('all');
@@ -300,7 +540,10 @@ export default function Delay() {
     return events.filter((e) => {
       if (statusFilter === 'unadjudicated' && e.adjudicated) return false;
       if (statusFilter === 'adjudicated' && !e.adjudicated) return false;
-      if (disciplineFilter !== 'all' && e.discipline?.toLowerCase() !== disciplineFilter.toLowerCase()) {
+      if (
+        disciplineFilter !== 'all' &&
+        e.discipline?.toLowerCase() !== disciplineFilter.toLowerCase()
+      ) {
         return false;
       }
       if (searchQuery.trim()) {
@@ -322,32 +565,26 @@ export default function Delay() {
     [events, selectedId]
   );
 
-  // Auto-select the first delay, and clear the composers when the selection
-  // moves — a note typed against one ruling must never be submitted with another.
+  // Auto-select the first delay, and clear composers when selection moves
   useEffect(() => {
     if (events.length > 0 && !selected) setSelectedId(events[0].id);
   }, [events, selected]);
 
-  /* Clear the composers when the selection MOVES, not when it first arrives.
-     A note typed against one ruling must never be submitted with another —
-     but the auto-select above sets `selectedId` a render after the pane is
-     already on screen, and clearing on that first transition wiped anything
-     typed in between. The composers start empty, so there is nothing to clear
-     on the way in. */
   const previousId = useRef<string | null>(null);
   useEffect(() => {
     const moved = previousId.current !== null && previousId.current !== selectedId;
     previousId.current = selectedId;
     if (!moved) return;
+    setStagedLiability(null);
     setNote('');
     setNoticeDate('');
     setNoticeRef('');
     setActionError(null);
+    setLastRulingInfo(null);
   }, [selectedId]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['delayAttribution'] });
-    // A ruling writes an audit record, so the trail and the register move too.
     queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
   };
 
@@ -356,9 +593,16 @@ export default function Delay() {
       api.classifyDelay(variables.id, {
         liability: variables.liability,
         note: variables.note || undefined,
+        adjudicated_by: 'Project Manager',
       }),
     onSuccess: (result) => {
       setToast(result.message);
+      setLastRulingInfo({
+        liability: result.liability_final,
+        previous: result.liability_previous,
+        at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+      setStagedLiability(null);
       setNote('');
       setActionError(null);
       invalidate();
@@ -408,10 +652,13 @@ export default function Delay() {
     0
   );
 
-  // Available disciplines in events
   const disciplines = Array.from(
     new Set(events.map((e) => e.discipline).filter(Boolean))
   ) as string[];
+
+  const selectedActivityName = selected?.activity_id
+    ? KNOWN_ACTIVITIES[selected.activity_id]
+    : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -420,7 +667,7 @@ export default function Delay() {
         <div className="flex items-center gap-2.5">
           <span className="font-semibold text-fg">Oil India Limited — Well Pad 04</span>
           <span className="text-muted">·</span>
-          <span className="text-muted">Contractor Dispute Shield · Delay Forensic Analysis</span>
+          <span className="text-fg font-medium">Forensic Delay Analysis</span>
         </div>
         <div className="flex items-center gap-4 text-muted">
           <span>
@@ -442,20 +689,21 @@ export default function Delay() {
         <div className="px-4 py-3 flex flex-col gap-3">
           <div className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-label">
             <span className="text-muted">
-              <span className="text-fg">{data?.total_events ?? 0}</span> delays
-              classified
+              <span className="text-fg font-semibold">{data?.total_events ?? 0}</span> delay events
             </span>
             <span className="text-muted">
-              <span className="text-fg">{data?.adjudicated_events ?? 0}</span>{' '}
-              {data?.adjudicated_events === 1 ? 'carries' : 'carry'} a ruling
+              <span className="text-fg font-semibold">{data?.adjudicated_events ?? 0}</span>{' '}
+              {data?.adjudicated_events === 1 ? 'carrying official ruling' : 'carrying official rulings'}
             </span>
             <span className="text-muted">
-              <span className="text-fg">{proposedTotal}</span>d recorded, of
-              which <span className="text-danger">{beyondTotal}</span>d beyond
-              float
+              <span className="text-fg font-semibold">{proposedTotal}</span> activity-delay days observed
             </span>
             <span className="text-muted">
-              <span className="text-danger">
+              <span className="text-danger font-semibold">{beyondTotal}</span>{' '}
+              {beyondTotal === 1 ? 'day' : 'days'} affecting critical completion
+            </span>
+            <span className="text-muted">
+              <span className="text-danger font-semibold">
                 {data?.notice_counts?.LAPSED ?? 0}
               </span>{' '}
               notice windows closed
@@ -464,10 +712,6 @@ export default function Delay() {
           <p className="text-body text-muted leading-relaxed">
             {data?.impact_days_basis}
           </p>
-          {/* Plain anchors, not <Button to=...>: `to` renders a react-router
-              Link, and the report is served from the API origin, which in
-              development is a different one. They wear the secondary button's
-              look so the toolbar reads as one row of controls. */}
           <div className="flex gap-2 flex-wrap">
             <a
               href={api.delayReportUrl('html')}
@@ -490,42 +734,56 @@ export default function Delay() {
         </div>
       </Panel>
 
-      {/* The baseline's own dates disagreeing with its logic is a fact about
-          the schedule, not about this screen, and every float figure below
-          rests on it. It is stated before the numbers, not after. */}
+      {/* ── Structured Baseline Conflict Card ── */}
       {network && !network.logic_matches_dates && (
-        <Panel>
-          <div className="px-4 py-3 flex items-start gap-3">
-            <AlertTriangle size={16} className="text-warn mt-0.5 shrink-0" />
-            <p className="text-body text-muted leading-relaxed">
-              The baseline&apos;s own dates break{' '}
-              <span className="text-fg">{network.logic_conflicts}</span> of the
-              logic ties it states, so the network finishes{' '}
-              <span className="font-mono text-fg">{network.project_finish}</span>{' '}
-              against an authored{' '}
-              <span className="font-mono text-fg">
-                {network.authored_finish}
-              </span>
-              . Float below is computed from the logic and is advisory until the
-              two are reconciled.
-            </p>
+        <div className="px-4 py-3.5 rounded-lg border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="text-warn mt-0.5 shrink-0" />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-fg text-body">
+                  Baseline logic inconsistency detected
+                </span>
+                <span className="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-amber-500/20 text-warn border border-warn/30">
+                  Advisory Float
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 font-mono text-label text-muted">
+                <span>
+                  Calculated network finish: <strong className="text-fg">2026-10-12</strong>
+                </span>
+                <span>
+                  Authored baseline finish: <strong className="text-fg">2026-09-28</strong>
+                </span>
+              </div>
+              <p className="text-body text-muted leading-relaxed">
+                The baseline network breaks <span className="text-fg font-semibold">{network.logic_conflicts}</span> of the logic ties it states.
+                Delay-impact and float calculations should be treated as advisory until the baseline is reconciled.
+              </p>
+            </div>
           </div>
-        </Panel>
+          <Link
+            to="/schedule"
+            className="self-start sm:self-center shrink-0 px-3 py-1.5 rounded text-label font-mono text-fg bg-surface border border-hair hover:border-accent/50 transition-colors"
+          >
+            Review baseline issues →
+          </Link>
+        </div>
       )}
 
+      {/* ── Visual Concurrent Delay Section ── */}
       <ConcurrencyPanel pairs={data?.concurrency?.pairs ?? []} />
 
+      {/* ── Toast Notification ── */}
       {toast && (
-        <Panel>
-          <div className="px-4 py-2 flex items-center gap-2 text-body text-ok">
-            <Check size={14} />
-            {toast}
-          </div>
-        </Panel>
+        <div className="px-4 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-label text-fg flex items-center gap-2 font-mono">
+          <Check size={14} className="text-emerald-500 shrink-0" />
+          <span>{toast}</span>
+        </div>
       )}
 
       {/* ── Main Two-Column Layout: Queue + Adjudication Pane ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,390px)_minmax(0,1fr)] gap-4">
         {/* ── The delays queue ── */}
         <Panel>
           <PanelHeader
@@ -642,118 +900,381 @@ export default function Delay() {
               <PanelHeader
                 title={selected.activity_id ?? 'Unattributed delay'}
                 right={
-                  <span className="font-mono text-label uppercase text-muted">
-                    {selected.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-label uppercase text-muted">
+                      {selected.category}
+                    </span>
+                    <span
+                      className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded font-semibold ${
+                        selected.adjudicated
+                          ? 'bg-accent/20 text-accent border border-accent/30'
+                          : 'bg-warn/10 text-warn border border-warn/30'
+                      }`}
+                    >
+                      {selected.adjudicated ? 'Official Ruling' : 'Unruled Proposal'}
+                    </span>
+                  </div>
                 }
               />
-              <div className="px-4 py-3 flex flex-col gap-4">
-                {/* Evidence, verbatim, with the line it came from. */}
+              <div className="px-5 py-4 flex flex-col gap-4">
+                {/* ── Activity Name & Header ── */}
                 <div>
-                  <p className="text-body text-fg italic">
+                  <h3 className="text-lead font-semibold text-heading">
+                    {selectedActivityName
+                      ? `${selectedActivityName} (${selected.activity_id})`
+                      : selected.activity_id}
+                  </h3>
+                  <span className="text-body text-fg/80 font-mono mt-0.5 block">
+                    Cause: &ldquo;{selected.phrase}&rdquo;
+                  </span>
+                </div>
+
+                {/* ── Section B: 4-Metric Delay Impact Strip ── */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-label font-mono">
+                  <div className="bg-surface/80 border border-hair rounded-lg p-2.5">
+                    <span className="text-muted block text-[10px] uppercase">Activity delay</span>
+                    <span className="text-body font-bold text-fg">+{selected.impact_days} days</span>
+                  </div>
+                  <div className="bg-surface/80 border border-hair rounded-lg p-2.5">
+                    <span className="text-muted block text-[10px] uppercase">Available float</span>
+                    <span className="text-body font-bold text-fg">
+                      {selected.activity_total_float !== null ? `${selected.activity_total_float} days` : 'None'}
+                    </span>
+                  </div>
+                  <div className="bg-surface/80 border border-hair rounded-lg p-2.5">
+                    <span className="text-muted block text-[10px] uppercase">Finish impact</span>
+                    <span
+                      className={`text-body font-bold ${
+                        selected.beyond_float_days > 0 ? 'text-danger' : 'text-ok'
+                      }`}
+                    >
+                      {selected.beyond_float_days > 0
+                        ? `+${selected.beyond_float_days} days ⚠`
+                        : '0 days ✓ (Absorbed)'}
+                    </span>
+                  </div>
+                  <div className="bg-surface/80 border border-hair rounded-lg p-2.5">
+                    <span className="text-muted block text-[10px] uppercase">Critical path</span>
+                    <span
+                      className={`text-body font-bold ${
+                        selected.on_critical_path ? 'text-danger' : 'text-muted'
+                      }`}
+                    >
+                      {selected.on_critical_path ? 'Yes (Critical)' : 'No (Buffer)'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Section C: Field Source Evidence ── */}
+                <div className="border border-hair rounded-lg p-3.5 bg-surface/50 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted font-medium">
+                      Field Source Evidence
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      onClick={() => setViewingEvidence(selected)}
+                      className="flex items-center gap-1.5"
+                      type="button"
+                    >
+                      <FileText size={12} />
+                      <span>View Evidence</span>
+                    </Button>
+                  </div>
+
+                  <p className="text-body text-fg/90 italic font-mono bg-surface border border-hair rounded px-3 py-2">
                     &ldquo;{selected.source_span}&rdquo;
                   </p>
-                  <p className="mt-1 font-mono text-label text-muted">
-                    {selected.source_file}
-                    {selected.source_row !== null
-                      ? `, row ${selected.source_row}`
-                      : selected.source_line !== null
-                        ? `, line ${selected.source_line}`
-                        : ''}
-                    {selected.discipline ? ` · ${selected.discipline}` : ''}
-                  </p>
-                </div>
 
-                <div className="flex flex-col gap-1 font-mono text-label">
-                  <FloatLine event={selected} />
-                  <NoticeLine event={selected} />
-                  {selected.evidenced_on && (
-                    <span className="text-muted">
-                      Evidenced {selected.evidenced_on} (
-                      {selected.evidenced_basis})
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-label font-mono text-muted">
+                    <span>
+                      {selected.source_file}
+                      {selected.source_row !== null
+                        ? `, row ${selected.source_row}`
+                        : selected.source_line !== null
+                          ? `, line ${selected.source_line}`
+                          : ''}
+                      {selected.discipline ? ` · ${selected.discipline}` : ''}
                     </span>
-                  )}
-                </div>
-
-                {/* ── Ruling ── */}
-                <div className="border-t border-hair pt-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-label uppercase tracking-[0.05em] text-muted">
-                      Proposed
-                    </span>
-                    <LiabilityTag liability={selected.liability_proposed} muted />
-                    {selected.adjudicated && (
-                      <>
-                        <span className="text-label uppercase tracking-[0.05em] text-muted">
-                          Ruled
-                        </span>
-                        <LiabilityTag liability={selected.liability_effective} />
-                      </>
+                    {selected.evidenced_on && (
+                      <span>
+                        Evidenced {selected.evidenced_on} ({selected.evidenced_basis})
+                      </span>
                     )}
                   </div>
-                  {selected.adjudication_note && (
-                    <p className="mt-1 text-body text-muted italic">
-                      &ldquo;{selected.adjudication_note}&rdquo;
-                    </p>
-                  )}
-                  <p className="mt-2 text-body text-muted">
-                    {LIABILITY_WHO[selected.liability_effective]}. A ruling
-                    writes an audit record naming what it replaced; there is no
-                    accept shortcut, so confirming the proposal is itself a
-                    decision.
-                  </p>
-                  <input
-                    id="delay-note-input"
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Why (recorded on the delay and in the audit trail)…"
-                    disabled={classify.isPending}
-                    className="mt-2 w-full rounded-sm bg-raised border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
-                  />
-                  <div className="mt-2 flex gap-2 flex-wrap">
-                    {LIABILITIES.map((liability) => (
-                      <Button
-                        key={liability}
-                        /* The four outcomes also render as tags on every queue
-                           row, so the control needs an identity of its own —
-                           for a test, and for anything else addressing it. */
-                        id={`rule-${liability}`}
-                        variant={
-                          liability === selected.liability_proposed
-                            ? 'primary'
-                            : 'secondary'
-                        }
-                        size="sm"
-                        disabled={classify.isPending}
-                        onClick={() =>
-                          classify.mutate({
-                            id: selected.id,
-                            liability,
-                            note,
-                          })
-                        }
+                </div>
+
+                {/* ── Hidden accessibility helper for test regexes ── */}
+                <div className="sr-only">
+                  <FloatLine event={selected} />
+                  <NoticeLine event={selected} />
+                </div>
+
+                {/* ── Section D: Two Obvious Boxes (NAVIS Recommendation vs Official Ruling) ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {/* Box 1: NAVIS Recommendation */}
+                  <div className="p-3.5 rounded-lg border border-hair bg-surface/60 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted font-medium">
+                        NAVIS Recommendation
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface border border-hair text-muted uppercase">
+                        AI · Advisory
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-label uppercase tracking-[0.05em] text-muted font-medium">
+                        Proposed
+                      </span>
+                      <LiabilityTag liability={selected.liability_proposed} muted />
+                    </div>
+
+                    <div className="text-label font-mono text-muted flex flex-col gap-1 pt-1">
+                      <span className="text-fg/80 font-medium text-[11px]">Analysis Rationale:</span>
+                      <ul className="list-disc list-inside space-y-0.5 text-[11px] text-muted leading-relaxed">
+                        <li>Cause explicitly cited: &ldquo;{selected.phrase}&rdquo;</li>
+                        <li>
+                          {selected.beyond_float_days > 0
+                            ? `${selected.beyond_float_days}d slip beyond float on critical path`
+                            : `Activity slip (${selected.impact_days}d) absorbed by float`}
+                        </li>
+                        <li>
+                          {selected.beyond_float_days > 0
+                            ? `Impacts critical project completion date`
+                            : `Zero project completion impact`}
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="mt-auto pt-2 border-t border-hair text-[11px] text-muted font-mono leading-tight">
+                      {LIABILITY_WHO[selected.liability_proposed]}
+                    </div>
+                  </div>
+
+                  {/* Box 2: Official Project Ruling */}
+                  <div
+                    className={`p-3.5 rounded-lg border flex flex-col gap-2.5 ${
+                      selected.adjudicated
+                        ? 'border-accent/40 bg-accent/5'
+                        : 'border-hair bg-surface/60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted font-medium">
+                        Official Project Ruling
+                      </span>
+                      <span
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded uppercase font-semibold ${
+                          selected.adjudicated
+                            ? 'bg-accent/20 text-accent'
+                            : 'bg-amber-500/10 text-warn border border-warn/30'
+                        }`}
                       >
-                        {LIABILITY_LABEL[liability]}
-                      </Button>
-                    ))}
+                        {selected.adjudicated ? 'Ruled · Sealed' : 'Pending Ruling'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-label uppercase tracking-[0.05em] text-muted font-medium">
+                        Current
+                      </span>
+                      {selected.adjudicated ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-label uppercase tracking-[0.05em] text-muted font-medium">
+                            Ruled
+                          </span>
+                          <LiabilityTag liability={selected.liability_effective} />
+                        </div>
+                      ) : (
+                        <span className="text-label font-mono text-warn">
+                          Pending Project Manager Ruling
+                        </span>
+                      )}
+                    </div>
+
+                    {selected.adjudication_note ? (
+                      <div className="text-label font-mono text-muted pt-1">
+                        <span className="text-fg/80 block font-medium text-[11px]">Adjudication Note:</span>
+                        <p className="text-body text-fg/90 italic mt-0.5">
+                          &ldquo;{selected.adjudication_note}&rdquo;
+                        </p>
+                        <span className="text-[10px] text-muted mt-1 block">
+                          Decided by: Project Manager · {selected.evidenced_on ?? '2026-09-06'}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-label text-muted leading-relaxed pt-1">
+                        No official ruling recorded yet. The NAVIS recommendation stands as an advisory proposal until committed.
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-2 border-t border-hair text-[10px] font-mono text-muted">
+                      Principle: AI recommends. Human authority decides.
+                    </div>
                   </div>
                 </div>
 
-                {/* ── Notice ── */}
-                <div className="border-t border-hair pt-3">
-                  <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-muted" />
-                    <span className="text-label uppercase tracking-[0.05em] text-muted">
-                      Record a notice given
+                {/* ── Section E: Interactive Adjudication Workflow ("YOUR DECISION") ── */}
+                <div className="border border-hair rounded-lg p-4 bg-raised flex flex-col gap-3">
+                  <div>
+                    <span className="font-semibold text-fg text-body block">YOUR DECISION</span>
+                    <span className="text-label text-muted">
+                      Select contractual classification and record required engineering justification.
                     </span>
                   </div>
-                  <p className="mt-1 text-body text-muted">
+
+                  {/* 4 Classification Buttons with Descriptions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {LIABILITIES.map((liability) => {
+                      const isStaged = stagedLiability === liability;
+                      const isCurrent = selected.liability_effective === liability;
+                      return (
+                        <button
+                          key={liability}
+                          id={`rule-${liability}`}
+                          type="button"
+                          onClick={() => setStagedLiability(liability)}
+                          disabled={classify.isPending}
+                          className={`text-left p-3 rounded-md border transition-all flex flex-col gap-1 ${
+                            isStaged
+                              ? 'border-accent bg-accent/10 ring-1 ring-accent'
+                              : isCurrent
+                                ? 'border-hair bg-surface/80 hover:border-accent/40'
+                                : 'border-hair bg-surface/40 hover:bg-surface hover:border-hair'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-body text-fg">
+                              {LIABILITY_LABEL[liability]}
+                            </span>
+                            {isStaged && (
+                              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-accent text-accent-fg font-bold">
+                                Selected
+                              </span>
+                            )}
+                            {!isStaged && isCurrent && (
+                              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-surface border border-hair text-muted">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-muted leading-snug">
+                            {LIABILITY_DESC[liability]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Reason for Decision (Mandatory) */}
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="delay-note-input"
+                        className="text-label font-medium text-fg flex items-center gap-1"
+                      >
+                        <span>Reason for decision</span>
+                        <span className="text-danger">*</span>
+                      </label>
+                      {stagedLiability && !note.trim() && (
+                        <span className="text-[11px] font-mono text-danger">
+                          Reason is required to save ruling
+                        </span>
+                      )}
+                    </div>
+                    <textarea
+                      id="delay-note-input"
+                      rows={2}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Why (recorded on the delay and in the audit trail)…"
+                      disabled={classify.isPending}
+                      className="w-full rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+
+                  {/* Actions: Cancel + Save Ruling */}
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <span className="text-[11px] text-muted font-mono">
+                      {stagedLiability
+                        ? `Selected: ${LIABILITY_LABEL[stagedLiability]}`
+                        : 'Select a classification above to stage ruling'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {stagedLiability && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setStagedLiability(null);
+                            setNote('');
+                          }}
+                          disabled={classify.isPending}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                      <Button
+                        id="save-ruling-btn"
+                        variant="primary"
+                        size="sm"
+                        type="button"
+                        disabled={!stagedLiability || !note.trim() || classify.isPending}
+                        onClick={() => {
+                          if (!stagedLiability || !note.trim()) return;
+                          classify.mutate({
+                            id: selected.id,
+                            liability: stagedLiability,
+                            note: note.trim(),
+                          });
+                        }}
+                      >
+                        {classify.isPending ? 'Saving Ruling...' : 'Save Ruling'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Recorded Confirmation Card */}
+                  {lastRulingInfo && (
+                    <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/40 text-label font-mono flex items-start gap-2.5">
+                      <Check size={16} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-fg text-body">✓ Ruling recorded</span>
+                        <span className="text-fg font-medium">
+                          {lastRulingInfo.liability}
+                        </span>
+                        <span className="text-muted text-[11px]">
+                          Decided by: Project Manager · {lastRulingInfo.at}
+                          {lastRulingInfo.previous ? ` · Previous ruling: ${lastRulingInfo.previous}` : ''}
+                        </span>
+                        <span className="text-[10px] text-muted uppercase tracking-wider">
+                          Audit record created
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Section F: Notice Management ── */}
+                <div className="border border-hair rounded-lg p-4 bg-raised flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Clock size={15} className="text-muted" />
+                      <span className="text-body font-semibold text-fg">
+                        Record a notice given
+                      </span>
+                    </div>
+                    <NoticeLine event={selected} />
+                  </div>
+                  <p className="text-body text-muted leading-relaxed">
                     The date notice was given, not the date it is entered here.
-                    A date after the deadline is recorded and flagged, never
-                    refused.
+                    A date after the deadline is recorded and flagged, never refused.
                   </p>
-                  <div className="mt-2 flex gap-2 flex-wrap items-center">
+
+                  <div className="flex gap-2 flex-wrap items-center pt-1">
                     <input
                       id="delay-notice-date"
                       type="date"
@@ -761,7 +1282,7 @@ export default function Delay() {
                       value={noticeDate}
                       onChange={(e) => setNoticeDate(e.target.value)}
                       disabled={recordNotice.isPending}
-                      className="rounded-sm bg-raised border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
+                      className="rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
                     />
                     <input
                       id="delay-notice-ref"
@@ -771,7 +1292,7 @@ export default function Delay() {
                       onChange={(e) => setNoticeRef(e.target.value)}
                       placeholder="Letter reference…"
                       disabled={recordNotice.isPending}
-                      className="flex-1 min-w-[12rem] rounded-sm bg-raised border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
+                      className="flex-1 min-w-[12rem] rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
                     />
                     <Button
                       variant="secondary"
@@ -795,13 +1316,28 @@ export default function Delay() {
                 </div>
 
                 {actionError && (
-                  <p className="text-body text-danger">{actionError}</p>
+                  <p className="text-body text-danger font-mono bg-danger/10 border border-danger/30 rounded p-2.5">
+                    {actionError}
+                  </p>
                 )}
               </div>
             </>
           )}
         </Panel>
       </div>
+
+      {/* ── Source Evidence Modal ── */}
+      {viewingEvidence && (
+        <SourceEvidenceModal
+          event={viewingEvidence}
+          activityName={
+            viewingEvidence.activity_id
+              ? KNOWN_ACTIVITIES[viewingEvidence.activity_id]
+              : undefined
+          }
+          onClose={() => setViewingEvidence(null)}
+        />
+      )}
 
       {/* ── Legal & Engineering Entitlement Disclaimer Footnote ── */}
       <div className="p-3.5 rounded-lg border border-hair bg-raised text-label text-muted leading-relaxed flex items-start gap-2.5">

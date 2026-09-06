@@ -124,8 +124,8 @@ describe('ScheduleDoctor Component', () => {
   it('opens calibrated P6 XML modal on button click', async () => {
     wrap(<ScheduleDoctor />);
 
-    expect(await screen.findByText(/Generate Calibrated Baseline/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/Generate Calibrated Baseline/i));
+    expect(await screen.findByText(/Generate Proposed Baseline Revision/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Generate Proposed Baseline Revision/i));
 
     expect(screen.getByText(/AI-Calibrated Schedule Prescription/i)).toBeInTheDocument();
     expect(screen.getByText(/Download P6 XML/i)).toBeInTheDocument();

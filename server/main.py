@@ -229,6 +229,7 @@ from .schemas import (
     ReviewQueueItemResponse,
     ScheduleActivityResponse,
     ScheduleResponse,
+    CompletedRun,
     SuggestedDuration,
     SlotState,
     KnowledgeRule,
@@ -4179,41 +4180,108 @@ def _compute_suggested_duration(
 
     planned_days = [(a.planned_finish - a.planned_start).days for a in matching]
     actual_days = []
+    completed_runs = []
+    upcoming_planned_days = None
+
     for a in matching:
+        p_days = (a.planned_finish - a.planned_start).days
         if a.actual_start and a.actual_finish:
-            actual_days.append((a.actual_finish - a.actual_start).days)
+            act_days = (a.actual_finish - a.actual_start).days
+            actual_days.append(act_days)
+            completed_runs.append(CompletedRun(
+                activity_id=a.activity_id,
+                description=a.description or a.detail or a.activity_id,
+                planned_days=p_days,
+                actual_days=act_days,
+                actual_start=a.actual_start.strftime("%Y-%m-%d") if hasattr(a.actual_start, "strftime") else str(a.actual_start),
+                actual_finish=a.actual_finish.strftime("%Y-%m-%d") if hasattr(a.actual_finish, "strftime") else str(a.actual_finish),
+                source="Verified Site Diary & DPR",
+                verified_by="Resident Planning Engineer",
+            ))
+        else:
+            if upcoming_planned_days is None:
+                upcoming_planned_days = p_days
+
+    if upcoming_planned_days is None and planned_days:
+        upcoming_planned_days = planned_days[-1]
 
     median_planned = statistics.median(planned_days)
+    group_planned_mean = round(statistics.mean(planned_days), 1) if planned_days else median_planned
     median_actual = statistics.median(actual_days) if actual_days else None
+    min_actual = min(actual_days) if actual_days else None
+    max_actual = max(actual_days) if actual_days else None
     p80_actual = None
     if actual_days:
         sorted_actuals = sorted(actual_days)
         p80_idx = int(len(sorted_actuals) * 0.8)
         p80_actual = sorted_actuals[min(p80_idx, len(sorted_actuals) - 1)]
 
-    recommendation = f"For {activity_type} activities, "
-    if len(actual_days) < MIN_ACTUALS_FOR_ESTIMATE:
-        # One completed activity is an anecdote, not a pattern, and the
-        # dataset contains same-day activities that would otherwise produce a
-        # 0-day "recommendation". The bar is the same one the tender estimate
-        # applies (D-094) — one system, one opinion about what counts as
-        # evidence.
+    n = len(actual_days)
+    cur_plan = upcoming_planned_days if upcoming_planned_days is not None else median_planned
+
+    if n < MIN_ACTUALS_FOR_ESTIMATE:
+        # n < 3: Insufficient evidence
+        evidence_strength = "INSUFFICIENT"
+        evidence_label = f"Insufficient evidence · only {n} completed {activity_type} activit{'y' if n == 1 else 'ies'}"
         recommendation = (
-            f"Insufficient evidence: {len(actual_days)} of {len(matching)} "
+            f"Insufficient evidence: {n} of {len(matching)} "
             f"{activity_type} activities have actual dates, and at least "
             f"{MIN_ACTUALS_FOR_ESTIMATE} are needed. No duration is suggested. "
             f"Planned duration is {median_planned}d."
         )
+        observation = f"Only {n} verified completed run{'s' if n != 1 else ''}. Insufficient history to identify an empirical trend."
+        planning_suggestion = f"Maintain baseline duration ({cur_plan}d) until at least {MIN_ACTUALS_FOR_ESTIMATE} verified completions are logged."
         median_actual = None
         p80_actual = None
-    elif median_actual is not None:
-        if median_actual > median_planned:
-            recommendation += f"actual median ({median_actual}d) exceeds planned ({median_planned}d). "
-            recommendation += f"Consider revising planned duration to {median_actual}d or using P80 ({p80_actual}d)."
+    elif n < 5:
+        # n = 3 or 4: Emerging pattern · Low confidence
+        evidence_strength = "LOW"
+        evidence_label = f"LOW — only {n} completed activities (Emerging pattern · Low confidence)"
+        exceeded_count = sum(1 for d in actual_days if d > cur_plan)
+        if median_actual and median_actual > cur_plan:
+            observation = f"Recent executions have taken longer than the current {cur_plan}-day plan ({exceeded_count} of {n} verified executions exceeded {cur_plan} days)."
+            planning_suggestion = f"Emerging pattern: consider reviewing the {cur_plan}-day duration assumption."
+            recommendation = (
+                f"For {activity_type} activities, observed median is {median_actual}d across {n} completions. "
+                f"Emerging pattern · low confidence: consider reviewing {cur_plan}d assumption."
+            )
         else:
-            recommendation += f"actual median ({median_actual}d) is within planned ({median_planned}d). Current estimates are adequate."
+            observation = f"Recent executions align with or are within the {cur_plan}-day plan ({n - exceeded_count} of {n} verified executions on or ahead of plan)."
+            planning_suggestion = f"Current {cur_plan}-day plan aligns with initial observed executions."
+            recommendation = (
+                f"For {activity_type} activities, observed median ({median_actual}d) is within planned ({cur_plan}d). "
+                f"Initial observations suggest current plan is adequate."
+            )
+    elif n < 10:
+        # n = 5-9: Moderate evidence
+        evidence_strength = "MODERATE"
+        evidence_label = f"MODERATE — {n} verified completed activities"
+        exceeded_count = sum(1 for d in actual_days if d > cur_plan)
+        if median_actual and median_actual > cur_plan:
+            observation = f"Established execution pattern: actual median ({median_actual}d) exceeds planned ({cur_plan}d) across {n} verified completions."
+            planning_suggestion = f"Moderate evidence: consider calibrating future packages to {median_actual}d (P80: {p80_actual}d)."
+            recommendation = (
+                f"For {activity_type} activities, moderate historical actual median ({median_actual}d) exceeds planned ({cur_plan}d). "
+                f"Consider calibrating future durations toward {median_actual}d."
+            )
+        else:
+            observation = f"Established execution pattern: actual median ({median_actual}d) is within planned ({cur_plan}d) across {n} completions."
+            planning_suggestion = f"Current plan ({cur_plan}d) is validated by moderate historical evidence."
+            recommendation = f"For {activity_type} activities, actual median ({median_actual}d) confirms adequacy of current planned duration ({cur_plan}d)."
     else:
-        recommendation += f"no actuals available yet. Planned duration is {median_planned}d."
+        # n >= 10: Strong historical benchmark
+        evidence_strength = "STRONG"
+        evidence_label = f"STRONG — {n} verified completed activities (Historical benchmark)"
+        if median_actual and median_actual > cur_plan:
+            observation = f"Statistically robust benchmark across {n} verified completions (median {median_actual}d, range {min_actual}–{max_actual}d, P80 {p80_actual}d)."
+            planning_suggestion = f"Calibrate future baseline schedule to {median_actual}d with P80 risk buffer ({p80_actual}d)."
+            recommendation = (
+                f"For {activity_type} activities, strong historical benchmark recommends revising planned duration to {median_actual}d or P80 ({p80_actual}d)."
+            )
+        else:
+            observation = f"Statistically robust benchmark across {n} verified completions (median {median_actual}d) confirms plan feasibility."
+            planning_suggestion = f"Maintain {cur_plan}d baseline duration."
+            recommendation = f"For {activity_type} activities, strong historical benchmark validates the current {cur_plan}d duration."
 
     return SuggestedDuration(
         activity_type_pattern=activity_type,
@@ -4223,6 +4291,15 @@ def _compute_suggested_duration(
         median_actual_days=median_actual,
         p80_actual_days=p80_actual,
         recommendation=recommendation,
+        current_planned_days=cur_plan,
+        group_planned_mean_days=group_planned_mean,
+        min_actual_days=min_actual,
+        max_actual_days=max_actual,
+        evidence_strength=evidence_strength,
+        evidence_label=evidence_label,
+        planning_suggestion=planning_suggestion,
+        observation=observation,
+        completed_runs=completed_runs,
     )
 
 

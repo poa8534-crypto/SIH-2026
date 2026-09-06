@@ -36,7 +36,7 @@ class _CpmItem:
     def predecessor_links(self) -> list:
         return self._links
 
-# ── Historical Benchmarks (Upper Assam / Duliajan / Digboi Well-Sites) ────────
+# ── Historical Benchmarks (Upper Assam / Duliajan Well-Sites) ─────────────────
 
 HISTORICAL_P50_BENCHMARKS: dict[str, dict[str, Any]] = {
     "CIV-FDN": {"p50": 20, "p90": 28, "mean": 22.4, "uom": "m3", "max_daily_rate": 8.5},

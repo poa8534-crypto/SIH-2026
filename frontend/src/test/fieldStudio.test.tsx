@@ -169,12 +169,11 @@ describe('an untouched form', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('opens on "Select discipline" rather than choosing a trade', () => {
+  it('prefills the assigned supervisor discipline (Piping)', () => {
     wrap(<ReportStudio />);
     const select = screen.getByLabelText('Discipline') as HTMLSelectElement;
 
-    expect(select.value).toBe('');
-    expect(screen.getByText('Select discipline')).toBeInTheDocument();
+    expect(select.value).toBe('piping');
   });
 
   it('honours a saved preference, which is the only legitimate default', () => {
@@ -189,6 +188,9 @@ describe('an untouched form', () => {
   it('sends no discipline when none is chosen', async () => {
     const spy = vi.spyOn(api, 'agentTurn').mockResolvedValue(READY);
     wrap(<ReportStudio />);
+    fireEvent.change(screen.getByLabelText('Discipline'), {
+      target: { value: '' },
+    });
     typeReport('spool erection complete');
     fireEvent.click(checkButton());
 
@@ -225,11 +227,11 @@ describe('irrelevant input', () => {
     fireEvent.click(checkButton());
 
     await screen.findByText('This does not look like a site report');
-    // The discipline <select> legitimately lists every trade; what must not
-    // appear is a rendered VALUE claiming one was read from the text.
+    // The interpretation panel must not open on a refusal.
+    expect(screen.queryByText('Review your report')).not.toBeInTheDocument();
+    expect(screen.queryByText('A few details needed')).not.toBeInTheDocument();
     const asValue = (t: string) =>
       screen.queryAllByText(t).filter((el) => el.tagName !== 'OPTION');
-    expect(asValue('Piping')).toHaveLength(0);
     expect(asValue('Civil')).toHaveLength(0);
     expect(screen.queryByText('PIP-ERC-1031')).not.toBeInTheDocument();
   });
@@ -339,7 +341,7 @@ describe('editing a checked report', () => {
     await screen.findByText('Review your report');
 
     fireEvent.change(screen.getByLabelText('Discipline'), {
-      target: { value: 'piping' },
+      target: { value: 'civil' },
     });
 
     expect(submitButton()).toBeDisabled();

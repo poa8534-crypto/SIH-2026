@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, errorDetail } from '../lib/api';
 import { useSession } from '../hooks/useSession';
 import { useSpeech } from '../hooks/useSpeech';
+import { useTheme } from '../hooks/useTheme';
 import { Button, PanelHeader } from '../components/ui';
 
 /**
@@ -31,6 +32,7 @@ export default function FieldProfile() {
   const navigate = useNavigate();
   const { signOut } = useSession();
   const speech = useSpeech();
+  const { theme, setTheme } = useTheme();
 
   // Project name and data date are the server's, off the same query key the
   // shells use. They were previously constants in config, which is how this
@@ -77,6 +79,35 @@ export default function FieldProfile() {
           <span className="font-mono">{fromServer(schedule?.data_date)}</span>
         </Row>
         <Row label="Details">Shift: {SUPERVISOR.shift}</Row>
+      </section>
+
+      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
+        <PanelHeader title={<>Appearance &amp; Theme</>} />
+        <div className="px-4 py-4 flex flex-col gap-3">
+          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
+            Theme preference
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              shape="pill"
+              active={theme === 'light'}
+              className="flex-1"
+              onClick={() => setTheme('light')}
+            >
+              Light
+            </Button>
+            <Button
+              variant="secondary"
+              shape="pill"
+              active={theme === 'dark'}
+              className="flex-1"
+              onClick={() => setTheme('dark')}
+            >
+              Dark
+            </Button>
+          </div>
+        </div>
       </section>
 
       <section className="border border-hair bg-raised rounded-lg overflow-hidden">

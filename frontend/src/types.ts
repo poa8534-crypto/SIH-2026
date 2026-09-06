@@ -643,6 +643,17 @@ export interface DelayReasonRow {
   days_lost: number;
 }
 
+export interface CompletedRun {
+  activity_id: string;
+  description: string;
+  planned_days: number;
+  actual_days: number;
+  actual_start?: string | null;
+  actual_finish?: string | null;
+  source?: string;
+  verified_by?: string;
+}
+
 export interface SuggestedDuration {
   activity_type_pattern: string;
   /** Activities of this type in the baseline. */
@@ -650,10 +661,19 @@ export interface SuggestedDuration {
   /** Of those, how many have actual dates — what the medians are based on. */
   actuals_count: number;
   median_planned_days: number;
-  /** Null when there are fewer than two completed activities. */
+  /** Null when there are fewer than three completed activities. */
   median_actual_days: number | null;
   p80_actual_days: number | null;
   recommendation: string;
+  current_planned_days?: number | null;
+  group_planned_mean_days?: number | null;
+  min_actual_days?: number | null;
+  max_actual_days?: number | null;
+  evidence_strength?: 'INSUFFICIENT' | 'LOW' | 'MODERATE' | 'STRONG';
+  evidence_label?: string;
+  planning_suggestion?: string;
+  observation?: string;
+  completed_runs?: CompletedRun[];
 }
 
 export interface MemoryQueryResponse {
@@ -895,7 +915,13 @@ export interface RaidCandidate {
   source_id: string | null;
   source_note: string | null;
   committed: boolean;
+  source_file?: string | null;
+  source_line?: number | null;
+  source_row?: number | null;
+  source_span?: string | null;
+  detected_date?: string | null;
 }
+
 
 // ── Executive Intelligence & S-Curve ─────────────────────────────────────────
 

@@ -16,24 +16,25 @@
    ========================================================================= */
 
 [data-theme="dark"] {
-  /* ChatGPT/Codex Minimalist Dark Tokens */
-  --bg: #212121;          /* canvas */
-  --bg-sidebar: #171717;  /* persistent left navigation */
-  --bg-raised: #2B2B2B;   /* cards, containers, subtle surface */
-  --bg-selected: #323232; /* selected row, subtle hover */
+  /* NAVIS Deep Navy & Blue Tokens (Rich Navy Canvas, NOT pitch black) */
+  --bg: #0B132B;          /* deep navy canvas */
+  --bg-sidebar: #0E172F;  /* persistent left navigation */
+  --bg-raised: #141F3D;   /* cards, containers, elevated surfaces */
+  --bg-secondary: #1B2950; /* secondary card surfaces / subtle fill */
+  --bg-selected: #1E2E5C; /* selected row, active item, subtle hover */
 
   /* Text */
-  --text: #ECECEC;        /* primary */
-  --text-muted: #B4B4B4;  /* secondary / labels */
+  --text: #F8FAFC;        /* off-white primary */
+  --text-muted: #94A3B8;  /* cool grey secondary / labels */
 
   /* Lines */
-  --border: #3A3A3A;      /* hairline dividers */
-  --border-strong: #555555; /* strong borders, focus */
+  --border: #1E2E52;      /* deep blue-tinted hairline dividers */
+  --border-strong: #2A3E6E; /* strong navy borders, focus rings */
 
-  /* Neutral Primary Action */
-  --accent: #ECECEC;
-  --accent-text: #212121;
-  --accent-hover: #FFFFFF;
+  /* Accessible NAVIS Blue Primary Action */
+  --accent: #3B82F6;
+  --accent-text: #FFFFFF;
+  --accent-hover: #60A5FA;
 
   /* Headings */
   --heading: #FFFFFF;
@@ -42,7 +43,7 @@
   --mark-bg: #4A3C12;
   --mark-text: #FFE9A8;
 
-  /* Status: Muted semantic colors accompanied by labels/icons */
+  /* Status: semantic data colors */
   --ok: #34D399;
   --warn: #FBBF24;
   --danger: #F87171;
@@ -59,33 +60,34 @@
 }
 
 [data-theme="light"] {
-  /* ChatGPT/Codex Minimalist Light Tokens */
-  --bg: #FFFFFF;          /* canvas */
-  --bg-sidebar: #F7F7F8;  /* persistent left navigation */
-  --bg-raised: #FAFAFA;   /* cards, containers, subtle surface */
-  --bg-selected: #EFEFEF; /* selected row, subtle hover */
+  /* NAVIS Enterprise Blue + White Tokens */
+  --bg: #F8FAFC;          /* light cool blue-grey canvas (Slate-50) */
+  --bg-sidebar: #FFFFFF;  /* clean persistent white sidebar */
+  --bg-raised: #FFFFFF;   /* pure white cards, containers, panels */
+  --bg-secondary: #F1F5F9; /* subtle hover / secondary background */
+  --bg-selected: #EFF6FF; /* soft light blue selected row (Blue-50) */
 
   /* Text */
-  --text: #202123;        /* primary */
-  --text-muted: #666666;  /* secondary / labels */
+  --text: #0F172A;        /* deep dark navy text (Slate-900) */
+  --text-muted: #475569;  /* cool grey secondary / labels (Slate-600) */
 
   /* Lines */
-  --border: #E5E5E5;      /* hairline dividers */
-  --border-strong: #CCCCCC; /* strong borders, focus */
+  --border: #E2E8F0;      /* cool grey hairline dividers (Slate-200) */
+  --border-strong: #CBD5E1; /* strong cool borders, focus rings (Slate-300) */
 
-  /* Neutral Primary Action */
-  --accent: #202123;
-  --accent-text: #FFFFFF;
-  --accent-hover: #333333;
+  /* Authoritative NAVIS Blue Primary Action */
+  --accent: #1D4ED8;      /* authoritative NAVIS Blue (Blue-700) */
+  --accent-text: #FFFFFF; /* crisp white text */
+  --accent-hover: #1E40AF; /* darker blue on hover (Blue-800) */
 
   /* Headings */
-  --heading: #111111;
+  --heading: #0F172A;     /* deep dark navy */
 
   /* Evidence-span highlight */
   --mark-bg: #FEF3C7;
   --mark-text: #92400E;
 
-  /* Status: Muted semantic colors accompanied by labels/icons */
+  /* Status: semantic data colors */
   --ok: #10A37F;
   --warn: #D97706;
   --danger: #DC2626;
@@ -102,18 +104,19 @@
 }
 
 :root:not([data-theme]) {
-  --bg: #FFFFFF;
-  --bg-sidebar: #F7F7F8;
-  --bg-raised: #FAFAFA;
-  --bg-selected: #EFEFEF;
-  --text: #202123;
-  --text-muted: #666666;
-  --border: #E5E5E5;
-  --border-strong: #CCCCCC;
-  --accent: #202123;
+  --bg: #F8FAFC;
+  --bg-sidebar: #FFFFFF;
+  --bg-raised: #FFFFFF;
+  --bg-secondary: #F1F5F9;
+  --bg-selected: #EFF6FF;
+  --text: #0F172A;
+  --text-muted: #475569;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --accent: #1D4ED8;
   --accent-text: #FFFFFF;
-  --accent-hover: #333333;
-  --heading: #111111;
+  --accent-hover: #1E40AF;
+  --heading: #0F172A;
   --mark-bg: #FEF3C7;
   --mark-text: #92400E;
   --ok: #10A37F;
@@ -139,6 +142,7 @@
   --color-surface: var(--bg);
   --color-sidebar: var(--bg-sidebar);
   --color-raised: var(--bg-raised);
+  --color-secondary: var(--bg-secondary);
   --color-selected: var(--bg-selected);
 
   --color-fg: var(--text);
@@ -196,16 +200,19 @@
   --text-h1: 32px;       /* display metrics                              */
 
   /* ==========================================================================
-     RADII — three, by role.
-
-     `rounded-sm` is anything a finger or cursor acts on (buttons, inputs,
-     chips, skeletons). `rounded-lg` is anything that contains (cards, panels,
-     drawers, banners). `rounded-full` is pills and dots and stays a static
-     Tailwind utility. The namespace is not reset here because `rounded-full`
-     is not part of it.
+     RADII — consistent enterprise scale.
+     - small controls / badges: 4-6px (xs, sm)
+     - buttons & inputs: 6-8px (sm, md)
+     - cards & panels: 8-12px (md, lg, xl)
+     - modals & containers: 12-16px (xl, 2xl, 3xl)
      ======================================================================= */
+  --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-lg: 8px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 16px;
 
   /* Legacy aliases. The original theme called muted text "text" and primary
      text "hl", which inverts the naming used above — so these are mapped

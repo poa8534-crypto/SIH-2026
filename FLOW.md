@@ -1291,6 +1291,63 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Field Supervisor Clarifications page redesigned as an Actionable Work Queue & Inbox.
+**Date:** 2026-09-06 · **Decision:** D-096
+
+```
+FIELD CLARIFICATIONS — WORK QUEUE & INBOX                          (D-096)
+
+  GET /field/clarifications
+      server/main.py :: field_clarifications(unanswered_only=False)
+      returns: list[ClarificationResponse]
+          id, review_item_id, reference, original_text, question,
+          asked_by, asked_at, answered, response, answered_at, matched_activity_id
+
+  THE INTERFACE
+      FieldClarifications.tsx   max-w-5xl operational inbox, 0 KPI dashboard tiles
+      Header                    "Clarifications" + "{N} require your response · {M} answered"
+      Filters                   [ All (N) ] [ Needs response (M) ] [ Answered (K) ]
+                                active subtle NAVIS Blue, neutral inactive
+      Search                    In-memory query matching question, update text, activity ID, asked by
+      Empty State               Natural centered whitespace with CheckCircle2:
+                                "No clarifications needed · Planning hasn't requested additional information"
+
+  CARDS & HIERARCHY
+      Needs Response Cards      Prominent question (text-lg font-semibold)
+                                Subtle amber pill: "● Needs response"
+                                Context box: verbatim report quote + matched activity ID & name
+                                Attribution: "Asked by Priya Das · Planning Engineer | Sent 18 min ago"
+                                Action: [ Respond ] CTA button (opens slideout drawer)
+      Answered Cards            Less prominent, "✓ Answered" green pill, question + compact context,
+                                "Your response: ..." callout, timestamp for traceability
+
+  RESPOND SLIDEOUT DRAWER
+      Drawer (right-aligned)    Active on [ Respond ] click or `?item=<id>` query param
+      Header                    "Respond to Planning" + reference
+      Context Preview           Amber callout with Planning's question + verbatim original report
+      Response Composer         Textarea (`Type your response here...`) + useSpeech voice recording
+      Schedule Protection       Reassurance that response goes to Planning before schedule actuals commit
+      Actions                   [ Cancel ] | [ Send Response ]
+      On Submit                 POST /field/clarifications/{id}/respond
+                                invalidates ['clarifications'], ['fieldReports'], ['reviewQueue']
+                                toast: "Response sent to Planning Engineer"
+                                moves card to Answered immediately
+
+  SIDEBAR INTEGRATION
+      FieldWorkspaceShell.tsx   unanswered count defaults to 0, badge rendered ONLY when > 0
+                                styled with amber warning pill
+
+  CROSS-PAGE INTEGRATION
+      FieldReports.tsx          Needs Information prompt navigates to /field/clarifications?item=<id>
+                                auto-opening drawer on arrival
+
+  Pinned by frontend/src/test/field.test.tsx (25 tests).
+```
+
+---
+
+### Previous modification area (D-095)
+
 **Task:** The reporting flow gets explicit states, a refusal renders as a
 refusal, and clarification moves out of the embedded chat panel.
 **Date:** 2026-09-06 · **Decision:** D-095

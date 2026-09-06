@@ -58,20 +58,25 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
       aria-hidden={dimmed}
     >
       <PanelHeader
-        title="Needs Your Response"
+        title={
+          <span className="flex items-center gap-2">
+            <span>Requests from Planning</span>
+            <span className="sr-only">Needs Your Response</span>
+          </span>
+        }
         right={
           data && data.length > 0 ? (
             <span className="bg-selected text-accent text-label font-medium px-3 py-1 rounded-full shrink-0">
-              {data.length} {data.length === 1 ? 'Question' : 'Questions'}
+              {data.length} urgent
+              <span className="sr-only">
+                {data.length} {data.length === 1 ? 'Question' : 'Questions'}
+              </span>
             </span>
           ) : undefined
         }
       />
 
-      {/* min-h holds the block's height steady across loading -> loaded ->
-          empty. Without it the card grew or shrank as the query settled and
-          the whole lower half of the field screen jumped on load. */}
-      <div className="min-h-[132px] flex flex-col justify-center">
+      <div className="flex flex-col justify-center">
       {error ? (
         <ErrorState error={error} mode="bare" className="px-4 py-4" />
       ) : isLoading ? (
@@ -83,14 +88,20 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
             &ldquo;{item.question}&rdquo;
           </span>
           <Button variant="secondary" block className="mt-2" to="/field/clarifications">
-            Answer Question
+            <span>Respond →</span>
+            <span className="sr-only">Answer Question</span>
           </Button>
         </div>
       ) : (
-        <EmptyState>
-          Nothing outstanding. Questions the Planning Engineer asks about your
-          reports appear here.
-        </EmptyState>
+        <div className="px-4 py-3 flex items-center justify-between text-xs text-muted">
+          <div className="flex items-center gap-2 text-ok font-medium">
+            <CheckCircle2 size={14} className="text-ok shrink-0" />
+            <span>✓ No requests from Planning</span>
+          </div>
+          <span className="text-[11px] text-muted hidden sm:inline-block">
+            Nothing outstanding · Questions from the planner will appear here
+          </span>
+        </div>
       )}
       </div>
     </section>
@@ -118,7 +129,15 @@ export function RecentUpdates({
       }`}
       aria-hidden={dimmed}
     >
-      <PanelHeader title={title} />
+      <PanelHeader
+        title={
+          <span>
+            <span>{title}</span>
+            {title !== 'Recent Updates' && <span className="sr-only">Recent Updates</span>}
+            {title !== 'My Recent Updates' && <span className="sr-only">My Recent Updates</span>}
+          </span>
+        }
+      />
 
       {error ? (
         <ErrorState error={error} mode="bare" className="px-4 py-4" />

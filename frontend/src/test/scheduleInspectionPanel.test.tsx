@@ -398,4 +398,31 @@ describe('Schedule Activity Inspection Panel & Evidence Dossier Integration', ()
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByText(/Activity Inspection Panel/i)).not.toBeInTheDocument();
   });
+
+  it('switches to Gantt view and closes drawer when "View in Gantt" is clicked, and can reopen via toolbar', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+
+    expect(await screen.findByText(/Activity Inspection Panel/i)).toBeInTheDocument();
+
+    const viewInGanttBtn = screen.getByRole('button', { name: /View in Gantt/i });
+    expect(viewInGanttBtn).toBeInTheDocument();
+
+    fireEvent.click(viewInGanttBtn);
+
+    // Drawer closes so Gantt chart timeline is unobstructed
+    expect(screen.queryByText(/Activity Inspection Panel/i)).not.toBeInTheDocument();
+
+    // Gantt chart view elements are visible
+    expect(screen.getByText('Scale:')).toBeInTheDocument();
+
+    // Toolbar helper button to re-inspect the selected activity is available
+    const inspectBtn = screen.getByRole('button', { name: /Inspect PIP-SUP-1049/i });
+    expect(inspectBtn).toBeInTheDocument();
+
+    // Clicking inspect button reopens the drawer
+    fireEvent.click(inspectBtn);
+    expect(await screen.findByText(/Activity Inspection Panel/i)).toBeInTheDocument();
+  });
 });
+
