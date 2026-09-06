@@ -1291,6 +1291,47 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Field Supervisor Preferences page redesigned: personal settings first, compact metadata grid, synchronized voice language.
+**Date:** 2026-09-06 · **Decision:** D-097
+
+```
+FIELD PREFERENCES — PERSONAL SETTINGS FIRST                        (D-097)
+
+  THE INTERFACE
+      FieldProfile.tsx          Personal application preferences with compact context
+      Header                    "Preferences" + "Personalize how NAVIS works for you."
+      Summary Banner            Compact horizontal user & assignment card (~100px)
+                                Role avatar [FS], "Field Supervisor", project name,
+                                workfront chip, discipline ("Piping"), shift ("Shift: Day")
+
+  SECTION 1: APPEARANCE
+      Segmented Control         [ ☀ Light ] [ ☾ Dark ] (~280px wide)
+      Theme Integration         Wired to `useTheme`, syncs with localStorage['theme_override'],
+                                login screen, and shell toggle
+
+  SECTION 2: LANGUAGE & VOICE INPUT
+      Segmented Control         [ English ] [ Hindi ] [ Assamese ]
+      Persistence & Sync        `useSpeech.ts` persists to localStorage['navis.speech_lang']
+                                Bidirectionally synced between shell header chips & Preferences
+      Privacy Notice            "Speech recognition runs in the browser. Nothing is recorded or sent to a speech service."
+
+  SECTION 3: CURRENT ASSIGNMENT (COMPACT METADATA)
+      Grid                      Compact 3-column read-only metadata grid
+                                Project (OIL-WSD-2026), Project code, Work front (Well Pad 04 · Sector A),
+                                Discipline (Piping), Shift (Shift: Day), Data date (15-Sep-2026)
+      Badge                     Subtle uppercase [READ-ONLY] chip
+
+  SESSION ACTIONS
+      Actions                   [ Back to home ] (secondary) & [ Return to role selection ] (accent CTA)
+      Sign Out                  `useSession.signOut()` clears `navis.role` and redirects to role picker
+
+  Pinned by frontend/src/test/field.test.tsx (25 tests).
+```
+
+---
+
+### Previous modification area (D-096)
+
 **Task:** Field Supervisor Clarifications page redesigned as an Actionable Work Queue & Inbox.
 **Date:** 2026-09-06 · **Decision:** D-096
 

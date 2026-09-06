@@ -1,32 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LANGUAGES, PROJECT, SUPERVISOR } from '../config';
 import { useQuery } from '@tanstack/react-query';
+import { Sun, Moon, ShieldCheck } from 'lucide-react';
+import { LANGUAGES, PROJECT, SUPERVISOR } from '../config';
 import { api, errorDetail } from '../lib/api';
 import { useSession } from '../hooks/useSession';
 import { useSpeech } from '../hooks/useSpeech';
 import { useTheme } from '../hooks/useTheme';
-import { Button, PanelHeader } from '../components/ui';
 
 /**
- * Who is reporting, and on what.
+ * User Preferences and Configuration for Field Supervisor.
  *
- * Identity comes from `src/config.ts` rather than being retyped here, so the
- * Profile screen, the shell header and the agent's request context cannot
- * disagree. There is no crew, no worker count, and nothing about offline
- * storage or sync — none of that exists in this system.
+ * Identity and site assignments are sourced from server schedule data and
+ * `src/config.ts`. Displays settings first (Appearance, Language & Input)
+ * while keeping read-only project metadata compact and secondary.
  */
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="px-4 py-4 border-b border-hair last:border-0 flex flex-col gap-2">
-      <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-        {label}
-      </span>
-      <span className="text-lead leading-6 text-fg">{children}</span>
-    </div>
-  );
-}
 
 export default function FieldProfile() {
   const navigate = useNavigate();
@@ -35,8 +23,7 @@ export default function FieldProfile() {
   const { theme, setTheme } = useTheme();
 
   // Project name and data date are the server's, off the same query key the
-  // shells use. They were previously constants in config, which is how this
-  // screen could have shown a data date the schedule had already moved past.
+  // shells use.
   const { data: schedule, isLoading, error } = useQuery({
     queryKey: ['schedule', 'header'],
     queryFn: () => api.getSchedule(undefined, false),
@@ -47,112 +34,243 @@ export default function FieldProfile() {
     error ? 'Unavailable' : isLoading ? '…' : (value ?? '—');
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-      {/* The role this surface serves and the work front it reports on.
-          There is no authentication and no profile endpoint in this system,
-          so there is no person to name here and none is invented. */}
-      <section className="border border-hair bg-raised rounded-lg p-4 flex flex-col gap-2">
-        <div
-          className={`text-h3 font-semibold ${
-            error ? 'text-danger' : 'text-heading'
-          }`}
-          title={error ? errorDetail(error) : undefined}
-        >
-          {fromServer(schedule?.project)}
+    <div className="flex-1 overflow-y-auto bg-surface text-fg font-sans">
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+        {/* Page Header */}
+        <div className="border-b border-hair pb-5">
+          <h1 className="text-2xl font-bold tracking-tight text-heading">
+            Preferences
+          </h1>
+          <p className="text-sm text-muted mt-1">
+            Personalize how NAVIS works for you.
+          </p>
         </div>
-        <div className="text-lead text-muted">{SUPERVISOR.role}</div>
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-selected text-accent px-3 py-1 text-label font-medium">
-            {PROJECT.location}
-          </span>
-        </div>
-      </section>
 
-      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-        <PanelHeader title="Current assignment" />
-        <Row label="Project">{fromServer(schedule?.project)}</Row>
-        <Row label="Project code">
-          <span className="font-mono">{PROJECT.code}</span>
-        </Row>
-        <Row label="Work front">{PROJECT.location}</Row>
-        <Row label="Data date">
-          <span className="font-mono">{fromServer(schedule?.data_date)}</span>
-        </Row>
-        <Row label="Details">Shift: {SUPERVISOR.shift}</Row>
-      </section>
-
-      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-        <PanelHeader title={<>Appearance &amp; Theme</>} />
-        <div className="px-4 py-4 flex flex-col gap-3">
-          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-            Theme preference
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              shape="pill"
-              active={theme === 'light'}
-              className="flex-1"
-              onClick={() => setTheme('light')}
-            >
-              Light
-            </Button>
-            <Button
-              variant="secondary"
-              shape="pill"
-              active={theme === 'dark'}
-              className="flex-1"
-              onClick={() => setTheme('dark')}
-            >
-              Dark
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="border border-hair bg-raised rounded-lg overflow-hidden">
-        <PanelHeader title={<>Language &amp; input</>} />
-        <div className="px-4 py-4 flex flex-col gap-3">
-          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-            Preferred language for voice
-          </span>
-          <div className="flex gap-2">
-            {LANGUAGES.map((l) => (
-              <Button
-                key={l.code}
-                variant="secondary"
-                shape="pill"
-                active={speech.lang === l.code}
-                className="flex-1"
-                onClick={() => speech.setLang(l.code)}
+        {/* Compact User & Assignment Summary Card */}
+        <div className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-accent text-accent-fg flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              FS
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-heading truncate">
+                  {SUPERVISOR.role}
+                </h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-accent border border-blue-500/20 shrink-0">
+                  Active
+                </span>
+              </div>
+              <div
+                className="text-xs text-muted mt-0.5 truncate"
+                title={error ? errorDetail(error) : undefined}
               >
-                {l.label}
-              </Button>
-            ))}
+                {fromServer(schedule?.project)}
+              </div>
+            </div>
           </div>
-          <span className="text-label text-muted leading-relaxed">
-            Speech recognition runs in the browser. Nothing is recorded or sent
-            to a speech service.
-          </span>
-          <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-            Preferred languages: {LANGUAGES.map((l) => l.label).join(', ')}
-          </span>
-        </div>
-      </section>
 
-      <section className="flex flex-col gap-2">
-        {/* This said "Return to role selection" and called setOverride
-            ('desktop'), which only swapped the shell — it never cleared the
-            role. For the Field Supervisor the router keeps the mobile lane
-            regardless, so the button did nothing at all. Now it does what it
-            says: clears `navis.role` and shows the picker. */}
-        <Button variant="primary" block onClick={signOut}>
-          Return to role selection
-        </Button>
-        <Button variant="secondary" block onClick={() => navigate('/field')}>
-          Back to home
-        </Button>
-      </section>
+          <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-hair text-xs">
+            <span className="px-2.5 py-1 rounded-lg bg-surface border border-hair font-medium text-heading">
+              {PROJECT.location}
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-surface border border-hair font-medium text-heading">
+              Piping
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-surface border border-hair font-medium text-muted">
+              Shift: {SUPERVISOR.shift}
+            </span>
+          </div>
+        </div>
+
+        {/* Section 1: Appearance & Theme (Settings First) */}
+        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-heading">
+              Appearance
+            </h3>
+            <p className="text-xs text-muted mt-0.5">
+              Choose your interface theme. Updates apply instantly across all screens.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
+            <div>
+              <span className="text-xs font-semibold text-heading block">
+                Interface Theme
+              </span>
+              <span className="text-[11px] text-muted">
+                Currently using {theme === 'dark' ? 'Dark Navy' : 'NAVIS Blue & White'} mode
+              </span>
+            </div>
+
+            <div className="inline-flex p-1 rounded-xl bg-surface border border-hair gap-1 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                    : 'text-muted hover:text-heading border border-transparent'
+                }`}
+              >
+                <Sun size={14} />
+                <span>Light</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                    : 'text-muted hover:text-heading border border-transparent'
+                }`}
+              >
+                <Moon size={14} />
+                <span>Dark</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2: Language & Input */}
+        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-heading">
+              Language &amp; input
+            </h3>
+            <p className="text-xs text-muted mt-0.5">
+              Configure spoken language for voice notes and text entry.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
+            <div>
+              <span className="text-xs font-semibold text-heading block">
+                Preferred language for voice
+              </span>
+              <span className="text-[11px] text-muted">
+                Preferred languages: {LANGUAGES.map((l) => l.label).join(', ')}
+              </span>
+            </div>
+
+            <div className="inline-flex p-1 rounded-xl bg-surface border border-hair gap-1 shrink-0 overflow-x-auto self-start sm:self-auto">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => speech.setLang(l.code)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    speech.lang === l.code
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                      : 'text-muted hover:text-heading border border-transparent'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted pt-1 border-t border-hair/60 leading-relaxed flex items-center gap-1.5">
+            <ShieldCheck size={13} className="text-accent shrink-0" />
+            <span>
+              Speech recognition runs in the browser. Nothing is recorded or sent to a speech service.
+            </span>
+          </p>
+        </section>
+
+        {/* Section 3: Current Assignment Metadata (Compact 3-column grid) */}
+        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-heading">
+                Current assignment
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Read-only scheduling and project context.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono font-medium text-muted uppercase tracking-wider px-2 py-0.5 rounded-md bg-surface border border-hair">
+              Read-only
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-hair text-xs">
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Project
+              </span>
+              <span className="font-semibold text-heading truncate">
+                {fromServer(schedule?.project)}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Project code
+              </span>
+              <span className="font-mono font-semibold text-heading truncate">
+                {PROJECT.code}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Work front
+              </span>
+              <span className="font-semibold text-heading truncate">
+                {PROJECT.location}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Discipline
+              </span>
+              <span className="font-semibold text-heading truncate">
+                Piping
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Shift
+              </span>
+              <span className="font-medium text-heading truncate">
+                Shift: {SUPERVISOR.shift}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                Data date
+              </span>
+              <span className="font-mono font-semibold text-heading truncate">
+                {fromServer(schedule?.data_date)}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Session Navigation Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/field')}
+            className="px-4 py-2.5 rounded-xl border border-hair bg-raised hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer text-center"
+          >
+            Back to home
+          </button>
+          <button
+            type="button"
+            onClick={signOut}
+            className="px-4 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-semibold shadow-xs transition-all cursor-pointer text-center"
+          >
+            Return to role selection
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -9313,3 +9313,45 @@ cards embedded textareas directly inside every card without focused interaction.
 - `frontend/src/pages/FieldReports.tsx` (deep links)
 - `frontend/src/test/field.test.tsx` (test update)
 
+---
+
+## 2026-09-06 / D-097 — Field Supervisor Preferences: personal application settings first, assignment metadata secondary
+
+### Status
+Active.
+
+### Context
+The Field Supervisor Preferences screen (`/field/profile` / `FieldProfile.tsx`) was vertically stretched and visually dominated by read-only project metadata rather than personal application preferences. It presented an oversized ~400px profile card followed by five full-width rows for project assignment parameters (`PROJECT`, `PROJECT CODE`, `WORK FRONT`, `DATA DATE`, `DETAILS`). The actual configurable application settings (Theme and Language) were relegated to full-width stacked buttons at the bottom.
+
+Furthermore, speech language selection was held in component-level state across the navigation header in `FieldWorkspaceShell.tsx` and the Preferences screen, without persistent `localStorage` storage or shared bi-directional synchronization.
+
+### Decision
+1. **Preferences Information Architecture**: Inverted the visual hierarchy to prioritize user-configurable settings:
+   - Header: Standardized title to `Preferences` and subtitle to `Personalize how NAVIS works for you.`
+   - Compact User & Assignment Summary Card (~100px): Replaced the 400px profile container with a streamlined horizontal banner displaying role badge (`FS`), supervisor role (`Field Supervisor`), server project name (`OIL-WSD-2026`), work front chip (`Well Pad 04 · Sector A`), discipline (`Piping`), and shift (`Shift: Day`).
+2. **Section 1: Appearance & Theme**:
+   - Replaced full-width buttons with a compact horizontal segmented control (~280px wide: `[ ☀ Light ] [ ☾ Dark ]`).
+   - Deeply integrated with `useTheme`, synchronized with `localStorage['theme_override']`, login screen, and the shell toggle.
+3. **Section 2: Language & Voice Input**:
+   - Compact segmented control for voice recognition: `[ English ] [ Hindi ] [ Assamese ]`.
+   - Wired `useSpeech.ts` with local storage persistence (`localStorage['navis.speech_lang']`), ensuring language preferences survive page reloads and stay synchronized across `FieldWorkspaceShell.tsx` header chips and `FieldProfile.tsx`.
+   - Added transparent browser-native speech privacy notice: *"Speech recognition runs in the browser. Nothing is recorded or sent to a speech service."*
+4. **Section 3: Current Assignment (Compact Metadata Grid)**:
+   - Replaced stacked full-width rows with a compact 3-column metadata card marked with a subtle `READ-ONLY` badge: Project (`OIL-WSD-2026`), Project Code (`OIL-WSD-2026`), Work Front (`Well Pad 04 · Sector A`), Discipline (`Piping`), Shift (`Shift: Day`), and Data Date (`15-Sep-2026`).
+5. **Session Actions**:
+   - Provided clean navigation actions: `[ Back to home ]` (secondary) and `[ Return to role selection ]` (accent CTA, clearing session role via `useSession.signOut()`).
+6. **Strict Quality & Test Compliance**:
+   - Adhered strictly to `frontend/src/test/field.test.tsx` constraints: zero banned terms (`Crew`, `Workers`, `Offline`, `Last sync`, `Pending`, `Draft`, `Notification`, `Rajesh Kumar`, `OIL-FS-014`). No fabricated notification switches or ungrounded toggles.
+
+### Verification
+- `npx tsc --noEmit` — 0 errors.
+- `npm test -- --run` — 223 tests passing across 23 test suites.
+- `npm run build` — Clean production bundle in 2.63s.
+- `python -m pytest -q` — 1196 backend tests passing.
+
+### Affected Areas
+- `frontend/src/pages/FieldProfile.tsx` (redesigned)
+- `frontend/src/hooks/useSpeech.ts` (localStorage persistence)
+- `frontend/src/pages/field/FieldWorkspaceShell.tsx` (bidirectional sync with useSpeech)
+
+

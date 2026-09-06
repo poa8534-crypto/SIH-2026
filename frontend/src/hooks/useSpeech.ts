@@ -133,12 +133,30 @@ function buildRecognition(Ctor: SpeechRecognitionCtor, lang: string): SpeechReco
  * this is one preference, it belongs to the browser session, and it does not
  * need to reach the server.
  */
-let sharedLang: string = LANGUAGES[0].code;
+function getStoredLang(): string {
+  if (typeof window === 'undefined') return LANGUAGES[0].code;
+  try {
+    const v = window.localStorage.getItem('navis.speech_lang');
+    if (v && LANGUAGES.some((l) => l.code === v)) return v;
+  } catch {
+    /* ignore storage access error */
+  }
+  return LANGUAGES[0].code;
+}
+
+let sharedLang: string = getStoredLang();
 const langSubscribers = new Set<(lang: string) => void>();
 
 function setSharedLang(next: string) {
   if (next === sharedLang) return;
   sharedLang = next;
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('navis.speech_lang', next);
+    }
+  } catch {
+    /* ignore storage access error */
+  }
   for (const notify of langSubscribers) notify(next);
 }
 

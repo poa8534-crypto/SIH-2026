@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useSession } from '../../hooks/useSession';
+import { useSpeech } from '../../hooks/useSpeech';
 import { api } from '../../lib/api';
 import { FieldNav } from '../../components/FieldNav';
 import { FIELD_ROLE, LANGUAGES, PROJECT, SUPERVISOR } from '../../config';
@@ -28,10 +29,10 @@ interface FieldWorkspaceShellProps {
 export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useSession();
+  const speech = useSpeech();
   const location = useLocation();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [selectedLang, setSelectedLang] = useState<string>('en-IN');
 
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule', 'header'],
@@ -203,9 +204,9 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
                 <button
                   key={l.code}
                   type="button"
-                  onClick={() => setSelectedLang(l.code)}
+                  onClick={() => speech.setLang(l.code)}
                   className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                    selectedLang === l.code
+                    speech.lang === l.code
                       ? 'bg-surface text-heading font-semibold shadow-xs'
                       : 'text-muted hover:text-heading'
                   }`}
