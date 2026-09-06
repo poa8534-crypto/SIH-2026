@@ -1727,6 +1727,10 @@ def get_review_queue(
                 margin=le.margin if le else 0.0,
                 rationale=json.loads(le.rationale) if le and le.rationale else [],
                 created_at=item.created_at,
+                quantity=le.quantity if le else None,
+                uom=le.uom if le else None,
+                reported_date=str(le.reported_date) if le and le.reported_date else None,
+                event_status=le.status if le else None,
             )
         )
 

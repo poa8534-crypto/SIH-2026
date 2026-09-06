@@ -59,6 +59,11 @@ export interface ReviewItem {
   rationale?: string[];
   margin?: number;
   match_method?: string;
+  quantity?: number | null;
+  uom?: string | null;
+  reported_date?: string | null;
+  event_status?: string | null;
+  location?: string | null;
 }
 
 /** ── Granularity resolution: quantity, productivity, forecast ──────────────

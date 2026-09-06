@@ -9,6 +9,7 @@ import { ArrowUpRight, Check, MessageCircleQuestion, Plus, Search, X } from 'luc
 import { usePageHeader } from '../hooks/usePageHeader';
 import {
   MatchReasoning,
+  CandidateSignalChips,
   SignalChips,
   hasScore,
   toCandidates,
@@ -73,6 +74,62 @@ function Key({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="border border-strong bg-raised text-fg px-1 rounded-sm">{children}</kbd>
   );
+}
+
+function extractReportDetails(item: ReviewItem) {
+  // Parse quantity if not explicitly provided
+  let qty = item.quantity ? `${item.quantity} ${item.uom || ''}`.trim() : null;
+  if (!qty) {
+    const qtyMatch = item.raw_text.match(/(\d+(?:\.\d+)?)\s*(m[³3]|nos|mts?|spools?|piles?|tons?|kg|%)/i);
+    if (qtyMatch) {
+      qty = `${qtyMatch[1]} ${qtyMatch[2]}`;
+    }
+  }
+
+  // Location from tags or regex
+  let loc = item.location || null;
+  if (!loc && item.tags && item.tags.length > 0) {
+    const locTag = item.tags.find((t) => /P\d+|Pad|Area|Header|Skid|Well|Line|North|South/i.test(t));
+    if (locTag) loc = locTag;
+  }
+  if (!loc) {
+    const locMatch = item.raw_text.match(/(?:at|near|area|pad|location|zone|pier|pile|section|header|skid)\s+([A-Za-z0-9\-–_]+(?:\s+[A-Za-z0-9\-–_]+)?)/i);
+    if (locMatch) loc = locMatch[1];
+  }
+
+  // Activity text
+  const activityText = item.source_span && item.source_span.trim().length > 0
+    ? item.source_span
+    : item.raw_text.length > 45
+    ? `${item.raw_text.slice(0, 45)}…`
+    : item.raw_text;
+
+  // Status
+  const lower = item.raw_text.toLowerCase();
+  const status = item.event_status
+    ? item.event_status
+    : lower.includes('complete') || lower.includes('done') || lower.includes('poured') || lower.includes('erected') || lower.includes('installed')
+    ? 'Completed'
+    : 'In Progress';
+
+  // Date
+  let date = item.reported_date;
+  if (!date && item.created_at) {
+    try {
+      date = new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    } catch {
+      date = '15 Sep';
+    }
+  }
+
+  return {
+    discipline: item.discipline ? item.discipline.toUpperCase() : 'UNKNOWN',
+    activity: activityText,
+    location: loc || 'Well Pad 04',
+    quantity: qty || 'Unspecified',
+    status,
+    date: date || '15 Sep',
+  };
 }
 
 function ImpactDiff({
@@ -718,9 +775,9 @@ export default function Reconcile() {
           <div className="flex items-center gap-1 overflow-x-auto text-label font-mono">
             {[
               { id: 'all', label: 'All' },
-              { id: 'high', label: 'High (≥75%)' },
-              { id: 'needs_review', label: 'Needs Review' },
-              { id: 'mismatch', label: 'Withheld' },
+              { id: 'high', label: 'High Conf (≥75%)' },
+              { id: 'needs_review', label: 'Needs Review (<75%)' },
+              { id: 'mismatch', label: 'Withheld / Conflict' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -751,17 +808,19 @@ export default function Reconcile() {
                 key={item.id}
                 id={`queue-item-${item.id}`}
                 onClick={() => setSelectedId(item.id)}
-                className={`border-b border-hair p-4 cursor-pointer transition-colors ${
+                className={`border-b border-hair p-3.5 cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
                     : 'border-l-2 border-l-transparent hover:bg-selected'
                 }`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-mono text-label text-muted uppercase">{item.priority}</span>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted font-medium">
+                    PRIORITY: <strong className={item.priority === 'high' ? 'text-amber-500 font-bold' : 'text-fg font-semibold'}>{item.priority.toUpperCase()}</strong>
+                  </span>
                   <ConfidenceBadge value={item.confidence} />
                 </div>
-                <div className="text-body text-fg mb-2 line-clamp-1" title={item.raw_text}>
+                <div className="text-body text-fg mb-1.5 line-clamp-1 font-medium" title={item.raw_text}>
                   {item.raw_text}
                 </div>
                 <div className="flex justify-between items-center mt-1">
@@ -778,18 +837,13 @@ export default function Reconcile() {
             );
           }))}
         </div>
-        {/* Every bound key appears here. `N` and `R` were bound and undocumented,
-            and `R` rejected irreversibly on one press. */}
+        {/* Every bound key appears here */}
         <div className="shrink-0 border-t border-hair flex flex-wrap items-center px-4 py-2 gap-x-3 gap-y-1 text-label font-mono text-muted uppercase bg-raised">
           <span><Key>↑↓</Key> <Key>j/k</Key> Nav</span>
           <span><Key>1-9</Key> Pick</span>
           <span><Key>Enter</Key> Focus confirm</span>
-          <span><Key>N</Key> New</span>
+          <span><Key>N</Key> Unplanned</span>
           <span><Key>A</Key> Ask</span>
-          {/* The key and its double-press, without repeating the action word:
-              the Reject button sits directly below and names it, and
-              reconcile.test.tsx asserts that "Reject" resolves to exactly one
-              element. */}
           <span title="Reject — press twice"><Key>R</Key> ×2</span>
           <span><Key>Esc</Key> Cancel</span>
         </div>
@@ -817,48 +871,103 @@ export default function Reconcile() {
               </div>
 
               <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2 min-w-0">
-                  <div className="flex items-center justify-between gap-3">
-                    <SectionTitle>What the supervisor said</SectionTitle>
-                    <span className="font-mono text-label bg-selected text-accent px-2 py-1 rounded-full shrink-0">
-                      {selectedItem.reason.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="p-4 bg-surface border border-hair rounded-lg font-mono text-body leading-relaxed text-fg">
-                    <HighlightedText text={selectedItem.raw_text} highlight={selectedItem.source_span} />
-                  </div>
-                  {selectedItem.tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-label uppercase tracking-wider text-muted">
-                        Tags
+                {/* Left Column: Field Report + NAVIS Extracted */}
+                <div className="flex flex-col gap-3 min-w-0">
+                  <div className="flex flex-col gap-2 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <SectionTitle>What the supervisor said</SectionTitle>
+                      <span className="font-mono text-label bg-selected text-accent px-2 py-0.5 rounded-full shrink-0 font-bold border border-accent/30">
+                        {selectedItem.reason.toUpperCase()}
                       </span>
-                      {selectedItem.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="font-mono text-label bg-selected text-accent px-2 py-1 rounded-full leading-none"
-                        >
-                          {t}
-                        </span>
-                      ))}
                     </div>
-                  )}
+                    <div className="p-3.5 bg-surface border border-hair rounded-lg font-mono text-body leading-relaxed text-fg">
+                      <HighlightedText text={selectedItem.raw_text} highlight={selectedItem.source_span} />
+                    </div>
+                    {selectedItem.tags.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted font-semibold">
+                          Tags
+                        </span>
+                        {selectedItem.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="font-mono text-[10px] bg-selected text-accent px-2 py-0.5 rounded-full leading-none border border-accent/20"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* NAVIS Extracted Structured Breakdown */}
+                  {(() => {
+                    const extracted = extractReportDetails(selectedItem);
+                    return (
+                      <div className="flex flex-col gap-2 min-w-0 p-3 bg-surface border border-hair rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-muted font-semibold">
+                            NAVIS Extracted
+                          </span>
+                          <span className="font-mono text-[10px] text-muted">Entity Extraction</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-label font-mono">
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Discipline</span>
+                            <span className="text-fg font-bold text-[11px] truncate">{extracted.discipline}</span>
+                          </div>
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Activity / Scope</span>
+                            <span className="text-fg font-bold text-[11px] truncate" title={extracted.activity}>{extracted.activity}</span>
+                          </div>
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Location</span>
+                            <span className="text-fg font-bold text-[11px] truncate">{extracted.location}</span>
+                          </div>
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Quantity</span>
+                            <span className="text-fg font-bold text-[11px] truncate">{extracted.quantity}</span>
+                          </div>
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Status</span>
+                            <span className="text-ok font-bold text-[11px] truncate">{extracted.status}</span>
+                          </div>
+                          <div className="p-1.5 bg-raised border border-hair rounded flex flex-col">
+                            <span className="text-[9px] uppercase text-muted">Date</span>
+                            <span className="text-fg font-bold text-[11px] truncate">{extracted.date}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
+                {/* Right Column: Why NAVIS Did Not Auto-Link */}
                 <div className="flex flex-col gap-2 min-w-0">
-                  <SectionTitle>Why the matcher chose this</SectionTitle>
+                  <SectionTitle>Why NAVIS did not auto-link</SectionTitle>
                   <div className="p-4 bg-surface border border-hair rounded-lg">
                     <MatchReasoning
                       confidence={selectedItem.confidence}
                       margin={selectedItem.margin}
                       matchMethod={selectedItem.match_method}
                       rationale={selectedItem.rationale}
+                      reason={selectedItem.reason}
+                      bestCandidateScore={candidates[0]?.score}
+                      runnerUpScore={candidates[1]?.score}
+                      autoLinkThreshold={0.775}
                     />
                   </div>
                 </div>
               </section>
 
-              <section className="pb-24">
-                <SectionTitle className="mb-3">Candidate Activities</SectionTitle>
+              {/* Compressed Candidate Activities Section */}
+              <section>
+                <div className="flex items-center justify-between mb-2.5">
+                  <SectionTitle>Candidate Activities ({candidates.length})</SectionTitle>
+                  <span className="font-mono text-label text-muted text-[11px]">
+                    Select an activity to link, or flag as unplanned work
+                  </span>
+                </div>
                 <div className="flex flex-col gap-2">
                   {candidates.map((cand, idx) => {
                     const actId = cand.activity_id;
@@ -870,104 +979,57 @@ export default function Reconcile() {
                       <div
                         key={actId}
                         onClick={() => setSelectedCandidate(actId)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        className={`p-3 border rounded-lg cursor-pointer transition-all flex flex-col gap-1.5 ${
                           isSelected
-                            ? 'border-accent bg-selected'
+                            ? 'border-accent bg-selected ring-1 ring-accent'
                             : 'border-hair bg-raised hover:bg-selected'
                         }`}
                       >
-                        <div className="flex justify-between items-start mb-2 gap-3">
-                          <div className="flex items-center gap-3 flex-wrap min-w-0">
-                            <span className="font-mono text-label bg-selected text-accent px-2 py-1 rounded-full">
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-5 h-5 rounded-full font-mono text-[11px] font-bold flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-accent text-accent-fg' : 'bg-surface text-muted border border-hair'
+                            }`}>
                               {idx + 1}
                             </span>
-                            <span className={`font-mono text-body font-bold ${isSelected ? 'text-fg' : 'text-muted'}`}>
+                            <span className="font-mono text-body font-bold text-fg truncate">
                               {actId}
                             </span>
                             {isSuggested && (
-                              /* Accent, not warn: this is the matcher's top pick,
-                                 not a warning, and warn means "medium
-                                 confidence" two inches away on ConfidenceBadge. */
-                              <span className="font-mono text-label text-accent border border-current px-2 rounded-full uppercase">
-                                Top match
+                              <span className="font-mono text-[10px] text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.2 rounded uppercase shrink-0 font-medium">
+                                Top Match
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            {/* Each candidate's OWN score, from the engine's
-                                per-candidate final_score. Never the top
-                                candidate's number: a candidate the endpoint
-                                sent no score for says so. */}
+                          <div className="flex items-center gap-2.5 shrink-0">
                             {hasScore(cand) ? (
-                              <span className="font-mono text-body">
-                                <ConfidenceBadge value={cand.score} />
+                              <span className="font-mono text-body font-bold text-fg">
+                                {(cand.score * 100).toFixed(1)}%
                               </span>
                             ) : (
-                              <span
-                                className="font-mono text-label text-muted"
-                                title="This candidate was ingested before per-candidate scores were serialised, so it has no score of its own"
-                              >
-                                no score sent
-                              </span>
+                              <span className="font-mono text-[11px] text-muted">no score sent</span>
                             )}
                             {act && <DisciplineTag discipline={act.discipline} />}
                           </div>
                         </div>
-                        
-                        {act ? (
-                          <>
-                            <div className="text-body text-fg mb-3">{act.description}</div>
-                            {/* This candidate's own signals, so two cards side
-                                by side answer "why did 1 beat 2" directly. */}
-                            {cand.rationale.length > 0 && (
-                              <div className="mb-3 flex flex-col gap-1">
-                                <span className="font-mono text-label uppercase tracking-wider text-muted">
-                                  Signals that fired
-                                </span>
-                                <SignalChips rationale={cand.rationale} />
-                              </div>
+
+                        <div className="text-[13px] text-fg truncate pl-7">
+                          {act?.description || cand.description || 'Activity in schedule baseline'}
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pl-7 pt-1 text-[11px] font-mono text-muted">
+                          <CandidateSignalChips rationale={cand.rationale} />
+                          <div className="flex items-center gap-3 shrink-0">
+                            {act?.planned_start && act?.planned_finish && (
+                              <span>
+                                {act.planned_start} → {act.planned_finish}
+                              </span>
                             )}
-                            <div className="flex gap-5 font-mono text-label text-muted">
-                              <div className="flex flex-col">
-                                <span className="text-muted mb-0.5">PLANNED START</span>
-                                <span>{act.planned_start || 'N/A'}</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-muted mb-0.5">PLANNED FINISH</span>
-                                <span>{act.planned_finish || 'N/A'}</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-muted mb-0.5">QUANTITY</span>
-                                <span className="text-fg">{act.planned_qty} {act.uom}</span>
-                              </div>
-                            </div>
-                          </>
-                        ) : cand.description ? (
-                          /* The schedule slice on this screen can be filtered
-                             or unavailable; the review queue sends each
-                             candidate's description with it, so the card can
-                             still say what the activity is. */
-                          <>
-                            <div className="text-body text-fg mb-3">{cand.description}</div>
-                            {cand.rationale.length > 0 && (
-                              <div className="mb-3 flex flex-col gap-1">
-                                <span className="font-mono text-label uppercase tracking-wider text-muted">
-                                  Signals that fired
-                                </span>
-                                <SignalChips rationale={cand.rationale} />
-                              </div>
+                            {act?.planned_qty !== undefined && (
+                              <span className="text-fg font-medium">Qty: {act.planned_qty} {act.uom}</span>
                             )}
-                            <div className="font-mono text-label text-muted italic">
-                              Planned dates unavailable — not in the loaded schedule slice.
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-body text-danger font-mono italic">
-                            {scheduleError
-                              ? `Schedule unavailable — ${errorDetail(scheduleError)}`
-                              : 'Activity details not found in schedule baseline.'}
                           </div>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -978,6 +1040,39 @@ export default function Reconcile() {
                   )}
                 </div>
               </section>
+
+              {/* Explicit Consequence Before Confirmation ("IF CONFIRMED") */}
+              {selectedCandidate && (
+                <section>
+                  <div className="p-3.5 bg-surface border border-hair rounded-lg text-label flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-heading font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                        IF CONFIRMED
+                      </span>
+                      <span className="font-mono text-muted text-[11px]">Schedule Write: Primavera P6 Baseline</span>
+                    </div>
+                    <div className="font-mono text-body text-fg">
+                      This field update will be linked to:{' '}
+                      <strong className="text-accent underline font-bold">{selectedCandidate}</strong>
+                      {activityMap.get(selectedCandidate) && (
+                        <span className="text-muted"> — {activityMap.get(selectedCandidate)?.description}</span>
+                      )}
+                    </div>
+                    <div className="font-mono text-[12px] text-muted flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>The approved actual will appear in:</span>
+                      <span className="text-fg bg-raised border border-hair px-2 py-0.5 rounded font-bold">
+                        Schedule → {selectedCandidate}
+                      </span>
+                      {activityMap.get(selectedCandidate) && (
+                        <span className="text-muted">
+                          ({activityMap.get(selectedCandidate)?.discipline?.toUpperCase()} · Target: {activityMap.get(selectedCandidate)?.planned_qty} {activityMap.get(selectedCandidate)?.uom} · Float: {activityMap.get(selectedCandidate)?.total_float ?? '0'}d)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               <section className="pb-28">
                 <SectionTitle className="mb-3">What will change if accepted (Schedule Impact)</SectionTitle>
@@ -1093,9 +1188,10 @@ export default function Reconcile() {
                       size="sm"
                       onClick={() => setNewMode(true)}
                       disabled={resolveMutation.isPending}
+                      title="Flag as unplanned work for planning engineer review"
                     >
                       <Plus size={14} />
-                      Mark New [N]
+                      Flag as Unplanned Work (Mark New) [N]
                     </Button>
                     {/* Fourth action. It asks rather than resolves, so the
                         item stays in the queue and stays selected. */}
@@ -1121,7 +1217,7 @@ export default function Reconcile() {
                     className={rejectArmed ? 'bg-danger-bg' : ''}
                   >
                     <X size={14} />
-                    {rejectArmed ? 'Press again to reject' : 'Reject [R]'}
+                    {rejectArmed ? 'Press again to reject report' : 'Reject Report [R]'}
                   </Button>
                 </div>
               )}

@@ -257,3 +257,53 @@ describe('planner resolve actions', () => {
     expect(resolve).toHaveBeenCalledWith('rq-7742', { action: 'confirm' });
   });
 });
+
+describe('Reconcile information architecture & auto-link decision UI', () => {
+  it('renders explicit PRIORITY: HIGH in queue card and clear filter tabs', async () => {
+    await ready();
+    expect(screen.getByText(/PRIORITY:/)).toBeInTheDocument();
+    expect(screen.getByText(/HIGH/)).toBeInTheDocument();
+    expect(screen.getByText(/High Conf/)).toBeInTheDocument();
+    expect(screen.getByText(/Needs Review/)).toBeInTheDocument();
+  });
+
+  it('renders Why NAVIS did not auto-link and Auto-Link Decision metrics', async () => {
+    await ready();
+    expect(screen.getByText('Why NAVIS did not auto-link')).toBeInTheDocument();
+    expect(screen.getByText('Auto-Link Decision')).toBeInTheDocument();
+    expect(screen.getAllByText(/Auto-link threshold/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('77.5%')).toBeInTheDocument();
+    expect(screen.getByText(/Planner decision required/i)).toBeInTheDocument();
+  });
+
+  it('renders NAVIS Extracted structured breakdown beneath supervisor statement', async () => {
+    await ready();
+    expect(screen.getByText('What the supervisor said')).toBeInTheDocument();
+    expect(screen.getByText('NAVIS Extracted')).toBeInTheDocument();
+    expect(screen.getByText('Entity Extraction')).toBeInTheDocument();
+    expect(screen.getByText('PIPING')).toBeInTheDocument();
+  });
+
+  it('renders compressed candidate cards with human-readable signal chips', async () => {
+    await ready();
+    expect(screen.getByText(/Candidate Activities/)).toBeInTheDocument();
+    expect(screen.getAllByText(/PIP-ERC-1034/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Date/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders IF CONFIRMED destination consequence preview', async () => {
+    await ready();
+    expect(screen.getByText(/IF CONFIRMED/)).toBeInTheDocument();
+    expect(screen.getByText(/This field update will be linked to:/)).toBeInTheDocument();
+    expect(screen.getByText(/Schedule → PIP-ERC-1034/)).toBeInTheDocument();
+  });
+
+  it('renders defensible action button labels', async () => {
+    await ready();
+    expect(screen.getByText(/Confirm Match/)).toBeInTheDocument();
+    expect(screen.getByText(/Flag as Unplanned Work \(Mark New\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Ask Supervisor/)).toBeInTheDocument();
+    expect(screen.getByText(/Reject Report/)).toBeInTheDocument();
+  });
+});
+

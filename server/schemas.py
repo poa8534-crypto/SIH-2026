@@ -127,6 +127,12 @@ class ReviewQueueItemResponse(BaseModel):
     match_method: str = "prepass"
     margin: float = 0.0
     rationale: list[str] = []
+    # Extracted event metadata projected for reviewer transparency
+    quantity: Optional[float] = None
+    uom: Optional[str] = None
+    reported_date: Optional[str] = None
+    event_status: Optional[str] = None
+    location: Optional[str] = None
 
 
 class ResolveRequest(BaseModel):
