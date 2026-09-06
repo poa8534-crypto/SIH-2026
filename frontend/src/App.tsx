@@ -333,21 +333,13 @@ function MobileShell({ children }: { children: React.ReactNode }) {
 }
 
 const PLANNER_NAV: NavItem[] = [
-  { path: '/home', label: 'Home', icon: LayoutDashboard },
-  { path: '/reconcile', label: 'Reconcile', icon: ListTodo },
+  { path: '/home', label: 'Overview', icon: LayoutDashboard },
+  { path: '/reconcile', label: 'Review & Reconcile', icon: ListTodo },
   { path: '/schedule', label: 'Schedule', icon: CalendarDays },
-  { path: '/ingest', label: 'Ingest', icon: Upload },
-  /* `lib/role.ts` has always listed /raid among the planner's routes, but
-     there was no nav entry and no route, so the register the executive
-     Exposure screen reads could never be filled by anyone. The detector
-     proposed; nobody could accept. */
-  { path: '/raid', label: 'Exposure', icon: ShieldAlert },
-  /* Delay attribution. The whole chain behind it — taxonomy, classification,
-     the notice clock, concurrency and float — proposes; this is where a
-     planner rules, and without the screen the proposals had nowhere to go.
-     Same shape of gap /raid had before it got a nav entry. */
-  { path: '/delay', label: 'Delay', icon: Scale },
-  { path: '/memory', label: 'Memory', icon: Database },
+  { path: '/ingest', label: 'Field Data', icon: Upload },
+  { path: '/raid', label: 'Risk & Exposure', icon: ShieldAlert },
+  { path: '/delay', label: 'Delay Analysis', icon: Scale },
+  { path: '/memory', label: 'Project Knowledge', icon: Database },
 ];
 
 /* Senior Management 8 analytical governance workspaces:
