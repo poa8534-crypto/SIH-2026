@@ -587,3 +587,30 @@ class TestThePlannedTotalQuestionCanBeAnswered:
         answered = _turn(client, sid, "6 out of 18")
         assert answered["slots"]["quantity"] == 6
         assert answered["slots"]["planned_quantity"] == 18
+
+
+class TestDateQuestionAdaptsToStatus:
+    """When reporting work in progress, NAVIS asks when the progress happened, not when it was completed."""
+
+    def test_in_progress_asks_when_progress_happened(self, client):
+        sid = str(uuid.uuid4())
+        turn1 = _turn(client, sid, "piping at Well Pad 04")
+        turn2 = _turn(client, sid, "in progress")
+        assert turn2["slots"]["status"] == "in_progress"
+        assert turn2["agent_message"] == "Which date did this progress happen on?"
+
+    def test_completed_asks_when_completed(self, client):
+        sid = str(uuid.uuid4())
+        turn1 = _turn(client, sid, "piping at Well Pad 04")
+        turn2 = _turn(client, sid, "completed")
+        assert turn2["slots"]["status"] == "completed"
+        assert turn2["agent_message"] == "Which date was it completed?"
+
+    def test_piping_and_still_left_infers_discipline_and_in_progress(self, client):
+        sid = str(uuid.uuid4())
+        turn = _turn(client, sid, "i did piping but there is still a llot left")
+        assert turn["slots"]["discipline"] == "piping"
+        assert turn["slots"]["status"] == "in_progress"
+        assert turn["agent_message"] == "Which date did this progress happen on?"
+
+

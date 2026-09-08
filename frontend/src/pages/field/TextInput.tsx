@@ -2,6 +2,8 @@ import React from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '../../components/ui';
 
+import { useTranslation } from '../../lib/i18n';
+
 /** The typed route into the agent, available in every stage that accepts input. */
 export function TextInput({
   value,
@@ -16,6 +18,8 @@ export function TextInput({
   disabled: boolean;
   grow: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="relative flex items-center">
       <input
@@ -31,7 +35,7 @@ export function TextInput({
           // again because nothing happened yet is the obvious thing to do.
           if (e.key === 'Enter' && !disabled) onSend();
         }}
-        placeholder={grow ? 'Type your update' : 'Or type your update'}
+        placeholder={grow ? t('type_update_prompt', 'Type your update') : t('type_update_placeholder', 'Or type your update')}
         className="rounded-sm w-full bg-raised border border-hair text-fg text-lead placeholder:text-muted px-4 pr-12 py-3 transition-colors focus:outline-none focus:border-accent"
       />
       <Button

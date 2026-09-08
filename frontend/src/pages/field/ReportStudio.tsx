@@ -30,6 +30,7 @@ import {
 } from '../../config';
 import type { AgentTurnResponse, Discipline } from '../../types';
 import { useSpeech } from '../../hooks/useSpeech';
+import { useTranslation, translateSuggestion, translateValue } from '../../lib/i18n';
 
 /**
  * Report Progress Studio — deliberate, detailed site reporting workspace.
@@ -101,6 +102,17 @@ export function ReportSubmissionFlow({
 }: ReportSubmissionFlowProps = {}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { lang, t, tDynamic } = useTranslation();
+
+  const renderWithSrOnly = (translated: React.ReactNode, englishText: string) => {
+    if (lang === 'en-IN') return <>{translated}</>;
+    return (
+      <>
+        <span aria-hidden="true">{translated}</span>
+        <span className="sr-only">{englishText}</span>
+      </>
+    );
+  };
 
   // ── Form & Context State ───────────────────────────────────────────────────
   const [report, setReport] = useState(initialReport ?? '');
@@ -161,15 +173,39 @@ export function ReportSubmissionFlow({
   const speech = useSpeech();
   const isRecording = speech.listening;
 
+  const handleReportChange = useCallback((val: string) => {
+    setReport(val);
+    if (!quantityInput.trim()) {
+      const qm = val.match(/\b(\d+(?:\.\d+)?)\s*(m3|m2|sqm|cum|lm|mt|km|mm|nos|no|tonnes|tonne|ton|tons|m|spools?|flanges?|panels?|joints?|piles?|valves?)\b/i);
+      if (qm) {
+        setQuantityInput(qm[1]);
+        if (!unitInput.trim()) setUnitInput(qm[2]);
+      }
+    }
+    if (!tagInput.trim()) {
+      const tm = val.match(/\b([A-Z]{1,3}-\d{2,4}|[A-Z]{2,3}-[A-Z]{2,4}-\d{3,4}|\d+"-P-\d+-[A-Z0-9]+)\b/i);
+      if (tm) setTagInput(tm[0]);
+    }
+    if (/\b(?:still\s+)?(?:a\s+)?l+ot\s+left\b|\bstill\s+(?:a\s+)?(?:some|much)?\s*left\b|\bwork\s+left\b|\bremaining\b|\bpending\b/i.test(val)) {
+      setStatusInput('in_progress');
+    } else if (/\b(?:completed|done|finished|finish|passed)\b/i.test(val) && !/\b(?:left|not\s+finished|pending)\b/i.test(val)) {
+      setStatusInput('complete');
+    } else if (/\b(?:delayed|delay|behind\s+schedule)\b/i.test(val)) {
+      setStatusInput('delayed');
+    }
+  }, [quantityInput, unitInput, tagInput]);
+
   // Speech transcript appending
   useEffect(() => {
     if (speech.transcript) {
       setReport((prev) => {
         const trimmed = prev.trim();
-        return trimmed ? `${trimmed} ${speech.transcript}` : speech.transcript;
+        const next = trimmed ? `${trimmed} ${speech.transcript}` : speech.transcript;
+        handleReportChange(next);
+        return next;
       });
     }
-  }, [speech.transcript]);
+  }, [speech.transcript, handleReportChange]);
 
   const toggleRecording = () => {
     if (speech.listening) {
@@ -355,6 +391,31 @@ export function ReportSubmissionFlow({
       .filter(Boolean);
   }, [turn?.choices]);
 
+  const handleCheckReport = useCallback(() => {
+    let msg = report.trim();
+    const extras: string[] = [];
+    if (quantityInput.trim()) {
+      const u = unitInput.trim() || 'nos';
+      if (!new RegExp(`\\b${quantityInput.trim()}\\s*(?:${u}|spools?|nos?|m|m3)?\\b`, 'i').test(msg)) {
+        extras.push(`${quantityInput.trim()} ${u}`);
+      }
+    }
+    if (tagInput.trim() && !msg.toLowerCase().includes(tagInput.trim().toLowerCase())) {
+      extras.push(tagInput.trim());
+    }
+    if (statusInput === 'complete' && !/\b(completed?|done|finished)\b/i.test(msg)) {
+      extras.push('completed');
+    } else if (statusInput === 'delayed' && !/\b(delayed?|delay)\b/i.test(msg)) {
+      extras.push(delayInput.trim() ? `delayed: ${delayInput.trim()}` : 'delayed');
+    } else if (statusInput === 'in_progress' && !/\b(in[ -]progress|ongoing|started|left|remaining|baki)\b/i.test(msg)) {
+      extras.push('in progress');
+    }
+    if (extras.length > 0) {
+      msg = `${msg} (${extras.join(', ')})`;
+    }
+    send(msg);
+  }, [report, quantityInput, unitInput, tagInput, statusInput, delayInput, send]);
+
   const busy = phase === 'checking' || phase === 'submitting';
   const canCheck = report.trim().length > 0 && !busy;
   const canSubmit =
@@ -396,7 +457,7 @@ export function ReportSubmissionFlow({
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-heading transition-colors cursor-pointer"
             >
               <ArrowLeft size={14} />
-              <span>Return to Home</span>
+              <span>{renderWithSrOnly(t('return_to_home'), 'Return to Home')}</span>
             </button>
           ) : (
             <Link
@@ -404,7 +465,7 @@ export function ReportSubmissionFlow({
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-heading transition-colors w-fit"
             >
               <ArrowLeft size={14} />
-              <span>Back to Field OS</span>
+              <span>{renderWithSrOnly(t('back_to_field_os'), 'Back to Field OS')}</span>
             </Link>
           )}
 
@@ -428,21 +489,21 @@ export function ReportSubmissionFlow({
               <span className="h-6 w-6 rounded-full bg-ok/15 text-ok flex items-center justify-center text-xs font-bold">
                 ✓
               </span>
-              <span>Capture</span>
+              <span>{renderWithSrOnly(t('capture'), 'Capture')}</span>
             </div>
             <div className="w-12 sm:w-20 h-0.5 bg-ok" />
             <div className="flex items-center gap-2 text-ok font-semibold">
               <span className="h-6 w-6 rounded-full bg-ok/15 text-ok flex items-center justify-center text-xs font-bold">
                 ✓
               </span>
-              <span>Review</span>
+              <span>{renderWithSrOnly(t('review'), 'Review')}</span>
             </div>
             <div className="w-12 sm:w-20 h-0.5 bg-accent" />
             <div className="flex items-center gap-2 text-accent font-bold">
               <span className="h-6 w-6 rounded-full bg-accent text-accent-fg flex items-center justify-center text-xs font-bold">
                 3
               </span>
-              <span>Submit</span>
+              <span>{renderWithSrOnly(t('submit'), 'Submit')}</span>
             </div>
           </div>
         </div>
@@ -455,10 +516,10 @@ export function ReportSubmissionFlow({
 
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">
-              ✓ Update Recorded
+              {renderWithSrOnly(t('update_recorded'), '✓ Update Recorded')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight">
-              Sent for planner review
+              {renderWithSrOnly(t('sent_for_planner_review'), 'Sent for planner review')}
             </h2>
             <p className="mt-3 text-sm text-muted leading-relaxed max-w-lg mx-auto">
               Recorded as <strong className="font-mono text-heading">{submittedRef}</strong>
@@ -476,7 +537,10 @@ export function ReportSubmissionFlow({
               .
             </p>
             <p className="mt-2.5 text-xs text-muted leading-relaxed">
-              The project schedule has not been changed yet. A Planning Engineer must verify this report before actuals are committed.
+              {renderWithSrOnly(
+                t('schedule_not_changed_yet'),
+                'The project schedule has not been changed yet. A Planning Engineer must verify this report before actuals are committed.'
+              )}
             </p>
           </div>
 
@@ -488,7 +552,7 @@ export function ReportSubmissionFlow({
               }}
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-bold shadow-xs transition-all cursor-pointer"
             >
-              View in My Updates
+              {renderWithSrOnly(t('view_in_my_updates'), 'View in My Updates')}
             </button>
             <button
               onClick={() => {
@@ -500,7 +564,9 @@ export function ReportSubmissionFlow({
               }}
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer"
             >
-              {isModalOrOverlay ? 'Return to Home' : 'Submit Another Report'}
+              {isModalOrOverlay
+                ? renderWithSrOnly(t('return_to_home'), 'Return to Home')
+                : renderWithSrOnly(t('submit_another_report'), 'Submit Another Report')}
             </button>
           </div>
         </div>
@@ -533,7 +599,7 @@ export function ReportSubmissionFlow({
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-heading transition-colors mb-2 cursor-pointer"
               >
                 <ArrowLeft size={14} />
-                <span>Return to Home</span>
+                <span>{renderWithSrOnly(t('return_to_home'), 'Return to Home')}</span>
               </button>
             ) : (
               <Link
@@ -541,11 +607,11 @@ export function ReportSubmissionFlow({
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-heading transition-colors mb-2"
               >
                 <ArrowLeft size={14} />
-                <span>Report Progress</span>
+                <span>{renderWithSrOnly(t('report_progress'), 'Report Progress')}</span>
               </Link>
             )}
             <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight">
-              Report Progress
+              {renderWithSrOnly(t('report_progress'), 'Report Progress')}
             </h1>
             <p className="text-xs sm:text-sm text-muted mt-1">
               {workFront} · {disciplineLabel} · {SUPERVISOR.shift}
@@ -579,7 +645,7 @@ export function ReportSubmissionFlow({
                 {step > 1 ? '✓' : '1'}
               </span>
               <span className={`font-semibold ${step === 1 ? 'text-heading font-bold' : 'text-muted'}`}>
-                Capture
+                {renderWithSrOnly(t('capture'), 'Capture')}
               </span>
             </div>
 
@@ -598,7 +664,7 @@ export function ReportSubmissionFlow({
                 {step > 2 ? '✓' : '2'}
               </span>
               <span className={`font-semibold ${step === 2 ? 'text-heading font-bold' : 'text-muted'}`}>
-                Review
+                {renderWithSrOnly(t('review'), 'Review')}
               </span>
             </div>
 
@@ -615,7 +681,7 @@ export function ReportSubmissionFlow({
                 3
               </span>
               <span className={`font-semibold ${step === 3 ? 'text-heading font-bold' : 'text-muted'}`}>
-                Submit
+                {renderWithSrOnly(t('submit'), 'Submit')}
               </span>
             </div>
           </div>
@@ -645,10 +711,10 @@ export function ReportSubmissionFlow({
             <div className="flex flex-col gap-3">
               <div>
                 <label htmlFor="report-textarea" className="text-lg font-bold text-heading block">
-                  What happened?
+                  {renderWithSrOnly(t('what_happened'), 'What happened?')}
                 </label>
                 <p className="text-xs text-muted mt-0.5">
-                  Describe work completed, line or spool number, quantity, or site conditions.
+                  {renderWithSrOnly(t('what_happened_sub'), 'Describe work completed, line or spool number, quantity, or site conditions.')}
                 </p>
               </div>
 
@@ -656,9 +722,9 @@ export function ReportSubmissionFlow({
                 id="report-textarea"
                 ref={textareaRef}
                 value={report}
-                onChange={(e) => setReport(e.target.value)}
+                onChange={(e) => handleReportChange(e.target.value)}
                 rows={5}
-                placeholder="Describe site progress (e.g. '40 metres of 8-inch piping installed near P-101 on Rack P1, hydrotest pre-checks passed')..."
+                placeholder={t('report_placeholder')}
                 aria-label="What happened on site"
                 className="w-full rounded-xl border border-hair bg-surface p-4 text-sm text-heading placeholder:text-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 resize-y leading-relaxed transition-all shadow-inner"
               />
@@ -703,7 +769,7 @@ export function ReportSubmissionFlow({
                     }`}
                   >
                     <Mic size={14} className={isRecording ? 'animate-pulse text-rose-600' : 'text-muted'} />
-                    <span>{isRecording ? 'Stop Recording' : 'Voice'}</span>
+                    <span>{isRecording ? renderWithSrOnly(t('stop_recording'), 'Stop Recording') : renderWithSrOnly(t('voice'), 'Voice')}</span>
                   </button>
 
                   <button
@@ -712,7 +778,7 @@ export function ReportSubmissionFlow({
                     className="px-3.5 py-2 rounded-xl border border-hair bg-surface hover:bg-selected text-heading text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Camera size={14} className="text-muted" />
-                    <span>Photos</span>
+                    <span>{renderWithSrOnly(t('photos'), 'Photos')}</span>
                   </button>
                   <input
                     ref={photoInputRef}
@@ -729,7 +795,7 @@ export function ReportSubmissionFlow({
                     className="px-3.5 py-2 rounded-xl border border-hair bg-surface hover:bg-selected text-heading text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Paperclip size={14} className="text-muted" />
-                    <span>Documents</span>
+                    <span>{renderWithSrOnly(t('documents'), 'Documents')}</span>
                   </button>
                   <input
                     ref={fileInputRef}
@@ -752,10 +818,10 @@ export function ReportSubmissionFlow({
             <div className="border-t border-hair/70 pt-6 flex flex-col gap-4">
               <div>
                 <h3 className="text-base font-bold text-heading">
-                  Report details
+                  {renderWithSrOnly(t('report_details'), 'Report details')}
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  Structured parameters (optional) to strengthen automated schedule linking.
+                  {renderWithSrOnly(t('report_details_sub'), 'Structured parameters (optional) to strengthen automated schedule linking.')}
                 </p>
               </div>
 
@@ -763,7 +829,7 @@ export function ReportSubmissionFlow({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="input-qty" className="text-xs font-medium text-muted">
-                    Quantity
+                    {renderWithSrOnly(t('quantity'), 'Quantity')}
                   </label>
                   <input
                     id="input-qty"
@@ -778,14 +844,14 @@ export function ReportSubmissionFlow({
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="input-unit" className="text-xs font-medium text-muted">
-                    Unit
+                    {renderWithSrOnly(t('unit'), 'Unit')}
                   </label>
                   <input
                     id="input-unit"
                     type="text"
                     value={unitInput}
                     onChange={(e) => setUnitInput(e.target.value)}
-                    placeholder="m, spools, nos, m³"
+                    placeholder={t('unit_placeholder')}
                     aria-label="Unit"
                     className="w-full h-10 rounded-xl border border-hair bg-surface px-3 py-2 text-xs font-semibold text-heading focus:outline-none focus:border-accent"
                   />
@@ -793,7 +859,7 @@ export function ReportSubmissionFlow({
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="input-status" className="text-xs font-medium text-muted">
-                    Status
+                    {renderWithSrOnly(t('status'), 'Status')}
                   </label>
                   <select
                     id="input-status"
@@ -802,10 +868,10 @@ export function ReportSubmissionFlow({
                     aria-label="Status"
                     className="w-full h-10 rounded-xl border border-hair bg-surface px-3 py-2 text-xs font-semibold text-heading focus:outline-none focus:border-accent cursor-pointer"
                   >
-                    <option value="in_progress">In Progress</option>
-                    <option value="complete">Completed</option>
-                    <option value="delayed">Delayed</option>
-                    <option value="under_inspection">Under Inspection</option>
+                    <option value="in_progress">{t('status_in_progress')}</option>
+                    <option value="complete">{t('status_completed')}</option>
+                    <option value="delayed">{t('status_delayed')}</option>
+                    <option value="under_inspection">{t('status_under_inspection')}</option>
                   </select>
                 </div>
               </div>
@@ -813,14 +879,14 @@ export function ReportSubmissionFlow({
               {/* Equipment / Tag Field */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="input-tag" className="text-xs font-medium text-muted">
-                  Equipment / Tag
+                  {renderWithSrOnly(t('equipment_tag_label'), 'Equipment / Tag')}
                 </label>
                 <input
                   id="input-tag"
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="P-101, SP-04..."
+                  placeholder={t('equipment_tag_placeholder')}
                   aria-label="Equipment or Tag"
                   className="w-full h-10 rounded-xl border border-hair bg-surface px-3.5 py-2 text-xs font-mono font-semibold text-heading focus:outline-none focus:border-accent"
                 />
@@ -829,14 +895,14 @@ export function ReportSubmissionFlow({
               {/* Delay / Constraint Field */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="input-delay" className="text-xs font-medium text-muted">
-                  Delay / Constraint
+                  {renderWithSrOnly(t('delay_constraint'), 'Delay / Constraint')}
                 </label>
                 <input
                   id="input-delay"
                   type="text"
                   value={delayInput}
                   onChange={(e) => setDelayInput(e.target.value)}
-                  placeholder="None (or describe weather delay, permit hold, material shortage)"
+                  placeholder={t('delay_constraint_placeholder')}
                   aria-label="Delay or Constraint"
                   className="w-full h-10 rounded-xl border border-hair bg-surface px-3.5 py-2 text-xs font-semibold text-heading focus:outline-none focus:border-accent"
                 />
@@ -849,9 +915,9 @@ export function ReportSubmissionFlow({
                 <StatusPanel
                   tone="neutral"
                   icon={<Loader2 size={16} className="animate-spin text-accent" />}
-                  title="Checking your report"
+                  title={renderWithSrOnly(t('checking_report'), 'Checking your report')}
                 >
-                  Reading it against the schedule. Nothing is stored yet.
+                  {renderWithSrOnly(t('checking_report_sub'), 'Reading it against the schedule. Nothing is stored yet.')}
                 </StatusPanel>
               </div>
             )}
@@ -861,12 +927,12 @@ export function ReportSubmissionFlow({
                 <StatusPanel
                   tone="warn"
                   icon={<AlertTriangle size={16} className="text-amber-500 shrink-0" />}
-                  title="This does not look like a site report"
+                  title={renderWithSrOnly(t('invalid_report_title'), 'This does not look like a site report')}
                 >
-                  <p>{turn.agent_message}</p>
+                  <p>{tDynamic(turn.agent_message)}</p>
                   <div className="mt-3 rounded-lg border border-hair bg-raised p-3 text-xs">
                     <span className="text-[11px] font-bold text-muted uppercase tracking-wider block mb-1">
-                      Examples of what to report
+                      {renderWithSrOnly(t('examples_title'), 'Examples of what to report')}
                     </span>
                     <ul className="list-disc list-inside space-y-1 text-muted">
                       <li>“P-101 pipe spools erected on Rack P1, 12 nos complete”</li>
@@ -883,15 +949,15 @@ export function ReportSubmissionFlow({
                 <StatusPanel
                   tone="warn"
                   icon={<AlertTriangle size={16} className="text-amber-500 shrink-0" />}
-                  title="A few details needed"
+                  title={renderWithSrOnly(t('details_needed_title'), 'A few details needed')}
                 >
-                  <p>{turn.agent_message}</p>
+                  <p>{tDynamic(turn.agent_message)}</p>
                 </StatusPanel>
 
                 {choices.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] text-muted font-medium">
-                      Choose one:
+                      {renderWithSrOnly(t('choose_one'), 'Choose one:')}
                     </span>
                     {choices.map((c) => (
                       <button
@@ -900,7 +966,7 @@ export function ReportSubmissionFlow({
                         onClick={() => send(c)}
                         className="px-3 py-1.5 rounded-lg border border-hair bg-raised hover:bg-accent hover:text-accent-fg text-xs font-semibold text-heading transition-colors cursor-pointer"
                       >
-                        {c}
+                        {renderWithSrOnly(translateSuggestion(c, lang), c)}
                       </button>
                     ))}
                   </div>
@@ -917,7 +983,7 @@ export function ReportSubmissionFlow({
                     type="text"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
-                    placeholder="Type the missing detail…"
+                    placeholder={t('missing_detail_placeholder')}
                     aria-label="Answer the question"
                     className="flex-1 rounded-xl border border-hair bg-surface px-3 py-2 text-xs font-medium text-heading placeholder:text-muted focus:outline-none focus:border-accent"
                   />
@@ -926,7 +992,7 @@ export function ReportSubmissionFlow({
                     disabled={!answer.trim() || busy}
                     className="px-4 py-2 rounded-xl bg-accent text-accent-fg font-bold text-xs disabled:opacity-40 cursor-pointer"
                   >
-                    Send
+                    {renderWithSrOnly(t('send_btn'), 'Send')}
                   </button>
                 </form>
               </div>
@@ -967,11 +1033,11 @@ export function ReportSubmissionFlow({
             <div className="pt-4 border-t border-hair/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="text-xs text-muted leading-relaxed">
                 {!turn && !edited && phase === 'draft' && (
-                  <span>Report will be checked against the project schedule before submission.</span>
+                  <span>{renderWithSrOnly(t('report_check_notice'), 'Report will be checked against the project schedule before submission.')}</span>
                 )}
                 {edited && (
                   <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
-                    <RotateCcw size={13} /> Report edited — check it again
+                    <RotateCcw size={13} /> {renderWithSrOnly(t('report_edited_notice'), 'Report edited — check it again')}
                   </span>
                 )}
               </div>
@@ -983,22 +1049,22 @@ export function ReportSubmissionFlow({
                     onClick={onClose}
                     className="px-4 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-heading font-semibold text-xs transition-colors cursor-pointer"
                   >
-                    Cancel
+                    {renderWithSrOnly(t('cancel_report'), 'Cancel')}
                   </button>
                 )}
                 <button
                   type="button"
                   disabled={!canCheck}
-                  onClick={() => send(report)}
+                  onClick={handleCheckReport}
                   className="px-6 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {phase === 'checking' && <Loader2 size={14} className="animate-spin" />}
                   <span>
                     {phase === 'checking'
-                      ? 'Checking…'
+                      ? renderWithSrOnly(t('checking'), 'Checking…')
                       : interpretationIsCurrent
-                        ? 'Check again'
-                        : 'Check report →'}
+                        ? renderWithSrOnly(t('check_again'), 'Check again')
+                        : renderWithSrOnly(t('check_report'), 'Check report →')}
                   </span>
                 </button>
 
@@ -1019,10 +1085,10 @@ export function ReportSubmissionFlow({
           <div className="lg:col-span-4 bg-raised border border-hair rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5">
             <div className="pb-3 border-b border-hair/70">
               <h2 className="text-base font-bold text-heading">
-                Context
+                {renderWithSrOnly(t('context'), 'Context')}
               </h2>
               <p className="text-[11px] text-muted mt-0.5">
-                Site execution context sent with this report
+                {renderWithSrOnly(t('context_sub'), 'Site execution context sent with this report')}
               </p>
             </div>
 
@@ -1035,16 +1101,16 @@ export function ReportSubmissionFlow({
                   <MapPin size={14} className="text-accent shrink-0" />
                   <span className="text-sm font-bold text-heading truncate">{workFront}</span>
                 </div>
-                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">Workfront</span>
+                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">{renderWithSrOnly(t('workfront'), 'Workfront')}</span>
               </div>
 
               {/* Discipline */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <Layers size={14} className="text-accent shrink-0" />
-                  <span className="text-sm font-bold text-heading">{disciplineLabel}</span>
+                  <span className="text-sm font-bold text-heading">{renderWithSrOnly(translateValue(disciplineLabel, lang), disciplineLabel)}</span>
                 </div>
-                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">Discipline</span>
+                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">{renderWithSrOnly(t('discipline'), 'Discipline')}</span>
               </div>
 
               {/* Work date */}
@@ -1053,16 +1119,16 @@ export function ReportSubmissionFlow({
                   <Calendar size={14} className="text-accent shrink-0" />
                   <span className="text-sm font-bold text-heading font-mono">{workDate}</span>
                 </div>
-                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">Work date</span>
+                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">{renderWithSrOnly(t('work_date'), 'Work date')}</span>
               </div>
 
               {/* Shift */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <Clock size={14} className="text-accent shrink-0" />
-                  <span className="text-sm font-bold text-heading">{SUPERVISOR.shift}</span>
+                  <span className="text-sm font-bold text-heading">{renderWithSrOnly(translateValue(SUPERVISOR.shift, lang), SUPERVISOR.shift)}</span>
                 </div>
-                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">Shift</span>
+                <span className="text-[11px] text-muted font-medium pl-5 mt-0.5">{renderWithSrOnly(t('shift_label'), 'Shift')}</span>
               </div>
 
             </div>
@@ -1074,7 +1140,7 @@ export function ReportSubmissionFlow({
                 onClick={() => setIsChangingContext(!isChangingContext)}
                 className="w-full py-2 px-3 rounded-xl border border-hair bg-surface hover:bg-selected text-xs font-semibold text-heading transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
-                <span>{isChangingContext ? 'Done changing context' : 'Change context'}</span>
+                <span>{renderWithSrOnly(isChangingContext ? t('done_changing_context') : t('change_context'), isChangingContext ? 'Done changing context' : 'Change context')}</span>
               </button>
 
               {/* Inline Context Editor when active */}
@@ -1082,7 +1148,7 @@ export function ReportSubmissionFlow({
                 <div className="p-3.5 rounded-xl border border-hair bg-surface flex flex-col gap-3 text-xs animate-in fade-in duration-150">
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                      Select Workfront
+                      {renderWithSrOnly(t('select_workfront'), 'Select Workfront')}
                     </label>
                     <select
                       value={workFront}
@@ -1098,7 +1164,7 @@ export function ReportSubmissionFlow({
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                      Select Discipline
+                      {renderWithSrOnly(t('select_discipline'), 'Select Discipline')}
                     </label>
                     <select
                       value={discipline}
@@ -1106,7 +1172,7 @@ export function ReportSubmissionFlow({
                       aria-label="Discipline"
                       className="w-full rounded-lg border border-hair bg-raised px-2.5 py-1.5 text-xs font-semibold text-heading focus:outline-none focus:border-accent cursor-pointer"
                     >
-                      <option value="">Select discipline</option>
+                      <option value="">{t('select_discipline')}</option>
                       {DISCIPLINES.map((d) => (
                         <option key={d.value} value={d.value}>{d.label}</option>
                       ))}
@@ -1115,7 +1181,7 @@ export function ReportSubmissionFlow({
 
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                      Select Work Date
+                      {renderWithSrOnly(t('select_work_date'), 'Select Work Date')}
                     </label>
                     <input
                       type="date"
@@ -1163,8 +1229,8 @@ export function ReportSubmissionFlow({
               )}
 
               <div className="text-[11px] text-muted leading-relaxed">
-                <span className="block font-medium text-heading">Schedule verification</span>
-                Matched against OIL Well Pad 04 baseline (120 activities).
+                <span className="block font-medium text-heading">{renderWithSrOnly(t('schedule_verification'), 'Schedule verification')}</span>
+                {renderWithSrOnly(t('schedule_verification_sub'), 'Matched against OIL Well Pad 04 baseline (120 activities).')}
               </div>
             </div>
 
@@ -1182,16 +1248,16 @@ export function ReportSubmissionFlow({
             <div className="flex items-center justify-between pb-4 border-b border-hair">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-accent">
-                  STEP 2 · NAVIS REVIEW
+                  {renderWithSrOnly(t('step_review_header'), 'STEP 2 · NAVIS REVIEW')}
                 </span>
                 <h2 className="text-xl font-bold text-heading mt-0.5 tracking-tight">
-                  Review your report
+                  {renderWithSrOnly(t('review_your_report'), 'Review your report')}
                 </h2>
               </div>
               {turn?.confidence !== undefined && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  {Math.round(turn.confidence * 100)}% confidence
+                  {Math.round(turn.confidence * 100)}% {renderWithSrOnly(t('confidence_label'), 'confidence')}
                 </span>
               )}
             </div>
@@ -1199,7 +1265,7 @@ export function ReportSubmissionFlow({
             {/* ORIGINAL REPORT */}
             <div className="flex flex-col gap-2">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                What you reported
+                {renderWithSrOnly(t('what_you_reported'), 'What you reported')}
               </span>
               <blockquote className="rounded-xl border border-hair bg-surface/70 p-4 text-sm font-medium text-heading italic leading-relaxed border-l-4 border-l-accent">
                 “{report}”
@@ -1210,26 +1276,26 @@ export function ReportSubmissionFlow({
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                  NAVIS EXTRACTED
+                  {renderWithSrOnly(t('navis_extracted'), 'NAVIS EXTRACTED')}
                 </span>
                 <span className="text-xs text-muted">
-                  Matched against project schedule
+                  {renderWithSrOnly(t('matched_against_schedule'), 'Matched against project schedule')}
                 </span>
               </div>
 
               <div className="border border-hair rounded-xl bg-surface divide-y divide-hair overflow-hidden text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Discipline</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('discipline'), 'Discipline')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <span className="font-bold text-heading">
                       {turn?.discipline_label ?? (discipline ? DISCIPLINES.find((d) => d.value === discipline)?.label : 'Piping')}
                     </span>
-                    <span className="text-[10px] text-muted">you selected</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('you_selected'), 'you selected')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Activity</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('activity_label'), 'Activity')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <div className="font-bold text-heading">
                       {slots?.activity_id ? (
@@ -1238,49 +1304,49 @@ export function ReportSubmissionFlow({
                         <span className="text-amber-600 dark:text-amber-400">Unmatched — flagged for planner placement</span>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted">read from your report</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('read_from_report'), 'read from your report')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Quantity</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('quantity'), 'Quantity')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <span className="font-bold text-heading">
                       {slots?.quantity !== null && slots?.quantity !== undefined
                         ? `${slots.quantity} ${slots.uom ?? (unitInput || 'nos')}`
                         : quantityInput ? `${quantityInput} ${unitInput || 'nos'}` : '—'}
                     </span>
-                    <span className="text-[10px] text-muted">read from your report</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('read_from_report'), 'read from your report')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Equipment / Tag</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('equipment_tag_label'), 'Equipment / Tag')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <span className="font-mono font-bold text-heading">
                       {slots?.tags && slots.tags.length > 0 ? slots.tags.join(', ') : tagInput || '—'}
                     </span>
-                    <span className="text-[10px] text-muted">read from your report</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('read_from_report'), 'read from your report')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Status</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('status'), 'Status')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <span className="font-bold text-heading">
                       {turn?.status_label ?? slots?.status ?? (statusInput === 'complete' ? 'Completed' : 'In Progress')}
                     </span>
-                    <span className="text-[10px] text-muted">read from your report</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('read_from_report'), 'read from your report')}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
-                  <span className="font-semibold text-muted">Workfront</span>
+                  <span className="font-semibold text-muted">{renderWithSrOnly(t('workfront'), 'Workfront')}</span>
                   <div className="sm:col-span-2 flex items-center justify-between">
                     <span className="font-bold text-heading">
                       {slots?.location ?? workFront}
                     </span>
-                    <span className="text-[10px] text-muted">you selected</span>
+                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('you_selected'), 'you selected')}</span>
                   </div>
                 </div>
               </div>
@@ -1291,8 +1357,8 @@ export function ReportSubmissionFlow({
               <div className="border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-4 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
                 <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="block font-bold">No matching activity found</strong>
-                  <span className="leading-relaxed">The update is complete, but cannot be automatically linked. If submitted, a planner will place it.</span>
+                  <strong className="block font-bold">{renderWithSrOnly(t('unmatched_notice_title'), 'No matching activity found')}</strong>
+                  <span className="leading-relaxed">{renderWithSrOnly(t('unmatched_notice_sub'), 'The update is complete, but cannot be automatically linked. If submitted, a planner will place it.')}</span>
                 </div>
               </div>
             )}
@@ -1300,7 +1366,7 @@ export function ReportSubmissionFlow({
             {/* ATTACHMENTS */}
             <div className="flex flex-col gap-2">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                ATTACHMENTS ({attachments.length})
+                {renderWithSrOnly(t('attachments_title'), 'ATTACHMENTS')} ({attachments.length})
               </span>
               <div className="flex flex-wrap gap-2 text-xs">
                 {attachments.length > 0 ? (
@@ -1311,7 +1377,7 @@ export function ReportSubmissionFlow({
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-muted italic">No attachments attached to this report.</span>
+                  <span className="text-xs text-muted italic">{renderWithSrOnly(t('no_attachments'), 'No attachments attached to this report.')}</span>
                 )}
               </div>
             </div>
@@ -1320,7 +1386,7 @@ export function ReportSubmissionFlow({
             <div className="rounded-xl border border-hair bg-surface/50 p-4 text-xs text-muted flex items-center gap-2.5">
               <AlertTriangle size={15} className="shrink-0 text-amber-500" />
               <span>
-                Nothing has been written to the schedule yet. A Planning Engineer must verify this report before actuals are committed.
+                {renderWithSrOnly(t('schedule_not_changed_yet'), 'Nothing has been written to the schedule yet. A Planning Engineer must verify this report before actuals are committed.')}
               </span>
             </div>
 
@@ -1369,7 +1435,7 @@ export function ReportSubmissionFlow({
                 className="px-4 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-heading font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
               >
                 <ArrowLeft size={13} />
-                <span>← Edit</span>
+                <span>{renderWithSrOnly(t('edit_report'), '← Edit')}</span>
               </button>
 
               <div className="flex items-center gap-2.5">
@@ -1380,7 +1446,7 @@ export function ReportSubmissionFlow({
                     onClick={onClose}
                     className="px-4 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-heading font-semibold text-xs transition-colors cursor-pointer disabled:opacity-40"
                   >
-                    Cancel
+                    {renderWithSrOnly(t('cancel_report'), 'Cancel')}
                   </button>
                 )}
                 <button
@@ -1393,10 +1459,10 @@ export function ReportSubmissionFlow({
                   <Send size={13} />
                   <span>
                     {phase === 'submitting'
-                      ? 'Submitting…'
+                      ? renderWithSrOnly(t('submitting'), 'Submitting…')
                       : phase === 'unmatched'
-                        ? 'Submit for Planner Review'
-                        : 'Submit Update'}
+                        ? renderWithSrOnly(t('submit_for_planner_review'), 'Submit for Planner Review')
+                        : renderWithSrOnly(t('submit_update'), 'Submit Update')}
                   </span>
                   <span className="sr-only">
                     {phase === 'unmatched' ? 'Send for a planner to place' : 'Send to planner review'}
@@ -1453,25 +1519,25 @@ export function ReportSubmissionFlow({
             <div className="border border-hair rounded-2xl bg-raised p-5 flex flex-col gap-4 shadow-xs">
               <div className="flex items-center justify-between pb-3 border-b border-hair">
                 <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                  Submission Target
+                  {renderWithSrOnly(t('submission_target'), 'Submission Target')}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-accent border border-blue-200 dark:border-blue-900/60">
-                  Ready to Dispatch
+                  {renderWithSrOnly(t('ready_to_dispatch'), 'Ready to Dispatch')}
                 </span>
               </div>
 
               <div className="flex flex-col gap-3">
                 <div>
-                  <span className="text-[11px] text-muted block">Assigned Workfront</span>
+                  <span className="text-[11px] text-muted block">{renderWithSrOnly(t('assigned_workfront'), 'Assigned Workfront')}</span>
                   <span className="text-xs font-bold text-heading">{workFront}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted block">Routing Queue</span>
-                  <span className="text-xs font-bold text-heading">Planning Reconciliation Queue</span>
+                  <span className="text-[11px] text-muted block">{renderWithSrOnly(t('routing_queue'), 'Routing Queue')}</span>
+                  <span className="text-xs font-bold text-heading">{renderWithSrOnly(t('planning_recon_queue'), 'Planning Reconciliation Queue')}</span>
                   <span className="text-[11px] font-mono text-muted block">/reconcile</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted block">Target Schedule Baseline</span>
+                  <span className="text-[11px] text-muted block">{renderWithSrOnly(t('target_schedule_baseline'), 'Target Schedule Baseline')}</span>
                   <span className="text-xs font-bold text-heading">OIL Well Pad 04 (120 activities)</span>
                 </div>
               </div>
@@ -1479,14 +1545,14 @@ export function ReportSubmissionFlow({
 
             <div className="border border-hair rounded-2xl bg-raised p-5 flex flex-col gap-3 shadow-xs">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
-                Baseline Protection
+                {renderWithSrOnly(t('baseline_protection'), 'Baseline Protection')}
               </span>
               <p className="text-xs text-muted leading-relaxed">
-                Planned dates will not change automatically. The planning team verifies this entry against activity baselines before reconciliation.
+                {renderWithSrOnly(t('baseline_protection_sub'), 'Planned dates will not change automatically. The planning team verifies this entry against activity baselines before reconciliation.')}
               </p>
               <div className="pt-2.5 border-t border-hair flex items-center gap-2 text-[11px] text-muted">
                 <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Non-destructive field reporting</span>
+                <span>{renderWithSrOnly(t('non_destructive_reporting'), 'Non-destructive field reporting')}</span>
               </div>
             </div>
           </div>
@@ -1535,7 +1601,7 @@ function StatusPanel({
 }: {
   tone: 'neutral' | 'warn';
   icon: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
 }) {
   const skin =

@@ -22,6 +22,8 @@ import { FieldNav } from '../../components/FieldNav';
 import { FIELD_ROLE, LANGUAGES, PROJECT, SUPERVISOR } from '../../config';
 import { AskNavisChat } from '../../components/AskNavisChat';
 
+import { useTranslation } from '../../lib/i18n';
+
 interface FieldWorkspaceShellProps {
   children: React.ReactNode;
 }
@@ -30,6 +32,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useSession();
   const speech = useSpeech();
+  const { t, lang, setLang, languages } = useTranslation();
   const location = useLocation();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
@@ -53,23 +56,23 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   const reportsCount = fieldReports?.length;
 
   const navItems = [
-    { to: '/field', label: 'Home', icon: Home, end: true },
+    { to: '/field', label: t('nav_home', 'Home'), icon: Home, end: true },
     {
       to: '/field/reports',
-      label: 'My Updates',
+      label: t('nav_updates', 'My Updates'),
       icon: FileText,
       badge: reportsCount && reportsCount > 0 ? String(reportsCount) : undefined,
       end: false,
     },
     {
       to: '/field/clarifications',
-      label: 'Clarifications',
+      label: t('nav_clarifications', 'Clarifications'),
       icon: MessageSquare,
       badge: unanswered > 0 ? String(unanswered) : undefined,
       badgeColor: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold',
       end: false,
     },
-    { to: '/field/profile', label: 'Preferences', icon: Settings, end: false },
+    { to: '/field/profile', label: t('nav_preferences', 'Preferences'), icon: Settings, end: false },
   ];
 
   return (
@@ -84,10 +87,10 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
             </div>
             <div>
               <div className="font-semibold text-body tracking-tight text-heading leading-none">
-                NAVIS Field
+                {t('app_name', 'NAVIS Field')}
               </div>
               <div className="text-label font-medium text-muted mt-0.5">
-                Site Capture OS
+                {t('app_sub', 'Site Capture OS')}
               </div>
             </div>
           </div>
@@ -95,7 +98,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
           {/* Navigation Items */}
           <nav className="flex flex-col gap-0.5">
             <div className="text-label font-medium text-muted px-3 mb-1">
-              Operations
+              {t('operations', 'Operations')}
             </div>
             {navItems.map((item) => (
               <NavLink
@@ -154,14 +157,14 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
             >
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+              <span>{theme === 'dark' ? t('light_mode', 'Light mode') : t('dark_mode', 'Dark mode')}</span>
             </button>
             <button
               onClick={signOut}
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
             >
               <LogOut size={14} />
-              <span>Switch role</span>
+              <span>{t('switch_role', 'Switch role')}</span>
             </button>
           </div>
         </div>
@@ -187,29 +190,33 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
             <button
               type="button"
               onClick={() => setIsOffline(!isOffline)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold border transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border transition-colors cursor-pointer ${
                 isOffline
                   ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
               }`}
-              title="Click to toggle simulated offline sync mode"
+              title={isOffline ? t('offline_desc', 'Offline Mode active · Updates cached locally') : 'Online · Live connected to project pilot'}
             >
-              <span className={`h-2 w-2 rounded-full ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
-              <span className="hidden xs:inline">{isOffline ? 'Offline — auto-sync' : 'Online'}</span>
+              <span className={`h-2 w-2 rounded-full shrink-0 ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+              <span className="inline font-sans">{isOffline ? t('offline', 'Offline — auto-sync') : t('online', 'Online')}</span>
             </button>
 
             {/* Multilingual Selector */}
-            <div className="hidden sm:flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
-              {LANGUAGES.map((l) => (
+            <div className="flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
+              {languages.map((l) => (
                 <button
                   key={l.code}
                   type="button"
-                  onClick={() => speech.setLang(l.code)}
-                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                    speech.lang === l.code
+                  onClick={() => {
+                    setLang(l.code);
+                    speech.setLang(l.code);
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                    lang === l.code
                       ? 'bg-surface text-heading font-semibold shadow-xs'
                       : 'text-muted hover:text-heading'
                   }`}
+                  title={`Switch language to ${l.label}`}
                 >
                   {l.label}
                 </button>
@@ -224,7 +231,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               aria-label="Ask NAVIS"
             >
               <Sparkles size={13} className="text-accent" />
-              <span>Ask NAVIS</span>
+              <span>{t('ask_navis', 'Ask NAVIS')}</span>
             </button>
 
             <button
@@ -232,7 +239,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair text-label text-muted hover:text-heading hover:bg-selected"
             >
               <LogOut size={12} />
-              <span>Switch role</span>
+              <span>{t('switch_role', 'Switch role')}</span>
             </button>
           </div>
         </header>

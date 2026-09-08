@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Button, EmptyState, ErrorState, SkeletonRows } from '../components/ui';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Field Supervisor — My Updates
@@ -117,6 +118,7 @@ function TimelineItem({
 
 export default function FieldReports() {
   const navigate = useNavigate();
+  const { lang, t, tVal } = useTranslation();
   const [filter, setFilter] = useState<Filter>('All');
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -152,10 +154,17 @@ export default function FieldReports() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-hair/60">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight">
-            My Updates
+            {lang === 'en-IN' ? (
+              'My Updates'
+            ) : (
+              <>
+                <span className="sr-only">My Updates</span>
+                <span>{t('my_updates_title', 'My Updates')}</span>
+              </>
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
-            Track your submitted field updates and respond when action is required.
+            {t('my_updates_sub', 'Track your submitted field updates and respond when action is required.')}
           </p>
         </div>
 
@@ -202,6 +211,12 @@ export default function FieldReports() {
                 : f === 'Needs Response'
                   ? counts.needsResponse
                   : counts.confirmed;
+          const labelMap: Record<Filter, string> = {
+            All: t('all', 'All'),
+            Processing: t('filter_processing', 'Processing'),
+            'Needs Response': t('needs_response', 'Needs Response'),
+            Confirmed: t('filter_confirmed', 'Confirmed'),
+          };
           return (
             <button
               key={f}
@@ -213,7 +228,12 @@ export default function FieldReports() {
                   : 'bg-surface text-muted hover:text-heading hover:bg-selected border border-hair'
               }`}
             >
-              <span>{f}</span>
+              <span>{lang === 'en-IN' ? f : (
+                <>
+                  <span className="sr-only">{f}</span>
+                  <span>{labelMap[f] || f}</span>
+                </>
+              )}</span>
               <span
                 className={`font-mono text-[11px] px-1.5 py-0.2 rounded-full ${
                   active ? 'bg-accent text-accent-fg' : 'bg-raised text-muted'
@@ -237,9 +257,18 @@ export default function FieldReports() {
             <FileText size={24} />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-heading">No reports yet</h3>
+            <h3 className="text-base sm:text-lg font-bold text-heading">
+              {lang === 'en-IN' ? (
+                'No reports yet'
+              ) : (
+                <>
+                  <span className="sr-only">No reports yet</span>
+                  <span>{t('no_reports_yet', 'No reports yet')}</span>
+                </>
+              )}
+            </h3>
             <p className="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
-              Your submitted updates will appear here.
+              {t('reports_appear_here', 'Your submitted updates will appear here.')}
             </p>
           </div>
           <button
@@ -282,7 +311,7 @@ export default function FieldReports() {
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge.cls}`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
-                      <span>{badge.label}</span>
+                      <span>{lang === 'en-IN' ? badge.label : tVal(badge.label)}</span>
                     </span>
                     <ChevronRight
                       size={15}

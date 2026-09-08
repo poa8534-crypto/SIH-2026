@@ -7,6 +7,7 @@ import { api, errorDetail } from '../lib/api';
 import { useSession } from '../hooks/useSession';
 import { useSpeech } from '../hooks/useSpeech';
 import { useTheme } from '../hooks/useTheme';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * User Preferences and Configuration for Field Supervisor.
@@ -21,6 +22,7 @@ export default function FieldProfile() {
   const { signOut } = useSession();
   const speech = useSpeech();
   const { theme, setTheme } = useTheme();
+  const { t, setLang } = useTranslation();
 
   // Project name and data date are the server's, off the same query key the
   // shells use.
@@ -39,10 +41,10 @@ export default function FieldProfile() {
         {/* Page Header */}
         <div className="border-b border-hair pb-5">
           <h1 className="text-2xl font-bold tracking-tight text-heading">
-            Preferences
+            {t('pref_title', 'Preferences')}
           </h1>
           <p className="text-sm text-muted mt-1">
-            Personalize how NAVIS works for you.
+            {t('pref_sub', 'Personalize how NAVIS works for you.')}
           </p>
         </div>
 
@@ -87,17 +89,17 @@ export default function FieldProfile() {
         <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
           <div>
             <h3 className="text-sm font-bold text-heading">
-              Appearance
+              {t('pref_theme', 'Appearance & Theme')}
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Choose your interface theme. Updates apply instantly across all screens.
+              {t('pref_theme_sub', 'Choose your interface theme. Updates apply instantly across all screens.')}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
             <div>
               <span className="text-xs font-semibold text-heading block">
-                Interface Theme
+                {t('pref_theme', 'Interface Theme')}
               </span>
               <span className="text-[11px] text-muted">
                 Currently using {theme === 'dark' ? 'Dark Navy' : 'NAVIS Blue & White'} mode
@@ -115,7 +117,7 @@ export default function FieldProfile() {
                 }`}
               >
                 <Sun size={14} />
-                <span>Light</span>
+                <span>{t('light_mode', 'Light')}</span>
               </button>
               <button
                 type="button"
@@ -127,7 +129,7 @@ export default function FieldProfile() {
                 }`}
               >
                 <Moon size={14} />
-                <span>Dark</span>
+                <span>{t('dark_mode', 'Dark')}</span>
               </button>
             </div>
           </div>
@@ -137,17 +139,17 @@ export default function FieldProfile() {
         <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
           <div>
             <h3 className="text-sm font-bold text-heading">
-              Language &amp; input
+              {t('pref_lang', 'Language & input')}
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Configure spoken language for voice notes and text entry.
+              {t('pref_lang_sub', 'Configure spoken language for voice notes and text entry.')}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
             <div>
               <span className="text-xs font-semibold text-heading block">
-                Preferred language for voice
+                {t('pref_lang', 'Preferred language for voice')}
               </span>
               <span className="text-[11px] text-muted">
                 Preferred languages: {LANGUAGES.map((l) => l.label).join(', ')}
@@ -159,7 +161,10 @@ export default function FieldProfile() {
                 <button
                   key={l.code}
                   type="button"
-                  onClick={() => speech.setLang(l.code)}
+                  onClick={() => {
+                    speech.setLang(l.code);
+                    setLang(l.code);
+                  }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                     speech.lang === l.code
                       ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
@@ -175,7 +180,7 @@ export default function FieldProfile() {
           <p className="text-[11px] text-muted pt-1 border-t border-hair/60 leading-relaxed flex items-center gap-1.5">
             <ShieldCheck size={13} className="text-accent shrink-0" />
             <span>
-              Speech recognition runs in the browser. Nothing is recorded or sent to a speech service.
+              {t('pref_lang_note', 'Speech recognition runs in the browser. Nothing is recorded or sent to a speech service.')}
             </span>
           </p>
         </section>
@@ -185,21 +190,21 @@ export default function FieldProfile() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-heading">
-                Current assignment
+                {t('pref_assignment', 'Current assignment')}
               </h3>
               <p className="text-xs text-muted mt-0.5">
                 Read-only scheduling and project context.
               </p>
             </div>
             <span className="text-[10px] font-mono font-medium text-muted uppercase tracking-wider px-2 py-0.5 rounded-md bg-surface border border-hair">
-              Read-only
+              {t('read_only', 'Read-only')}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-hair text-xs">
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                Project
+                {t('project', 'Project')}
               </span>
               <span className="font-semibold text-heading truncate">
                 {fromServer(schedule?.project)}
@@ -217,7 +222,7 @@ export default function FieldProfile() {
 
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                Work front
+                {t('work_front', 'Work front')}
               </span>
               <span className="font-semibold text-heading truncate">
                 {PROJECT.location}
@@ -226,7 +231,7 @@ export default function FieldProfile() {
 
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                Discipline
+                {t('discipline', 'Discipline')}
               </span>
               <span className="font-semibold text-heading truncate">
                 Piping
@@ -235,7 +240,7 @@ export default function FieldProfile() {
 
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                Shift
+                {t('shift', 'Shift')}
               </span>
               <span className="font-medium text-heading truncate">
                 Shift: {SUPERVISOR.shift}
@@ -244,7 +249,7 @@ export default function FieldProfile() {
 
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                Data date
+                {t('data_date', 'Data date')}
               </span>
               <span className="font-mono font-semibold text-heading truncate">
                 {fromServer(schedule?.data_date)}
@@ -260,14 +265,14 @@ export default function FieldProfile() {
             onClick={() => navigate('/field')}
             className="px-4 py-2.5 rounded-xl border border-hair bg-raised hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer text-center"
           >
-            Back to home
+            {t('back_home', 'Back to home')}
           </button>
           <button
             type="button"
             onClick={signOut}
             className="px-4 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-semibold shadow-xs transition-all cursor-pointer text-center"
           >
-            Return to role selection
+            {t('return_role', 'Return to role selection')}
           </button>
         </div>
       </div>

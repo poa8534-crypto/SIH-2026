@@ -4759,7 +4759,7 @@ def agent_turn(
         slots.asked_slot = pending_slot
         choices = choices_for(pending_slot) if pending_slot else None
     elif pending_slot:
-        agent_msg = question_for(pending_slot, countable_noun=_countable_noun(slots))
+        agent_msg = question_for(pending_slot, countable_noun=_countable_noun(slots), status=slots.status)
         if req.confirm:
             # A confirm cannot be honoured while a slot is genuinely open —
             # submitting would file a record the supervisor never completed.
@@ -4904,7 +4904,8 @@ def _fill_slots(
         try:
             slots.date = parse_date(message, data_date)
         except InvalidDate as e:
-            clarification = f"That date cannot be right ({e}). Which date was it completed?"
+            date_q = question_for("date", status=slots.status)
+            clarification = f"That date cannot be right ({e}). {date_q}"
     elif answering in ("quantity", "planned_quantity"):
         parsed = parse_quantity(message)
         if parsed is None:

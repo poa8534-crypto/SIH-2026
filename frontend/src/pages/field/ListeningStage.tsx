@@ -2,6 +2,7 @@ import React from 'react';
 import { StopCircle, X } from 'lucide-react';
 import { NeedsYourResponse, RecentUpdates } from '../../components/FieldContextBlocks';
 import { Waveform, mmss } from './shared';
+import { useTranslation } from '../../lib/i18n';
 
 /**
  * Recording flow state:
@@ -21,6 +22,8 @@ export function ListeningStage({
   onStop: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="w-full max-w-[780px] mx-auto py-2 sm:py-3 px-3 sm:px-4 flex flex-col gap-4">
       <div className="relative border border-hair bg-raised rounded-2xl overflow-hidden p-6 sm:p-7 flex flex-col items-center gap-5 text-center shadow-xs">
@@ -29,7 +32,7 @@ export function ListeningStage({
 
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 font-mono text-xs font-semibold">
           <span className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse" />
-          <span>Recording</span>
+          <span>{t('recording', 'Recording')}</span>
           <span>{mmss(elapsed)}</span>
           <span className="sr-only">Listening</span>
         </div>
@@ -41,10 +44,10 @@ export function ListeningStage({
             {transcript ? (
               `“${transcript}”`
             ) : (
-              <span className="text-muted text-sm">Speak now… dictating site update</span>
+              <span className="text-muted text-sm">{t('speak_now_hint', 'Speak now… dictating site update')}</span>
             )}
           </p>
-          {silent && <span className="text-xs text-muted">still listening…</span>}
+          {silent && <span className="text-xs text-muted">{t('still_listening', 'still listening…')}</span>}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-sm pt-2">
@@ -54,7 +57,7 @@ export function ListeningStage({
             className="w-full py-3 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <StopCircle size={16} />
-            <span>Tap to finish</span>
+            <span>{t('tap_to_finish', 'Tap to finish')}</span>
             <span className="sr-only">Stop & Process</span>
           </button>
           <button
@@ -63,7 +66,7 @@ export function ListeningStage({
             className="w-full sm:w-auto py-3 px-4 rounded-xl border border-hair bg-surface hover:bg-selected text-muted hover:text-heading font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <X size={14} />
-            <span>Cancel</span>
+            <span>{t('cancel', 'Cancel')}</span>
           </button>
         </div>
       </div>

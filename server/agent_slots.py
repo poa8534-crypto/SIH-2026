@@ -74,7 +74,7 @@ _DISCIPLINE_SYNONYMS: dict[str, str] = {
     "instruments": "instrumentation", "instrument": "instrumentation",
     "instr": "instrumentation", "inst": "instrumentation",
     "safety": "hse", "ehs": "hse", "h&s": "hse", "suraksha": "hse",
-    "pipe": "piping", "pipes": "piping",
+    "pipe": "piping", "pipes": "piping", "piping": "piping", "pipeline": "piping",
     "khudaai": "civil", "dhalai": "civil", "mitti": "civil",
 }
 
@@ -84,7 +84,7 @@ _DISCIPLINE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "civil": ("civil", "foundation", "concrete", "backfill", "grading", "slab",
               "flooring", "tile", "plaster", "drainage", "fencing", "pedestal",
               "excavat", "rebar", "formwork", "khudaai", "dhalai"),
-    "piping": ("pipe", "spool", "flange", "hydrotest", "erection", "erect",
+    "piping": ("piping", "pipe", "pipes", "pipeline", "spool", "flange", "hydrotest", "erection", "erect",
                "insulation", "coating", "paint", "header", "boltup", "bolt-up"),
     "static_equipment": ("vessel", "exchanger", "pump", "compressor", "skid",
                          "tank", "jacking", "grout", "nozzle", "yantrik"),
@@ -154,7 +154,10 @@ _STATUS_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("completed", ("completed", "complete", "done", "finished", "finish",
                    "closed", "passed", "khotom", "over", "ho gaya", "hogaya", "ho gya", "khatam", "khatam ho gaya", "pura ho gaya", "pura", "shesh hoise", "hol", "samapta")),
     ("in_progress", ("started", "resumed", "ongoing", "in progress", "underway",
-                     "continuing", "progressing", "chalu", "shuru", "chal raha hai", "chal raha", "choli ase", "lag gaya", "shuru hua")),
+                     "continuing", "progressing", "chalu", "shuru", "chal raha hai", "chal raha", "choli ase", "lag gaya", "shuru hua",
+                     "still a lot left", "still a llot left", "still lot left", "still left", "lot left", "llot left",
+                     "much left", "some left", "work left", "remaining", "pending", "incomplete", "not finished", "not completed",
+                     "partially done", "partially completed", "half done", "baki", "baaki", "baki hai", "baaki hai", "baki ase")),
 )
 
 
@@ -166,6 +169,8 @@ def parse_status(text: str) -> Optional[str]:
     for value, words in _STATUS_PATTERNS:
         if any(re.search(rf"\b{re.escape(w)}\b", low) for w in words):
             return value
+    if re.search(r"\b(?:still\s+)?(?:a\s+)?l+ot\s+left\b|\bstill\s+(?:a\s+)?(?:some|much)?\s*left\b", low):
+        return "in_progress"
     return None
 
 
@@ -441,10 +446,18 @@ QUESTIONS: dict[str, str] = {
 }
 
 
-def question_for(slot: str, *, countable_noun: str = "spools") -> str:
+def question_for(slot: str, *, countable_noun: str = "spools", status: Optional[str] = None) -> str:
     """The question to ask for one missing slot, in supervisor language."""
     if slot == "quantity":
         return f"How many {countable_noun} out of the planned quantity?"
+    if slot == "date":
+        if status == "in_progress":
+            return "Which date did this progress happen on?"
+        if status in ("delayed", "blocked"):
+            return "Which date did this delay occur on?"
+        if status == "not_started":
+            return "As of which date is it not started?"
+        return "Which date was it completed?"
     return QUESTIONS[slot]
 
 

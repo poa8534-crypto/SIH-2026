@@ -21,6 +21,7 @@ import { api } from '../../lib/api';
 import { NeedsYourResponse, RecentUpdates } from '../../components/FieldContextBlocks';
 import { Discipline } from '../../types';
 import { DISCIPLINES } from '../../config';
+import { useTranslation } from '../../lib/i18n';
 
 export function IdleStage({
   fallback,
@@ -59,6 +60,7 @@ export function IdleStage({
   selectedPreset?: 'progress' | 'material' | 'delay' | 'inspection' | null;
   onSelectPreset?: (preset: 'progress' | 'material' | 'delay' | 'inspection' | null) => void;
 }) {
+  const { t } = useTranslation();
   const { data: clarifications } = useQuery({
     queryKey: ['clarifications', 'unanswered'],
     queryFn: () => api.getClarifications(true),
@@ -98,8 +100,13 @@ export function IdleStage({
 
     setPresetPlaceholder(placeholder);
     onSelectPreset?.(type);
-    if (!composerValue.startsWith(tag)) {
-      onComposerChange(tag + composerValue.replace(/^\[[^\]]+\]\s*/, ''));
+
+    if (onComposerChange) {
+      if (!composerValue || composerValue.startsWith('[')) {
+        onComposerChange(tag);
+      } else if (!composerValue.includes(tag)) {
+        onComposerChange(`${tag}${composerValue}`);
+      }
     }
     textareaRef.current?.focus();
   };
@@ -127,17 +134,20 @@ export function IdleStage({
 
   const defaultPlaceholder =
     presetPlaceholder ??
-    "Tell NAVIS what happened on site... or type your update (e.g. 'Poured 40 m3 on the raft at Pad-04' or 'Delayed by rain')";
+    t(
+      'composer_placeholder',
+      "Tell NAVIS what happened on site... or type your update (e.g. 'Poured 40 m3 on the raft at Pad-04' or 'Delayed by rain')"
+    );
 
   return (
     <div className="w-full max-w-[780px] mx-auto py-2 sm:py-3 px-3 sm:px-4 flex flex-col gap-4">
       {/* Top Heading: Clean, tightened, no redundant location badge */}
       <div className="flex flex-col">
         <h1 className="text-xl sm:text-2xl font-bold text-heading tracking-tight">
-          What happened on site today?
+          {t('home_title', 'What happened on site today?')}
         </h1>
         <p className="mt-0.5 text-xs sm:text-sm text-muted">
-          Record work progress, material arrivals, site constraints, and inspections.
+          {t('home_subtitle', 'Record work progress, material arrivals, site constraints, and inspections.')}
         </p>
       </div>
 
@@ -152,7 +162,7 @@ export function IdleStage({
         <div className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-medium">
           <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
           <span>
-            Offline Mode active. Updates will be cached safely on device and synced when signal returns.
+            {t('offline_desc', 'Offline Mode active. Updates will be cached safely on device and synced when signal returns.')}
           </span>
         </div>
       )}
@@ -235,7 +245,7 @@ export function IdleStage({
                 className="px-3.5 py-2 rounded-xl bg-fg hover:opacity-90 active:opacity-95 text-surface text-xs font-semibold shadow-xs transition-all flex items-center gap-2 cursor-pointer min-w-[140px] sm:min-w-[160px] justify-center"
               >
                 <Mic size={15} />
-                <span>Record Voice</span>
+                <span>{t('record_voice', 'Record Voice')}</span>
                 <span className="sr-only">Tap &amp; Speak</span>
                 <span className="sr-only">Describe what happened on site</span>
               </button>
@@ -249,7 +259,7 @@ export function IdleStage({
               title="Add photo"
             >
               <Camera size={14} className="text-muted" />
-              <span>Photo</span>
+              <span>{t('photo', 'Photo')}</span>
             </button>
 
             {/* File Attachment Button */}
@@ -260,7 +270,7 @@ export function IdleStage({
               title="Attach document or test record"
             >
               <Paperclip size={14} className="text-muted" />
-              <span>Attach</span>
+              <span>{t('attach', 'Attach')}</span>
             </button>
           </div>
 
@@ -284,7 +294,7 @@ export function IdleStage({
               </>
             ) : (
               <>
-                <span>Send Update</span>
+                <span>{t('send_update', 'Send Update')}</span>
                 <Send size={13} />
               </>
             )}
@@ -297,8 +307,8 @@ export function IdleStage({
       {/* ── Quick Presets (Prompt templates guiding the composer) ── */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between text-[11px] text-muted font-mono uppercase tracking-wider px-1">
-          <span>Quick Presets</span>
-          <span>Prefills scope &amp; format</span>
+          <span>{t('quick_presets', 'Quick Presets')}</span>
+          <span>{t('prefills_format', 'Prefills scope & format')}</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
@@ -310,8 +320,8 @@ export function IdleStage({
               <Wrench size={13} />
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-heading block truncate">Work Progress</span>
-              <span className="text-[10px] text-muted block truncate">Erection &amp; fit-up</span>
+              <span className="text-xs font-semibold text-heading block truncate">{t('preset_progress', 'Work Progress')}</span>
+              <span className="text-[10px] text-muted block truncate">{t('preset_progress_sub', 'Erection & fit-up')}</span>
             </div>
           </button>
 
@@ -324,8 +334,8 @@ export function IdleStage({
               <Truck size={13} />
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-heading block truncate">Material Delivery</span>
-              <span className="text-[10px] text-muted block truncate">Spools &amp; valves</span>
+              <span className="text-xs font-semibold text-heading block truncate">{t('preset_material', 'Material Delivery')}</span>
+              <span className="text-[10px] text-muted block truncate">{t('preset_material_sub', 'Spools & valves')}</span>
             </div>
           </button>
 
@@ -338,8 +348,8 @@ export function IdleStage({
               <AlertTriangle size={13} />
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-heading block truncate">Delay / Constraint</span>
-              <span className="text-[10px] text-muted block truncate">Weather &amp; access</span>
+              <span className="text-xs font-semibold text-heading block truncate">{t('preset_delay', 'Delay / Constraint')}</span>
+              <span className="text-[10px] text-muted block truncate">{t('preset_delay_sub', 'Weather & access')}</span>
             </div>
           </button>
 
@@ -352,8 +362,8 @@ export function IdleStage({
               <ClipboardCheck size={13} />
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-heading block truncate">Inspection</span>
-              <span className="text-[10px] text-muted block truncate">Hydrotest &amp; NDT</span>
+              <span className="text-xs font-semibold text-heading block truncate">{t('preset_inspection', 'Inspection')}</span>
+              <span className="text-[10px] text-muted block truncate">{t('preset_inspection_sub', 'Hydrotest & NDT')}</span>
             </div>
           </button>
         </div>

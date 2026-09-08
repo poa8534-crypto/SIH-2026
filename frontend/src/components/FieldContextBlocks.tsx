@@ -4,6 +4,7 @@ import { CheckCircle2, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { api } from '../lib/api';
 import { FieldReport } from '../types';
 import { Button, EmptyState, ErrorState, PanelHeader, SkeletonRows } from './ui';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * "Needs Your Response" and "Recent Updates", shown below the input.
@@ -38,6 +39,7 @@ const STATUS_SHORT: Record<string, string> = {
 };
 
 export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery({
     queryKey: ['clarifications', 'unanswered'],
     queryFn: () => api.getClarifications(true),
@@ -60,14 +62,14 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
       <PanelHeader
         title={
           <span className="flex items-center gap-2">
-            <span>Requests from Planning</span>
+            <span>{t('req_from_planning', 'Requests from Planning')}</span>
             <span className="sr-only">Needs Your Response</span>
           </span>
         }
         right={
           data && data.length > 0 ? (
             <span className="bg-selected text-accent text-label font-medium px-3 py-1 rounded-full shrink-0">
-              {data.length} urgent
+              {data.length} {t('require_response', 'urgent')}
               <span className="sr-only">
                 {data.length} {data.length === 1 ? 'Question' : 'Questions'}
               </span>
@@ -88,7 +90,7 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
             &ldquo;{item.question}&rdquo;
           </span>
           <Button variant="secondary" block className="mt-2" to="/field/clarifications">
-            <span>Respond →</span>
+            <span>{t('respond', 'Respond')} →</span>
             <span className="sr-only">Answer Question</span>
           </Button>
         </div>
@@ -96,10 +98,10 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
         <div className="px-4 py-3 flex items-center justify-between text-xs text-muted">
           <div className="flex items-center gap-2 text-ok font-medium">
             <CheckCircle2 size={14} className="text-ok shrink-0" />
-            <span>✓ No requests from Planning</span>
+            <span>{t('no_requests', '✓ No requests from Planning')}</span>
           </div>
           <span className="text-[11px] text-muted hidden sm:inline-block">
-            Nothing outstanding · Questions from the planner will appear here
+            {t('no_requests_sub', 'Nothing outstanding · Questions from the planner will appear here')}
           </span>
         </div>
       )}
@@ -110,11 +112,13 @@ export function NeedsYourResponse({ dimmed = false }: { dimmed?: boolean }) {
 
 export function RecentUpdates({
   dimmed = false,
-  title = 'Recent Updates',
+  title,
 }: {
   dimmed?: boolean;
   title?: string;
 }) {
+  const { t } = useTranslation();
+  const displayTitle = title ?? t('recent_updates', 'Recent Updates');
   const { data, isLoading, error } = useQuery({
     queryKey: ['fieldReports'],
     queryFn: () => api.getFieldReports(),
@@ -132,9 +136,9 @@ export function RecentUpdates({
       <PanelHeader
         title={
           <span>
-            <span>{title}</span>
-            {title !== 'Recent Updates' && <span className="sr-only">Recent Updates</span>}
-            {title !== 'My Recent Updates' && <span className="sr-only">My Recent Updates</span>}
+            <span>{displayTitle}</span>
+            {displayTitle !== 'Recent Updates' && <span className="sr-only">Recent Updates</span>}
+            {displayTitle !== 'My Recent Updates' && <span className="sr-only">My Recent Updates</span>}
           </span>
         }
       />

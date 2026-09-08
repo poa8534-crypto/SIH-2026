@@ -1,6 +1,7 @@
 import React from 'react';
 import { RotateCcw, Send } from 'lucide-react';
 import { NeedsYourResponse, RecentUpdates } from '../../components/FieldContextBlocks';
+import { useTranslation } from '../../lib/i18n';
 
 /**
  * Post-recording review:
@@ -17,13 +18,24 @@ export function TranscriptStage({
   onUse: () => void;
   onRecordAgain: () => void;
 }) {
+  const { lang, t } = useTranslation();
+
   return (
     <div className="w-full max-w-[780px] mx-auto py-2 sm:py-3 px-3 sm:px-4 flex flex-col gap-4">
       <div className="border border-hair bg-raised rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-xs">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-heading">Check your transcript</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-heading">
+            {lang === 'en-IN' ? (
+              'Check your transcript'
+            ) : (
+              <>
+                <span className="sr-only">Check your transcript</span>
+                <span>{t('check_transcript_title', 'Check your transcript')}</span>
+              </>
+            )}
+          </h1>
           <p className="text-xs sm:text-sm text-muted mt-0.5 leading-relaxed">
-            Check this before sending — speech recognition can mishear equipment numbers.
+            {t('check_transcript_desc', 'Check this before sending — speech recognition can mishear equipment numbers.')}
           </p>
         </div>
 
@@ -43,7 +55,7 @@ export function TranscriptStage({
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send size={13} />
-            <span>Submit Update</span>
+            <span>{t('submit_update', 'Submit Update')}</span>
             <span className="sr-only">Use This Transcript</span>
           </button>
           <button
@@ -52,7 +64,7 @@ export function TranscriptStage({
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-heading font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <RotateCcw size={13} />
-            <span>Redo</span>
+            <span>{t('redo', 'Redo')}</span>
             <span className="sr-only">Record Again</span>
           </button>
         </div>

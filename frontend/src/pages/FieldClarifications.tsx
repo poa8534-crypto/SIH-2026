@@ -19,6 +19,7 @@ import { api } from '../lib/api';
 import { Clarification } from '../types';
 import { useSpeech } from '../hooks/useSpeech';
 import { Button, ErrorState, SkeletonRows } from '../components/ui';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Questions the Planning Engineer put back to this supervisor.
@@ -63,6 +64,7 @@ function timeAgo(iso?: string | null): string {
 }
 
 export default function FieldClarifications() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>('All');
   const [search, setSearch] = useState('');
@@ -199,12 +201,12 @@ export default function FieldClarifications() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight text-heading">
-                Clarifications
+                {t('nav_clarifications', 'Clarifications')}
               </h1>
               {counts.needsResponse > 0 ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  {counts.needsResponse} require your response
+                  {counts.needsResponse} {t('require_response', 'require your response')}
                 </span>
               ) : counts.total > 0 ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
@@ -220,9 +222,9 @@ export default function FieldClarifications() {
 
           {/* Compact summary indicator */}
           <div className="text-xs text-muted font-medium flex items-center gap-2">
-            <span>{counts.needsResponse} need response</span>
+            <span>{counts.needsResponse} {t('needs_response', 'need response')}</span>
             <span className="text-hair">·</span>
-            <span>{counts.answered} answered</span>
+            <span>{counts.answered} {t('answered', 'answered')}</span>
           </div>
         </div>
 
@@ -239,6 +241,13 @@ export default function FieldClarifications() {
                   ? counts.needsResponse
                   : counts.answered;
 
+              const label =
+                f === 'All'
+                  ? t('all', 'All')
+                  : f === 'Needs Response'
+                  ? t('needs_response', 'Needs Response')
+                  : t('answered', 'Answered');
+
               return (
                 <button
                   key={f}
@@ -250,7 +259,7 @@ export default function FieldClarifications() {
                       : 'text-muted hover:text-heading hover:bg-selected border border-transparent'
                   }`}
                 >
-                  <span>{f}</span>
+                  <span>{label}</span>
                   <span
                     className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
                       isActive
@@ -275,8 +284,8 @@ export default function FieldClarifications() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clarifications..."
-              aria-label="Search clarifications"
+              placeholder={t('search_clarifications', 'Search clarifications...')}
+              aria-label={t('search_clarifications', 'Search clarifications...')}
               className="w-full pl-9 pr-8 py-1.5 rounded-xl border border-hair bg-raised text-xs text-heading placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
             />
             {search && (
@@ -419,6 +428,8 @@ function NeedsResponseCard({
   activityName?: string;
   onOpenRespond: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <article
       onClick={onOpenRespond}
@@ -428,7 +439,7 @@ function NeedsResponseCard({
       <div className="flex items-center justify-between gap-3 text-xs">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Needs response
+          {t('needs_response', 'Needs response')}
         </span>
         <span className="font-mono text-[11px] text-muted">{item.reference}</span>
       </div>
@@ -478,7 +489,7 @@ function NeedsResponseCard({
           }}
           className="px-4 py-2 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer self-stretch sm:self-auto"
         >
-          <span>Respond</span>
+          <span>{t('respond', 'Respond')}</span>
         </button>
       </div>
     </article>
@@ -495,13 +506,15 @@ function AnsweredCard({
   item: Clarification;
   activityName?: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <article className="rounded-2xl border border-hair bg-raised/70 p-5 shadow-xs flex flex-col gap-3 opacity-95">
       {/* Top status bar */}
       <div className="flex items-center justify-between gap-3 text-xs">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
           <Check size={12} />
-          Answered
+          {t('answered', 'Answered')}
         </span>
         <span className="font-mono text-[11px] text-muted">{item.reference}</span>
       </div>
@@ -524,7 +537,7 @@ function AnsweredCard({
       {/* Your response block */}
       <div className="rounded-xl border border-hair/80 bg-surface/60 p-3.5 flex flex-col gap-1.5">
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-          Your Response
+          {t('your_response', 'Your Response')}
         </span>
         <p className="text-sm text-fg leading-relaxed">
           &ldquo;{item.response}&rdquo;
@@ -557,6 +570,7 @@ function RespondDrawer({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation();
   const speech = useSpeech();
   const [draft, setDraft] = useState('');
   const [reviewing, setReviewing] = useState(false);
@@ -594,7 +608,7 @@ function RespondDrawer({
         <div className="px-5 py-4 border-b border-hair flex items-center justify-between gap-3 bg-surface/60">
           <div>
             <h2 className="text-base font-bold text-heading">
-              Respond to Planning
+              {t('respond_to_planning', 'Respond to Planning')}
             </h2>
             <p className="text-xs text-muted font-mono mt-0.5">
               Ref: {item.reference}
@@ -631,7 +645,7 @@ function RespondDrawer({
           {/* Original Update Context */}
           <div className="p-4 rounded-xl border border-hair bg-surface/60 flex flex-col gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              Original Field Report
+              {t('original_field_report', 'Original Field Report')}
             </span>
             <blockquote className="text-sm text-fg italic border-l-2 border-accent pl-3 my-0.5 leading-relaxed">
               &ldquo;{item.original_text}&rdquo;
@@ -653,7 +667,7 @@ function RespondDrawer({
               htmlFor="clarification-response-input"
               className="text-xs font-semibold text-heading"
             >
-              Your response
+              {t('your_response', 'Your response')}
             </label>
 
             {speech.listening ? (
@@ -681,7 +695,7 @@ function RespondDrawer({
                     Stop &amp; use text
                   </Button>
                   <Button variant="ghost" onClick={() => speech.cancel()}>
-                    Cancel
+                    {t('cancel', 'Cancel')}
                   </Button>
                 </div>
               </div>
@@ -713,7 +727,7 @@ function RespondDrawer({
                     className="self-start px-3 py-1.5 rounded-lg border border-hair bg-surface hover:bg-selected text-heading text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Mic size={14} className="text-accent" />
-                    <span>Record voice response</span>
+                    <span>{t('record_voice_resp', 'Record voice response')}</span>
                   </button>
                 )}
               </div>
@@ -733,7 +747,7 @@ function RespondDrawer({
         {/* Footer Actions */}
         <div className="p-4 border-t border-hair bg-surface/80 flex items-center justify-end gap-2.5">
           <Button variant="ghost" onClick={onClose} disabled={send.isPending}>
-            Cancel
+            {t('cancel', 'Cancel')}
           </Button>
           <Button
             variant="primary"
@@ -746,7 +760,7 @@ function RespondDrawer({
             ) : (
               <>
                 <Send size={14} />
-                Send Response
+                {t('send_response', 'Send Response')}
               </>
             )}
           </Button>

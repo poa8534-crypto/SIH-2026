@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Edit3, Settings2 } from 'lucide-react';
 import { Discipline } from '../../types';
 import { DISCIPLINES, WORK_FRONTS } from '../../config';
+import { useTranslation } from '../../lib/i18n';
 
 export const SHIFTS = [
   'Day Shift (06:00 - 18:00)',
@@ -32,6 +33,7 @@ export function ContextBlock({
   shift?: string;
   onShift?: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
 
   const disciplineObj = DISCIPLINES.find((d) => d.value === discipline);
@@ -42,7 +44,7 @@ export function ContextBlock({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="font-bold text-heading uppercase tracking-wider text-[11px] flex items-center gap-1.5 shrink-0">
             <Settings2 size={13} className="text-accent shrink-0" />
-            <span>Current Context</span>
+            <span>{t('current_context', 'Current Context')}</span>
           </span>
           <span className="text-muted font-normal">|</span>
           <span className="text-fg font-medium flex items-center flex-wrap gap-1.5">
@@ -60,7 +62,7 @@ export function ContextBlock({
           className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer shrink-0 ml-auto"
         >
           <Edit3 size={11} />
-          <span>{isEditing ? 'Done' : 'Change'}</span>
+          <span>{isEditing ? t('done', 'Done') : t('change', 'Change')}</span>
         </button>
       </div>
 
@@ -69,7 +71,7 @@ export function ContextBlock({
           {/* Workfront */}
           <div className="p-2.5 rounded-lg border border-hair bg-surface flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
-              Workfront
+              {t('work_front', 'Workfront')}
             </span>
             <select
               value={workFront}
@@ -87,7 +89,7 @@ export function ContextBlock({
           {/* Discipline */}
           <div className="p-2.5 rounded-lg border border-hair bg-surface flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
-              Discipline
+              {t('discipline', 'Discipline')}
             </span>
             <select
               value={discipline}
@@ -105,7 +107,7 @@ export function ContextBlock({
           {/* Shift */}
           <div className="p-2.5 rounded-lg border border-hair bg-surface flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
-              Shift
+              {t('shift', 'Shift')}
             </span>
             {onShift ? (
               <select

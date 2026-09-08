@@ -49,9 +49,9 @@ export default function Login({ onPick }: LoginProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen w-full bg-surface text-fg font-sans flex flex-col justify-between p-6 sm:p-10">
+    <div className="min-h-screen w-full bg-surface text-fg font-sans flex flex-col justify-between p-4 sm:p-6 lg:p-8 overflow-y-auto">
       {/* Top Header Bar with NAVIS Brand & Theme Selector */}
-      <div className="w-full max-w-[1180px] mx-auto mb-4 flex items-center justify-between">
+      <div className="w-full max-w-[1180px] mx-auto mb-3 sm:mb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-7 h-7 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label shadow-xs">
             N
@@ -99,11 +99,11 @@ export default function Login({ onPick }: LoginProps) {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+      <div className="flex-1 my-auto py-2 sm:py-4 flex items-center justify-center">
+        <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
           
           {/* Left Column: Product Context & Core Purpose */}
-          <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-hair bg-surface/30">
+          <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-hair bg-surface/30">
             <div>
               {/* Product Badge */}
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-accent text-accent-fg text-label font-medium">
@@ -111,22 +111,22 @@ export default function Login({ onPick }: LoginProps) {
               </div>
 
               {/* Title & Subtitle */}
-              <h1 className="mt-5 text-h1 font-semibold tracking-tight text-heading leading-tight">
+              <h1 className="mt-4 sm:mt-5 text-h2 sm:text-h1 font-semibold tracking-tight text-heading leading-tight">
                 Field reality. Verified against the plan.
               </h1>
-              <p className="mt-3 text-body text-muted leading-relaxed max-w-xl">
+              <p className="mt-2.5 text-body text-muted leading-relaxed max-w-xl">
                 NAVIS connects heterogeneous field progress reports to L5/L6 schedule activities, supports human review of uncertain matches, records verified actual progress, and builds institutional memory.
               </p>
 
               {/* Authentic Schedule Baseline Context Card */}
-              <div className="mt-8 border border-hair bg-raised rounded-lg p-5">
-                <div className="flex items-center justify-between text-label font-medium text-muted pb-3 border-b border-hair">
+              <div className="mt-5 sm:mt-6 border border-hair bg-raised rounded-lg p-4 sm:p-5">
+                <div className="flex items-center justify-between text-label font-medium text-muted pb-2.5 border-b border-hair">
                   <span className="font-semibold text-heading">Active Project Baseline</span>
                   <span className="font-mono">Data date: 2026-03-01</span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-md bg-surface/60 border border-hair">
+                <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="p-2.5 sm:p-3 rounded-md bg-surface/60 border border-hair">
                     <div className="text-label text-muted">Project</div>
                     <div className="mt-1 font-semibold text-heading text-body truncate">
                       OIL Well Pad 04
@@ -169,14 +169,14 @@ export default function Login({ onPick }: LoginProps) {
             </div>
 
             {/* Bottom Context Notice */}
-            <div className="mt-8 pt-4 border-t border-hair flex items-center justify-between text-label text-muted">
+            <div className="mt-5 sm:mt-6 pt-3 border-t border-hair flex items-center justify-between text-label text-muted">
               <span>Zero-Math-Hallucination Policy</span>
               <span>Append-only Audit Log</span>
             </div>
           </div>
 
           {/* Right Column: Role Selector */}
-          <div className="lg:col-span-5 p-8 sm:p-10 flex flex-col justify-between bg-raised">
+          <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-raised">
             <div>
               <h2 className="text-h2 font-semibold tracking-tight text-heading">
                 Select your role
@@ -186,7 +186,7 @@ export default function Login({ onPick }: LoginProps) {
               </p>
 
               {/* Role Cards */}
-              <div className="mt-6 flex flex-col gap-3">
+              <div className="mt-4 sm:mt-5 flex flex-col gap-2.5">
                 {ROLES_DATA.map((item) => {
                   const isSelected = selected === item.id;
                   const Icon = item.icon;
@@ -195,20 +195,20 @@ export default function Login({ onPick }: LoginProps) {
                       key={item.id}
                       onClick={() => setSelected(item.id)}
                       onDoubleClick={() => onPick(item.id)}
-                      className={`cursor-pointer rounded-lg p-4 transition-colors border text-left ${
+                      className={`cursor-pointer rounded-lg p-3 sm:p-3.5 transition-colors border text-left ${
                         isSelected
                           ? 'border-strong bg-selected'
                           : 'border-hair bg-raised hover:bg-selected/60'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2.5">
                         <div className="min-w-0 flex-1">
                           <span className="block text-label font-medium text-muted mb-0.5">
                             {item.category}
                           </span>
                           <div className="flex items-center gap-2">
                             <Icon
-                              size={16}
+                              size={15}
                               className={`shrink-0 ${
                                 isSelected ? 'text-heading' : 'text-muted'
                               }`}
@@ -220,14 +220,14 @@ export default function Login({ onPick }: LoginProps) {
                           <p className="mt-1 text-label text-muted leading-relaxed">
                             {item.description}
                           </p>
-                          <div className="mt-2 text-label text-muted/80 font-mono">
+                          <div className="mt-1.5 text-label text-muted/80 font-mono">
                             {item.responsibility}
                           </div>
                         </div>
 
                         {/* Custom Radio Button */}
                         <div
-                          className={`h-4 w-4 shrink-0 rounded-full border flex items-center justify-center mt-1 transition-colors ${
+                          className={`h-4 w-4 shrink-0 rounded-full border flex items-center justify-center mt-0.5 transition-colors ${
                             isSelected
                               ? 'border-accent bg-accent text-accent-fg'
                               : 'border-strong bg-surface'
@@ -246,7 +246,7 @@ export default function Login({ onPick }: LoginProps) {
                 variant="primary"
                 size="md"
                 block
-                className="mt-6"
+                className="mt-4 sm:mt-5"
                 onClick={() => onPick(selected)}
               >
                 <span>Enter workspace</span>
@@ -255,7 +255,7 @@ export default function Login({ onPick }: LoginProps) {
             </div>
 
             {/* Footnote */}
-            <div className="mt-8 pt-4 border-t border-hair text-center">
+            <div className="mt-5 sm:mt-6 pt-3 border-t border-hair text-center">
               <div className="text-label text-muted font-medium">
                 Prototype Demonstration
               </div>
@@ -269,7 +269,7 @@ export default function Login({ onPick }: LoginProps) {
       </div>
 
       {/* Bottom Bar Indicator */}
-      <div className="max-w-[1180px] w-full mx-auto mt-4 px-2 flex items-center justify-between text-label text-muted font-mono">
+      <div className="max-w-[1180px] w-full mx-auto mt-3 sm:mt-4 px-2 flex items-center justify-between text-label text-muted font-mono shrink-0">
         <span>NAVIS PILOT ENGINE // OIL INDIA LIMITED</span>
         <span>SIH 2026</span>
       </div>

@@ -3,6 +3,7 @@ import { AlertCircle, Cpu, Pencil } from 'lucide-react';
 import { SlotState } from '../../types';
 import { Button, PanelHeader } from '../../components/ui';
 import { CardRow, STATUS_LABEL, longDate } from './shared';
+import { useTranslation } from '../../lib/i18n';
 
 /**
  * The agent's proposal, as a set of labelled slots the supervisor can correct.
@@ -27,6 +28,8 @@ export function StructuredCard({
   onCancel: () => void;
   submitting: boolean;
 }) {
+  const { lang, t, tVal } = useTranslation();
+
   // Whatever MatchingEngine returned, never a hardcoded id. The two
   // no-result cases are named differently because they mean different things:
   // the matcher found nothing, versus it has not run to completion.
@@ -35,22 +38,29 @@ export function StructuredCard({
         slots.activity_description ? ` · ${slots.activity_description}` : ''
       }`
     : outcome
-      ? 'No matching activity — flagged for Planning Engineer'
-      : 'Awaiting Planning Engineer confirmation';
+      ? (lang === 'en-IN' ? 'No matching activity — flagged for Planning Engineer' : t('no_match_flagged', 'No matching activity — flagged for Planning Engineer'))
+      : (lang === 'en-IN' ? 'Awaiting Planning Engineer confirmation' : t('awaiting_planner', 'Awaiting Planning Engineer confirmation'));
 
   const quantity =
     slots.quantity !== null
       ? `${slots.quantity}${
           slots.planned_quantity !== null ? ` of ${slots.planned_quantity}` : ''
         }${slots.uom ? ` ${slots.uom}` : ''}`
-      : 'Not stated';
+      : t('not_stated', 'Not stated');
+
+  const displayLabels: Record<string, string> = {
+    activity: t('chip_activity', 'ACTIVITY'),
+    status: t('chip_status', 'STATUS'),
+    date: t('chip_date', 'DATE'),
+    quantity: t('chip_quantity', 'QUANTITY'),
+  };
 
   const rows: CardRow[] = [
     // Editable as the supervisor's own interpretation of what happened. The
     // validated schedule id underneath is not his to change, and there is no
     // activity picker anywhere in this screen.
     { key: 'activity', label: 'ACTIVITY', value: activity },
-    { key: 'status', label: 'STATUS', value: STATUS_LABEL[slots.status ?? ''] ?? '—' },
+    { key: 'status', label: 'STATUS', value: STATUS_LABEL[slots.status ?? ''] ? tVal(STATUS_LABEL[slots.status ?? '']) : '—' },
     { key: 'date', label: 'DATE', value: longDate(slots.date) },
     { key: 'quantity', label: 'QUANTITY', value: quantity },
   ];
@@ -61,7 +71,14 @@ export function StructuredCard({
         title={
           <>
             <Cpu size={18} className="text-accent shrink-0" />
-            STRUCTURED UPDATE
+            {lang === 'en-IN' ? (
+              'STRUCTURED UPDATE'
+            ) : (
+              <>
+                <span className="sr-only">STRUCTURED UPDATE</span>
+                <span>{t('structured_update', 'STRUCTURED UPDATE')}</span>
+              </>
+            )}
           </>
         }
       />
@@ -76,7 +93,14 @@ export function StructuredCard({
           >
             <div className="flex flex-col gap-2 min-w-0">
               <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-                {r.label}
+                {lang === 'en-IN' ? (
+                  r.label
+                ) : (
+                  <>
+                    <span className="sr-only">{r.label}</span>
+                    <span>{displayLabels[r.key] || r.label}</span>
+                  </>
+                )}
               </span>
               <span className="text-lead leading-6 text-fg break-words">{r.value}</span>
             </div>
@@ -95,8 +119,7 @@ export function StructuredCard({
           <div className="px-4 py-4 border-b border-hair flex items-start gap-2">
             <AlertCircle size={16} className="mt-0.5 shrink-0 text-warn" />
             <span className="text-body leading-5 text-warn">
-              Completed exceeds the planned total — the Planning Engineer will
-              check this
+              {t('qty_over_planned_warn', 'Completed exceeds the planned total — the Planning Engineer will check this')}
             </span>
           </div>
         )}
@@ -106,28 +129,50 @@ export function StructuredCard({
         <div className="flex justify-between items-start gap-4 px-4 py-4">
           <div className="flex flex-col gap-2">
             <span className="text-label font-medium uppercase tracking-[0.05em] text-muted">
-              Confidence
+              {lang === 'en-IN' ? (
+                'Confidence'
+              ) : (
+                <>
+                  <span className="sr-only">Confidence</span>
+                  <span>{t('confidence', 'Confidence')}</span>
+                </>
+              )}
             </span>
             <span className="text-lead leading-6 font-mono text-accent">
               {(confidence * 100).toFixed(1)}%
             </span>
           </div>
           <span className="text-label font-medium uppercase tracking-[0.05em] text-muted mt-1 shrink-0">
-            {outcome === 'AUTO_LINK' ? 'strong match' : 'planner confirms'}
+            {outcome === 'AUTO_LINK' ? t('strong_match', 'strong match') : t('planner_confirms', 'planner confirms')}
           </span>
         </div>
       </div>
 
       <div className="px-4 py-5 border-t border-hair bg-surface flex flex-col gap-3">
         <Button variant="primary" block onClick={onSubmit} disabled={submitting}>
-          {submitting ? 'Submitting…' : 'CONFIRM & SUBMIT'}
+          {submitting ? (
+            t('submitting', 'Submitting…')
+          ) : lang === 'en-IN' ? (
+            'CONFIRM & SUBMIT'
+          ) : (
+            <>
+              <span className="sr-only">CONFIRM & SUBMIT</span>
+              <span>{t('confirm_submit', 'CONFIRM & SUBMIT')}</span>
+            </>
+          )}
         </Button>
         <Button variant="ghost" block onClick={onCancel} disabled={submitting}>
-          Cancel
+          {lang === 'en-IN' ? (
+            'Cancel'
+          ) : (
+            <>
+              <span className="sr-only">Cancel</span>
+              <span>{t('cancel', 'Cancel')}</span>
+            </>
+          )}
         </Button>
         <p className="text-label text-muted leading-relaxed text-center">
-          Submitting confirms the report information only. The Planning Engineer
-          must review it before any project data changes.
+          {t('submit_disclaimer', 'Submitting confirms the report information only. The Planning Engineer must review it before any project data changes.')}
         </p>
       </div>
     </section>

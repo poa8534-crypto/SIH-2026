@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LANGUAGES } from '../config';
+import { setActiveLanguage, type LanguageCode } from '../lib/i18n';
 
 /**
  * Web Speech API only — no external service and no API key.
@@ -158,6 +159,7 @@ function setSharedLang(next: string) {
     /* ignore storage access error */
   }
   for (const notify of langSubscribers) notify(next);
+  setActiveLanguage(next as LanguageCode);
 }
 
 export function useSpeech(): UseSpeechResult {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, FileText, PlusCircle, ShieldCheck } from 'lucide-react';
 import { NeedsYourResponse, RecentUpdates } from '../../components/FieldContextBlocks';
 import type { AgentTurnResponse } from '../../types';
+import { useTranslation } from '../../lib/i18n';
 
 /**
  * Structured post-submit state:
@@ -18,6 +19,7 @@ export function SubmittedStage({
   turn?: AgentTurnResponse | null;
   onReturn: () => void;
 }) {
+  const { lang, t } = useTranslation();
   const slots = turn?.slots;
   const trackingId = reference || (turn?.review_item_id ?? turn?.linked_event_id ?? 'FU-1042');
 
@@ -42,16 +44,23 @@ export function SubmittedStage({
           </div>
           <div>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              ✓ UPDATE CAPTURED
+              {t('update_captured', '✓ UPDATE CAPTURED')}
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-heading">
-              Update submitted
+              {lang === 'en-IN' ? (
+                'Update submitted'
+              ) : (
+                <>
+                  <span className="sr-only">Update submitted</span>
+                  <span>{t('update_submitted_title', 'Update submitted')}</span>
+                </>
+              )}
             </h2>
             <p className="text-xs text-muted mt-0.5">
-              Sent for Planning Engineer review.
+              {t('sent_for_review', 'Sent for Planning Engineer review.')}
             </p>
             <p className="text-xs text-muted">
-              The project schedule has not been changed.
+              {t('schedule_unchanged', 'The project schedule has not been changed.')}
             </p>
           </div>
         </div>
@@ -59,29 +68,29 @@ export function SubmittedStage({
         {/* Structured Understanding Grid */}
         <div className="rounded-xl border border-hair bg-surface p-4 flex flex-col gap-3">
           <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted pb-2 border-b border-hair/60 flex items-center justify-between">
-            <span>NAVIS Extraction Summary</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Verified</span>
+            <span>{t('extraction_summary', 'NAVIS Extraction Summary')}</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t('verified', 'Verified')}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Discipline</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">{t('discipline', 'Discipline')}</span>
               <span className="font-semibold text-heading text-sm">{discipline}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Work / Activity</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">{t('work_activity', 'Work / Activity')}</span>
               <span className="font-semibold text-heading text-sm">{work}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Quantity</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">{t('chip_quantity', 'Quantity')}</span>
               <span className="font-semibold text-heading">{quantity}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Equipment / Tag</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">{t('equipment_tag', 'Equipment / Tag')}</span>
               <span className="font-semibold text-heading">{equipment}</span>
             </div>
             <div className="sm:col-span-2">
-              <span className="text-muted block text-[10px] uppercase tracking-wider">Status</span>
+              <span className="text-muted block text-[10px] uppercase tracking-wider">{t('chip_status', 'Status')}</span>
               <span className="font-semibold text-heading">{status}</span>
             </div>
           </div>
@@ -91,16 +100,16 @@ export function SubmittedStage({
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-hair bg-raised text-xs">
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-heading">
-              Report reference: {trackingId}
+              {t('report_reference', 'Report reference')}: {trackingId}
             </span>
             <span>·</span>
             <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-medium text-[11px]">
-              Ready for PM Review
+              {t('ready_for_review', 'Ready for PM Review')}
             </span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-muted">
             <ShieldCheck size={13} className="text-fg shrink-0" />
-            <span>Schedule unchanged until confirmed</span>
+            <span>{t('schedule_unchanged_confirmed', 'Schedule unchanged until confirmed')}</span>
           </div>
         </div>
 
@@ -112,21 +121,21 @@ export function SubmittedStage({
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-fg hover:opacity-90 active:opacity-95 text-surface font-semibold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <PlusCircle size={15} />
-            <span>Submit Another Update</span>
+            <span>{t('submit_another', 'Submit Another Update')}</span>
           </button>
           <Link
             to="/field/reports"
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-heading font-semibold text-xs transition-colors flex items-center justify-center gap-2 text-center"
           >
             <FileText size={15} />
-            <span>View in My Updates</span>
+            <span>{t('view_in_my_updates', 'View in My Updates')}</span>
           </Link>
           <button
             type="button"
             onClick={onReturn}
             className="text-xs text-muted hover:text-heading px-2 py-1"
           >
-            Return Home
+            {lang === 'en-IN' ? 'Return Home' : t('back_home', 'Return Home')}
           </button>
         </div>
       </div>
