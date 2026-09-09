@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server.db import Activity, AuditRecord, Base, LinkedEvent
+from server.db import Activity, AuditRecord, Base, LinkedEvent, ReviewQueueItem
 from server.main import FIELD_MATCH_METHOD, app, get_db
 
 TEST_DB = "sqlite:///dataset/test_notifications.db"
@@ -242,6 +242,33 @@ class TestMovementIsNeverInvented:
         r = client.get("/field/notifications")
         assert r.status_code == 200
         assert r.json()[0]["day_movement"] is None
+
+
+class TestFieldReportsRejection:
+    def test_rejected_update_has_rejected_status_and_resolution_note(self, client, db):
+        event = _field_event(db)
+        review = ReviewQueueItem(
+            linked_event_id=event.id,
+            reason="low_confidence",
+            status="ignored",
+            resolution="ignore",
+            resolution_note="Out of scope for current reporting period",
+            resolved_at=datetime(2026, 9, 3, 11, 0),
+        )
+        db.add(review)
+        event.reviewed = True
+        event.reviewer_action = "ignore"
+        event.reviewed_at = datetime(2026, 9, 3, 11, 0)
+        db.commit()
+
+        res = client.get("/field/reports")
+        assert res.status_code == 200
+        reports = res.json()
+        assert len(reports) == 1
+        rep = reports[0]
+        assert rep["status"] == "Rejected"
+        assert rep["resolution_note"] == "Out of scope for current reporting period"
+        assert rep["resolved_at"] is not None
 
 
 if __name__ == "__main__":

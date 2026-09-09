@@ -310,6 +310,8 @@ class FieldReportResponse(BaseModel):
     review_item_id: Optional[str] = None
     clarification_question: Optional[str] = None
     clarification_response: Optional[str] = None
+    resolution_note: Optional[str] = None
+    resolved_at: Optional[datetime] = None
 
 
 class ClarificationResponse(BaseModel):

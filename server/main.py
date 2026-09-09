@@ -3383,14 +3383,20 @@ def _report_reference(event) -> str:
     return f"FR-{stamp}-{event.id[:4].upper()}"
 
 
-def _report_status(review) -> str:
+def _report_status(review, event=None) -> str:
     """The status the supervisor sees, from the planner's own state."""
-    if review is None:
-        return "Processing"
-    if review.status == "resolved":
-        return "Rejected" if review.resolution == "ignore" else "Confirmed"
-    if review.clarification_question and not review.clarification_response:
-        return "Needs Information"
+    if event is not None and getattr(event, "reviewer_action", None) == "ignore":
+        return "Rejected"
+    if review is not None:
+        if review.status == "ignored" or review.resolution == "ignore":
+            return "Rejected"
+        if review.status == "resolved":
+            return "Confirmed"
+        if review.clarification_question and not review.clarification_response:
+            return "Needs Information"
+    if event is not None and getattr(event, "reviewed", False):
+        if getattr(event, "reviewer_action", None) in ("confirm", "reassign", "create"):
+            return "Confirmed"
     return "Processing"
 
 
@@ -3436,13 +3442,15 @@ def field_reports(db: Session = Depends(get_db)):
                 discipline_label(event.discipline)
                 if event.discipline in DISCIPLINE_VALUES else None
             ),
-            status=_report_status(review),
+            status=_report_status(review, event),
             matched_activity_id=event.activity_id,
             matched_activity_description=matched.description if matched else None,
             confidence=event.confidence or 0.0,
             review_item_id=review.id if review else None,
             clarification_question=review.clarification_question if review else None,
             clarification_response=review.clarification_response if review else None,
+            resolution_note=review.resolution_note if review else None,
+            resolved_at=review.resolved_at if review else (event.reviewed_at if event else None),
         ))
     return out
 

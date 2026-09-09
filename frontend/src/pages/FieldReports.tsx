@@ -6,7 +6,9 @@ import {
   ArrowRight,
   ChevronRight,
   FileText,
+  RotateCcw,
   X,
+  XCircle,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Button, EmptyState, ErrorState, SkeletonRows } from '../components/ui';
@@ -16,10 +18,10 @@ import { useTranslation } from '../lib/i18n';
  * Field Supervisor — My Updates
  *
  * Tracks submitted site updates, their schedule match, and review status.
- * Actions are required only when Planning requests clarification.
+ * Actions are required only when Planning requests clarification or rejects an update.
  */
 
-const FILTERS = ['All', 'Processing', 'Needs Response', 'Confirmed'] as const;
+const FILTERS = ['All', 'Processing', 'Needs Response', 'Confirmed', 'Rejected'] as const;
 type Filter = (typeof FILTERS)[number];
 
 function statusBadge(status: string) {
@@ -78,36 +80,43 @@ function TimelineItem({
   detail,
   isLast = false,
   status = 'complete',
+  variant = 'normal',
 }: {
   title: string;
   time: string;
   detail: string;
   isLast?: boolean;
   status?: 'complete' | 'active' | 'pending';
+  variant?: 'normal' | 'danger';
 }) {
+  const isDanger = variant === 'danger';
   return (
     <div className="flex items-start gap-3 relative">
       {!isLast && (
         <div
           className={`absolute left-[11px] top-6 bottom-0 w-0.5 ${
-            status === 'complete' ? 'bg-emerald-500/40' : 'bg-hair'
+            status === 'complete'
+              ? isDanger ? 'bg-rose-500/40' : 'bg-emerald-500/40'
+              : 'bg-hair'
           }`}
         />
       )}
       <div
         className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 z-10 text-xs font-bold ${
-          status === 'complete'
-            ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-            : status === 'active'
-              ? 'bg-accent text-accent-fg border border-accent ring-4 ring-accent/15'
-              : 'bg-surface border border-hair text-muted'
+          isDanger
+            ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+            : status === 'complete'
+              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+              : status === 'active'
+                ? 'bg-accent text-accent-fg border border-accent ring-4 ring-accent/15'
+                : 'bg-surface border border-hair text-muted'
         }`}
       >
-        {status === 'complete' ? '✓' : '•'}
+        {isDanger ? '✕' : status === 'complete' ? '✓' : '•'}
       </div>
       <div className="flex-1 pb-5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-bold text-heading">{title}</span>
+          <span className={`text-xs font-bold ${isDanger ? 'text-rose-700 dark:text-rose-300' : 'text-heading'}`}>{title}</span>
           <span className="text-[11px] font-mono text-muted">{time}</span>
         </div>
         <p className="text-xs text-muted mt-0.5 leading-relaxed">{detail}</p>
@@ -134,6 +143,7 @@ export default function FieldReports() {
       processing: reports.filter((r) => r.status === 'Processing').length,
       needsResponse: reports.filter((r) => r.status === 'Needs Information').length,
       confirmed: reports.filter((r) => r.status === 'Confirmed').length,
+      rejected: reports.filter((r) => r.status === 'Rejected').length,
     }),
     [reports]
   );
@@ -196,6 +206,14 @@ export default function FieldReports() {
             <span className="font-bold font-mono">{counts.needsResponse}</span>
             <span>{counts.needsResponse === 1 ? 'needs response' : 'need response'}</span>
           </span>
+
+          {counts.rejected > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-700 dark:text-rose-300 font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+              <span className="font-bold font-mono">{counts.rejected}</span>
+              <span>rejected</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -210,12 +228,15 @@ export default function FieldReports() {
                 ? counts.processing
                 : f === 'Needs Response'
                   ? counts.needsResponse
-                  : counts.confirmed;
+                  : f === 'Confirmed'
+                    ? counts.confirmed
+                    : counts.rejected;
           const labelMap: Record<Filter, string> = {
             All: t('all', 'All'),
             Processing: t('filter_processing', 'Processing'),
             'Needs Response': t('needs_response', 'Needs Response'),
             Confirmed: t('filter_confirmed', 'Confirmed'),
+            Rejected: t('filter_rejected', 'Rejected'),
           };
           return (
             <button
@@ -381,6 +402,43 @@ export default function FieldReports() {
                     </button>
                   </div>
                 )}
+
+                {/* Actionable Prompt if Rejected */}
+                {r.status === 'Rejected' && (
+                  <div className="mt-1.5 p-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-start gap-2">
+                      <XCircle
+                        size={15}
+                        className="text-rose-600 dark:text-rose-400 mt-0.5 shrink-0"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-rose-900 dark:text-rose-200 block">
+                          Rejected by Project Manager:
+                        </span>
+                        <span className="text-rose-800 dark:text-rose-300 italic">
+                          {r.resolution_note ? `“${r.resolution_note}”` : 'Excluded from schedule update during review.'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/field/report', {
+                          state: {
+                            initialReport: r.raw_text,
+                            initialDiscipline: r.discipline || undefined,
+                            resubmitFromReference: r.reference,
+                          },
+                        });
+                      }}
+                      className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer self-start sm:self-auto flex items-center gap-1.5"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Edit & Resubmit</span>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -517,6 +575,49 @@ export default function FieldReports() {
                 </div>
               )}
 
+              {/* Rejection Banner */}
+              {open.status === 'Rejected' && (
+                <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 flex flex-col gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <XCircle
+                      size={18}
+                      className="text-rose-600 dark:text-rose-400 mt-0.5 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-rose-900 dark:text-rose-200 block">
+                        Update Rejected by Project Manager / Planning
+                      </span>
+                      <p className="text-xs text-rose-800 dark:text-rose-300 mt-1">
+                        {open.resolution_note?.trim()
+                          ? `“${open.resolution_note.trim()}”`
+                          : 'This update was reviewed and dismissed. No actuals were committed to the schedule.'}
+                      </p>
+                      {open.resolved_at && (
+                        <span className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 block">
+                          Rejected {when(open.resolved_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/field/report', {
+                        state: {
+                          initialReport: open.raw_text,
+                          initialDiscipline: open.discipline ?? open.discipline_label,
+                          resubmitFromReference: open.reference,
+                        },
+                      });
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Edit & Resubmit Report</span>
+                  </button>
+                </div>
+              )}
+
               {/* Status History Timeline */}
               <div className="p-4 rounded-xl border border-hair bg-raised flex flex-col gap-3">
                 <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
@@ -549,20 +650,25 @@ export default function FieldReports() {
                     title={
                       open.status === 'Confirmed'
                         ? 'Confirmed'
-                        : open.status === 'Needs Information'
-                          ? 'Clarification Requested'
-                          : 'Processing'
+                        : open.status === 'Rejected'
+                          ? 'Rejected by Project Manager'
+                          : open.status === 'Needs Information'
+                            ? 'Clarification Requested'
+                            : 'Processing'
                     }
-                    time={justTime(open.submitted_at)}
+                    time={justTime(open.resolved_at ?? open.submitted_at)}
                     detail={
                       open.status === 'Confirmed'
                         ? 'Planning Engineer approved and committed actuals'
-                        : open.status === 'Needs Information'
-                          ? 'Waiting for clarification response'
-                          : 'In review by Planning Engineer'
+                        : open.status === 'Rejected'
+                          ? (open.resolution_note ? `Rejected: ${open.resolution_note}` : 'Dismissed during planning reconciliation')
+                          : open.status === 'Needs Information'
+                            ? 'Waiting for clarification response'
+                            : 'In review by Planning Engineer'
                     }
                     isLast
-                    status={open.status === 'Confirmed' ? 'complete' : 'active'}
+                    status={open.status === 'Confirmed' || open.status === 'Rejected' ? 'complete' : 'active'}
+                    variant={open.status === 'Rejected' ? 'danger' : 'normal'}
                   />
                 </div>
               </div>
@@ -578,13 +684,33 @@ export default function FieldReports() {
                 <span>View audit trail</span>
                 <ArrowRight size={13} />
               </button>
-              <button
-                type="button"
-                onClick={() => setOpenId(null)}
-                className="px-4 py-2 rounded-xl border border-hair bg-surface hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-2">
+                {open.status === 'Rejected' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/field/report', {
+                        state: {
+                          initialReport: open.raw_text,
+                          initialDiscipline: open.discipline ?? open.discipline_label,
+                          resubmitFromReference: open.reference,
+                        },
+                      });
+                    }}
+                    className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Edit & Resubmit</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpenId(null)}
+                  className="px-4 py-2 rounded-xl border border-hair bg-surface hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

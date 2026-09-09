@@ -439,6 +439,7 @@ export default function Reconcile() {
       );
       queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['fieldReports'] });
       setActionError(null);
       setNewMode(false);
       setNewDesc('');

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -124,8 +124,18 @@ export function ReportSubmissionFlow({
   onSuccess,
 }: ReportSubmissionFlowProps = {}) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { lang, t, tDynamic } = useTranslation();
+
+  const routeState = (location.state as {
+    initialReport?: string;
+    initialDiscipline?: Discipline | '';
+    resubmitFromReference?: string;
+  } | null);
+
+  const effectiveInitialReport = initialReport ?? routeState?.initialReport ?? '';
+  const effectiveInitialDiscipline = initialDiscipline !== undefined ? initialDiscipline : routeState?.initialDiscipline;
 
   const renderWithSrOnly = (translated: React.ReactNode, englishText: string) => {
     if (lang === 'en-IN') return <>{translated}</>;
@@ -138,7 +148,7 @@ export function ReportSubmissionFlow({
   };
 
   // ── Form & Context State ───────────────────────────────────────────────────
-  const [report, setReport] = useState(initialReport ?? '');
+  const [report, setReport] = useState(effectiveInitialReport);
   const [attachments, setAttachments] = useState<{ name: string; type: 'photo' | 'file' }[]>(
     initialAttachments ?? []
   );
@@ -148,14 +158,14 @@ export function ReportSubmissionFlow({
 
   // Supervisor defaults to their assigned trade (Piping) or saved preference, unless initialReport mentions another trade
   const [discipline, setDiscipline] = useState<Discipline | ''>(() => {
-    if (initialDiscipline !== undefined) return initialDiscipline;
-    if (initialReport) {
-      const detected = detectDisciplineFromText(initialReport);
+    if (effectiveInitialDiscipline !== undefined) return effectiveInitialDiscipline;
+    if (effectiveInitialReport) {
+      const detected = detectDisciplineFromText(effectiveInitialReport);
       if (detected) return detected;
     }
     return savedDiscipline() ?? SUPERVISOR.discipline;
   });
-  const userManuallySetDiscipline = useRef(initialDiscipline !== undefined);
+  const userManuallySetDiscipline = useRef(effectiveInitialDiscipline !== undefined);
 
   const handleDisciplineChange = (val: Discipline | '') => {
     userManuallySetDiscipline.current = true;
@@ -745,6 +755,17 @@ export function ReportSubmissionFlow({
           )}
         </div>
       </div>
+
+      {routeState?.resubmitFromReference && (
+        <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 flex items-center justify-between text-xs text-rose-800 dark:text-rose-300">
+          <div className="flex items-center gap-2 font-medium">
+            <RotateCcw size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>
+              Resubmitting update based on rejected report #{routeState.resubmitFromReference}. Review and adjust details before checking.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ── STEP 1: CAPTURE WORKSPACE (65 / 35 LAYOUT) ────────────────────────── */}
       {step === 1 && (

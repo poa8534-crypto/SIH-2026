@@ -591,6 +591,8 @@ export interface FieldReport {
   review_item_id: string | null;
   clarification_question: string | null;
   clarification_response: string | null;
+  resolution_note?: string | null;
+  resolved_at?: string | null;
 }
 
 /** A Planning Engineer question about one of this supervisor's reports. */

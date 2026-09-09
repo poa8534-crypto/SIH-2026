@@ -209,7 +209,7 @@ describe('an untouched form', () => {
     fireEvent.click(checkButton());
 
     await waitFor(() => expect(spy).toHaveBeenCalled());
-    expect(spy.mock.calls[0][0].context.discipline).toBe('civil');
+    expect(spy.mock.calls[0]![0].context?.discipline).toBe('civil');
   });
 });
 
