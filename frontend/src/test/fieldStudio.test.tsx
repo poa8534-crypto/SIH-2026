@@ -197,6 +197,20 @@ describe('an untouched form', () => {
     await waitFor(() => expect(spy).toHaveBeenCalled());
     expect(spy.mock.calls[0][0].context).not.toHaveProperty('discipline');
   });
+
+  it('auto-detects civil discipline when typing concrete work', async () => {
+    const spy = vi.spyOn(api, 'agentTurn').mockResolvedValue({
+      ...READY,
+      slots: { ...READY.slots, discipline: 'civil' },
+      discipline_label: 'Civil',
+    });
+    wrap(<ReportStudio />);
+    typeReport('concret has arrived and applied to tower 3');
+    fireEvent.click(checkButton());
+
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+    expect(spy.mock.calls[0][0].context.discipline).toBe('civil');
+  });
 });
 
 // ── Journey 2: irrelevant input ─────────────────────────────────────────────

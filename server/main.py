@@ -4675,8 +4675,6 @@ def agent_turn(
         slots = SlotState()
         turn_number = 1
 
-    _apply_context(slots, context)
-
     clarification = None
     if req.message:
         # The first substantive message is the description: it carries the
@@ -4687,6 +4685,7 @@ def agent_turn(
         if slots.description is None:
             refusal = _unreportable_reason(req.message)
             if refusal is not None:
+                _apply_context(slots, context)
                 # Readable, and it names the two things that count as a
                 # report — work done AND work prevented. The second half was
                 # missing, so a supervisor refused for "waiting for permit"
@@ -4731,6 +4730,9 @@ def agent_turn(
                 )
             slots.description = req.message.strip() or None
         clarification = _fill_slots(slots, req.message, context, db)
+
+    # Seed any slots not extracted from the message using client ambient context
+    _apply_context(slots, context)
 
     awaiting_confirmation = False
     review_item_id = None
@@ -4896,8 +4898,10 @@ def _fill_slots(
     data_date = context.resolved_data_date(DATA_DATE)
 
     # ── the answer to our own question, first ──
-    if answering == "discipline" and slots.discipline is None:
-        slots.discipline = parse_discipline(message, as_answer=True)
+    if answering == "discipline":
+        ans_disc = parse_discipline(message, as_answer=True)
+        if ans_disc:
+            slots.discipline = ans_disc
     elif answering == "status" and slots.status is None:
         slots.status = parse_status(message)
     elif answering in ("date",) and slots.date is None:
@@ -4974,8 +4978,11 @@ def _fill_slots(
             if name not in slots.llm_suggested_fields:
                 slots.llm_suggested_fields = slots.llm_suggested_fields + [name]
 
-    if slots.discipline is None:
-        slots.discipline = parse_discipline(message)
+    msg_disc = parse_discipline(message)
+    if msg_disc:
+        slots.discipline = msg_disc
+        if "discipline" in slots.llm_suggested_fields:
+            slots.llm_suggested_fields = [f for f in slots.llm_suggested_fields if f != "discipline"]
     if slots.status is None:
         slots.status = parse_status(message)
     if not slots.tags:

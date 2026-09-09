@@ -614,3 +614,23 @@ class TestDateQuestionAdaptsToStatus:
         assert turn["agent_message"] == "Which date did this progress happen on?"
 
 
+class TestDisciplineOverrideAndConcreteKeywords:
+    """When a supervisor with default piping context reports civil/concrete work,
+    NAVIS must recognize the civil trade and not get hijacked by piping context or HSE false-positives."""
+
+    def test_concrete_keywords_override_piping_context(self, client):
+        sid = str(uuid.uuid4())
+        turn = _turn(client, sid, "concret has arrived and applied to tower 3")
+        assert turn["slots"]["discipline"] == "civil"
+        assert turn["discipline_label"] == "Civil"
+        assert turn["slots"]["discipline"] != "piping"
+        assert turn["slots"]["discipline"] != "hse"
+
+    def test_concreate_typo_resolves_to_civil(self, client):
+        sid = str(uuid.uuid4())
+        turn = _turn(client, sid, "concreate work started for foundation")
+        assert turn["slots"]["discipline"] == "civil"
+        assert turn["discipline_label"] == "Civil"
+
+
+

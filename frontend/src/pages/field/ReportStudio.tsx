@@ -75,6 +75,29 @@ function phaseFor(turn: AgentTurnResponse): Phase {
   return 'ready';
 }
 
+function detectDisciplineFromText(text: string): Discipline | null {
+  if (!text) return null;
+  if (/\b(?:concret|concreate|concrete|cement|civil|foundation|backfill|grading|excavat|rebar|formwork|shuttering|plinth|raft|footing|earthwork|slab|masonry|brick|mortar|pcc|rcc|curing|dhalai|khudaai|khudai|dalai|mitti)\b/i.test(text)) {
+    return 'civil';
+  }
+  if (/\b(?:piping|pipe|pipes|pipeline|spool|flange|hydrotest|insulation|coating|header|boltup|bolt-up|weld|valve)\b/i.test(text)) {
+    return 'piping';
+  }
+  if (/\b(?:cable|electrical|transformer|switchgear|earthing|grounding|megger|conduit|panel|tray|lighting|motor|vidyut)\b/i.test(text)) {
+    return 'electrical';
+  }
+  if (/\b(?:instrument|transmitter|loop\s*check|dcs|sis|esd|calibration|sensor|tubing|plc|junction|interlock)\b/i.test(text)) {
+    return 'instrumentation';
+  }
+  if (/\b(?:vessel|exchanger|pump|compressor|skid|tank|jacking|grout|nozzle|yantrik)\b/i.test(text)) {
+    return 'static_equipment';
+  }
+  if (/\b(?:safety|scaffold|permit|jsa|induction|toolbox|ppe|near-miss|incident|spill|firstaid|barricade|suraksha)\b/i.test(text)) {
+    return 'hse';
+  }
+  return null;
+}
+
 export interface ReportSubmissionFlowProps {
   initialReport?: string;
   initialAttachments?: Array<{ name: string; type: 'photo' | 'file' }>;
@@ -123,11 +146,21 @@ export function ReportSubmissionFlow({
   const [isChangingWorkFront, setIsChangingWorkFront] = useState(false);
   const [isChangingContext, setIsChangingContext] = useState(false);
 
-  // Supervisor defaults to their assigned trade (Piping) or saved preference
+  // Supervisor defaults to their assigned trade (Piping) or saved preference, unless initialReport mentions another trade
   const [discipline, setDiscipline] = useState<Discipline | ''>(() => {
     if (initialDiscipline !== undefined) return initialDiscipline;
+    if (initialReport) {
+      const detected = detectDisciplineFromText(initialReport);
+      if (detected) return detected;
+    }
     return savedDiscipline() ?? SUPERVISOR.discipline;
   });
+  const userManuallySetDiscipline = useRef(initialDiscipline !== undefined);
+
+  const handleDisciplineChange = (val: Discipline | '') => {
+    userManuallySetDiscipline.current = true;
+    setDiscipline(val);
+  };
   const [isChangingDiscipline, setIsChangingDiscipline] = useState(false);
 
   const [workDate, setWorkDate] = useState<string>(initialWorkDate ?? PROJECT.dataDate);
@@ -175,6 +208,12 @@ export function ReportSubmissionFlow({
 
   const handleReportChange = useCallback((val: string) => {
     setReport(val);
+    if (!userManuallySetDiscipline.current) {
+      const detected = detectDisciplineFromText(val);
+      if (detected) {
+        setDiscipline(detected);
+      }
+    }
     if (!quantityInput.trim()) {
       const qm = val.match(/\b(\d+(?:\.\d+)?)\s*(m3|m2|sqm|cum|lm|mt|km|mm|nos|no|tonnes|tonne|ton|tons|m|spools?|flanges?|panels?|joints?|piles?|valves?)\b/i);
       if (qm) {
@@ -284,8 +323,15 @@ export function ReportSubmissionFlow({
           return;
         }
 
+        const nextDisc = (res.slots?.discipline as Discipline) || discipline;
+        if (res.slots?.discipline && res.slots.discipline !== discipline) {
+          setDiscipline(nextDisc);
+        }
+
+        const effectiveKey = `${currentReport}::${workFront}::${nextDisc}::${workDate}`;
         setTurn(res);
-        setCheckedKey(keyAtSend);
+        setCheckedKey(effectiveKey);
+        draftKeyRef.current = effectiveKey;
         setEdited(false);
         setExchanges((e) => [...e, { from: 'navis', text: res.agent_message }]);
         setAnswer('');
@@ -1168,7 +1214,7 @@ export function ReportSubmissionFlow({
                     </label>
                     <select
                       value={discipline}
-                      onChange={(e) => setDiscipline(e.target.value as Discipline | '')}
+                      onChange={(e) => handleDisciplineChange(e.target.value as Discipline | '')}
                       aria-label="Discipline"
                       className="w-full rounded-lg border border-hair bg-raised px-2.5 py-1.5 text-xs font-semibold text-heading focus:outline-none focus:border-accent cursor-pointer"
                     >
@@ -1209,7 +1255,7 @@ export function ReportSubmissionFlow({
                   </select>
                   <select
                     value={discipline}
-                    onChange={(e) => setDiscipline(e.target.value as Discipline | '')}
+                    onChange={(e) => handleDisciplineChange(e.target.value as Discipline | '')}
                     aria-label="Discipline"
                     tabIndex={-1}
                   >
@@ -1290,7 +1336,11 @@ export function ReportSubmissionFlow({
                     <span className="font-bold text-heading">
                       {turn?.discipline_label ?? (discipline ? DISCIPLINES.find((d) => d.value === discipline)?.label : 'Piping')}
                     </span>
-                    <span className="text-[10px] text-muted">{renderWithSrOnly(t('you_selected'), 'you selected')}</span>
+                    <span className="text-[10px] text-muted">
+                      {turn?.slots?.discipline
+                        ? renderWithSrOnly(t('read_from_report'), 'read from your report')
+                        : renderWithSrOnly(t('you_selected'), 'you selected')}
+                    </span>
                   </div>
                 </div>
 
@@ -1482,7 +1532,7 @@ export function ReportSubmissionFlow({
             />
             <select
               value={discipline}
-              onChange={(e) => setDiscipline(e.target.value as Discipline | '')}
+              onChange={(e) => handleDisciplineChange(e.target.value as Discipline | '')}
               aria-label="Discipline"
               className="sr-only"
               tabIndex={-1}

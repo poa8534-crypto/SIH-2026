@@ -75,17 +75,21 @@ _DISCIPLINE_SYNONYMS: dict[str, str] = {
     "instr": "instrumentation", "inst": "instrumentation",
     "safety": "hse", "ehs": "hse", "h&s": "hse", "suraksha": "hse",
     "pipe": "piping", "pipes": "piping", "piping": "piping", "pipeline": "piping",
-    "khudaai": "civil", "dhalai": "civil", "mitti": "civil",
+    "concrete": "civil", "concret": "civil", "concreate": "civil", "concreting": "civil",
+    "cement": "civil", "rcc": "civil", "pcc": "civil", "foundation": "civil",
+    "khudaai": "civil", "dhalai": "civil", "mitti": "civil", "khudai": "civil", "dalai": "civil",
 }
 
 # Words that merely describe work of a discipline, used only when the message
 # is prose rather than a direct answer.
 _DISCIPLINE_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "civil": ("civil", "foundation", "concrete", "backfill", "grading", "slab",
+    "civil": ("concret", "concreate", "concrete", "cement", "civil", "foundation", "backfill", "grading", "slab",
               "flooring", "tile", "plaster", "drainage", "fencing", "pedestal",
-              "excavat", "rebar", "formwork", "khudaai", "dhalai"),
+              "excavat", "rebar", "formwork", "shuttering", "plinth", "raft", "footing",
+              "earthwork", "masonry", "brick", "mortar", "pcc", "rcc", "curing",
+              "khudaai", "dhalai", "khudai", "dalai", "mitti"),
     "piping": ("piping", "pipe", "pipes", "pipeline", "spool", "flange", "hydrotest", "erection", "erect",
-               "insulation", "coating", "paint", "header", "boltup", "bolt-up"),
+               "insulation", "coating", "paint", "header", "boltup", "bolt-up", "weld"),
     "static_equipment": ("vessel", "exchanger", "pump", "compressor", "skid",
                          "tank", "jacking", "grout", "nozzle", "yantrik"),
     "electrical": ("cable", "termination", "earthing", "grounding",
@@ -111,7 +115,7 @@ def parse_discipline(text: str, *, as_answer: bool = False) -> Optional[str]:
     if not text:
         return None
     cleaned = text.strip().lower()
-    cleaned = re.sub(r"[^a-z&\s]", " ", cleaned)
+    cleaned = re.sub(r"[^a-z0-9&\s\-]", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
     # Exact label or enum value.
@@ -130,9 +134,12 @@ def parse_discipline(text: str, *, as_answer: bool = False) -> Optional[str]:
                 return value
 
     # Prose: infer from the work described.
+    # Note: Require a leading word boundary so abbreviations (like 'ncr')
+    # never match as substrings inside other words (like 'concret' / 'concrete').
     for value, words in _DISCIPLINE_KEYWORDS.items():
-        if any(w in cleaned for w in words):
-            return value
+        for w in words:
+            if re.search(rf"\b{re.escape(w)}", cleaned):
+                return value
     return None
 
 
