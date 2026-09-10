@@ -41,7 +41,7 @@ So: **four content slides, four diagrams, one per slide.** Slide 3 gets a big on
 > Style: flat 2D technical flowchart for a government hackathon slide, in the style of an engineering block diagram. Pastel filled boxes (light blue, mint, lavender, peach) with thin darker borders and rounded corners; related boxes grouped inside soft tinted background containers, each container carrying a small caption above it. Arrows are thin dark grey with labelled conditions on them. Section headings inside the canvas are small, blue, underlined. Sans-serif throughout. No 3D, no shadows, no gradients, no clipart, no icons of people or buildings, no emoji. Every box label 6 words or fewer. Must stay legible when projected and when printed in greyscale, so never use colour alone to carry meaning.
 
 **Only these numbers may appear on a diagram:**
-100% auto-link precision (67/67) · 43.5% coverage · 86.9% top-1 (126/145) · 71.4% held-out v2 top-1 · 88.1% recall@3 · 80.0% NO_MATCH refusal · 1,426 tests · 120 activities · 0.80 / 0.40 / margin 0.03 · 6 disciplines · 18 API routes · 100% recall@20.
+100% auto-link precision (67/67) · 43.5% coverage · 86.9% top-1 (126/145) · 71.4% held-out v2 top-1 · 88.1% recall@3 · 80.0% NO_MATCH refusal · 1,431 tests · 120 activities · 0.80 / 0.40 / margin 0.03 · 6 disciplines · 46 HTTP routes · 100% recall@20.
 
 **Never let a diagram say:** "Offline-first PWA" · "96.7%" · "0.42 spools/day" · "dual-engine OCR" beside "zero internet" · "learns from planner corrections" · "bi-directional MS Project" · "empirical monsoon factor" · "218 activities" as the demo size · "real Oil India data".
 
@@ -192,7 +192,7 @@ Attach a dashed optional box to the ENGINE layer: "Local LLM via Ollama — opti
 off by default".
 On the right inside edge of the boundary, a vertical strip labelled "P6 PMXML import ·
 P6 XER import · JSON baseline import · PMXML / XER export".
-Below the boundary, three small stat tiles: "1,426 automated tests passing",
+Below the boundary, three small stat tiles: "1,431 automated tests passing",
 "Single-command Docker deploy", "Runs on a laptop CPU — no GPU".
 
 RIGHT PANEL, heading "RISKS AND HOW WE HANDLE THEM":
@@ -283,7 +283,7 @@ Bottom-right corner of slide 3, roughly **4.0" × 1.3"**, light blue fill:
 ```
 GitHub link:  <your repo URL>
 Demo video:   <link>
-Working prototype — 1,426 automated tests passing   ← this line in red
+Working prototype — 1,431 automated tests passing   ← this line in red
 ```
 
 The winning deck put "Above 40% of the prototype is completed" there in red. You are further along than that, so say what is true and let it do the work: a link a judge can click plus a test count they can verify beats any adjective.

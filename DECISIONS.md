@@ -9585,3 +9585,56 @@ nobody re-derived survived three builds of the deck.
 **Related:** D-100 (the deck build), D-093 (the shipped thresholds the answers quote),
 D-061 (the learning-loop measurement behind A73), D-047 (the simplified XER writer
 behind A79), D-004 (the append-only trail behind A75).
+
+---
+
+### D-102 — External review answered: three findings confirmed, one wrong, and every URL removed from the deck
+
+**Date:** 2026-09-10 · **Status:** current · **Area:** deck, `research/`, `NUMBERS_SHEET.md`, retired pitch documents
+
+**Context.** An external review produced an eight-row claim-versus-reality table. Every
+row was re-derived against the code rather than against documentation. **The critical
+context is that the review read `pitch_deck.md` and `demo_script.md`, not the submitted
+deck.** Both are superseded drafts, and every false claim it found lives in them.
+
+**Row-by-row outcome.**
+
+| Reviewer's claim | Verdict after checking the source |
+|:---|:---|
+| "96.7% top-1" | **Their finding is right about the old file, and it is not in the deck.** The submitted deck says 86.9% (126/145). `pitch_deck.md` carried 96.7%. |
+| "100% precision is selective" | **Fair, and already disclosed** — the deck prints coverage 43.5% (67/154) next to the precision figure. |
+| "Offline-first PWA" | **Confirmed false, in `pitch_deck.md` only.** No service worker, no IndexedDB. Never in the submitted deck. |
+| "Bi-directional P6 and MS Project" | **Confirmed false, in the old docs only.** No `.mpp`; the XER writer is a simplified shape (D-047). |
+| "Dual-engine OCR for scanned diaries" | **Confirmed untested** — there is not one image fixture under `dataset/` or `datasets/`. |
+| "Learning loop is inert" | **Confirmed and already documented** — `w_alias = 0.0`; the measurement is D-061. |
+| "Planner review can instantiate planned dates" | **Half right, and worth fixing.** No ingest path touches a planned date and no planner action changes a *baseline* activity's planned dates. But `server/main.py`, the `action == "create"` branch, seeds a planner-created activity's `planned_start` and `planned_finish` from the event's reported date. That is a fabricated plan date on a real row, and it is the same defect class as D-015. **Open — not fixed in this pass.** |
+| "1,431 tests, not 1,250" | **Correct, and our own figure was also stale.** Re-ran both suites: **1,202 pytest + 229 vitest = 1,431**, all passing. We had been quoting 1,426 (224 vitest) from a run earlier the same day; the responsive-layout work (D-099) added five frontend tests. |
+
+**Decisions taken.**
+
+1. **1,431 replaces 1,426** in `NUMBERS_SHEET.md`, the deck, the drill files,
+   `HACKATHON_EVE_BATTLE_PLAN.md`, `FLOWCHART_PROMPTS.md` and `DECK_DIAGRAMS.md`.
+   `ppt_build/CONTENT_EVIDENCE_PLAN.md` keeps 1,426 as the record of its own run and
+   notes the re-count beside it.
+2. **No URL appears anywhere in the deck.** The repository link left slide 3 — the
+   evidence box now offers the command that reproduces the figures and the scope of the
+   test set — and slide 6 names its five sources with what each was used for, instead of
+   linking them. The reviewer also flagged the `vercel.app` link in the repository's
+   About panel; that field is edited on GitHub and cannot be changed from here.
+3. **The on-premise band on slide 4 is now native shapes, and the Eraser export is no
+   longer placed.** That PNG had "18 REST routes" and "1,426 automated tests" baked into
+   its pixels. A figure inside an image cannot be corrected from this repository, so
+   images that carry figures do not belong in this deck. Two Eraser diagrams remain, and
+   neither states a number that can go stale.
+4. **`pitch_deck.md` and `demo_script.md` carry a retraction banner** listing each false
+   claim beside the reality, and pointing at `NUMBERS_SHEET.md` and the drill files.
+   They are not deleted — an architectural history keeps its retractions visible.
+
+**Consequence, and the lesson worth keeping.** Both wrong figures on the deck — 18
+routes and 1,426 tests — were true when first written and were never re-derived. The
+rule that catches this is not "check the docs"; it is **re-derive every number from the
+code or a named run on the day you ship it**, which is what `NUMBERS_SHEET.md` exists to
+force.
+
+**Related:** D-100 and D-101 (the deck), D-099 (the five new frontend tests), D-061
+(learning loop), D-047 (XER), D-015 (the same fabricated-date class as the open item).

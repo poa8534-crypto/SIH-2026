@@ -44,7 +44,7 @@ Six shapes. Sits under B, below a dashed divider — the reference deck's "3 LAY
 ```
 GitHub:      <repo URL>
 Demo video:  <link>
-Working prototype — 1,426 automated tests passing    ← in red
+Working prototype — 1,431 automated tests passing    ← in red
 ```
 
 ---

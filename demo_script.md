@@ -1,4 +1,24 @@
 # NAVIS — 2-Minute Grand Finale Live Demo Script
+
+> ## ⚠ RETRACTED — DO NOT PRESENT FROM THIS FILE
+>
+> **This document is superseded and several of its claims are false.** It is kept only
+> as a record of an earlier draft. An external review on 2026-09-10 read this file and
+> reported these defects, all of which are confirmed:
+>
+> | Claim in this file | Reality in the code |
+> |:---|:---|
+> | "96.7% Top-1" | **86.9%** (126/145) on the shipped v1 held-out test; 71.4% on the v2 corpus |
+> | "Offline-First PWA, local caching, offline voice queue" | **No service worker, no IndexedDB, no offline queue.** `Field.tsx` says so in a comment |
+> | "Bi-directional Primavera P6 and MS Project" | **No `.mpp` support at all.** The XER writer emits a simplified shape that P6 will not import (D-047) |
+> | "Dual-engine OCR for scanned diaries" | Wrappers exist; **there is not one scanned diary image in the benchmark**, and the cloud path needs a key and a network |
+> | "The system learns from planner corrections" | Corrections are stored; `w_alias = 0.0`, so the matcher never reads them back (D-061) |
+> | "1,250+ automated tests" | **1,431** (1,202 pytest + 229 vitest), re-counted 2026-09-10 |
+>
+> **What to present instead:** `NUMBERS_SHEET.md` for every figure,
+> `deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pptx` for the deck, and
+> `research/JUDGE_DRILL_02_ANSWERS.md` for the Q&A. See D-102.
+
 **Problem Statement SIH26122** · Oil India Limited / Ministry of Petroleum and Natural Gas  
 **Target Duration**: 120 Seconds (2 Minutes Flat)  
 **Presenter Setup**: Laptop showing NAVIS Web App (`localhost:8000`), second presenter holding a mobile phone connected to the PWA.

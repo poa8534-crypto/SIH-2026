@@ -174,7 +174,7 @@ wrong number reaches a judge.*
 60. Your worst metric — name it yourself, right now, before I find it.
 61. Recall@20 is 100%. That means retrieval is solved and ranking is not. So why are you
     showing me retrieval on the slide?
-62. 1,426 tests. How many of them assert anything that would fail if the matcher were
+62. 1,431 tests. How many of them assert anything that would fail if the matcher were
     wrong?
 63. Run it. Right now. On this laptop. I want to see the number appear, not a
     screenshot.

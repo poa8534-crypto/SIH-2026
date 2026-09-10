@@ -5,9 +5,9 @@
 // canvas, one evidence box in the bottom-right corner, and diagram density that is grouped
 // rather than scattered.
 //
-// Three Eraser diagrams carry the argument (bridge, master flow chart, on-premise stack); the
-// remaining Eraser diagrams were deliberately left out and their content is set as native text,
-// which stays sharper and reads better at slide size.
+// Two Eraser diagrams carry the argument (the bridge on slide 2, the master flow chart on
+// slide 3). Everything else is native shapes: an image cannot be corrected when a figure inside
+// it goes stale, which is exactly what happened to the on-premise export (D-102).
 //
 // Every figure on these slides is on the NUMBERS_SHEET.md allow list.
 
@@ -26,7 +26,6 @@ async function dataUrl(file) {
 }
 const IMG_BRIDGE = await dataUrl("diagram_A_bridge.png");     // 3.787 : 1
 const IMG_FLOW = await dataUrl("diagram_B_flowchart.png");    // 2.565 : 1
-const IMG_ONPREM = await dataUrl("diagram_D1_onprem.png");    // 4.520 : 1
 
 // Canvas is 1280 x 720 px. Fixed template zones: title above y=125, blue footer below y=658.
 const X0 = 36;
@@ -263,12 +262,14 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
   statChip(slide, { x: 528, y: 528, w: 148, h: 118, value: "43.5%", label: "COVERAGE\n67 of 154 mentions", fill: C.paleBlue, stroke: "#9DC2E6", valueColor: C.navy });
   statChip(slide, { x: 688, y: 528, w: 148, h: 118, value: "86.9%", label: "TOP-1 ACCURACY\n126 of 145", fill: C.paleOrange, stroke: "#F1B36F", valueColor: C.orange });
 
+  // Evidence box. No URLs anywhere in this deck, by instruction - the claim is the
+  // command that reproduces it, which is stronger than a link nobody will open on stage.
   card(slide, { x: 852, y: 528, w: 392, h: 118 }, C.paleBlue2, C.line, 12);
-  textBox(slide, "GitHub", { left: 868, top: 540, width: 70, height: 20 }, { fontSize: 11.5, bold: true, color: C.navy });
-  textBox(slide, "github.com/poa8534-crypto/SIH-2026", { left: 938, top: 540, width: 296, height: 20 }, { fontSize: 11.5, color: C.blue });
-  textBox(slide, "Verify", { left: 868, top: 566, width: 70, height: 20 }, { fontSize: 11.5, bold: true, color: C.navy });
-  textBox(slide, "python eval.py  reproduces every figure above", { left: 938, top: 566, width: 296, height: 20 }, { fontSize: 11.5, color: C.ink });
-  textBox(slide, "Working prototype - 1,426 automated tests passing", { left: 868, top: 598, width: 366, height: 36 }, {
+  textBox(slide, "Verify", { left: 868, top: 540, width: 62, height: 20 }, { fontSize: 11.5, bold: true, color: C.navy });
+  textBox(slide, "python eval.py  reproduces every figure above", { left: 930, top: 540, width: 304, height: 20 }, { fontSize: 11.5, color: C.ink });
+  textBox(slide, "Scope", { left: 868, top: 566, width: 62, height: 20 }, { fontSize: 11.5, bold: true, color: C.navy });
+  textBox(slide, "154 held-out mentions, synthetic corpus, one project", { left: 930, top: 566, width: 304, height: 20 }, { fontSize: 11.5, color: C.ink });
+  textBox(slide, "Working prototype - 1,431 automated tests passing", { left: 868, top: 598, width: 366, height: 36 }, {
     fontSize: 13, bold: true, color: C.red, verticalAlignment: "top", lineSpacing: 1.05,
   });
 
@@ -276,7 +277,7 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
     "Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram LxOWrZi9aG3a2C87B7_8.",
     "Thresholds shown on the chart are the shipped configuration: high 0.80, low 0.40, margin 0.03 (matching/config.py).",
     "Auto-link precision 100 percent (67/67), coverage 43.5 percent (67/154), top-1 86.9 percent (126/145) on the held-out test split.",
-    "1,426 automated tests = 1,202 pytest plus 224 vitest, all passing on 10 September 2026.",
+    "1,431 automated tests = 1,202 pytest plus 229 vitest, all passing, re-counted on 10 September 2026 after the responsive-layout work (D-099).",
     "The optional local LLM may help read a messy report. It never chooses the activity and never writes a date.",
   ]);
 }
@@ -291,11 +292,46 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
     fontSize: 14, bold: true, color: C.ink,
   });
 
-  slide.images.add({
-    dataUrl: IMG_ONPREM,
-    alt: "On-premise boundary containing the React client, FastAPI service, extraction and hybrid matching engine, SQLite store and the Primavera P6 import and export path.",
-    position: { left: 97, top: 152, width: 1086, height: 240 },
-    fit: "contain",
+  // The on-premise band is built natively rather than placed as the Eraser export.
+  // That export has "18 REST routes" and "1,426 automated tests" baked into its pixels,
+  // and both figures are now wrong (46 routes, 1,431 tests). A figure inside an image
+  // cannot be corrected from this repository, so it does not belong in this deck.
+  card(slide, { x: X0, y: 152, w: 1010, h: 240 }, "#F7FAFD", C.blue, 14);
+  textBox(slide, "ON-PREMISE BOUNDARY - no cloud service, no API key, nothing leaves your network", { left: X0 + 16, top: 162, width: 960, height: 20 }, {
+    fontSize: 11.5, bold: true, color: C.blue,
+  });
+
+  const tiers = [
+    { t: "CLIENT", d: "Planner web app\n(React + TypeScript)\nField supervisor screen", fill: C.paleGreen, stroke: "#92C9AA", color: C.green },
+    { t: "API", d: "FastAPI\n46 HTTP routes\nlive OpenAPI docs", fill: "#FBF0FA", stroke: "#D9A9D2", color: "#8E3C82" },
+    { t: "ENGINE", d: "Extraction rules\nHybrid matcher\nConfidence policy\n\nLocal LLM (Ollama):\noptional, OFF by default", fill: "#FFFAF0", stroke: "#E3B968", color: C.orange },
+    { t: "DATA", d: "SQLite\nActuals, review queue\nAppend-only audit", fill: C.paleBlue, stroke: "#9DC2E6", color: C.navy },
+    { t: "INTEROP", d: "Import: P6 PMXML,\nP6 XER, JSON baseline\nExport: PMXML, XER", fill: C.paleBlue2, stroke: C.line, color: C.navy },
+  ];
+  const tw = 178;
+  const tgap = (978 - tiers.length * tw) / (tiers.length - 1);
+  const tierShapes = tiers.map((tier, i) => {
+    const x = X0 + 16 + i * (tw + tgap);
+    const surface = card(slide, { x, y: 194, w: tw, h: 182 }, tier.fill, tier.stroke, 11);
+    textBox(slide, tier.t, { left: x + 10, top: 204, width: tw - 20, height: 18 }, {
+      fontSize: 11.5, bold: true, color: tier.color, alignment: "center",
+    });
+    textBox(slide, tier.d, { left: x + 10, top: 226, width: tw - 20, height: 142 }, {
+      fontSize: 10.5, color: C.ink, alignment: "center", verticalAlignment: "top", lineSpacing: 1.08,
+    });
+    return surface;
+  });
+  for (let i = 0; i < tierShapes.length - 1; i += 1) arrow(slide, tierShapes[i], tierShapes[i + 1], C.blue, 1.6);
+
+  card(slide, { x: 1062, y: 194, w: 182, h: 182 }, C.paleGreen, "#92C9AA", 11);
+  textBox(slide, "1,431", { left: 1070, top: 214, width: 166, height: 36 }, {
+    fontSize: 26, bold: true, color: C.green, alignment: "center",
+  });
+  textBox(slide, "automated tests passing\n1,202 pytest + 229 vitest", { left: 1070, top: 252, width: 166, height: 42 }, {
+    fontSize: 10.5, bold: true, color: C.ink, alignment: "center", verticalAlignment: "top", lineSpacing: 1.05,
+  });
+  textBox(slide, "Single-command Docker deploy\nLaptop CPU, no GPU", { left: 1070, top: 306, width: 166, height: 60 }, {
+    fontSize: 10.5, color: C.ink, alignment: "center", verticalAlignment: "top", lineSpacing: 1.1,
   });
 
   sectionLabel(slide, "CHALLENGES AND RISKS", X0, 408, 170, C.red);
@@ -424,24 +460,25 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
   deleteNamed(slide, "TextBox 8");
 
   sectionLabel(slide, "REFERENCE AND RESEARCH WORK", X0, 126, 226);
+  // Sources are named, not linked. No URL appears anywhere in this deck, by instruction.
   const refs = [
-    ["MoSPI PAIMANA", "Central project monitoring scale", "ipm.mospi.gov.in"],
-    ["GAO Schedule Assessment Guide", "What makes a schedule reliable", "gao.gov/products/gao-16-89g"],
-    ["NIST AI Risk Management Framework", "Traceability and human oversight", "nist.gov/itl/ai-risk-management-framework"],
-    ["Oracle Primavera P6 EPPM docs", "PMXML and XER interchange", "docs.oracle.com - primavera-p6"],
-    ["CFIHOS oil and gas taxonomy", "Structure behind the synthetic schedule", "public specification, datasets/real/"],
+    ["MoSPI PAIMANA", "Official central-project monitoring portal", "the scale figure on slide 5"],
+    ["GAO Schedule Assessment Guide (GAO-16-89G)", "What makes a schedule reliable", "why actuals must be traceable"],
+    ["NIST AI Risk Management Framework", "Traceability and human oversight", "why a human confirms every uncertain row"],
+    ["Oracle Primavera P6 EPPM documentation", "PMXML and XER interchange formats", "our pure-Python parsers"],
+    ["CFIHOS oil and gas taxonomy", "Public equipment and discipline taxonomy", "the structure of the synthetic schedule"],
   ];
-  refs.forEach(([name, why, link], i) => {
+  refs.forEach(([name, why, used], i) => {
     const y = 168 + i * 74;
     card(slide, { x: X0, y, w: 596, h: 64 }, i % 2 === 0 ? C.paleBlue2 : C.white, C.line, 11);
     textBox(slide, name, { left: X0 + 14, top: y + 9, width: 570, height: 20 }, {
       fontSize: 12.5, bold: true, color: C.navy,
     });
-    textBox(slide, why, { left: X0 + 14, top: y + 31, width: 300, height: 20 }, {
+    textBox(slide, why, { left: X0 + 14, top: y + 31, width: 340, height: 20 }, {
       fontSize: 11, color: C.ink,
     });
-    textBox(slide, link, { left: X0 + 320, top: y + 31, width: 264, height: 20 }, {
-      fontSize: 11, color: C.blue, alignment: "right",
+    textBox(slide, "used for: " + used, { left: X0 + 340, top: y + 31, width: 244, height: 20 }, {
+      fontSize: 10.5, color: C.muted, alignment: "right",
     });
   });
 
@@ -493,7 +530,7 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
     "Synthetic schedule and reports",
     "No live Oil India data yet",
     "In-distribution benchmark",
-    "1,426 tests - 1,202 pytest, 224 vitest",
+    "1,431 tests - 1,202 pytest, 229 vitest",
   ];
   bounds.forEach((item, i) => {
     const x = X0 + 16 + i * 296;

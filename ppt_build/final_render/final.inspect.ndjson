@@ -1,4 +1,4 @@
-{"kind":"deck","id":"pr/lk7amu","name":"Deck"}
+{"kind":"deck","id":"pr/tyh1wy","name":"Deck"}
 {"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"TITLE PAGE","textShapes":3}
 {"kind":"shape","id":"sh/43y1gji9","slide":1,"name":"Rectangle 24","bbox":[160,0,960,720]}
 {"kind":"shape","id":"sh/54r2poju","slide":1,"name":"Freeform: Shape 26","bbox":[593.89,89.4,486.99,541.2]}
@@ -68,15 +68,15 @@
 {"kind":"textbox","id":"sh/tsbil0nu","slide":3,"text":"86.9%","textPreview":"86.9%","textChars":5,"textLines":1,"bbox":[694,537,136,34]}
 {"kind":"textbox","id":"sh/il0zm1o7","slide":3,"text":"TOP-1 ACCURACY\n126 of 145","textPreview":"TOP-1 ACCURACY | 126 of 145","textChars":25,"textLines":2,"bbox":[696,572,132,68]}
 {"kind":"shape","id":"sh/jm90f65s","slide":3,"bbox":[852,528,392,118]}
-{"kind":"textbox","id":"sh/4nihob6d","slide":3,"text":"GitHub","textPreview":"GitHub","textChars":6,"textLines":1,"bbox":[868,540,70,20]}
-{"kind":"textbox","id":"sh/5orihgni","slide":3,"text":"github.com/poa8534-crypto/SIH-2026","textPreview":"github.com/poa8534-crypto/SIH-2026","textChars":34,"textLines":1,"bbox":[938,540,296,20]}
-{"kind":"textbox","id":"sh/2h4jy54b","slide":3,"text":"Verify","textPreview":"Verify","textChars":6,"textLines":1,"bbox":[868,566,70,20]}
-{"kind":"textbox","id":"sh/3id0ra5w","slide":3,"text":"python eval.py  reproduces every figure above","textPreview":"python eval.py  reproduces every figure above","textChars":45,"textLines":1,"bbox":[938,566,296,20]}
-{"kind":"textbox","id":"sh/dcf2x47y","slide":3,"text":"Working prototype - 1,426 automated tests passing","textPreview":"Working prototype - 1,426 automated tests passing","textChars":49,"textLines":1,"bbox":[868,598,366,36]}
+{"kind":"textbox","id":"sh/4nihob6d","slide":3,"text":"Verify","textPreview":"Verify","textChars":6,"textLines":1,"bbox":[868,540,62,20]}
+{"kind":"textbox","id":"sh/5orihgni","slide":3,"text":"python eval.py  reproduces every figure above","textPreview":"python eval.py  reproduces every figure above","textChars":45,"textLines":1,"bbox":[930,540,304,20]}
+{"kind":"textbox","id":"sh/2h4jy54b","slide":3,"text":"Scope","textPreview":"Scope","textChars":5,"textLines":1,"bbox":[868,566,62,20]}
+{"kind":"textbox","id":"sh/3id0ra5w","slide":3,"text":"154 held-out mentions, synthetic corpus, one project","textPreview":"154 held-out mentions, synthetic corpus, one project","textChars":52,"textLines":1,"bbox":[930,566,304,20]}
+{"kind":"textbox","id":"sh/dcf2x47y","slide":3,"text":"Working prototype - 1,431 automated tests passing","textPreview":"Working prototype - 1,431 automated tests passing","textChars":49,"textLines":1,"bbox":[868,598,366,36]}
 {"kind":"image","id":"im/5snex8by","slide":3,"name":"Picture 11","bbox":[1026.78,0.16,236.2,111.53]}
 {"kind":"image","id":"im/ipcv2ds7","slide":3,"name":"","bbox":[368,158.27,876,341.45]}
-{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram LxOWrZi9aG3a2C87B7_8.\nThresholds shown on the chart are the shipped configuration: high 0.80, low 0.40, margin 0.03 (matching/config.py).\nAuto-link precision 100 percent (67/67), coverage 43.5 percent (67/154), top-1 86.9 percent (126/145) on the held-out test split.\n1,426 automated tests = 1,202 pytest plus 224 vitest, all passing on 10 September 2026.\nThe optional local LLM may help read a messy report. It never chooses the activity and never writes a date."}
-{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"FEASIBILITY AND VIABILITY","textShapes":19}
+{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram LxOWrZi9aG3a2C87B7_8.\nThresholds shown on the chart are the shipped configuration: high 0.80, low 0.40, margin 0.03 (matching/config.py).\nAuto-link precision 100 percent (67/67), coverage 43.5 percent (67/154), top-1 86.9 percent (126/145) on the held-out test split.\n1,431 automated tests = 1,202 pytest plus 229 vitest, all passing, re-counted on 10 September 2026 after the responsive-layout work (D-099).\nThe optional local LLM may help read a messy report. It never chooses the activity and never writes a date."}
+{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"FEASIBILITY AND VIABILITY","textShapes":33}
 {"kind":"shape","id":"sh/kbm987y5","slide":4,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
 {"kind":"textbox","id":"sh/ud8fyt4z","slide":4,"name":"Title 1","placeholder":"title","text":"FEASIBILITY AND VIABILITY","textPreview":"FEASIBILITY AND VIABILITY","textChars":25,"textLines":1,"bbox":[0,0,0,0]}
 {"kind":"textbox","id":"sh/doj29oba","slide":4,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
@@ -85,33 +85,57 @@
 {"kind":"textbox","id":"sh/6h8v6d07","slide":4,"text":"FEASIBILITY - IT RUNS ON ONE LAPTOP","textPreview":"FEASIBILITY - IT RUNS ON ONE LAPTOP","textChars":35,"textLines":1,"bbox":[36,126,460,22]}
 {"kind":"shape","id":"sh/rihwfy1s","slide":4,"bbox":[36,149,268,0]}
 {"kind":"textbox","id":"sh/4fqd43i1","slide":4,"text":"No cloud service, no API key, nothing leaves your network.","textPreview":"No cloud service, no API key, nothing leaves your network.","textChars":58,"textLines":1,"bbox":[336,124,620,24]}
-{"kind":"textbox","id":"sh/id8v2t0b","slide":4,"text":"CHALLENGES AND RISKS","textPreview":"CHALLENGES AND RISKS","textChars":20,"textLines":1,"bbox":[36,408,460,22]}
-{"kind":"shape","id":"sh/jehwby1g","slide":4,"bbox":[36,431,170,0]}
-{"kind":"textbox","id":"sh/wr6d0ji5","slide":4,"text":"MITIGATION - ALREADY BUILT","textPreview":"MITIGATION - ALREADY BUILT","textChars":26,"textLines":1,"bbox":[654,408,460,22]}
-{"kind":"shape","id":"sh/hsze9ojq","slide":4,"bbox":[654,431,200,0]}
-{"kind":"shape","id":"sh/x8rudkbe","slide":4,"bbox":[36,452,8,8]}
-{"kind":"textbox","id":"sh/c7yt4fut","slide":4,"text":"Field wording never matches the WBS text","textPreview":"Field wording never matches the WBS text","textChars":40,"textLines":1,"bbox":[52,444,570,32]}
-{"kind":"shape","id":"sh/b6pcbat8","slide":4,"bbox":[654,452,8,8]}
-{"kind":"textbox","id":"sh/algb25cn","slide":4,"text":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textPreview":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textChars":92,"textLines":1,"bbox":[670,444,574,32]}
-{"kind":"shape","id":"sh/pk7u90bi","slide":4,"bbox":[36,489,8,8]}
-{"kind":"textbox","id":"sh/ojyt0vux","slide":4,"text":"A wrong actual date means false billing or a premature hydrotest","textPreview":"A wrong actual date means false billing or a premature hydrotest","textChars":64,"textLines":1,"bbox":[52,481,570,32]}
-{"kind":"shape","id":"sh/nipc7atc","slide":4,"bbox":[654,489,8,8]}
-{"kind":"textbox","id":"sh/2hgby5cr","slide":4,"text":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textPreview":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textChars":90,"textLines":1,"bbox":[670,481,574,32]}
-{"kind":"shape","id":"sh/9gbul4bm","slide":4,"bbox":[36,526,8,8]}
-{"kind":"textbox","id":"sh/8fidczu1","slide":4,"text":"Work happens that nobody planned","textPreview":"Work happens that nobody planned","textChars":32,"textLines":1,"bbox":[52,518,570,32]}
-{"kind":"shape","id":"sh/qlcr61sj","slide":4,"bbox":[654,526,8,8]}
-{"kind":"textbox","id":"sh/rml8f694","slide":4,"text":"Raised to the planner as a new-scope proposal, never dropped silently","textPreview":"Raised to the planner as a new-scope proposal, never dropped silently","textChars":69,"textLines":1,"bbox":[670,518,574,32]}
-{"kind":"shape","id":"sh/snu98bap","slide":4,"bbox":[36,563,8,8]}
-{"kind":"textbox","id":"sh/do3q1wra","slide":4,"text":"No live Oil India schedule is available to us","textPreview":"No live Oil India schedule is available to us","textChars":45,"textLines":1,"bbox":[52,555,570,32]}
-{"kind":"shape","id":"sh/ihcr2hsn","slide":4,"bbox":[654,563,8,8]}
-{"kind":"textbox","id":"sh/3il8bm9s","slide":4,"text":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textPreview":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textChars":87,"textLines":1,"bbox":[670,555,574,32]}
-{"kind":"shape","id":"sh/4ju94rad","slide":4,"bbox":[36,600,8,8]}
-{"kind":"textbox","id":"sh/5k3qdwry","slide":4,"text":"Site or venue has no internet","textPreview":"Site or venue has no internet","textChars":29,"textLines":1,"bbox":[52,592,570,32]}
-{"kind":"shape","id":"sh/2dwrelsr","slide":4,"bbox":[654,600,8,8]}
-{"kind":"textbox","id":"sh/ne5s7q9c","slide":4,"text":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textPreview":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textChars":69,"textLines":1,"bbox":[670,592,574,32]}
-{"kind":"textbox","id":"sh/76lo3ids","slide":4,"text":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textPreview":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textChars":126,"textLines":1,"bbox":[36,628,1208,24]}
-{"kind":"image","id":"im/7qdgb2tc","slide":4,"name":"Picture 10","bbox":[1026.78,0.16,236.2,111.53]}
-{"kind":"image","id":"im/8rmh47ux","slide":4,"name":"","bbox":[97.65,152,1084.71,240]}
+{"kind":"shape","id":"sh/5gzed8jm","slide":4,"bbox":[36,152,1010,240]}
+{"kind":"textbox","id":"sh/id8v2t0b","slide":4,"text":"ON-PREMISE BOUNDARY - no cloud service, no API key, nothing leaves your network","textPreview":"ON-PREMISE BOUNDARY - no cloud service, no API key, nothing leaves your network","textChars":79,"textLines":1,"bbox":[52,162,960,20]}
+{"kind":"shape","id":"sh/jehwby1g","slide":4,"bbox":[52,194,178,182]}
+{"kind":"textbox","id":"sh/wr6d0ji5","slide":4,"text":"CLIENT","textPreview":"CLIENT","textChars":6,"textLines":1,"bbox":[62,204,158,18]}
+{"kind":"textbox","id":"sh/hsze9ojq","slide":4,"text":"Planner web app\n(React + TypeScript)\nField supervisor screen","textPreview":"Planner web app | (React + TypeScript) | Field supervisor screen","textChars":60,"textLines":3,"bbox":[62,226,158,142]}
+{"kind":"shape","id":"sh/x8rudkbe","slide":4,"bbox":[252,194,178,182]}
+{"kind":"textbox","id":"sh/c7yt4fut","slide":4,"text":"API","textPreview":"API","textChars":3,"textLines":1,"bbox":[262,204,158,18]}
+{"kind":"textbox","id":"sh/b6pcbat8","slide":4,"text":"FastAPI\n46 HTTP routes\nlive OpenAPI docs","textPreview":"FastAPI | 46 HTTP routes | live OpenAPI docs","textChars":40,"textLines":3,"bbox":[262,226,158,142]}
+{"kind":"shape","id":"sh/algb25cn","slide":4,"bbox":[452,194,178,182]}
+{"kind":"textbox","id":"sh/pk7u90bi","slide":4,"text":"ENGINE","textPreview":"ENGINE","textChars":6,"textLines":1,"bbox":[462,204,158,18]}
+{"kind":"textbox","id":"sh/ojyt0vux","slide":4,"text":"Extraction rules\nHybrid matcher\nConfidence policy\n\nLocal LLM (Ollama):\noptional, OFF by default","textPreview":"Extraction rules | Hybrid matcher | Confidence policy |  | Local LLM (Ollama): | optional, OFF by default","textChars":95,"textLines":6,"bbox":[462,226,158,142]}
+{"kind":"shape","id":"sh/nipc7atc","slide":4,"bbox":[652,194,178,182]}
+{"kind":"textbox","id":"sh/2hgby5cr","slide":4,"text":"DATA","textPreview":"DATA","textChars":4,"textLines":1,"bbox":[662,204,158,18]}
+{"kind":"textbox","id":"sh/9gbul4bm","slide":4,"text":"SQLite\nActuals, review queue\nAppend-only audit","textPreview":"SQLite | Actuals, review queue | Append-only audit","textChars":46,"textLines":3,"bbox":[662,226,158,142]}
+{"kind":"shape","id":"sh/8fidczu1","slide":4,"bbox":[852,194,178,182]}
+{"kind":"textbox","id":"sh/qlcr61sj","slide":4,"text":"INTEROP","textPreview":"INTEROP","textChars":7,"textLines":1,"bbox":[862,204,158,18]}
+{"kind":"textbox","id":"sh/rml8f694","slide":4,"text":"Import: P6 PMXML,\nP6 XER, JSON baseline\nExport: PMXML, XER","textPreview":"Import: P6 PMXML, | P6 XER, JSON baseline | Export: PMXML, XER","textChars":58,"textLines":3,"bbox":[862,226,158,142]}
+{"kind":"shape","id":"sh/hory9o7q","slide":4,"bbox":[230,285,22,0]}
+{"kind":"shape","id":"sh/ulgfyt8f","slide":4,"bbox":[430,285,22,0]}
+{"kind":"shape","id":"sh/fmpg7yp0","slide":4,"bbox":[630,285,22,0]}
+{"kind":"shape","id":"sh/8jyxwjq9","slide":4,"bbox":[830,285,22,0]}
+{"kind":"shape","id":"sh/4ju94rad","slide":4,"bbox":[1062,194,182,182]}
+{"kind":"textbox","id":"sh/5k3qdwry","slide":4,"text":"1,431","textPreview":"1,431","textChars":5,"textLines":1,"bbox":[1070,214,166,36]}
+{"kind":"textbox","id":"sh/2dwrelsr","slide":4,"text":"automated tests passing\n1,202 pytest + 229 vitest","textPreview":"automated tests passing | 1,202 pytest + 229 vitest","textChars":49,"textLines":2,"bbox":[1070,252,166,42]}
+{"kind":"textbox","id":"sh/ne5s7q9c","slide":4,"text":"Single-command Docker deploy\nLaptop CPU, no GPU","textPreview":"Single-command Docker deploy | Laptop CPU, no GPU","textChars":47,"textLines":2,"bbox":[1070,306,166,60]}
+{"kind":"textbox","id":"sh/76lo3ids","slide":4,"text":"CHALLENGES AND RISKS","textPreview":"CHALLENGES AND RISKS","textChars":20,"textLines":1,"bbox":[36,408,460,22]}
+{"kind":"shape","id":"sh/m5cnadw7","slide":4,"bbox":[36,431,170,0]}
+{"kind":"textbox","id":"sh/98365svi","slide":4,"text":"MITIGATION - ALREADY BUILT","textPreview":"MITIGATION - ALREADY BUILT","textChars":26,"textLines":1,"bbox":[654,408,460,22]}
+{"kind":"shape","id":"sh/87u5cned","slide":4,"bbox":[654,431,200,0]}
+{"kind":"shape","id":"sh/zi14zidg","slide":4,"bbox":[36,452,8,8]}
+{"kind":"textbox","id":"sh/yhsn6dwv","slide":4,"text":"Field wording never matches the WBS text","textPreview":"Field wording never matches the WBS text","textChars":40,"textLines":1,"bbox":[52,444,570,32]}
+{"kind":"shape","id":"sh/l43m18vm","slide":4,"bbox":[654,452,8,8]}
+{"kind":"textbox","id":"sh/0ju583e1","slide":4,"text":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textPreview":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textChars":92,"textLines":1,"bbox":[670,444,574,32]}
+{"kind":"shape","id":"sh/je5ob2d0","slide":4,"bbox":[36,489,8,8]}
+{"kind":"textbox","id":"sh/idwnixcf","slide":4,"text":"A wrong actual date means false billing or a premature hydrotest","textPreview":"A wrong actual date means false billing or a premature hydrotest","textChars":64,"textLines":1,"bbox":[52,481,570,32]}
+{"kind":"shape","id":"sh/g76tgfql","slide":4,"bbox":[654,489,8,8]}
+{"kind":"textbox","id":"sh/h8fup076","slide":4,"text":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textPreview":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textChars":90,"textLines":1,"bbox":[670,481,574,32]}
+{"kind":"shape","id":"sh/u54be58f","slide":4,"bbox":[36,526,8,8]}
+{"kind":"textbox","id":"sh/f6xcnap0","slide":4,"text":"Work happens that nobody planned","textPreview":"Work happens that nobody planned","textChars":32,"textLines":1,"bbox":[52,518,570,32]}
+{"kind":"shape","id":"sh/4b6tkfqh","slide":4,"bbox":[654,526,8,8]}
+{"kind":"textbox","id":"sh/pcfutk72","slide":4,"text":"Raised to the planner as a new-scope proposal, never dropped silently","textPreview":"Raised to the planner as a new-scope proposal, never dropped silently","textChars":69,"textLines":1,"bbox":[670,518,574,32]}
+{"kind":"shape","id":"sh/29obi58r","slide":4,"bbox":[36,563,8,8]}
+{"kind":"textbox","id":"sh/3axcrapw","slide":4,"text":"No live Oil India schedule is available to us","textPreview":"No live Oil India schedule is available to us","textChars":45,"textLines":1,"bbox":[52,555,570,32]}
+{"kind":"shape","id":"sh/czqtoz6t","slide":4,"bbox":[654,563,8,8]}
+{"kind":"textbox","id":"sh/d0zuxk7e","slide":4,"text":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textPreview":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textChars":87,"textLines":1,"bbox":[670,555,574,32]}
+{"kind":"shape","id":"sh/lwvuhkzi","slide":4,"bbox":[36,600,8,8]}
+{"kind":"textbox","id":"sh/0vmt8fyx","slide":4,"text":"Site or venue has no internet","textPreview":"Site or venue has no internet","textChars":29,"textLines":1,"bbox":[52,592,570,32]}
+{"kind":"shape","id":"sh/zudsfahc","slide":4,"bbox":[654,600,8,8]}
+{"kind":"textbox","id":"sh/yt4b6pgr","slide":4,"text":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textPreview":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textChars":69,"textLines":1,"bbox":[670,592,574,32]}
+{"kind":"textbox","id":"sh/9kful4ze","slide":4,"text":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textPreview":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textChars":126,"textLines":1,"bbox":[36,628,1208,24]}
+{"kind":"image","id":"im/k325gze5","slide":4,"name":"Picture 10","bbox":[1026.78,0.16,236.2,111.53]}
 {"kind":"notes","id":"nt/jyx0ra1s","slide":4,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram Vwn78M3zjDixZbTZ4tdn.\nrecall@20 = 100 percent on the held-out test split; fusion places the correct activity inside the retrieved 20.\nThe XER writer emits a simplified shape and is not a P6-valid round trip (D-047).\nOCR is on-premise only when local Tesseract is installed; an optional cloud vision provider would send that document out."}
 {"kind":"slide","id":"sl/i107q5of","slide":5,"title":"IMPACT AND BENEFITS","textShapes":29}
 {"kind":"shape","id":"sh/w32dkbuh","slide":5,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
@@ -173,24 +197,24 @@
 {"kind":"shape","id":"sh/wred4j2x","slide":6,"bbox":[36,149,226,0]}
 {"kind":"shape","id":"sh/nmlcre1g","slide":6,"bbox":[36,168,596,64]}
 {"kind":"textbox","id":"sh/mlcby9kv","slide":6,"text":"MoSPI PAIMANA","textPreview":"MoSPI PAIMANA","textChars":13,"textLines":1,"bbox":[50,177,570,20]}
-{"kind":"textbox","id":"sh/9onutojm","slide":6,"text":"Central project monitoring scale","textPreview":"Central project monitoring scale","textChars":32,"textLines":1,"bbox":[50,199,300,20]}
-{"kind":"textbox","id":"sh/oned0j21","slide":6,"text":"ipm.mospi.gov.in","textPreview":"ipm.mospi.gov.in","textChars":16,"textLines":1,"bbox":[356,199,264,20]}
+{"kind":"textbox","id":"sh/9onutojm","slide":6,"text":"Official central-project monitoring portal","textPreview":"Official central-project monitoring portal","textChars":42,"textLines":1,"bbox":[50,199,340,20]}
+{"kind":"textbox","id":"sh/oned0j21","slide":6,"text":"used for: the scale figure on slide 5","textPreview":"used for: the scale figure on slide 5","textChars":37,"textLines":1,"bbox":[376,199,244,20]}
 {"kind":"shape","id":"sh/7ipc3i1k","slide":6,"bbox":[36,242,596,64]}
-{"kind":"textbox","id":"sh/6hgvadkf","slide":6,"text":"GAO Schedule Assessment Guide","textPreview":"GAO Schedule Assessment Guide","textChars":29,"textLines":1,"bbox":[50,251,570,20]}
-{"kind":"textbox","id":"sh/2d0f2h4n","slide":6,"text":"What makes a schedule reliable","textPreview":"What makes a schedule reliable","textChars":30,"textLines":1,"bbox":[50,273,300,20]}
-{"kind":"textbox","id":"sh/3etgv2ls","slide":6,"text":"gao.gov/products/gao-16-89g","textPreview":"gao.gov/products/gao-16-89g","textChars":27,"textLines":1,"bbox":[356,273,264,20]}
+{"kind":"textbox","id":"sh/6hgvadkf","slide":6,"text":"GAO Schedule Assessment Guide (GAO-16-89G)","textPreview":"GAO Schedule Assessment Guide (GAO-16-89G)","textChars":42,"textLines":1,"bbox":[50,251,570,20]}
+{"kind":"textbox","id":"sh/2d0f2h4n","slide":6,"text":"What makes a schedule reliable","textPreview":"What makes a schedule reliable","textChars":30,"textLines":1,"bbox":[50,273,340,20]}
+{"kind":"textbox","id":"sh/3etgv2ls","slide":6,"text":"used for: why actuals must be traceable","textPreview":"used for: why actuals must be traceable","textChars":39,"textLines":1,"bbox":[376,273,244,20]}
 {"kind":"shape","id":"sh/4f2x47md","slide":6,"bbox":[36,316,596,64]}
 {"kind":"textbox","id":"sh/pgbyxc3y","slide":6,"text":"NIST AI Risk Management Framework","textPreview":"NIST AI Risk Management Framework","textChars":33,"textLines":1,"bbox":[50,325,570,20]}
-{"kind":"textbox","id":"sh/qhkf6h4j","slide":6,"text":"Traceability and human oversight","textPreview":"Traceability and human oversight","textChars":32,"textLines":1,"bbox":[50,347,300,20]}
-{"kind":"textbox","id":"sh/ritgzml4","slide":6,"text":"nist.gov/itl/ai-risk-management-framework","textPreview":"nist.gov/itl/ai-risk-management-framework","textChars":41,"textLines":1,"bbox":[356,347,264,20]}
+{"kind":"textbox","id":"sh/qhkf6h4j","slide":6,"text":"Traceability and human oversight","textPreview":"Traceability and human oversight","textChars":32,"textLines":1,"bbox":[50,347,340,20]}
+{"kind":"textbox","id":"sh/ritgzml4","slide":6,"text":"used for: why a human confirms every uncertain row","textPreview":"used for: why a human confirms every uncertain row","textChars":50,"textLines":1,"bbox":[376,347,244,20]}
 {"kind":"shape","id":"sh/cj2x8rmp","slide":6,"bbox":[36,390,596,64]}
-{"kind":"textbox","id":"sh/dkby1w3a","slide":6,"text":"Oracle Primavera P6 EPPM docs","textPreview":"Oracle Primavera P6 EPPM docs","textChars":29,"textLines":1,"bbox":[50,399,570,20]}
-{"kind":"textbox","id":"sh/6lgfux4f","slide":6,"text":"PMXML and XER interchange","textPreview":"PMXML and XER interchange","textChars":25,"textLines":1,"bbox":[50,421,300,20]}
-{"kind":"textbox","id":"sh/7m9wnil0","slide":6,"text":"docs.oracle.com - primavera-p6","textPreview":"docs.oracle.com - primavera-p6","textChars":30,"textLines":1,"bbox":[356,421,264,20]}
+{"kind":"textbox","id":"sh/dkby1w3a","slide":6,"text":"Oracle Primavera P6 EPPM documentation","textPreview":"Oracle Primavera P6 EPPM documentation","textChars":38,"textLines":1,"bbox":[50,399,570,20]}
+{"kind":"textbox","id":"sh/6lgfux4f","slide":6,"text":"PMXML and XER interchange formats","textPreview":"PMXML and XER interchange formats","textChars":33,"textLines":1,"bbox":[50,421,340,20]}
+{"kind":"textbox","id":"sh/7m9wnil0","slide":6,"text":"used for: our pure-Python parsers","textPreview":"used for: our pure-Python parsers","textChars":33,"textLines":1,"bbox":[376,421,244,20]}
 {"kind":"shape","id":"sh/90fit0ni","slide":6,"bbox":[36,464,596,64]}
 {"kind":"textbox","id":"sh/oz610v6x","slide":6,"text":"CFIHOS oil and gas taxonomy","textPreview":"CFIHOS oil and gas taxonomy","textChars":27,"textLines":1,"bbox":[50,473,570,20]}
-{"kind":"textbox","id":"sh/nex0rq5c","slide":6,"text":"Structure behind the synthetic schedule","textPreview":"Structure behind the synthetic schedule","textChars":39,"textLines":1,"bbox":[50,495,300,20]}
-{"kind":"textbox","id":"sh/mdojylor","slide":6,"text":"public specification, datasets/real/","textPreview":"public specification, datasets/real/","textChars":36,"textLines":1,"bbox":[356,495,264,20]}
+{"kind":"textbox","id":"sh/nex0rq5c","slide":6,"text":"Public equipment and discipline taxonomy","textPreview":"Public equipment and discipline taxonomy","textChars":40,"textLines":1,"bbox":[50,495,340,20]}
+{"kind":"textbox","id":"sh/mdojylor","slide":6,"text":"used for: the structure of the synthetic schedule","textPreview":"used for: the structure of the synthetic schedule","textChars":49,"textLines":1,"bbox":[376,495,244,20]}
 {"kind":"textbox","id":"sh/x4zix0ne","slide":6,"text":"OUR OWN EVIDENCE - WHY COVERAGE IS UNDER HALF","textPreview":"OUR OWN EVIDENCE - WHY COVERAGE IS UNDER HALF","textChars":45,"textLines":1,"bbox":[664,126,460,22]}
 {"kind":"shape","id":"sh/w3614vmt","slide":6,"bbox":[664,149,330,0]}
 {"kind":"shape","id":"sh/b2x0vq58","slide":6,"bbox":[664,168,580,62]}
@@ -216,6 +240,6 @@
 {"kind":"textbox","id":"sh/xwjmh4re","slide":6,"text":"Synthetic schedule and reports","textPreview":"Synthetic schedule and reports","textChars":30,"textLines":1,"bbox":[52,586,280,46]}
 {"kind":"textbox","id":"sh/wvq58zat","slide":6,"text":"No live Oil India data yet","textPreview":"No live Oil India data yet","textChars":26,"textLines":1,"bbox":[348,586,280,46]}
 {"kind":"textbox","id":"sh/jy14je9k","slide":6,"text":"In-distribution benchmark","textPreview":"In-distribution benchmark","textChars":25,"textLines":1,"bbox":[644,586,280,46]}
-{"kind":"textbox","id":"sh/yxsna9sz","slide":6,"text":"1,426 tests - 1,202 pytest, 224 vitest","textPreview":"1,426 tests - 1,202 pytest, 224 vitest","textChars":38,"textLines":1,"bbox":[940,586,280,46]}
+{"kind":"textbox","id":"sh/yxsna9sz","slide":6,"text":"1,431 tests - 1,202 pytest, 229 vitest","textPreview":"1,431 tests - 1,202 pytest, 229 vitest","textChars":38,"textLines":1,"bbox":[940,586,280,46]}
 {"kind":"image","id":"im/jetwza18","slide":6,"name":"Picture 11","bbox":[1026.78,0.16,236.2,111.53]}
 {"kind":"notes","id":"nt/x8f69ofe","slide":6,"text":"MoSPI PAIMANA: https://ipm.mospi.gov.in/\nGAO Schedule Assessment Guide GAO-16-89G: https://www.gao.gov/products/gao-16-89g\nNIST AI Risk Management Framework: https://www.nist.gov/itl/ai-risk-management-framework\nOracle Primavera P6 EPPM documentation: https://docs.oracle.com/en/industries/construction-engineering/primavera-p6-enterprise-project-portfolio/\nMETRICS.md section 3.4a audits our own benchmark: 84 percent of test positives reuse an activity seen in training, so these are in-distribution numbers."}

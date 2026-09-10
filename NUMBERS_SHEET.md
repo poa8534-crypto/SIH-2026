@@ -21,7 +21,7 @@ Authority: `METRICS.md`. If this sheet and `METRICS.md` disagree, `METRICS.md` w
 | 4 | **Held-out v2 top-1** | **71.4%** — 132 of 185, 218-activity corpus | — |
 | 5 | **Recall@3** (planner depth) | **88.1%** — 163 of 185 | ~~Recall@20 = 100%~~ |
 | 6 | **NO_MATCH refusal** | **80.0%** — 56 of 70, pooled | ~~8.3%~~ |
-| 7 | **Automated tests** | **1,426** — 1,202 pytest + 224 vitest, all passing | ~~580~~ ~~635~~ ~~1,250~~ ~~1,422~~ |
+| 7 | **Automated tests** | **1,431** — 1,202 pytest + 229 vitest, all passing | ~~580~~ ~~635~~ ~~1,250~~ ~~1,422~~ ~~1,426~~ |
 | 8 | **Demo schedule** | **120 activities** | ~~218~~ *(that's research only)* |
 | 9 | **Thresholds** | **0.80 / 0.40 / margin 0.03** | ~~0.85 / 0.15~~ |
 | 10 | **Wrong review rows** | **28 queued, never written** | — |

@@ -42,3 +42,4 @@ ppt_build/obsolete/
 ppt_build/.codex-finalizer/
 ppt_build/vitest-results.json
 ppt_build/probe_api_output.txt
+deliverables/*.inspect.ndjson

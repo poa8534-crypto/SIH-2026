@@ -1291,6 +1291,34 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** External review answered; deck de-linked, test count corrected, slide 4 rebuilt native (D-102).
+**Date:** 2026-09-10 · **Decision:** D-102
+
+```
+WHAT WAS RE-DERIVED, AND FROM WHERE
+
+  pytest -q                    1,202 passed
+  npx vitest run               229 passed, 89 suites        -> 1,431 total (was 1,426)
+  grep @app.<method> main.py   46 unique routes             (deck said 18, fixed D-101)
+  matching/config.py           w_alias = 0.0                 inert learning loop, D-061
+  dataset/ + datasets/         0 image fixtures              OCR untested on scans
+  server/main.py  action=="create"
+        new Activity(planned_start = le.reported_date or DATA_DATE,
+                     planned_finish = le.reported_date or DATA_DATE)
+        -> a planner-created activity gets FABRICATED plan dates.  OPEN, D-102.
+
+DECK NOW BUILDS WITH TWO IMAGES, NOT THREE
+  slide 2   diagram_A_bridge.png      no figures in it
+  slide 3   diagram_B_flowchart.png   thresholds only, and those are stable
+  slide 4   native shapes             was diagram_D1_onprem.png, which had "18 REST
+                                      routes" and "1,426 tests" baked into its pixels
+  no URL on any slide
+```
+
+---
+
+### Previous modification area
+
 **Task:** Judge Q&A drill split into questions and answers; deck route count corrected (D-101).
 **Date:** 2026-09-10 · **Decision:** D-101
 

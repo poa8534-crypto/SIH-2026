@@ -16,6 +16,7 @@ Prepared only as a content source while the editable PPTX template is unavailabl
 - TypeScript: `npm run lint` passed.
 - Frontend build: `npm run build` passed. Vite warned that the main generated bundle is larger than 500 kB.
 - Total passing automated tests from this run: **1,426**.
+- **Re-counted later the same day: 1,431** (1,202 pytest + 229 vitest, 89 suites). The frontend gained five tests in the responsive-layout work (D-099). 1,431 is the current figure; 1,426 above is preserved as the record of the earlier run.
 - Matcher: `python eval.py` reproduced the shipped v1 configuration on a held-out test split.
 
 ## Safe measured claims
