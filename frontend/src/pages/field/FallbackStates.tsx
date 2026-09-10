@@ -32,6 +32,13 @@ export function MicUnavailable() {
       <span className="text-lead text-muted">
         {lang === 'en-IN' ? 'Typing works just as well.' : t('mic_unavailable_desc', 'Typing works just as well.')}
       </span>
+      {typeof window !== 'undefined' && !window.isSecureContext && (
+        <p className="text-xs text-muted/80 mt-2 max-w-xs">
+          Mobile browsers require HTTPS or enabling{' '}
+          <code className="bg-surface px-1 py-0.5 rounded text-accent text-[10px]">chrome://flags</code>{' '}
+          to allow the microphone over a local IP address.
+        </p>
+      )}
     </div>
   );
 }

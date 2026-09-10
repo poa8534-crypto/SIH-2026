@@ -76,7 +76,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
   ];
 
   return (
-    <div className="flex h-screen w-full bg-surface text-fg overflow-hidden font-sans">
+    <div className="flex h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg overflow-hidden font-sans">
       {/* Desktop/Tablet Sidebar (hidden on small mobile screens) */}
       <aside className="hidden md:flex w-64 shrink-0 border-r border-hair bg-sidebar flex-col justify-between z-10">
         <div className="p-5 flex flex-col gap-5">
@@ -235,7 +235,7 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               className="sm:hidden px-2 py-1 rounded-lg border border-hair bg-raised text-[11px] font-mono font-semibold text-heading cursor-pointer"
               title={`Switch language (current: ${languages.find((l) => l.code === lang)?.label ?? 'EN'})`}
             >
-              {lang === 'hi-IN' ? 'HI' : lang === 'mr-IN' ? 'MR' : 'EN'}
+              {languages.find((l) => l.code === lang)?.short ?? 'EN'}
             </button>
 
             <button
@@ -261,12 +261,12 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
         </header>
 
         {/* Workspace Content View */}
-        <main className="flex-1 overflow-y-auto min-h-0 bg-surface">
+        <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y bg-surface">
           {children}
         </main>
 
         {/* Mobile Bottom Nav (rendered only on small screens < md) */}
-        <div className="md:hidden">
+        <div className="md:hidden shrink-0 z-30">
           <FieldNav />
         </div>
       </div>

@@ -64,6 +64,7 @@ export interface ReviewItem {
   reported_date?: string | null;
   event_status?: string | null;
   location?: string | null;
+  reference?: string | null;
 }
 
 /** ── Granularity resolution: quantity, productivity, forecast ──────────────

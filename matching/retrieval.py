@@ -78,22 +78,22 @@ class MiniLMEmbedder:
         with self._lock:
             if self._model is not None or self._failed:
                 return          # another thread won the race
-            from sentence_transformers import SentenceTransformer
             try:
+                from sentence_transformers import SentenceTransformer
                 # Offline first — model must already be in the local HF cache.
-                self._model = SentenceTransformer(self.MODEL_NAME, local_files_only=True)
-            except Exception:
-                logger.warning(
-                    "MiniLM not cached locally; downloading once so future runs are offline"
-                )
                 try:
-                    self._model = SentenceTransformer(self.MODEL_NAME)
-                except Exception as e:  # fully offline machine without cached model
-                    logger.error(
-                        "Could not load %s: %s — falling back to hashing embedder",
-                        self.MODEL_NAME, e,
+                    self._model = SentenceTransformer(self.MODEL_NAME, local_files_only=True)
+                except Exception:
+                    logger.warning(
+                        "MiniLM not cached locally; downloading once so future runs are offline"
                     )
-                    self._failed = True
+                    self._model = SentenceTransformer(self.MODEL_NAME)
+            except Exception as e:
+                logger.error(
+                    "Could not load %s: %s — falling back to hashing embedder",
+                    self.MODEL_NAME, e,
+                )
+                self._failed = True
 
     @property
     def is_neural(self) -> bool:

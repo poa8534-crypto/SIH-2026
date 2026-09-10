@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Field from '../pages/Field';
 import { api } from '../lib/api';
-import { classifySpeechError } from '../hooks/useSpeech';
+import { classifySpeechError, mergeTranscripts } from '../hooks/useSpeech';
 
 /** Recognition instances the component created, so a test can drive them. */
 const made: FakeRecognition[] = [];
@@ -249,5 +249,71 @@ describe('structured card', () => {
     expect(
       await screen.findByText('No matching activity — flagged for Planning Engineer')
     ).toBeInTheDocument();
+  });
+});
+
+describe('mergeTranscripts deduplication', () => {
+  it('handles empty strings', () => {
+    expect(mergeTranscripts('', 'hello')).toBe('hello');
+    expect(mergeTranscripts('hello', '')).toBe('hello');
+  });
+
+  it('deduplicates prefix containment', () => {
+    expect(mergeTranscripts('concrete was', 'concrete was put in')).toBe('concrete was put in');
+  });
+
+  it('deduplicates identical chunks', () => {
+    expect(mergeTranscripts('concrete was', 'concrete was')).toBe('concrete was');
+  });
+
+  it('merges word overlaps across chunk boundaries', () => {
+    expect(mergeTranscripts('concrete was put', 'put in our 3')).toBe('concrete was put in our 3');
+    expect(mergeTranscripts('poured 40 cubic meters', 'cubic meters on raft')).toBe('poured 40 cubic meters on raft');
+  });
+
+  it('joins non-overlapping chunks with space', () => {
+    expect(mergeTranscripts('spool erection', 'on 24 inch header')).toBe('spool erection on 24 inch header');
+  });
+});
+
+describe('mobile speech result accumulation', () => {
+  it('does not duplicate text when onresult fires multiple times with accumulated results', () => {
+    wrap();
+    fireEvent.click(screen.getByText('Tap & Speak'));
+
+    act(() => {
+      made[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 1,
+          0: { isFinal: false, 0: { transcript: 'concrete was' } },
+        },
+      });
+    });
+
+    act(() => {
+      made[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 2,
+          0: { isFinal: true, 0: { transcript: 'concrete was' } },
+          1: { isFinal: false, 0: { transcript: ' put in our 3' } },
+        },
+      });
+    });
+
+    act(() => {
+      made[0].onresult?.({
+        resultIndex: 0,
+        results: {
+          length: 2,
+          0: { isFinal: true, 0: { transcript: 'concrete was' } },
+          1: { isFinal: true, 0: { transcript: ' put in our 3' } },
+        },
+      });
+    });
+
+    expect(screen.getByText(/concrete was put in our 3/i)).toBeInTheDocument();
+    expect(screen.queryByText(/concrete was.*concrete was/i)).toBeNull();
   });
 });
