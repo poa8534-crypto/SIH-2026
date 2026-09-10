@@ -173,24 +173,24 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
       {/* Main Workspace Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface">
         {/* Top Header Bar */}
-        <header className="h-14 shrink-0 border-b border-hair bg-surface px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <header className="h-14 shrink-0 border-b border-hair bg-surface px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 max-w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
             <MapPin size={15} className="text-accent shrink-0" />
-            <span className="font-semibold text-heading text-sm truncate">
+            <span className="font-semibold text-heading text-xs sm:text-sm truncate max-w-[110px] xs:max-w-[150px] sm:max-w-none">
               {PROJECT.location}
             </span>
-            <span className="text-xs text-muted">·</span>
-            <span className="text-xs font-medium text-muted truncate">
+            <span className="text-xs text-muted hidden sm:inline">·</span>
+            <span className="text-xs font-medium text-muted truncate hidden sm:inline">
               Piping · {FIELD_ROLE}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Offline indicator toggle */}
             <button
               type="button"
               onClick={() => setIsOffline(!isOffline)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border transition-colors cursor-pointer ${
                 isOffline
                   ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
                   : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
@@ -198,11 +198,11 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               title={isOffline ? t('offline_desc', 'Offline Mode active · Updates cached locally') : 'Online · Live connected to project pilot'}
             >
               <span className={`h-2 w-2 rounded-full shrink-0 ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
-              <span className="inline font-sans">{isOffline ? t('offline', 'Offline — auto-sync') : t('online', 'Online')}</span>
+              <span className="hidden sm:inline font-sans">{isOffline ? t('offline', 'Offline — auto-sync') : t('online', 'Online')}</span>
             </button>
 
-            {/* Multilingual Selector */}
-            <div className="flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
+            {/* Multilingual Selector (Desktop & Tablet) */}
+            <div className="hidden sm:flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
               {languages.map((l) => (
                 <button
                   key={l.code}
@@ -223,23 +223,39 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               ))}
             </div>
 
+            {/* Compact language pill for mobile (< sm) */}
+            <button
+              type="button"
+              onClick={() => {
+                const curIdx = languages.findIndex((l) => l.code === lang);
+                const nextLang = languages[(curIdx + 1) % languages.length];
+                setLang(nextLang.code);
+                speech.setLang(nextLang.code);
+              }}
+              className="sm:hidden px-2 py-1 rounded-lg border border-hair bg-raised text-[11px] font-mono font-semibold text-heading cursor-pointer"
+              title={`Switch language (current: ${languages.find((l) => l.code === lang)?.label ?? 'EN'})`}
+            >
+              {lang === 'hi-IN' ? 'HI' : lang === 'mr-IN' ? 'MR' : 'EN'}
+            </button>
+
             <button
               type="button"
               onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
               title="Ask NAVIS Assistant"
               aria-label="Ask NAVIS"
             >
               <Sparkles size={13} className="text-accent" />
-              <span>{t('ask_navis', 'Ask NAVIS')}</span>
+              <span className="hidden sm:inline">{t('ask_navis', 'Ask NAVIS')}</span>
             </button>
 
             <button
               onClick={signOut}
-              className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-hair text-label text-muted hover:text-heading hover:bg-selected"
+              className="md:hidden flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-md border border-hair text-label text-muted hover:text-heading hover:bg-selected"
+              title={t('switch_role', 'Switch role')}
             >
-              <LogOut size={12} />
-              <span>{t('switch_role', 'Switch role')}</span>
+              <LogOut size={13} />
+              <span className="hidden sm:inline">{t('switch_role', 'Switch role')}</span>
             </button>
           </div>
         </header>

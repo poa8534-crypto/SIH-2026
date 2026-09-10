@@ -362,7 +362,7 @@ export default function Ingest() {
   return (
     <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
       {/* CHANNEL SELECTOR TABS */}
-      <div className="border border-hair bg-raised rounded-lg p-1.5 flex gap-2">
+      <div className="border border-hair bg-raised rounded-lg p-1.5 flex flex-col sm:flex-row gap-2">
         <button
           type="button"
           onClick={() => setChannel('field')}

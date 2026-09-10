@@ -234,15 +234,15 @@ export function IdleStage({
         />
 
         {/* Integrated Composer Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-hair/60">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-hair/60">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* Sized 150-180px Voice Pill Button */}
             {!fallback && (
               <button
                 type="button"
                 onClick={onStart}
                 title="Record Voice · Tap & Speak"
-                className="px-3.5 py-2 rounded-xl bg-fg hover:opacity-90 active:opacity-95 text-surface text-xs font-semibold shadow-xs transition-all flex items-center gap-2 cursor-pointer min-w-[140px] sm:min-w-[160px] justify-center"
+                className="px-3 sm:px-3.5 py-2 rounded-xl bg-fg hover:opacity-90 active:opacity-95 text-surface text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer min-w-[130px] sm:min-w-[160px] justify-center"
               >
                 <Mic size={15} />
                 <span>{t('record_voice', 'Record Voice')}</span>

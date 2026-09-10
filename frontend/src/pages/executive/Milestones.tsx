@@ -240,8 +240,8 @@ export default function ExecutiveMilestones() {
       </div>
 
       {/* ── Summary Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="border border-hair rounded-lg p-4 bg-raised shadow-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="border border-hair rounded-lg p-3 sm:p-4 bg-raised shadow-xs">
           <span className="text-label font-mono text-muted uppercase tracking-wider block mb-1">
             Total Milestones
           </span>
@@ -579,7 +579,12 @@ export default function ExecutiveMilestones() {
 
       {/* ── Read-Only Detail Drawer ── */}
       {selectedMilestone && (
-        <div className="fixed inset-y-0 right-0 w-full max-w-[460px] bg-surface border-l border-hair shadow-xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+        <>
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 transition-opacity"
+            onClick={() => setSelectedMilestone(null)}
+          />
+          <div className="fixed inset-y-0 right-0 w-full max-w-[460px] bg-surface border-l border-hair shadow-xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
           {/* Drawer Header */}
           <div className="h-16 px-6 border-b border-hair flex items-center justify-between bg-raised">
             <div className="min-w-0">
@@ -719,6 +724,7 @@ export default function ExecutiveMilestones() {
             </button>
           </div>
         </div>
+      </>
       )}
     </div>
   );

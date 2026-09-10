@@ -447,7 +447,10 @@ export default function FieldReports() {
 
       {/* Update Detail Drawer / Slideout */}
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setOpenId(null); }}
+          className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150"
+        >
           <div className="relative w-full max-w-lg bg-surface border-l border-hair shadow-2xl h-full flex flex-col overflow-y-auto animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
             <div className="p-5 border-b border-hair flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur-xs z-10">

@@ -118,9 +118,9 @@ export default function ExecutiveForecasts() {
       {metricsLoading ? (
         <SkeletonRows rows={3} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Baseline Finish */}
-          <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs">
+          <div className="border border-hair rounded-lg p-4 sm:p-5 bg-raised shadow-xs">
             <span className="text-label font-mono text-muted uppercase tracking-wider block mb-1">
               Baseline Finish (Contractual)
             </span>
@@ -174,7 +174,7 @@ export default function ExecutiveForecasts() {
       )}
 
       {/* ── What-If Scenario Exploration Simulator ── */}
-      <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-6">
+      <div className="border border-hair rounded-lg p-4 sm:p-6 bg-raised shadow-xs flex flex-col gap-4 sm:gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-hair">
           <div>
             <h2 className="text-lead font-semibold text-heading flex items-center gap-2">

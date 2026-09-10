@@ -618,7 +618,7 @@ export function ActivityInspectionPanel({
       )}
 
       {/* ── 3 Top Tabs: Overview | Evidence (3) | Audit Trail ──────────────── */}
-      <div className="flex border-b border-hair bg-surface px-4 pt-1 gap-6 shrink-0">
+      <div className="flex border-b border-hair bg-surface px-3 sm:px-4 pt-1 gap-3 sm:gap-6 shrink-0 overflow-x-auto">
         <button
           type="button"
           onClick={() => setDrawerTab('overview')}

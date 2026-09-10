@@ -103,7 +103,7 @@ export default function Login({ onPick }: LoginProps) {
         <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
           
           {/* Left Column: Product Context & Core Purpose */}
-          <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-hair bg-surface/30">
+          <div className="lg:col-span-7 p-4 sm:p-6 lg:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-hair bg-surface/30">
             <div>
               {/* Product Badge */}
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-accent text-accent-fg text-label font-medium">
@@ -176,7 +176,7 @@ export default function Login({ onPick }: LoginProps) {
           </div>
 
           {/* Right Column: Role Selector */}
-          <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-raised">
+          <div className="lg:col-span-5 p-4 sm:p-6 lg:p-8 flex flex-col justify-between bg-raised">
             <div>
               <h2 className="text-h2 font-semibold tracking-tight text-heading">
                 Select your role

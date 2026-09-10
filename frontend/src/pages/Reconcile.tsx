@@ -240,6 +240,7 @@ export default function Reconcile() {
     return searchParams.get('filter') === 'needs_review' ? 'needs_review' : 'all';
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobilePane, setMobilePane] = useState<'queue' | 'detail'>('queue');
   /**
    * What the last resolve actually did, so the success state can link
    * straight to the schedule row it wrote rather than leaving the planner to
@@ -740,7 +741,7 @@ export default function Reconcile() {
   }
 
   return (
-    <div className="flex h-full w-full bg-raised border border-hair rounded-lg relative overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-lg relative overflow-hidden">
       {/* Toast Notifications */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
@@ -751,8 +752,35 @@ export default function Reconcile() {
         ))}
       </div>
 
-      {/* LEFT PANE - QUEUE */}
-      <div className="w-[38%] flex-shrink-0 border-r border-hair flex flex-col bg-raised z-10">
+      {/* Mobile Master-Detail Tabs (Visible only on < lg) */}
+      <div className="lg:hidden flex items-center border-b border-hair p-1.5 bg-surface text-label font-mono shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobilePane('queue')}
+          className={`flex-1 py-1.5 rounded text-center transition-colors cursor-pointer ${
+            mobilePane === 'queue'
+              ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
+              : 'text-muted hover:text-fg'
+          }`}
+        >
+          Queue ({sortedQueue.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('detail')}
+          className={`flex-1 py-1.5 rounded text-center transition-colors cursor-pointer ${
+            mobilePane === 'detail'
+              ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
+              : 'text-muted hover:text-fg'
+          }`}
+        >
+          Detail {selectedItem ? `(${selectedItem.suggested_activity_id ?? selectedItem.id.slice(0, 6)})` : ''}
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
+        {/* LEFT PANE - QUEUE */}
+        <div className={`w-full lg:w-[38%] flex-shrink-0 border-b lg:border-b-0 lg:border-r border-hair flex flex-col bg-raised z-10 ${mobilePane === 'queue' ? 'flex flex-1 lg:flex-initial' : 'hidden lg:flex'}`}>
         <PanelHeader
           title="Review Queue"
           right={
@@ -808,7 +836,10 @@ export default function Reconcile() {
               <div
                 key={item.id}
                 id={`queue-item-${item.id}`}
-                onClick={() => setSelectedId(item.id)}
+                onClick={() => {
+                  setSelectedId(item.id);
+                  setMobilePane('detail');
+                }}
                 className={`border-b border-hair p-3.5 cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
@@ -851,14 +882,22 @@ export default function Reconcile() {
       </div>
 
       {/* RIGHT PANE - DETAIL */}
-      <div className="flex-1 flex flex-col bg-raised overflow-hidden relative">
+      <div className={`flex-1 flex flex-col bg-raised overflow-hidden relative ${mobilePane === 'detail' ? 'flex' : 'hidden lg:flex'}`}>
         {selectedItem ? (
           <>
             {/* Evidence and reasoning sit side by side and above the fold: the
                 planner's question is "is this the right activity, and why does
                 the matcher think so", and both halves of that are answerable
                 without scrolling. */}
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col gap-4 sm:gap-5">
+              {/* Back to Review Queue button on mobile */}
+              <button
+                type="button"
+                onClick={() => setMobilePane('queue')}
+                className="lg:hidden flex items-center gap-1.5 text-xs font-mono font-semibold text-accent hover:underline py-1 cursor-pointer self-start"
+              >
+                ← Back to Review Queue ({sortedQueue.length} pending)
+              </button>
               {/* Site Context / Provenance Strip */}
               <div className="px-3.5 py-2.5 bg-surface border border-hair rounded-lg flex flex-wrap items-center justify-between gap-3 text-label font-mono">
                 <div className="flex items-center gap-2">
@@ -1172,8 +1211,8 @@ export default function Reconcile() {
                   </Button>
                 </div>
               ) : (
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       id="confirm-match"
                       variant="primary"
@@ -1229,6 +1268,7 @@ export default function Reconcile() {
             <EmptyState>Select an item from the queue.</EmptyState>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -166,7 +166,7 @@ export default function ExecutiveExecutionInsights() {
               placeholder="Search activity type pattern (e.g. PIP-SPL)…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-surface text-fg border border-hair rounded pl-8 pr-3 py-1.5 text-xs w-[240px] focus:outline-none focus:border-fg"
+              className="bg-surface text-fg border border-hair rounded pl-8 pr-3 py-1.5 text-xs w-full xs:w-[240px] focus:outline-none focus:border-fg"
             />
           </div>
 

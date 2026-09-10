@@ -522,6 +522,7 @@ export default function Delay() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'unadjudicated' | 'adjudicated'>('all');
   const [disciplineFilter, setDisciplineFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobilePane, setMobilePane] = useState<'queue' | 'adjudication'>('queue');
 
   const {
     data,
@@ -782,10 +783,36 @@ export default function Delay() {
         </div>
       )}
 
+      {/* ── Mobile View Switcher (< lg) ── */}
+      <div className="flex lg:hidden items-center justify-center p-1 rounded-xl bg-surface border border-hair font-mono text-xs">
+        <button
+          type="button"
+          onClick={() => setMobilePane('queue')}
+          className={`flex-1 py-1.5 px-3 rounded-lg font-semibold transition-colors cursor-pointer text-center ${
+            mobilePane === 'queue'
+              ? 'bg-selected text-heading border border-hair/80 shadow-xs'
+              : 'text-muted hover:text-heading'
+          }`}
+        >
+          Delay Queue ({events.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('adjudication')}
+          className={`flex-1 py-1.5 px-3 rounded-lg font-semibold transition-colors cursor-pointer text-center ${
+            mobilePane === 'adjudication'
+              ? 'bg-selected text-heading border border-hair/80 shadow-xs'
+              : 'text-muted hover:text-heading'
+          }`}
+        >
+          Adjudication {selected?.activity_id ? `(${selected.activity_id})` : ''}
+        </button>
+      </div>
+
       {/* ── Main Two-Column Layout: Queue + Adjudication Pane ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,390px)_minmax(0,1fr)] gap-4">
         {/* ── The delays queue ── */}
-        <Panel>
+        <Panel className={mobilePane === 'adjudication' ? 'hidden lg:block' : 'block'}>
           <PanelHeader
             title={`Delays (${events.length})`}
             right={
@@ -881,7 +908,10 @@ export default function Delay() {
                   key={event.id}
                   event={event}
                   selected={event.id === selectedId}
-                  onSelect={() => setSelectedId(event.id)}
+                  onSelect={() => {
+                    setSelectedId(event.id);
+                    setMobilePane('adjudication');
+                  }}
                 />
               ))}
             </div>
@@ -889,7 +919,7 @@ export default function Delay() {
         </Panel>
 
         {/* ── The one being adjudicated ── */}
-        <Panel>
+        <Panel className={mobilePane === 'queue' ? 'hidden lg:block' : 'block'}>
           {!selected ? (
             <EmptyState icon={Layers} title="Nothing selected">
               Choose a delay to see the evidence behind it and rule on who
@@ -917,6 +947,15 @@ export default function Delay() {
                 }
               />
               <div className="px-5 py-4 flex flex-col gap-4">
+                {/* Mobile Back Button (< lg) */}
+                <button
+                  type="button"
+                  onClick={() => setMobilePane('queue')}
+                  className="lg:hidden px-3 py-1.5 rounded-lg border border-hair bg-surface text-xs font-mono text-fg hover:bg-selected transition-colors flex items-center gap-1.5 self-start cursor-pointer"
+                >
+                  ← Back to Delay Queue
+                </button>
+
                 {/* ── Activity Name & Header ── */}
                 <div>
                   <h3 className="text-lead font-semibold text-heading">
@@ -1274,7 +1313,7 @@ export default function Delay() {
                     A date after the deadline is recorded and flagged, never refused.
                   </p>
 
-                  <div className="flex gap-2 flex-wrap items-center pt-1">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
                     <input
                       id="delay-notice-date"
                       type="date"
@@ -1282,7 +1321,7 @@ export default function Delay() {
                       value={noticeDate}
                       onChange={(e) => setNoticeDate(e.target.value)}
                       disabled={recordNotice.isPending}
-                      className="rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full sm:w-auto rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
                     />
                     <input
                       id="delay-notice-ref"
@@ -1292,7 +1331,7 @@ export default function Delay() {
                       onChange={(e) => setNoticeRef(e.target.value)}
                       placeholder="Letter reference…"
                       disabled={recordNotice.isPending}
-                      className="flex-1 min-w-[12rem] rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full sm:flex-1 min-w-0 rounded bg-surface border border-hair px-3 py-2 font-mono text-body text-fg focus:outline-none focus:border-accent transition-colors"
                     />
                     <Button
                       variant="secondary"

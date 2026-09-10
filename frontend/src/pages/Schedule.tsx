@@ -799,7 +799,7 @@ export default function Schedule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search descriptions"
-            className="rounded-sm h-7 w-56 bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
+            className="rounded-sm h-7 w-full xs:w-44 sm:w-56 flex-1 sm:flex-none bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
           />
 
           <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg">

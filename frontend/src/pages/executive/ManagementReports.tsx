@@ -277,7 +277,7 @@ export default function ExecutiveManagementReports() {
       </div>
 
       {/* ── Printable Report Preview Canvas ── */}
-      <div className="border border-hair rounded-lg p-8 bg-surface shadow-xs flex flex-col gap-6 text-fg">
+      <div className="border border-hair rounded-lg p-4 sm:p-8 bg-surface shadow-xs flex flex-col gap-6 text-fg">
         {/* Report Document Title Header */}
         <div className="border-b-2 border-hair pb-4">
           <div className="flex items-center justify-between font-mono text-xs text-muted mb-2">

@@ -632,8 +632,8 @@ export function ReportSubmissionFlow({
 
     if (isModalOrOverlay) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-4 sm:p-6 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-3xl my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-3 sm:p-6 max-h-[96vh] sm:max-h-[92vh] overflow-y-auto">
             {receiptContent}
           </div>
         </div>
@@ -1654,8 +1654,8 @@ export function ReportSubmissionFlow({
 
   if (isModalOrOverlay) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-        <div className="relative w-full max-w-[1240px] my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-4 sm:p-6 max-h-[94vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+        <div className="relative w-full max-w-[1240px] my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-3 sm:p-6 max-h-[96vh] sm:max-h-[94vh] overflow-y-auto">
           {mainContent}
         </div>
       </div>

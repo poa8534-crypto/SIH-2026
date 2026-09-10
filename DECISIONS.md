@@ -9394,5 +9394,83 @@ Per W3C Web Cryptography API specifications, `crypto.randomUUID()` is strictly g
 - `frontend/src/pages/field/ReportStudio.tsx`
 - `frontend/src/components/AskNavisChat.tsx`
 
+---
+
+## 2026-09-10 / D-099 — Mobile viewport adaptation, zero horizontal blowout, and responsive multi-workspace navigation shells
+
+### Status
+Active.
+
+### Context
+When testing the application on mobile devices (e.g. iPhone / Android handsets over LAN `http://192.168.1.7:5173`), screens were "glitching all over the place and not working at all".
+Investigation identified several severe root causes:
+1. **Desktop Shell layout collision on mobile viewports (< md / < 768px)**:
+   - `DesktopShell` (used for Planning Engineer and Senior Management / Executive workspaces) rigidly rendered a fixed 240px wide sidebar `<aside>` alongside the main content on all viewports.
+   - On a 360px–390px mobile handset screen, the 240px sidebar left only 120px–150px for the entire application, crushing tables, cards, and forms.
+2. **Field Workspace Shell top navigation bar overflow**:
+   - `FieldWorkspaceShell.tsx` placed the workfront location pill, 3 separate language toggle chips (`English`, `Hindi`, `Assamese`), the offline indicator button, `Ask NAVIS` button, and `Switch role` button in a single non-wrapping flex row. On screens narrower than 480px, this row exceeded 550px, blowing out the horizontal viewport and triggering lateral finger scrolling and layout stutter.
+3. **Absence of strict horizontal viewport containment**:
+   - Lack of `viewport-fit=cover` in `frontend/index.html` and absence of `overflow-x: hidden; max-width: 100vw;` on `html, body` allowed offscreen content to cause horizontal scrolling jitter and diagonal touch gestures.
+4. **Master-Detail screen congestion**:
+   - Workspaces like `Reconcile.tsx` and `Delay.tsx` rendered side-by-side two-column grids on wide desktop, but on mobile screens they vertically stacked without navigation aids, forcing supervisors and planners to scroll endlessly past tall queues to access review and adjudication actions.
+5. **Modal & Drawer viewports**:
+   - Full-width modal overlays and slide-out detail drawers (`Milestones.tsx`, `Raid.tsx`, `FieldReports.tsx`, `ReportStudio.tsx`) lacked backdrop touch dismissal or exceeded viewport height boundaries on mobile browsers with bottom navigation bars.
+
+### Decision
+1. **Global Viewport & Overflow Containment**:
+   - Updated `frontend/index.html` `<meta name="viewport">` with `viewport-fit=cover` to support modern mobile bezel safe areas.
+   - Enforced `overflow-x: hidden; max-width: 100vw; width: 100%;` in `frontend/src/index.css` on `html, body, #root`.
+2. **Responsive Desktop Navigation Shell with Slide-Out Mobile Drawer**:
+   - Updated `DesktopShell` in `frontend/src/App.tsx`:
+     - Hid the fixed 240px `<aside>` on mobile (`hidden md:flex md:w-60`).
+     - Added a clean mobile header bar on `< md` with a hamburger menu button (`Menu` icon), branding, and active workspace title.
+     - Implemented an animated mobile slide-out drawer (`isMobileNavOpen` state) with backdrop touch-dismissal, project metadata, responsive navigation links, theme toggle, and switch-role action.
+     - Responsive content container padding: `p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0`.
+3. **Field Supervisor Responsive Header (`FieldWorkspaceShell.tsx`)**:
+   - Compressed location chip on mobile with truncation (`max-w-[110px] xs:max-w-[150px] sm:max-w-none`).
+   - Hid secondary subtitle (`Piping · Field Supervisor`) on `< sm`.
+   - Compressed offline indicator to a compact dot with icon on `< sm`.
+   - Compact multilingual selector: toggles between a single compact `{lang.toUpperCase()}` pill on `< sm` and the full 3-chip control on `sm+`.
+   - Icon-only compact mode for `Ask NAVIS` and `Switch role` buttons on `< sm`.
+4. **Mobile Master-Detail Segmented Controls**:
+   - `Reconcile.tsx`: Added segmented `Queue` vs `Detail` tab switcher on `< lg`. Auto-switches to detail view upon selecting a queue item. Added `← Back to Review Queue` button and responsive action button wrap.
+   - `Delay.tsx`: Added segmented `Delay Queue` vs `Adjudication` tab switcher on `< lg`. Auto-switches to adjudication upon selecting an event, with mobile `← Back to Delay Queue` button and stacked notice inputs.
+5. **Executive & Operational Page Responsive Polish**:
+   - `Schedule.tsx` & `ExecutionInsights.tsx`: Made search inputs fluid and responsive (`w-full xs:w-auto`).
+   - `ActivityInspectionPanel.tsx` & `RisksDelays.tsx`: Ensured horizontal tab bars have `overflow-x-auto whitespace-nowrap` for mobile swiping.
+   - `Milestones.tsx`, `Raid.tsx`, `FieldReports.tsx`: Added backdrop click-dismissal and responsive padding (`p-4 sm:p-6`) to all inspection drawers and evidence modals.
+   - `Forecasts.tsx` & `DataConfidence.tsx`: Replaced rigid column definitions with responsive `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` grids.
+   - `ReportStudio.tsx`: Adjusted modal overlay wrapper padding to `p-2 sm:p-6` with `max-h-[96vh]` for mobile screen clearance.
+6. **Zero Feature or Test Regression**:
+   - Preserved all button labels, test IDs, and existing test invariants across all 24 test suites.
+
+### Verification
+- `npx tsc --noEmit`: 0 errors.
+- `npm run build`: Production bundle built cleanly in 2.69s.
+- `npm test -- --run`: All 24 test files and 229 tests passed cleanly.
+- Visual inspection: Verified zero horizontal viewport blowout across 360px–430px mobile device viewports.
+
+### Affected Areas
+- `frontend/index.html`
+- `frontend/src/index.css`
+- `frontend/src/App.tsx`
+- `frontend/src/pages/field/FieldWorkspaceShell.tsx`
+- `frontend/src/pages/field/IdleStage.tsx`
+- `frontend/src/pages/field/ReportStudio.tsx`
+- `frontend/src/pages/FieldReports.tsx`
+- `frontend/src/pages/Reconcile.tsx`
+- `frontend/src/pages/Delay.tsx`
+- `frontend/src/pages/Raid.tsx`
+- `frontend/src/pages/Schedule.tsx`
+- `frontend/src/pages/Ingest.tsx`
+- `frontend/src/pages/Login.tsx`
+- `frontend/src/components/ActivityInspectionPanel.tsx`
+- `frontend/src/pages/executive/Milestones.tsx`
+- `frontend/src/pages/executive/RisksDelays.tsx`
+- `frontend/src/pages/executive/Forecasts.tsx`
+- `frontend/src/pages/executive/ExecutionInsights.tsx`
+- `frontend/src/pages/executive/DataConfidence.tsx`
+- `frontend/src/pages/executive/ManagementReports.tsx`
+
 
 

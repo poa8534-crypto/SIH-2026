@@ -755,8 +755,11 @@ export default function Raid() {
 
       {/* ── PROPOSED ISSUE ADJUDICATION DRAWER ────────────────────────────────── */}
       {reviewingCandidate && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end transition-opacity">
-          <div className="w-full max-w-lg bg-raised h-full border-l border-hair shadow-2xl flex flex-col p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setReviewingCandidate(null); }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end transition-opacity"
+        >
+          <div className="w-full max-w-lg bg-raised h-full border-l border-hair shadow-2xl flex flex-col p-4 sm:p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-hair">
               <div>
                 <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-warn block">
@@ -922,7 +925,10 @@ export default function Raid() {
 
       {/* ── SOURCE EVIDENCE MODAL ─────────────────────────────────────────────── */}
       {viewingEvidence && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setViewingEvidence(null); }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+        >
           <div className="w-full max-w-lg bg-raised border border-hair rounded-lg shadow-2xl p-5 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-hair pb-3">
               <div className="flex items-center gap-2">

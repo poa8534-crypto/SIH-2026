@@ -182,7 +182,7 @@ export default function ExecutiveRisksDelays() {
       </div>
 
       {/* ── Section Navigation Tabs ── */}
-      <div className="flex items-center gap-2 border-b border-hair pb-1 text-sm font-medium">
+      <div className="flex items-center gap-2 border-b border-hair pb-1 text-sm font-medium overflow-x-auto whitespace-nowrap">
         <button
           type="button"
           onClick={() => setActiveTab('raid')}

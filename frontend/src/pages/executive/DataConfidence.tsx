@@ -167,7 +167,7 @@ export default function ExecutiveDataConfidence() {
       </div>
 
       {/* ── 2. Reporting Coverage with Explicit Denominators ── */}
-      <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+      <div className="border border-hair rounded-lg p-4 sm:p-6 bg-raised shadow-xs flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-hair">
           <div>
             <h2 className="text-lead font-semibold text-heading flex items-center gap-2">
@@ -210,7 +210,7 @@ export default function ExecutiveDataConfidence() {
       </div>
 
       {/* ── 3. Missing or Stale Reporting ── */}
-      <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+      <div className="border border-hair rounded-lg p-4 sm:p-6 bg-raised shadow-xs flex flex-col gap-4">
         <div className="pb-3 border-b border-hair">
           <h3 className="text-body font-semibold text-heading flex items-center gap-2">
             <AlertTriangle size={16} className="text-warn" />
@@ -265,7 +265,7 @@ export default function ExecutiveDataConfidence() {
       </div>
 
       {/* ── 4. Source Disagreements (Conflicts) ── */}
-      <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-4">
+      <div className="border border-hair rounded-lg p-4 sm:p-6 bg-raised shadow-xs flex flex-col gap-4">
         <div className="pb-3 border-b border-hair">
           <h3 className="text-body font-semibold text-heading flex items-center gap-2">
             <AlertCircle size={16} className="text-danger" />
@@ -311,7 +311,7 @@ export default function ExecutiveDataConfidence() {
       </div>
 
       {/* ── 5. Secondary Research Corpus Section (Clearly Separated) ── */}
-      <div className="border border-hair rounded-lg p-6 bg-raised shadow-xs flex flex-col gap-6">
+      <div className="border border-hair rounded-lg p-4 sm:p-6 bg-raised shadow-xs flex flex-col gap-4 sm:gap-6">
         <div className="pb-3 border-b border-hair flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-muted mb-1 uppercase tracking-wider">
