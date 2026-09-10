@@ -1,4 +1,4 @@
-{"kind":"deck","id":"pr/a3lpw6","name":"Deck"}
+{"kind":"deck","id":"pr/lk7amu","name":"Deck"}
 {"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"TITLE PAGE","textShapes":3}
 {"kind":"shape","id":"sh/43y1gji9","slide":1,"name":"Rectangle 24","bbox":[160,0,960,720]}
 {"kind":"shape","id":"sh/54r2poju","slide":1,"name":"Freeform: Shape 26","bbox":[593.89,89.4,486.99,541.2]}
@@ -40,7 +40,7 @@
 {"kind":"shape","id":"sh/9o325ovy","slide":3,"bbox":[36,178,8,8]}
 {"kind":"textbox","id":"sh/onulwjut","slide":3,"text":"React + TypeScript - Vite front end","textPreview":"React + TypeScript - Vite front end","textChars":35,"textLines":1,"bbox":[53,170,279,48]}
 {"kind":"shape","id":"sh/nmlk3ed8","slide":3,"bbox":[36,234,8,8]}
-{"kind":"textbox","id":"sh/mlc3u9cn","slide":3,"text":"FastAPI - 18 REST routes, live OpenAPI docs","textPreview":"FastAPI - 18 REST routes, live OpenAPI docs","textChars":43,"textLines":1,"bbox":[53,226,279,48]}
+{"kind":"textbox","id":"sh/mlc3u9cn","slide":3,"text":"FastAPI - 46 HTTP routes, live OpenAPI docs","textPreview":"FastAPI - 46 HTTP routes, live OpenAPI docs","textChars":43,"textLines":1,"bbox":[53,226,279,48]}
 {"kind":"shape","id":"sh/psz2tkvu","slide":3,"bbox":[36,290,8,8]}
 {"kind":"textbox","id":"sh/4rq1kfu9","slide":3,"text":"Deterministic rules extraction - .txt, .xlsx, .pdf, .csv, image OCR","textPreview":"Deterministic rules extraction - .txt, .xlsx, .pdf, .csv, image OCR","textChars":67,"textLines":1,"bbox":[53,282,279,48]}
 {"kind":"shape","id":"sh/gnetwj6h","slide":3,"bbox":[36,346,8,8]}

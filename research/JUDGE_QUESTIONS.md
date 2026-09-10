@@ -1,5 +1,13 @@
 # Judge questions — anticipated hard questions and evidence-backed answers
 
+> **Which Q&A file do I want?**
+> - **`JUDGE_DRILL_01_QUESTIONS.md`** — 103 hostile questions, no answers, to be read
+>   aloud by whoever plays the judge. Start here when rehearsing.
+> - **`JUDGE_DRILL_02_ANSWERS.md`** — the model answers to those 103, same numbering.
+> - **This file** — the older 12-question set (Q1–Q12) written on 2026-08-30 against
+>   the v1 corpus. Kept for its ablation and competitive-positioning detail. **Its
+>   figures are v1-scoped; read the scope note below before quoting any of them.**
+
 > **SCOPE: v1 CORPUS, 2026-08-30.** Every figure in this document was measured
 > against the **v1** evaluation corpus — `dataset/ground_truth.csv`, 254
 > labelled mentions, against the 120-activity demo baseline

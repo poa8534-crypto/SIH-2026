@@ -1291,6 +1291,35 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Judge Q&A drill split into questions and answers; deck route count corrected (D-101).
+**Date:** 2026-09-10 · **Decision:** D-101
+
+```
+JUDGE DRILL DOCUMENTS  (no runtime code - rehearsal instruments)
+
+  research/JUDGE_DRILL_01_QUESTIONS.md   103 questions, 8 blocks, no answers
+  research/JUDGE_DRILL_02_ANSWERS.md     A1..A103, each traced to a source
+  research/JUDGE_QUESTIONS.md            older 12-question v1 set, now sign-posted
+
+  Answer provenance actually read while writing them:
+      matching/features.py    FEATURE_WEIGHTS      six features + weights   (A64)
+      matching/config.py      SHIPPED_THRESHOLDS   0.80 / 0.40 / 0.03, D-093 (A56-A58)
+      server/main.py          MIN_ACTUALS_FOR_ESTIMATE = 3                  (A72)
+      server/main.py          list_source_conflicts                         (A69)
+      server/db.py            append-only guard, D-004                      (A75)
+      METRICS.md              2.84 ms/event batched, 352 events/s           (A76)
+
+  Correction that came out of it:
+      server/main.py currently declares 46 unique @app.<method> routes.
+      The deck said 18 - fixed in ppt_build/build_navis_sih_deck.mjs, deck and
+      PDF rebuilt. The same wrong figure is still baked into the slide-4 image
+      ppt_build/assets/diagram_D1_onprem.png and needs an Eraser re-export.
+```
+
+---
+
+### Previous modification area
+
 **Task:** SIH idea deck rebuilt on the official template with the Eraser flow charts (D-100).
 **Date:** 2026-09-10 · **Decision:** D-100
 

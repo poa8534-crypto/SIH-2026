@@ -9537,3 +9537,51 @@ diagram changes. Eraser stays the source of truth for the three complex charts.
 **Related:** `DECK_DIAGRAMS.md` (diagram IDs and edit links), `NUMBERS_SHEET.md` (the
 allow list every figure on the deck comes from), `DECK_IMAGE_PROMPTS.md` (prompts for
 the optional generated art), D-015 (withheld finish dates, the slide-6 funnel).
+
+---
+
+### D-101 — The judge drill is split into a questions file and an answers file, and the deck's route count was wrong
+
+**Date:** 2026-09-10 · **Status:** current · **Area:** `research/`, `ppt_build/`
+
+**Context.** `research/JUDGE_QUESTIONS.md` holds twelve v1-scoped questions with answers
+interleaved, which makes it useless as a rehearsal instrument — a person reading a
+question aloud can see the answer underneath it, and the reader being drilled has
+already read both. The panel a finale team actually faces is also mostly non-technical,
+and that file is entirely technical.
+
+**Decision.** Two new files in `research/`, deliberately numbered so the reading order is
+unambiguous:
+
+- `JUDGE_DRILL_01_QUESTIONS.md` — 103 questions in eight blocks (lay judge, belittling,
+  business and adoption, synthetic data, metric interrogation, technical, off-topic,
+  behavioural stress), **no answers in the file**, so it can be read aloud cold.
+- `JUDGE_DRILL_02_ANSWERS.md` — the model answers, numbered A1…A103 against Q1…Q103,
+  each verified against `NUMBERS_SHEET.md`, `METRICS.md` or the named source file.
+  Landmine answers are marked, including the four where the natural-sounding answer is
+  false: "does it learn from corrections", the XER round trip, the cross-encoder
+  rejection, and the P95 latency we have not measured.
+
+`JUDGE_QUESTIONS.md` keeps its content and gains a header saying which of the three
+files a reader wants.
+
+**Defect found while writing the answers, and fixed.** Answering Q64 and the technical
+block required reading the source rather than the docs, and that surfaced a wrong figure
+on the submission deck: slide 3 claimed **"FastAPI — 18 REST routes"**. The actual count
+is **46** unique `@app.<method>` route decorators in `server/main.py` (44 API endpoints
+plus a static uploads route and the SPA catch-all). The 18 came from an earlier build
+and had been carried forward unchecked. `ppt_build/build_navis_sih_deck.mjs` now says 46
+and the deck and PDF were rebuilt.
+
+**Still wrong, and it cannot be fixed from this repository:** the on-premise diagram on
+slide 4 (`ppt_build/assets/diagram_D1_onprem.png`) has "FastAPI — 18 REST routes" baked
+into the exported image. Fixing it means editing diagram `Vwn78M3zjDixZbTZ4tdn` in the
+Eraser workspace and re-exporting. Tracked here so it is not forgotten.
+
+**Consequence.** The rule this enforces is the one in `NUMBERS_SHEET.md`: a figure that
+is not verifiable against the code or a named run does not go on a slide. An 18 that
+nobody re-derived survived three builds of the deck.
+
+**Related:** D-100 (the deck build), D-093 (the shipped thresholds the answers quote),
+D-061 (the learning-loop measurement behind A73), D-047 (the simplified XER writer
+behind A79), D-004 (the append-only trail behind A75).

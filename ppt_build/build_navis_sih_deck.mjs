@@ -230,7 +230,7 @@ const presentation = await PresentationFile.importPptx(await FileBlob.load(SOURC
   sectionLabel(slide, "TECHNOLOGIES USED", X0, 128, 148);
   const stack = [
     "React + TypeScript - Vite front end",
-    "FastAPI - 18 REST routes, live OpenAPI docs",
+    "FastAPI - 46 HTTP routes, live OpenAPI docs",
     "Deterministic rules extraction - .txt, .xlsx, .pdf, .csv, image OCR",
     "Hybrid retrieval - exact tag + BM25 + MiniLM embeddings, RRF fused",
     "Ranking - 6 explainable features, no black box in the loop",
