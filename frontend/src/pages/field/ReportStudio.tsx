@@ -31,6 +31,7 @@ import {
 import type { AgentTurnResponse, Discipline } from '../../types';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useTranslation, translateSuggestion, translateValue } from '../../lib/i18n';
+import { generateUUID } from '../../lib/uuid';
 
 /**
  * Report Progress Studio — deliberate, detailed site reporting workspace.
@@ -197,7 +198,7 @@ export function ReportSubmissionFlow({
   });
 
   // ── Engine State ───────────────────────────────────────────────────────────
-  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState<string>(() => generateUUID());
   const [phase, setPhase] = useState<Phase>('draft');
   const [turn, setTurn] = useState<AgentTurnResponse | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
@@ -298,7 +299,7 @@ export function ReportSubmissionFlow({
 
   useEffect(() => {
     if (!edited) return;
-    setSessionId(crypto.randomUUID());
+    setSessionId(generateUUID());
     seqRef.current += 1;
   }, [edited]);
 
@@ -418,7 +419,7 @@ export function ReportSubmissionFlow({
   }, [isOpen, initialReport, initialAttachments, initialWorkFront, initialDiscipline, initialWorkDate, initialPreset, send]);
 
   const startOver = () => {
-    setSessionId(crypto.randomUUID());
+    setSessionId(generateUUID());
     seqRef.current += 1;
     setReport('');
     setAttachments([]);

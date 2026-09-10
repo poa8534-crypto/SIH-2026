@@ -9354,4 +9354,45 @@ Furthermore, speech language selection was held in component-level state across 
 - `frontend/src/hooks/useSpeech.ts` (localStorage persistence)
 - `frontend/src/pages/field/FieldWorkspaceShell.tsx` (bidirectional sync with useSpeech)
 
+---
+
+## 2026-09-10 / D-098 — Browser-compatible UUID generator with non-secure LAN HTTP fallback
+
+### Status
+Active.
+
+### Context
+When accessing the frontend over a local LAN IP (e.g. `http://192.168.1.7:5173`) from mobile devices (iOS Safari / Chromium), the frontend crashed immediately on mount with:
+`TypeError: crypto.randomUUID is not a function. (In 'crypto.randomUUID()', 'crypto.randomUUID' is undefined)`.
+
+Per W3C Web Cryptography API specifications, `crypto.randomUUID()` is strictly gated to Secure Contexts (`window.isSecureContext === true`). While `http://localhost` is granted a secure-context exception by browsers, plain HTTP over private LAN IP addresses (`http://192.168.x.x`) is considered non-secure. On non-secure contexts, Safari/WebKit and Chromium omit `crypto.randomUUID` from `window.crypto`.
+
+### Decision
+1. **Centralized UUID Utility (`frontend/src/lib/uuid.ts`)**:
+   - Created a single shared helper `generateUUID()` (re-exported as `randomUUID`) with multi-tier fallback:
+     1. Native `crypto.randomUUID()` when available in secure contexts (HTTPS / localhost).
+     2. `crypto.getRandomValues()` RFC 4122 v4 calculation when in non-secure HTTP contexts (which remains available on HTTP in modern browsers).
+     3. High-resolution timestamp + `Math.random()` pseudo-random generator as an ultimate fallback if crypto is completely unavailable.
+2. **Replaced All Direct Call Sites**:
+   - `frontend/src/pages/Field.tsx`: replaced `crypto.randomUUID()` in initial `sessionId` and `resetSession()`.
+   - `frontend/src/pages/field/ReportStudio.tsx`: replaced `crypto.randomUUID()` in initial `sessionId`, edit-invalidation effect, and `startOver()`.
+   - `frontend/src/components/AskNavisChat.tsx`: replaced `crypto.randomUUID()` in user and assistant message IDs.
+3. **No UI or Functional Drift**:
+   - Zero changes to UI layout, styling, or application behavior.
+   - All generated IDs conform strictly to RFC 4122 v4 UUID format.
+
+### Verification
+- `frontend/src/test/uuid.test.ts`: 5 new tests verifying native, non-secure `getRandomValues`, fallback, and uniqueness paths.
+- `npx tsc --noEmit`: 0 errors.
+- `npm test -- --run`: All 24 test files and 229 tests passed cleanly.
+- `npm run build`: Production bundle built cleanly in 6.09s.
+
+### Affected Areas
+- `frontend/src/lib/uuid.ts` (new)
+- `frontend/src/test/uuid.test.ts` (new)
+- `frontend/src/pages/Field.tsx`
+- `frontend/src/pages/field/ReportStudio.tsx`
+- `frontend/src/components/AskNavisChat.tsx`
+
+
 

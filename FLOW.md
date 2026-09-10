@@ -1291,6 +1291,38 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Centralized browser-compatible UUID utility with non-secure LAN HTTP fallback (D-098).
+**Date:** 2026-09-10 · **Decision:** D-098
+
+```
+BROWSER-COMPATIBLE UUID UTILITY — HTTP LAN COMPATIBILITY           (D-098)
+
+  THE PROBLEM
+      `crypto.randomUUID()` is restricted by W3C Web Cryptography API to Secure
+      Contexts (`window.isSecureContext === true`).
+      Accessing the app over a local LAN IP (http://192.168.1.7:5173) on iOS Safari
+      or Chromium leaves `crypto.randomUUID` undefined, crashing Field.tsx,
+      ReportStudio.tsx, and AskNavisChat.tsx with TypeError on mount.
+
+  THE IMPLEMENTATION
+      frontend/src/lib/uuid.ts
+        generateUUID() / randomUUID()
+          1. Native crypto.randomUUID() when in secure contexts (HTTPS & localhost)
+          2. crypto.getRandomValues() RFC 4122 v4 calculation in non-secure contexts
+          3. Math.random() + high-resolution timestamp fallback if crypto is absent
+
+  AFFECTED CALL SITES
+      Field.tsx                 sessionId on mount + resetSession()
+      ReportStudio.tsx          sessionId on mount, edited effect, startOver()
+      AskNavisChat.tsx          user message ID, assistant response/error IDs
+
+  Pinned by frontend/src/test/uuid.test.ts (5 tests).
+```
+
+---
+
+### Previous modification area (D-097)
+
 **Task:** Field Supervisor Preferences page redesigned: personal settings first, compact metadata grid, synchronized voice language.
 **Date:** 2026-09-06 · **Decision:** D-097
 

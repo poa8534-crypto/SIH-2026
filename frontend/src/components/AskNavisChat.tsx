@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
+import { generateUUID } from '../lib/uuid';
 import type { ChatAction, ChatResponse } from '../types';
 import { Button } from './ui';
 
@@ -194,7 +195,7 @@ export function AskNavisChat({
     const query = (textToSend ?? input).trim();
     if (!query || loading) return;
 
-    const userMsgId = crypto.randomUUID();
+    const userMsgId = generateUUID();
     const userMsg: Message = {
       id: userMsgId,
       from: 'user',
@@ -213,7 +214,7 @@ export function AskNavisChat({
       });
 
       const navisMsg: Message = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         from: 'navis',
         text: res.answer,
         citations: res.citations,
@@ -224,7 +225,7 @@ export function AskNavisChat({
       setMessages((prev) => [...prev, navisMsg]);
     } catch (err) {
       const errorMsg: Message = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         from: 'navis',
         text: `Unable to reach conversational assistant: ${errorDetail(err)}. Local deterministic project data is still active in your workspace.`,
         citations: [],

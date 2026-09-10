@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MapPin } from 'lucide-react';
 import { api, errorDetail } from '../lib/api';
+import { generateUUID } from '../lib/uuid';
 import { AgentTurnResponse, Discipline } from '../types';
 import { SPEECH_LANGUAGES, useSpeech } from '../hooks/useSpeech';
 import { SUPERVISOR, WORK_FRONTS, agentContext } from '../config';
@@ -43,7 +44,7 @@ export default function Field() {
   const queryClient = useQueryClient();
   const speech = useSpeech();
 
-  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => generateUUID());
   const [stage, setStage] = useState<Stage>('idle');
   const [messages, setMessages] = useState<Message[]>([]);
   const [draftTranscript, setDraftTranscript] = useState('');
@@ -104,7 +105,7 @@ export default function Field() {
    */
   const resetSession = () => {
     speech.cancel();
-    setSessionId(crypto.randomUUID());
+    setSessionId(generateUUID());
     setMessages([]);
     setTurn(null);
     setDraftTranscript('');
