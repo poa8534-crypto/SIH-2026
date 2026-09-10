@@ -1,0 +1,221 @@
+{"kind":"deck","id":"pr/a3lpw6","name":"Deck"}
+{"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"TITLE PAGE","textShapes":3}
+{"kind":"shape","id":"sh/43y1gji9","slide":1,"name":"Rectangle 24","bbox":[160,0,960,720]}
+{"kind":"shape","id":"sh/54r2poju","slide":1,"name":"Freeform: Shape 26","bbox":[593.89,89.4,486.99,541.2]}
+{"kind":"textbox","id":"sh/7qp4be9c","slide":1,"name":"Subtitle 3","placeholder":"subtitle","text":"\nTITLE PAGE","textPreview":"| TITLE PAGE","textChars":11,"textLines":2,"bbox":[130.78,68.1,896,184]}
+{"kind":"textbox","id":"sh/fu94fe98","slide":1,"name":"Title 7","placeholder":"title","text":"SMART INDIA HACKATHON 2026","textPreview":"SMART INDIA HACKATHON 2026","textChars":26,"textLines":1,"bbox":[34.78,-55.3,1088,218]}
+{"kind":"textbox","id":"sh/wn6dc7eh","slide":1,"name":"TextBox 9","text":"\nProblem Statement ID – 26122\nProblem Statement Title- Intelligent Data Capture & Schedule-Linking Layer for Infrastructure Project Management: Real-Time Actual Progress Tracking (Planning-to-Execution Bridge)\nTheme- Smart Automation\nPS Category- Software\nTeam ID-\nTeam Name- NamasteByte","textPreview":"| Problem Statement ID – 26122 | Problem Statement Title- Intelligent Data Capture & Schedule-Linking Layer for Infrastructure Project Ma...","textChars":287,"textLines":7,"bbox":[34.78,218,622,493.76]}
+{"kind":"image","id":"im/t8jihgzm","slide":1,"name":"Picture 4","bbox":[719.67,180.14,336.33,359.71]}
+{"kind":"image","id":"im/s7a1obih","slide":1,"name":"Picture 1","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"notes","id":"nt/y90nupkv","slide":1,"text":"Problem statement metadata taken from the SIH portal listing for PS 26122, Oil India Limited.\nTeam ID intentionally left blank until the portal issues it."}
+{"kind":"slide","id":"sl/hwbqtkby","slide":2,"title":"IDEA TITLE","textShapes":12}
+{"kind":"shape","id":"sh/q5wjelsz","slide":2,"name":"Rectangle 8","bbox":[0,667.17,1280,52.83]}
+{"kind":"textbox","id":"sh/dkvmpszm","slide":2,"name":"Title 1","placeholder":"title","text":"\nIDEA TITLE","textPreview":"| IDEA TITLE","textChars":11,"textLines":2,"bbox":[19.21,0,1152,120]}
+{"kind":"textbox","id":"sh/x4r21kru","slide":2,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/w3i1sfa9","slide":2,"name":"Footer Placeholder 6","placeholder":"footer","text":"@SIH Idea submission- Template","textPreview":"@SIH Idea submission- Template","textChars":30,"textLines":1,"bbox":[488,667.33,336.38,38.33]}
+{"kind":"textbox","id":"sh/ove9o7yd","slide":2,"name":"Oval 9","text":"NamasteByte","textPreview":"NamasteByte","textChars":11,"textLines":1,"bbox":[34.62,26.48,131.43,84.76]}
+{"kind":"textbox","id":"sh/0n650nid","slide":2,"text":"PROPOSED SOLUTION","textPreview":"PROPOSED SOLUTION","textChars":17,"textLines":1,"bbox":[36,126,460,22]}
+{"kind":"shape","id":"sh/1ofmtszy","slide":2,"bbox":[36,149,152,0]}
+{"kind":"textbox","id":"sh/el4nyd07","slide":2,"text":"NAVIS - one evidence trail from a field sentence to a reviewed P6 actual.","textPreview":"NAVIS - one evidence trail from a field sentence to a reviewed P6 actual.","textChars":73,"textLines":1,"bbox":[220,124,700,24]}
+{"kind":"shape","id":"sh/or6547i9","slide":2,"bbox":[36,494,392,156]}
+{"kind":"textbox","id":"sh/9sf6xczu","slide":2,"text":"THE PROBLEM","textPreview":"THE PROBLEM","textChars":11,"textLines":1,"bbox":[50,505,364,20]}
+{"kind":"textbox","id":"sh/jylgjq58","slide":2,"text":"Progress is reported as prose - daily reports, discipline sheets, voice notes. Primavera P6 needs an activity ID and a date. A planner bridges that gap by hand, every cycle, on a schedule of thousands of activities.","textPreview":"Progress is reported as prose - daily reports, discipline sheets, voice notes. Primavera P6 needs an activity ID and a date. A planner br...","textChars":215,"textLines":1,"bbox":[50,529,364,110]}
+{"kind":"shape","id":"sh/ixszalon","slide":2,"bbox":[444,494,392,156]}
+{"kind":"textbox","id":"sh/5k3yl0ne","slide":2,"text":"HOW NAVIS SOLVES IT","textPreview":"HOW NAVIS SOLVES IT","textChars":19,"textLines":1,"bbox":[458,505,364,20]}
+{"kind":"textbox","id":"sh/kzuhcv6t","slide":2,"text":"Extract the fact with the file and line it came from, retrieve 20 candidate activities, rank on 6 explainable features, then gate on confidence. Actuals are written with an append-only audit record.","textPreview":"Extract the fact with the file and line it came from, retrieve 20 candidate activities, rank on 6 explainable features, then gate on conf...","textChars":198,"textLines":1,"bbox":[458,529,364,110]}
+{"kind":"shape","id":"sh/vu1gfq5c","slide":2,"bbox":[852,494,392,156]}
+{"kind":"textbox","id":"sh/atsz6lor","slide":2,"text":"WHAT IS NEW - REFUSAL IS THE FEATURE","textPreview":"WHAT IS NEW - REFUSAL IS THE FEATURE","textChars":36,"textLines":1,"bbox":[866,505,364,20]}
+{"kind":"textbox","id":"sh/xwjyh0n2","slide":2,"text":"100% auto-link precision, 67 of 67 on a held-out test. The rest is queued for a planner, never guessed. A wrong actual date triggers false billing or a premature hydrotest - so the system asks instead.","textPreview":"100% auto-link precision, 67 of 67 on a held-out test. The rest is queued for a planner, never guessed. A wrong actual date triggers fals...","textChars":201,"textLines":1,"bbox":[866,529,364,110]}
+{"kind":"image","id":"im/lgjipk3u","slide":2,"name":"Picture 10","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"image","id":"im/mhsjip4z","slide":2,"name":"","bbox":[36,160.02,1208,318.97]}
+{"kind":"notes","id":"nt/hwbqtkby","slide":2,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram 9JyHxB0LPKk1vQ5E_QwS.\n100 percent auto-link precision, 67 of 67, on the held-out test split - reproduce with python eval.py.\nCoverage is 43.5 percent by design; the remaining mentions go to the planner review queue."}
+{"kind":"slide","id":"sl/ofy9wn61","slide":3,"title":"TECHNICAL APPROACH","textShapes":26}
+{"kind":"shape","id":"sh/n2l4fq98","slide":3,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
+{"kind":"textbox","id":"sh/j6dgf6tk","slide":3,"name":"Title 1","placeholder":"title","text":"TECHNICAL APPROACH","textPreview":"TECHNICAL APPROACH","textChars":18,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/obq90bml","slide":3,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/pcjqtg36","slide":3,"name":"Footer Placeholder 6","placeholder":"footer","text":"@SIH Idea submission- Template","textPreview":"@SIH Idea submission- Template","textChars":30,"textLines":1,"bbox":[488,667.33,336.38,38.33]}
+{"kind":"textbox","id":"sh/m1c3mlsn","slide":3,"name":"Oval 10","text":"NamasteByte","textPreview":"NamasteByte","textChars":11,"textLines":1,"bbox":[34.62,26.48,131.43,84.76]}
+{"kind":"textbox","id":"sh/zy1kzedw","slide":3,"text":"TECHNOLOGIES USED","textPreview":"TECHNOLOGIES USED","textChars":17,"textLines":1,"bbox":[36,128,460,22]}
+{"kind":"shape","id":"sh/exsjq9cb","slide":3,"bbox":[36,151,148,0]}
+{"kind":"shape","id":"sh/9o325ovy","slide":3,"bbox":[36,178,8,8]}
+{"kind":"textbox","id":"sh/onulwjut","slide":3,"text":"React + TypeScript - Vite front end","textPreview":"React + TypeScript - Vite front end","textChars":35,"textLines":1,"bbox":[53,170,279,48]}
+{"kind":"shape","id":"sh/nmlk3ed8","slide":3,"bbox":[36,234,8,8]}
+{"kind":"textbox","id":"sh/mlc3u9cn","slide":3,"text":"FastAPI - 18 REST routes, live OpenAPI docs","textPreview":"FastAPI - 18 REST routes, live OpenAPI docs","textChars":43,"textLines":1,"bbox":[53,226,279,48]}
+{"kind":"shape","id":"sh/psz2tkvu","slide":3,"bbox":[36,290,8,8]}
+{"kind":"textbox","id":"sh/4rq1kfu9","slide":3,"text":"Deterministic rules extraction - .txt, .xlsx, .pdf, .csv, image OCR","textPreview":"Deterministic rules extraction - .txt, .xlsx, .pdf, .csv, image OCR","textChars":67,"textLines":1,"bbox":[53,282,279,48]}
+{"kind":"shape","id":"sh/gnetwj6h","slide":3,"bbox":[36,346,8,8]}
+{"kind":"textbox","id":"sh/honupo72","slide":3,"text":"Hybrid retrieval - exact tag + BM25 + MiniLM embeddings, RRF fused","textPreview":"Hybrid retrieval - exact tag + BM25 + MiniLM embeddings, RRF fused","textChars":66,"textLines":1,"bbox":[53,338,279,48]}
+{"kind":"shape","id":"sh/ulwbu9ob","slide":3,"bbox":[36,402,8,8]}
+{"kind":"textbox","id":"sh/fm5cnepw","slide":3,"text":"Ranking - 6 explainable features, no black box in the loop","textPreview":"Ranking - 6 explainable features, no black box in the loop","textChars":58,"textLines":1,"bbox":[53,394,279,48]}
+{"kind":"shape","id":"sh/4byt036d","slide":3,"bbox":[36,458,8,8]}
+{"kind":"textbox","id":"sh/pc7ut87y","slide":3,"text":"SQLite - actuals, review queue, append-only audit","textPreview":"SQLite - actuals, review queue, append-only audit","textChars":49,"textLines":1,"bbox":[53,450,279,48]}
+{"kind":"shape","id":"sh/2pwbyton","slide":3,"bbox":[36,514,8,8]}
+{"kind":"textbox","id":"sh/3q5cryps","slide":3,"text":"Primavera P6 PMXML and XER - pure Python, no MPXJ, no JVM","textPreview":"Primavera P6 PMXML and XER - pure Python, no MPXJ, no JVM","textChars":57,"textLines":1,"bbox":[53,506,279,48]}
+{"kind":"shape","id":"sh/cfyt436p","slide":3,"bbox":[36,570,8,8]}
+{"kind":"textbox","id":"sh/dg7ux87a","slide":3,"text":"Local LLM via Ollama - optional, OFF by default","textPreview":"Local LLM via Ollama - optional, OFF by default","textChars":47,"textLines":1,"bbox":[53,562,279,48]}
+{"kind":"textbox","id":"sh/natwn29c","slide":3,"text":"Runs on one laptop CPU. No cloud service, no API key.","textPreview":"Runs on one laptop CPU. No cloud service, no API key.","textChars":53,"textLines":1,"bbox":[36,622,296,30]}
+{"kind":"shape","id":"sh/m90fux8r","slide":3,"bbox":[348,132,0,516]}
+{"kind":"textbox","id":"sh/9cbepcri","slide":3,"text":"FLOW CHART","textPreview":"FLOW CHART","textChars":10,"textLines":1,"bbox":[368,128,460,22]}
+{"kind":"shape","id":"sh/ob2xw7qx","slide":3,"bbox":[368,151,92,0]}
+{"kind":"shape","id":"sh/e50vqx8v","slide":3,"bbox":[368,514,876,0]}
+{"kind":"shape","id":"sh/18relsr6","slide":3,"bbox":[368,528,148,118]}
+{"kind":"textbox","id":"sh/07ids7ql","slide":3,"text":"100%","textPreview":"100%","textChars":4,"textLines":1,"bbox":[374,537,136,34]}
+{"kind":"textbox","id":"sh/j2dwvm9k","slide":3,"text":"AUTO-LINK PRECISION\n67 of 67 correct","textPreview":"AUTO-LINK PRECISION | 67 of 67 correct","textChars":36,"textLines":2,"bbox":[376,572,132,68]}
+{"kind":"shape","id":"sh/y1kf2h8z","slide":3,"bbox":[528,528,148,118]}
+{"kind":"textbox","id":"sh/6pkzqlo3","slide":3,"text":"43.5%","textPreview":"43.5%","textChars":5,"textLines":1,"bbox":[534,537,136,34]}
+{"kind":"textbox","id":"sh/rqt0jq5o","slide":3,"text":"COVERAGE\n67 of 154 mentions","textPreview":"COVERAGE | 67 of 154 mentions","textChars":27,"textLines":2,"bbox":[536,572,132,68]}
+{"kind":"shape","id":"sh/sr2hsv69","slide":3,"bbox":[688,528,148,118]}
+{"kind":"textbox","id":"sh/tsbil0nu","slide":3,"text":"86.9%","textPreview":"86.9%","textChars":5,"textLines":1,"bbox":[694,537,136,34]}
+{"kind":"textbox","id":"sh/il0zm1o7","slide":3,"text":"TOP-1 ACCURACY\n126 of 145","textPreview":"TOP-1 ACCURACY | 126 of 145","textChars":25,"textLines":2,"bbox":[696,572,132,68]}
+{"kind":"shape","id":"sh/jm90f65s","slide":3,"bbox":[852,528,392,118]}
+{"kind":"textbox","id":"sh/4nihob6d","slide":3,"text":"GitHub","textPreview":"GitHub","textChars":6,"textLines":1,"bbox":[868,540,70,20]}
+{"kind":"textbox","id":"sh/5orihgni","slide":3,"text":"github.com/poa8534-crypto/SIH-2026","textPreview":"github.com/poa8534-crypto/SIH-2026","textChars":34,"textLines":1,"bbox":[938,540,296,20]}
+{"kind":"textbox","id":"sh/2h4jy54b","slide":3,"text":"Verify","textPreview":"Verify","textChars":6,"textLines":1,"bbox":[868,566,70,20]}
+{"kind":"textbox","id":"sh/3id0ra5w","slide":3,"text":"python eval.py  reproduces every figure above","textPreview":"python eval.py  reproduces every figure above","textChars":45,"textLines":1,"bbox":[938,566,296,20]}
+{"kind":"textbox","id":"sh/dcf2x47y","slide":3,"text":"Working prototype - 1,426 automated tests passing","textPreview":"Working prototype - 1,426 automated tests passing","textChars":49,"textLines":1,"bbox":[868,598,366,36]}
+{"kind":"image","id":"im/5snex8by","slide":3,"name":"Picture 11","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"image","id":"im/ipcv2ds7","slide":3,"name":"","bbox":[368,158.27,876,341.45]}
+{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram LxOWrZi9aG3a2C87B7_8.\nThresholds shown on the chart are the shipped configuration: high 0.80, low 0.40, margin 0.03 (matching/config.py).\nAuto-link precision 100 percent (67/67), coverage 43.5 percent (67/154), top-1 86.9 percent (126/145) on the held-out test split.\n1,426 automated tests = 1,202 pytest plus 224 vitest, all passing on 10 September 2026.\nThe optional local LLM may help read a messy report. It never chooses the activity and never writes a date."}
+{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"FEASIBILITY AND VIABILITY","textShapes":19}
+{"kind":"shape","id":"sh/kbm987y5","slide":4,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
+{"kind":"textbox","id":"sh/ud8fyt4z","slide":4,"name":"Title 1","placeholder":"title","text":"FEASIBILITY AND VIABILITY","textPreview":"FEASIBILITY AND VIABILITY","textChars":25,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/doj29oba","slide":4,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/sna103ap","slide":4,"name":"Footer Placeholder 6","placeholder":"footer","text":"@SIH Idea submission- Template","textPreview":"@SIH Idea submission- Template","textChars":30,"textLines":1,"bbox":[488,667.33,336.38,38.33]}
+{"kind":"textbox","id":"sh/i94r6xgz","slide":4,"name":"Oval 11","text":"NamasteByte","textPreview":"NamasteByte","textChars":11,"textLines":1,"bbox":[34.62,26.48,131.43,84.76]}
+{"kind":"textbox","id":"sh/6h8v6d07","slide":4,"text":"FEASIBILITY - IT RUNS ON ONE LAPTOP","textPreview":"FEASIBILITY - IT RUNS ON ONE LAPTOP","textChars":35,"textLines":1,"bbox":[36,126,460,22]}
+{"kind":"shape","id":"sh/rihwfy1s","slide":4,"bbox":[36,149,268,0]}
+{"kind":"textbox","id":"sh/4fqd43i1","slide":4,"text":"No cloud service, no API key, nothing leaves your network.","textPreview":"No cloud service, no API key, nothing leaves your network.","textChars":58,"textLines":1,"bbox":[336,124,620,24]}
+{"kind":"textbox","id":"sh/id8v2t0b","slide":4,"text":"CHALLENGES AND RISKS","textPreview":"CHALLENGES AND RISKS","textChars":20,"textLines":1,"bbox":[36,408,460,22]}
+{"kind":"shape","id":"sh/jehwby1g","slide":4,"bbox":[36,431,170,0]}
+{"kind":"textbox","id":"sh/wr6d0ji5","slide":4,"text":"MITIGATION - ALREADY BUILT","textPreview":"MITIGATION - ALREADY BUILT","textChars":26,"textLines":1,"bbox":[654,408,460,22]}
+{"kind":"shape","id":"sh/hsze9ojq","slide":4,"bbox":[654,431,200,0]}
+{"kind":"shape","id":"sh/x8rudkbe","slide":4,"bbox":[36,452,8,8]}
+{"kind":"textbox","id":"sh/c7yt4fut","slide":4,"text":"Field wording never matches the WBS text","textPreview":"Field wording never matches the WBS text","textChars":40,"textLines":1,"bbox":[52,444,570,32]}
+{"kind":"shape","id":"sh/b6pcbat8","slide":4,"bbox":[654,452,8,8]}
+{"kind":"textbox","id":"sh/algb25cn","slide":4,"text":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textPreview":"Three retrieval channels fused - the correct activity is inside the top 20, recall@20 = 100%","textChars":92,"textLines":1,"bbox":[670,444,574,32]}
+{"kind":"shape","id":"sh/pk7u90bi","slide":4,"bbox":[36,489,8,8]}
+{"kind":"textbox","id":"sh/ojyt0vux","slide":4,"text":"A wrong actual date means false billing or a premature hydrotest","textPreview":"A wrong actual date means false billing or a premature hydrotest","textChars":64,"textLines":1,"bbox":[52,481,570,32]}
+{"kind":"shape","id":"sh/nipc7atc","slide":4,"bbox":[654,489,8,8]}
+{"kind":"textbox","id":"sh/2hgby5cr","slide":4,"text":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textPreview":"Nothing is auto-written unless score, margin and discipline all agree - 0 wrong auto-links","textChars":90,"textLines":1,"bbox":[670,481,574,32]}
+{"kind":"shape","id":"sh/9gbul4bm","slide":4,"bbox":[36,526,8,8]}
+{"kind":"textbox","id":"sh/8fidczu1","slide":4,"text":"Work happens that nobody planned","textPreview":"Work happens that nobody planned","textChars":32,"textLines":1,"bbox":[52,518,570,32]}
+{"kind":"shape","id":"sh/qlcr61sj","slide":4,"bbox":[654,526,8,8]}
+{"kind":"textbox","id":"sh/rml8f694","slide":4,"text":"Raised to the planner as a new-scope proposal, never dropped silently","textPreview":"Raised to the planner as a new-scope proposal, never dropped silently","textChars":69,"textLines":1,"bbox":[670,518,574,32]}
+{"kind":"shape","id":"sh/snu98bap","slide":4,"bbox":[36,563,8,8]}
+{"kind":"textbox","id":"sh/do3q1wra","slide":4,"text":"No live Oil India schedule is available to us","textPreview":"No live Oil India schedule is available to us","textChars":45,"textLines":1,"bbox":[52,555,570,32]}
+{"kind":"shape","id":"sh/ihcr2hsn","slide":4,"bbox":[654,563,8,8]}
+{"kind":"textbox","id":"sh/3il8bm9s","slide":4,"text":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textPreview":"Synthetic schedule structured on the public CFIHOS oil and gas taxonomy - and we say so","textChars":87,"textLines":1,"bbox":[670,555,574,32]}
+{"kind":"shape","id":"sh/4ju94rad","slide":4,"bbox":[36,600,8,8]}
+{"kind":"textbox","id":"sh/5k3qdwry","slide":4,"text":"Site or venue has no internet","textPreview":"Site or venue has no internet","textChars":29,"textLines":1,"bbox":[52,592,570,32]}
+{"kind":"shape","id":"sh/2dwrelsr","slide":4,"bbox":[654,600,8,8]}
+{"kind":"textbox","id":"sh/ne5s7q9c","slide":4,"text":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textPreview":"The whole stack runs on one laptop CPU - no cloud, no GPU, no API key","textChars":69,"textLines":1,"bbox":[670,592,574,32]}
+{"kind":"textbox","id":"sh/76lo3ids","slide":4,"text":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textPreview":"Known gaps, stated: no authentication (the login screen is a role picker), no offline queue, no .mpp import, synthetic labels.","textChars":126,"textLines":1,"bbox":[36,628,1208,24]}
+{"kind":"image","id":"im/7qdgb2tc","slide":4,"name":"Picture 10","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"image","id":"im/8rmh47ux","slide":4,"name":"","bbox":[97.65,152,1084.71,240]}
+{"kind":"notes","id":"nt/jyx0ra1s","slide":4,"text":"Diagram: Eraser workspace 2qnRjujRIBvJMgxD2vov, diagram Vwn78M3zjDixZbTZ4tdn.\nrecall@20 = 100 percent on the held-out test split; fusion places the correct activity inside the retrieved 20.\nThe XER writer emits a simplified shape and is not a P6-valid round trip (D-047).\nOCR is on-premise only when local Tesseract is installed; an optional cloud vision provider would send that document out."}
+{"kind":"slide","id":"sl/i107q5of","slide":5,"title":"IMPACT AND BENEFITS","textShapes":29}
+{"kind":"shape","id":"sh/w32dkbuh","slide":5,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
+{"kind":"textbox","id":"sh/y1g7ylcj","slide":5,"name":"Title 1","placeholder":"title","text":"IMPACT AND BENEFITS","textPreview":"IMPACT AND BENEFITS","textChars":19,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/l4bupwny","slide":5,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/032tgr6d","slide":5,"name":"Footer Placeholder 6","placeholder":"footer","text":"@SIH Idea submission- Template","textPreview":"@SIH Idea submission- Template","textChars":30,"textLines":1,"bbox":[488,667.33,336.38,38.33]}
+{"kind":"textbox","id":"sh/ahkvi1cb","slide":5,"name":"Oval 11","text":"NamasteByte","textPreview":"NamasteByte","textChars":11,"textLines":1,"bbox":[34.62,26.48,131.43,84.76]}
+{"kind":"textbox","id":"sh/u5s3qdcb","slide":5,"text":"THE LOOP THAT CLOSES","textPreview":"THE LOOP THAT CLOSES","textChars":20,"textLines":1,"bbox":[36,126,460,22]}
+{"kind":"shape","id":"sh/v614zitg","slide":5,"bbox":[36,149,158,0]}
+{"kind":"textbox","id":"sh/4ba5wnud","slide":5,"text":"Today this knowledge dies in a supervisor's notebook at project close.","textPreview":"Today this knowledge dies in a supervisor's notebook at project close.","textChars":70,"textLines":1,"bbox":[216,124,700,24]}
+{"kind":"shape","id":"sh/5wjm5sby","slide":5,"bbox":[36,196,218,92]}
+{"kind":"textbox","id":"sh/i9s3uxc7","slide":5,"text":"PROJECT EXECUTES","textPreview":"PROJECT EXECUTES","textChars":16,"textLines":1,"bbox":[46,206,198,20]}
+{"kind":"textbox","id":"sh/3a1432ts","slide":5,"text":"reports, diaries,\nfield updates","textPreview":"reports, diaries, | field updates","textChars":31,"textLines":2,"bbox":[46,230,198,50]}
+{"kind":"shape","id":"sh/szu507a9","slide":5,"bbox":[283.5,196,218,92]}
+{"kind":"textbox","id":"sh/d03m9cbu","slide":5,"text":"NAVIS CAPTURES","textPreview":"NAVIS CAPTURES","textChars":14,"textLines":1,"bbox":[293.5,206,198,20]}
+{"kind":"textbox","id":"sh/1kfux8zm","slide":5,"text":"real start, real finish,\nreal quantity","textPreview":"real start, real finish, | real quantity","textChars":38,"textLines":2,"bbox":[293.5,230,198,50]}
+{"kind":"shape","id":"sh/0j6d43yh","slide":5,"bbox":[531,196,218,92]}
+{"kind":"textbox","id":"sh/fixcvyhw","slide":5,"text":"STRUCTURED RECORD","textPreview":"STRUCTURED RECORD","textChars":17,"textLines":1,"bbox":[541,206,198,20]}
+{"kind":"textbox","id":"sh/ehov2tgb","slide":5,"text":"durations, delay causes,\ndiscipline productivity","textPreview":"durations, delay causes, | discipline productivity","textChars":48,"textLines":2,"bbox":[541,230,198,50]}
+{"kind":"shape","id":"sh/p8ze1szy","slide":5,"bbox":[778.5,196,218,92]}
+{"kind":"textbox","id":"sh/o7qd8nyd","slide":5,"text":"QUERYABLE HISTORY","textPreview":"QUERYABLE HISTORY","textChars":17,"textLines":1,"bbox":[788.5,206,198,20]}
+{"kind":"textbox","id":"sh/n6hczihs","slide":5,"text":"how long does this\nreally take here","textPreview":"how long does this | really take here","textChars":35,"textLines":2,"bbox":[788.5,230,198,50]}
+{"kind":"shape","id":"sh/25ov6dg7","slide":5,"bbox":[1026,196,218,92]}
+{"kind":"textbox","id":"sh/5cvupozu","slide":5,"text":"NEXT BASELINE","textPreview":"NEXT BASELINE","textChars":13,"textLines":1,"bbox":[1036,206,198,20]}
+{"kind":"textbox","id":"sh/4bmdwji9","slide":5,"text":"calibrated,\nnot guessed","textPreview":"calibrated, | not guessed","textChars":23,"textLines":2,"bbox":[1036,230,198,50]}
+{"kind":"shape","id":"sh/21gba9sb","slide":5,"bbox":[254,242,29.5,0]}
+{"kind":"shape","id":"sh/329c3e9g","slide":5,"bbox":[501.5,242,29.5,0]}
+{"kind":"shape","id":"sh/by5snu10","slide":5,"bbox":[749,242,29.5,0]}
+{"kind":"shape","id":"sh/qxwbe9kf","slide":5,"bbox":[996.5,242,29.5,0]}
+{"kind":"shape","id":"sh/dknap4jq","slide":5,"bbox":[24,112,1111,84]}
+{"kind":"textbox","id":"sh/3mds3uxo","slide":5,"text":"the loop closes - execution history becomes the next plan","textPreview":"the loop closes - execution history becomes the next plan","textChars":57,"textLines":1,"bbox":[430,164,420,20]}
+{"kind":"textbox","id":"sh/4nmtwze9","slide":5,"text":"WHO GAINS, AND WHAT THEY GAIN","textPreview":"WHO GAINS, AND WHAT THEY GAIN","textChars":29,"textLines":1,"bbox":[36,316,460,22]}
+{"kind":"shape","id":"sh/5ova54fe","slide":5,"bbox":[36,339,232,0]}
+{"kind":"shape","id":"sh/yp0ry5gz","slide":5,"bbox":[36,352,595,84]}
+{"kind":"textbox","id":"sh/jq9srax4","slide":5,"text":"SITE SUPERVISOR","textPreview":"SITE SUPERVISOR","textChars":15,"textLines":1,"bbox":[50,364,567,20]}
+{"kind":"textbox","id":"sh/zm18v6p8","slide":5,"text":"Speaks one sentence instead of filling a form. Reporting stops being a second job.","textPreview":"Speaks one sentence instead of filling a form. Reporting stops being a second job.","textChars":82,"textLines":1,"bbox":[50,388,567,40]}
+{"kind":"shape","id":"sh/yls7m18n","slide":5,"bbox":[649,352,595,84]}
+{"kind":"textbox","id":"sh/lojqxw7y","slide":5,"text":"PLANNING ENGINEER","textPreview":"PLANNING ENGINEER","textChars":17,"textLines":1,"bbox":[663,364,567,20]}
+{"kind":"textbox","id":"sh/0napobqt","slide":5,"text":"Reviews ranked exceptions instead of matching thousands of rows by hand.","textPreview":"Reviews ranked exceptions instead of matching thousands of rows by hand.","textChars":72,"textLines":1,"bbox":[663,388,567,40]}
+{"kind":"shape","id":"sh/na18z6p4","slide":5,"bbox":[36,448,595,84]}
+{"kind":"textbox","id":"sh/m9s7q18j","slide":5,"text":"PROJECT MANAGER","textPreview":"PROJECT MANAGER","textChars":15,"textLines":1,"bbox":[50,460,567,20]}
+{"kind":"textbox","id":"sh/9c3q1g7a","slide":5,"text":"Sees a schedule that reflects this week, not last month - slippage while it can still be acted on.","textPreview":"Sees a schedule that reflects this week, not last month - slippage while it can still be acted on.","textChars":98,"textLines":1,"bbox":[50,484,567,40]}
+{"kind":"shape","id":"sh/8bupsbqp","slide":5,"bbox":[649,448,595,84]}
+{"kind":"textbox","id":"sh/vel83qpg","slide":5,"text":"PSU / OWNER","textPreview":"PSU / OWNER","textChars":11,"textLines":1,"bbox":[663,460,567,20]}
+{"kind":"textbox","id":"sh/adc7ul8v","slide":5,"text":"Every actual date is defensible with a file, a line and a confidence.","textPreview":"Every actual date is defensible with a file, a line and a confidence.","textChars":69,"textLines":1,"bbox":[663,484,567,40]}
+{"kind":"shape","id":"sh/sjepkvmt","slide":5,"bbox":[36,576,1208,74]}
+{"kind":"textbox","id":"sh/tkn6t0ne","slide":5,"text":"SCALE OF THE EXPOSURE","textPreview":"SCALE OF THE EXPOSURE","textChars":21,"textLines":1,"bbox":[52,590,260,20]}
+{"kind":"textbox","id":"sh/6hc7il43","slide":5,"text":"1,948 monitored central-sector projects, ₹41.99 lakh crore latest revised cost (MoSPI PAIMANA, February 2026).","textPreview":"1,948 monitored central-sector projects, ₹41.99 lakh crore latest revised cost (MoSPI PAIMANA, February 2026).","textChars":110,"textLines":1,"bbox":[52,612,700,24]}
+{"kind":"textbox","id":"sh/7i5orq58","slide":5,"text":"Context only. NAVIS has run no field pilot, so no saving, ROI or productivity figure is claimed.","textPreview":"Context only. NAVIS has run no field pilot, so no saving, ROI or productivity figure is claimed.","textChars":96,"textLines":1,"bbox":[760,600,468,40]}
+{"kind":"image","id":"im/9kzq94zi","slide":5,"name":"Picture 10","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"notes","id":"nt/i107q5of","slide":5,"text":"MoSPI PAIMANA portal, February 2026: 1,948 monitored central-sector projects, latest revised cost 41,98,684.28 crore rupees.\nThat figure sets the scale of the exposure. It is not a NAVIS savings claim and the slide says so.\nNo field pilot has run, so no ROI, monetary saving or productivity percentage is claimed anywhere in this deck."}
+{"kind":"slide","id":"sl/x8f69ofe","slide":6,"title":"RESEARCH  AND REFERENCES","textShapes":39}
+{"kind":"shape","id":"sh/h4bupgn6","slide":6,"name":"Rectangle 9","bbox":[0,667.17,1280,52.83]}
+{"kind":"textbox","id":"sh/1kj2p0ve","slide":6,"name":"Title 1","placeholder":"title","text":"RESEARCH  AND REFERENCES","textPreview":"RESEARCH  AND REFERENCES","textChars":24,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/ml07i9sv","slide":6,"name":"Slide Number Placeholder 5","placeholder":"slideNumber","text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/7m98ru9g","slide":6,"name":"Footer Placeholder 6","placeholder":"footer","text":"@SIH Idea submission- Template","textPreview":"@SIH Idea submission- Template","textChars":30,"textLines":1,"bbox":[488,667.33,336.38,38.33]}
+{"kind":"textbox","id":"sh/pc76hkr2","slide":6,"name":"Oval 8","text":"NamasteByte","textPreview":"NamasteByte","textChars":11,"textLines":1,"bbox":[34.62,26.48,131.43,84.76]}
+{"kind":"textbox","id":"sh/xsnuxoji","slide":6,"text":"REFERENCE AND RESEARCH WORK","textPreview":"REFERENCE AND RESEARCH WORK","textChars":27,"textLines":1,"bbox":[36,126,460,22]}
+{"kind":"shape","id":"sh/wred4j2x","slide":6,"bbox":[36,149,226,0]}
+{"kind":"shape","id":"sh/nmlcre1g","slide":6,"bbox":[36,168,596,64]}
+{"kind":"textbox","id":"sh/mlcby9kv","slide":6,"text":"MoSPI PAIMANA","textPreview":"MoSPI PAIMANA","textChars":13,"textLines":1,"bbox":[50,177,570,20]}
+{"kind":"textbox","id":"sh/9onutojm","slide":6,"text":"Central project monitoring scale","textPreview":"Central project monitoring scale","textChars":32,"textLines":1,"bbox":[50,199,300,20]}
+{"kind":"textbox","id":"sh/oned0j21","slide":6,"text":"ipm.mospi.gov.in","textPreview":"ipm.mospi.gov.in","textChars":16,"textLines":1,"bbox":[356,199,264,20]}
+{"kind":"shape","id":"sh/7ipc3i1k","slide":6,"bbox":[36,242,596,64]}
+{"kind":"textbox","id":"sh/6hgvadkf","slide":6,"text":"GAO Schedule Assessment Guide","textPreview":"GAO Schedule Assessment Guide","textChars":29,"textLines":1,"bbox":[50,251,570,20]}
+{"kind":"textbox","id":"sh/2d0f2h4n","slide":6,"text":"What makes a schedule reliable","textPreview":"What makes a schedule reliable","textChars":30,"textLines":1,"bbox":[50,273,300,20]}
+{"kind":"textbox","id":"sh/3etgv2ls","slide":6,"text":"gao.gov/products/gao-16-89g","textPreview":"gao.gov/products/gao-16-89g","textChars":27,"textLines":1,"bbox":[356,273,264,20]}
+{"kind":"shape","id":"sh/4f2x47md","slide":6,"bbox":[36,316,596,64]}
+{"kind":"textbox","id":"sh/pgbyxc3y","slide":6,"text":"NIST AI Risk Management Framework","textPreview":"NIST AI Risk Management Framework","textChars":33,"textLines":1,"bbox":[50,325,570,20]}
+{"kind":"textbox","id":"sh/qhkf6h4j","slide":6,"text":"Traceability and human oversight","textPreview":"Traceability and human oversight","textChars":32,"textLines":1,"bbox":[50,347,300,20]}
+{"kind":"textbox","id":"sh/ritgzml4","slide":6,"text":"nist.gov/itl/ai-risk-management-framework","textPreview":"nist.gov/itl/ai-risk-management-framework","textChars":41,"textLines":1,"bbox":[356,347,264,20]}
+{"kind":"shape","id":"sh/cj2x8rmp","slide":6,"bbox":[36,390,596,64]}
+{"kind":"textbox","id":"sh/dkby1w3a","slide":6,"text":"Oracle Primavera P6 EPPM docs","textPreview":"Oracle Primavera P6 EPPM docs","textChars":29,"textLines":1,"bbox":[50,399,570,20]}
+{"kind":"textbox","id":"sh/6lgfux4f","slide":6,"text":"PMXML and XER interchange","textPreview":"PMXML and XER interchange","textChars":25,"textLines":1,"bbox":[50,421,300,20]}
+{"kind":"textbox","id":"sh/7m9wnil0","slide":6,"text":"docs.oracle.com - primavera-p6","textPreview":"docs.oracle.com - primavera-p6","textChars":30,"textLines":1,"bbox":[356,421,264,20]}
+{"kind":"shape","id":"sh/90fit0ni","slide":6,"bbox":[36,464,596,64]}
+{"kind":"textbox","id":"sh/oz610v6x","slide":6,"text":"CFIHOS oil and gas taxonomy","textPreview":"CFIHOS oil and gas taxonomy","textChars":27,"textLines":1,"bbox":[50,473,570,20]}
+{"kind":"textbox","id":"sh/nex0rq5c","slide":6,"text":"Structure behind the synthetic schedule","textPreview":"Structure behind the synthetic schedule","textChars":39,"textLines":1,"bbox":[50,495,300,20]}
+{"kind":"textbox","id":"sh/mdojylor","slide":6,"text":"public specification, datasets/real/","textPreview":"public specification, datasets/real/","textChars":36,"textLines":1,"bbox":[356,495,264,20]}
+{"kind":"textbox","id":"sh/x4zix0ne","slide":6,"text":"OUR OWN EVIDENCE - WHY COVERAGE IS UNDER HALF","textPreview":"OUR OWN EVIDENCE - WHY COVERAGE IS UNDER HALF","textChars":45,"textLines":1,"bbox":[664,126,460,22]}
+{"kind":"shape","id":"sh/w3614vmt","slide":6,"bbox":[664,149,330,0]}
+{"kind":"shape","id":"sh/b2x0vq58","slide":6,"bbox":[664,168,580,62]}
+{"kind":"textbox","id":"sh/a1oj2lo3","slide":6,"text":"154 held-out test mentions","textPreview":"154 held-out test mentions","textChars":26,"textLines":1,"bbox":[678,178,552,20]}
+{"kind":"textbox","id":"sh/d8vilgna","slide":6,"text":"six source files, no threshold tuned on them","textPreview":"six source files, no threshold tuned on them","textChars":44,"textLines":1,"bbox":[678,200,552,20]}
+{"kind":"textbox","id":"sh/c7mhsb6p","slide":6,"text":"▼","textPreview":"▼","textChars":1,"textLines":1,"bbox":[664,230,580,16]}
+{"kind":"shape","id":"sh/g3al0j6d","slide":6,"bbox":[664,246,580,62]}
+{"kind":"textbox","id":"sh/ho3m9o7y","slide":6,"text":"67 auto-linked","textPreview":"67 auto-linked","textChars":14,"textLines":1,"bbox":[678,256,552,20]}
+{"kind":"textbox","id":"sh/u1s3y987","slide":6,"text":"43.5% coverage at 100% precision","textPreview":"43.5% coverage at 100% precision","textChars":32,"textLines":1,"bbox":[678,278,552,20]}
+{"kind":"textbox","id":"sh/f2147eps","slide":6,"text":"▼","textPreview":"▼","textChars":1,"textLines":1,"bbox":[664,308,580,16]}
+{"kind":"shape","id":"sh/szalwzq1","slide":6,"bbox":[664,324,580,62]}
+{"kind":"textbox","id":"sh/t0jm547m","slide":6,"text":"39 schedule nodes touched","textPreview":"39 schedule nodes touched","textChars":25,"textLines":1,"bbox":[678,334,552,20]}
+{"kind":"textbox","id":"sh/6xs3up8b","slide":6,"text":"after quantity-based roll-up","textPreview":"after quantity-based roll-up","textChars":28,"textLines":1,"bbox":[678,356,552,20]}
+{"kind":"shape","id":"sh/7y1k3upg","slide":6,"bbox":[664,402,282,62]}
+{"kind":"textbox","id":"sh/kvqlszq5","slide":6,"text":"32 had no measurable quantity","textPreview":"32 had no measurable quantity","textChars":29,"textLines":1,"bbox":[676,412,258,20]}
+{"kind":"textbox","id":"sh/5wj2147q","slide":6,"text":"no percentage, no date written","textPreview":"no percentage, no date written","textChars":30,"textLines":1,"bbox":[676,434,258,20]}
+{"kind":"shape","id":"sh/n6h4bu9c","slide":6,"bbox":[962,402,282,62]}
+{"kind":"textbox","id":"sh/m5832psr","slide":6,"text":"7 finish dates withheld","textPreview":"7 finish dates withheld","textChars":23,"textLines":1,"bbox":[974,412,258,20]}
+{"kind":"textbox","id":"sh/9szmdkri","slide":6,"text":"the only date came from a report header","textPreview":"the only date came from a report header","textChars":39,"textLines":1,"bbox":[974,434,258,20]}
+{"kind":"textbox","id":"sh/orq54fax","slide":6,"text":"Every narrowing step is a deliberate refusal. Reproduce it live: python eval.py","textPreview":"Every narrowing step is a deliberate refusal. Reproduce it live: python eval.py","textChars":79,"textLines":1,"bbox":[664,476,580,22]}
+{"kind":"shape","id":"sh/buh4fu9o","slide":6,"bbox":[36,546,1208,104]}
+{"kind":"textbox","id":"sh/at8n6ps3","slide":6,"text":"EVIDENCE BOUNDARY","textPreview":"EVIDENCE BOUNDARY","textChars":17,"textLines":1,"bbox":[52,558,260,20]}
+{"kind":"textbox","id":"sh/xwjmh4re","slide":6,"text":"Synthetic schedule and reports","textPreview":"Synthetic schedule and reports","textChars":30,"textLines":1,"bbox":[52,586,280,46]}
+{"kind":"textbox","id":"sh/wvq58zat","slide":6,"text":"No live Oil India data yet","textPreview":"No live Oil India data yet","textChars":26,"textLines":1,"bbox":[348,586,280,46]}
+{"kind":"textbox","id":"sh/jy14je9k","slide":6,"text":"In-distribution benchmark","textPreview":"In-distribution benchmark","textChars":25,"textLines":1,"bbox":[644,586,280,46]}
+{"kind":"textbox","id":"sh/yxsna9sz","slide":6,"text":"1,426 tests - 1,202 pytest, 224 vitest","textPreview":"1,426 tests - 1,202 pytest, 224 vitest","textChars":38,"textLines":1,"bbox":[940,586,280,46]}
+{"kind":"image","id":"im/jetwza18","slide":6,"name":"Picture 11","bbox":[1026.78,0.16,236.2,111.53]}
+{"kind":"notes","id":"nt/x8f69ofe","slide":6,"text":"MoSPI PAIMANA: https://ipm.mospi.gov.in/\nGAO Schedule Assessment Guide GAO-16-89G: https://www.gao.gov/products/gao-16-89g\nNIST AI Risk Management Framework: https://www.nist.gov/itl/ai-risk-management-framework\nOracle Primavera P6 EPPM documentation: https://docs.oracle.com/en/industries/construction-engineering/primavera-p6-enterprise-project-portfolio/\nMETRICS.md section 3.4a audits our own benchmark: 84 percent of test positives reuse an activity seen in training, so these are in-distribution numbers."}

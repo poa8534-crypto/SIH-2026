@@ -1291,6 +1291,43 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** SIH idea deck rebuilt on the official template with the Eraser flow charts (D-100).
+**Date:** 2026-09-10 · **Decision:** D-100
+
+```
+DECK BUILD PATH  (documentation artefact - no NAVIS runtime code is involved)
+
+  ppt_build/build_navis_sih_deck.mjs        node, @oai/artifact-tool
+      PresentationFile.importPptx(SIH2026-IDEA-Presentation-Format.pptx)
+        slide 1  left exactly as shipped (speaker notes only)
+        slide 2  deleteNamed("TextBox 8") -> bridge diagram + 3 pointer cards
+        slide 3  technology column | divider | master flow chart
+                 dashed rule -> 3 stat chips + evidence box
+        slide 4  on-premise band -> risk / mitigation rows -> known-gaps line
+        slide 5  native 5-node loop (shapes.connect) -> 4 beneficiary cards -> scale strip
+        slide 6  5 reference rows | native evidence funnel -> evidence-boundary pills
+        slides.getItem(6).delete()          the template's instruction page
+      PresentationFile.exportPptx -> deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pptx
+
+  ppt_build/fill_template_fields.py          python-pptx, run-level edits only
+      cover text box  6 paragraphs   fill_paragraph(run[0].text = value)
+      team ovals      slides 2-6     "Your Team Name" -> "NamasteByte"
+      font size overridden only where the shipped size cannot hold the content
+      (PS title 24 -> 13 pt, oval -> 10 pt)
+
+  ppt_build/render_final.mjs                 PNG proof of what was built
+      -> ppt_build/final_render/slide-1..6.png, montage.png, final.inspect.ndjson
+      -> deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pdf   (Pillow, from those PNGs)
+
+  Diagram assets: ppt_build/assets/diagram_A_bridge.png, diagram_B_flowchart.png,
+  diagram_D1_onprem.png - exported from the Eraser workspace listed in DECK_DIAGRAMS.md
+  and whitespace-trimmed. The other five Eraser diagrams are deliberately unused.
+```
+
+---
+
+### Previous modification area
+
 **Task:** Centralized browser-compatible UUID utility with non-secure LAN HTTP fallback (D-098).
 **Date:** 2026-09-10 · **Decision:** D-098
 

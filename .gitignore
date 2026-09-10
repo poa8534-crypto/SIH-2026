@@ -33,3 +33,12 @@ tmp/*.txt
 tmp/*.log
 tmp/*.md
 schedule_export_*.xml
+
+# Deck build byproducts: regenerable from ppt_build/build_navis_sih_deck.mjs.
+# The template inspection dumps, the superseded candidate decks and the codex
+# finalizer staging area are not sources of truth.
+ppt_build/template_inspection/
+ppt_build/obsolete/
+ppt_build/.codex-finalizer/
+ppt_build/vitest-results.json
+ppt_build/probe_api_output.txt

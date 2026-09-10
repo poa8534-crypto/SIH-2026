@@ -9474,3 +9474,66 @@ Investigation identified several severe root causes:
 
 
 
+
+---
+
+### D-100 — The SIH idea deck is rebuilt on the official template, with three Eraser flow charts carrying the argument
+
+**Date:** 2026-09-10 · **Status:** current · **Area:** `ppt_build/`, `deliverables/`
+
+**Context.** The previous build of `deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pptx`
+put a different visual pattern on every slide — numbered node rows, three-column
+cards, metric tiles, a screenshot — with no shared layout language. The content was
+accurate but the reader had to relearn the slide on every page. Eight diagrams had
+been produced in Eraser (`DECK_DIAGRAMS.md`) and none of them were in the deck.
+
+**Decision.**
+
+1. **The official template is loaded and never restructured.** `build_navis_sih_deck.mjs`
+   imports `SIH2026-IDEA-Presentation-Format.pptx` and adds content into the free canvas
+   only — `x 36→1244`, `y 125→658` in the tool's 1280 × 720 coordinate space. Every fixed
+   element the template ships (slide titles, team-name oval, SIH logo, blue footer bar,
+   slide numbers) is left in place and unedited. Only two template shapes are touched:
+   the pointer text box on each content slide (`TextBox 8`, the instruction text the
+   template exists to have replaced) is deleted, and the instruction page (slide 7) is
+   removed because it is not part of a submission.
+
+2. **The template's own fill-in fields are filled run by run, not rebuilt.**
+   `fill_template_fields.py` (python-pptx) writes into the existing runs of the cover's
+   six-line text box and of each team-name oval, so the template's fonts, bullets and
+   geometry survive. Two font sizes are overridden because the shipped ones cannot
+   physically hold the required content: the problem-statement title (24 pt runs off the
+   bottom of the cover; set to 13 pt) and the team name (breaks "NamasteByte" mid-word in
+   the oval; set to 10 pt). Nothing else about the template is changed.
+
+3. **Three of the eight Eraser diagrams are used, not all eight.** Slide 2 takes the
+   "two worlds, one bridge" band, slide 3 the master flow chart, slide 4 the on-premise
+   stack. The other five were dropped: the 3-way decision mini is already inside the
+   master flow chart; the risk/mitigation, who-benefits and evidence-funnel diagrams are
+   list-shaped, and reading them as an image costs resolution for no gain, so their
+   content is set as native text and native shapes instead. Diagram PNGs live in
+   `ppt_build/assets/` and are whitespace-trimmed before placement.
+
+4. **One layout language, taken from the reference deck.** A text column beside a
+   dominant flow chart with a thin vertical divider; small underlined blue section
+   headings inside the canvas; the numbers as a chip row under a dashed divider; the
+   evidence box (repo link, `python eval.py`, "1,426 automated tests passing" in red) in
+   the bottom-right corner of slide 3.
+
+**Consequence.** The deck is six slides, all figures on the `NUMBERS_SHEET.md` allow
+list, and the honesty lines are on the slides rather than only in the speaker notes:
+"no field pilot, so no ROI is claimed" on slide 5, the known-gaps line on slide 4, and
+the evidence-boundary strip on slide 6.
+
+**Verification.** `python scripts/office/validate.py deliverables/…FINAL.pptx --original
+<template>` reports `All validations PASSED!`; all six slides were rendered to PNG and
+inspected; no content crosses the template's fixed title or footer zones.
+
+**Rejected alternative.** Rebuilding the flow charts as native PowerPoint shapes. The
+master flow chart has roughly forty boxes and thirty labelled edges; hand-placing that
+buys sharper text at the cost of hours and a layout that cannot be re-exported when the
+diagram changes. Eraser stays the source of truth for the three complex charts.
+
+**Related:** `DECK_DIAGRAMS.md` (diagram IDs and edit links), `NUMBERS_SHEET.md` (the
+allow list every figure on the deck comes from), `DECK_IMAGE_PROMPTS.md` (prompts for
+the optional generated art), D-015 (withheld finish dates, the slide-6 funnel).
