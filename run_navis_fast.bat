@@ -18,11 +18,14 @@ echo 3. Starting Optimized Frontend Server on 0.0.0.0:5173...
 cd /d "%~dp0frontend"
 start "NAVIS Fast Frontend" cmd /k "npx vite preview --host 0.0.0.0 --port 5173"
 
+for /f "usebackq tokens=*" %%a in (`powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddress -First 1)"`) do set "CURRENT_IP=%%a"
+if "%CURRENT_IP%"=="" set "CURRENT_IP=localhost"
+
 echo.
 echo ========================================================
 echo NAVIS is now running at maximum speed!
-echo - Phone URL (Make sure phone is on Wi-Fi 'Kevin_5G'):
-echo   http://192.168.0.106:5173
+echo - Phone URL (Make sure phone is on the same Wi-Fi / Hotspot):
+echo   http://%CURRENT_IP%:5173
 echo.
 echo - PC URL:
 echo   http://localhost:5173
