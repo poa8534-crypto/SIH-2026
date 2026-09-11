@@ -1,7 +1,7 @@
 # Running the demo
 
 > **Every number in this file was re-walked end to end on 2026-09-03 against
-> commit `f9336bf`**, from a clean `scripts\demo_reset.ps1` run on a live server,
+> commit `f9336bf`**, from a clean `backend\scripts\demo_reset.ps1` run on a live server,
 > with every screen loaded at 1280×800 in all three roles and every quoted
 > string read back off the running application. Demo-database counts are
 > for the **120-activity demo schedule** (`dataset/baseline_schedule.json`) —
@@ -14,7 +14,7 @@ Two terminals, both from the project root (the folder containing
 
 ```powershell
 # terminal 1 — API on :8000
-python -m uvicorn server.main:app --reload
+python -m uvicorn server.main:app --app-dir backend --reload
 
 # terminal 2 — UI on :5173
 cd frontend
@@ -80,7 +80,7 @@ Field Supervisor on the login screen instead.
 
 This is the single most likely thing to break a rehearsal, so read it twice:
 
-- `scripts\demo_reset.ps1` and `scripts\reset_demo.py` reset **server** state —
+- `backend\scripts\demo_reset.ps1` and `backend\scripts\reset_demo.py` reset **server** state —
   ingests, review items, audit records, actual dates.
 - The role is **browser** state — one `localStorage` key on the presenting
   machine.
@@ -133,7 +133,7 @@ than trust. Needs the server up **with reset enabled**:
 ```powershell
 # terminal 1 — API, with the reset route turned on
 $env:NAVIS_ENABLE_RESET = "1"
-python -m uvicorn server.main:app --reload
+python -m uvicorn server.main:app --app-dir backend --reload
 ```
 
 ```powershell
@@ -176,7 +176,7 @@ so on the next line; check `dataset/` before assuming the run failed.
 **If the server refuses to start** with `no such column: activities.wbs_level`,
 the local `dataset/epc_progress.db` predates the v2 baseline work. It is
 gitignored, disposable and rebuilt entirely from `dataset/`. Run
-`python scripts\reset_demo.py` once — it detects the schema mismatch and
+`python backend\scripts\reset_demo.py` once — it detects the schema mismatch and
 recreates the tables — then start the server again.
 
 Exit codes: `0` reset and all thirteen ingests succeeded; `1` they did not (API
@@ -186,14 +186,14 @@ clean; `2` a dataset file is missing and nothing was touched.
 ### From a terminal
 
 ```powershell
-python scripts\reset_demo.py
+python backend\scripts\reset_demo.py
 ```
 
 Takes about 30 seconds and prints per-file counts plus a fuller summary block
 than the PowerShell script does. Reload the browser afterwards; the running
 server picks it up immediately.
 
-`python scripts\seed.py` does the same thing and is what `SETUP.md` documents
+`python backend\scripts\seed.py` does the same thing and is what `SETUP.md` documents
 for first-time setup. `reset_demo.py` is the shorter one to reach for mid-run.
 
 ### Over HTTP, without leaving the browser
@@ -203,7 +203,7 @@ record. Start the server with the flag to enable it:
 
 ```powershell
 $env:NAVIS_ENABLE_RESET = "1"
-python -m uvicorn server.main:app --reload
+python -m uvicorn server.main:app --app-dir backend --reload
 ```
 
 Then:
@@ -230,7 +230,7 @@ message pointing at the script, so it cannot fire by accident.
 | conflict-flagged audit rows | 68 | row counter |
 | conflicts shown on Home | **18** rows across **17** activities | `GET /schedule/conflicts`, deduplicated: 17 on `actual_start`, 1 on `actual_finish` |
 
-Verified 2026-09-03 by `scripts\demo_reset.ps1` followed by direct counts
+Verified 2026-09-03 by `backend\scripts\demo_reset.ps1` followed by direct counts
 against `dataset/epc_progress.db` and `GET /schedule/conflicts`. If those
 numbers do not match after a reset, something is wrong with the dataset rather
 than with the run. The script's own `$Expected` assertion (`120 / 67 / 135`)
@@ -301,7 +301,7 @@ To ingest a file that is not already in the database, first hold one out:
 
 ```powershell
 move dataset\dpr_day_03.txt %TEMP%\
-python scripts\reset_demo.py
+python backend\scripts\reset_demo.py
 move %TEMP%\dpr_day_03.txt dataset\
 ```
 
@@ -334,7 +334,7 @@ hash with an explanation, not an error.
 > not 275 — on a source conflict the stored value is whichever source arrived
 > last, so order changes what gets recorded. Activities, events, the review
 > queue and the actual dates all come back to 120 / 266 / 135 / 67 / 38. If you
-> are going to quote the audit count later, run `scripts\demo_reset.ps1` again
+> are going to quote the audit count later, run `backend\scripts\demo_reset.ps1` again
 > first.
 
 ### 3. Reconcile — resolve one
@@ -549,7 +549,7 @@ into the register on its own authority.* Same rule as D-009 for dates, applied
 to governance.
 
 If you want the register populated for the demo, accept a candidate as the
-planner first — it appears here immediately. `scripts\demo_reset.ps1` clears
+planner first — it appears here immediately. `backend\scripts\demo_reset.ps1` clears
 the register again, so a rehearsal cannot leave a stray entry behind.
 
 Below it, **Source conflicts (18)** — the same detections the planner sees, at
@@ -596,7 +596,7 @@ Home, Reports, Clarifications, Profile.
 ### 9. Report an update by voice — or by typing
 
 Tap **Tap & Speak** and say the opener, or type it. **Use this three-turn
-script; it is the one covered by `server/test_agent.py` and it is the one that
+script; it is the one covered by `backend/server/test_agent.py` and it is the one that
 works:**
 
 1. *"spool erection on the 24 inch header is done"*
@@ -664,7 +664,7 @@ here may be quoted without the phrase in its "say it like this" column.
 | **18 source conflicts** | "18 disagreements across 17 activities, spreadsheet against daily report" |
 | **27 activities** | the authentic WSDOT schedule. Never inflate it |
 
-### v1 — what the running server actually does (`python eval.py`)
+### v1 — what the running server actually does (`python backend/eval.py`)
 
 Baseline v1, 120 activities, 254 mentions, **no train/test split** — calibrated
 and reported on the same data, and it must be labelled that way.
@@ -689,7 +689,7 @@ Baseline v2, thresholds calibrated on dev, reported on a held-out test split of
 
 ### Recall@3 — the one to quote, and the one that replaces Recall@20
 
-The review queue shows a planner **three** candidates (`server/main.py:491`;
+The review queue shows a planner **three** candidates (`backend/server/main.py:491`;
 the `candidates` useMemo in `Reconcile.tsx`), so k=3 is the number that
 describes the product.
 
@@ -720,7 +720,7 @@ missing, two times in three — and none of those are auto-linked.*
 - ❌ "NAVIS is 87% accurate" — not without naming the corpus, the baseline, and
   the fact that it is not held-out.
 - ❌ Quoting **99.8%** at all — it is the optimistic median-threshold figure
-  `eval.py --cv` prints. The out-of-fold number is **99.5%** (437/439).
+  `backend/eval.py --cv` prints. The out-of-fold number is **99.5%** (437/439).
 - ❌ Any claim about a **new project** or an **unseen activity** — 84% of v2
   test positives reuse a training activity.
 
@@ -798,7 +798,7 @@ start again with the three-turn script in step 9.
 **The microphone does nothing.** Expected on a locked-down browser. The screen
 falls back to typing automatically; carry on typing.
 
-**State got messy.** `python scripts\reset_demo.py`, reload the browser. The
+**State got messy.** `python backend\scripts\reset_demo.py`, reload the browser. The
 role you are signed in as will not change.
 
 **Port 8000 is held after a crash.** Start on another port

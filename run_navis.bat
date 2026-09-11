@@ -8,7 +8,7 @@ powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8000, 5173 -Stat
 timeout /t 1 /nobreak >nul 2>&1
 
 echo Starting FastAPI Backend (Port 8000)...
-start "NAVIS Backend (FastAPI)" cmd /k "python -m uvicorn server.main:app --host 0.0.0.0 --port 8000 --reload"
+start "NAVIS Backend (FastAPI)" cmd /k "python -m uvicorn server.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload"
 
 echo Starting Vite Frontend (Port 5173)...
 start "NAVIS Frontend (Vite/React)" cmd /k "cd /d "%~dp0frontend" && npm run dev"

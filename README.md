@@ -70,7 +70,7 @@ schedule**. See section 4.
 Nothing that reaches the matcher is ever silently thrown away. *(One honest
 exception at the boundary: a `.csv` upload is accepted, extracts zero events,
 and its error is not surfaced to the caller — `result.errors` is never read in
-`server/main.py`. `.txt` and `.xlsx` are the supported paths. See `METRICS.md`
+`backend/server/main.py`. `.txt` and `.xlsx` are the supported paths. See `METRICS.md`
 §8.)*
 
 **Step 5 — Remember what we learned.**
@@ -92,11 +92,11 @@ So the system is deliberately **cautious**. When it is not sure, it refuses to a
 and asks a human. That is why our measured numbers look the way they do.
 
 **What the running application achieves.** One command, and it measures the
-build that ships — the same `production(sha)` configuration `server/main.py`
-builds, at the thresholds it imports from `matching/config.py`:
+build that ships — the same `production(sha)` configuration `backend/server/main.py`
+builds, at the thresholds it imports from `backend/matching/config.py`:
 
 ```bash
-python eval.py
+python backend/eval.py
 ```
 
 Reported on the **held-out test split**: 154 labelled mentions against the
@@ -278,21 +278,22 @@ we still work.
 ## 7. What is in the repo
 
 ```
+backend/       ALL Python. Run it from the project root with --app-dir backend
+  extraction/          Reading messy text → structured events
+  matching/            The matching engine. The heart of the project
+  matching/artifacts/  Fitted ranker + calibrator. Measured, NOT loaded in production
+  server/              The API, the database, all 18 routes
+  scripts/             Demo reset, health check, seeding
+  eval.py              Measures how good the matching is
+frontend/      The React app
 dataset/       DEMO + evaluation data — the 120-activity demo schedule, 11 daily
                reports, 2 spreadsheets, and the v1 answer key (254 mentions)
 dataset/v2/    The harder RESEARCH corpus — 218-activity baseline, 814 labelled
                mentions with train/dev/test splits. Not loaded by the server
 datasets/real/ REAL public-source material (WSDOT, CFIHOS, Uniclass, PAIMANA,
                CPWD, ConstructCIE). Never used to compute a matcher accuracy
-extraction/    Reading messy text → structured events
-matching/      The matching engine. The heart of the project
-matching/artifacts/  Fitted ranker + calibrator. Measured, NOT loaded in production
-server/        The API, the database, all 18 routes
-frontend/      The React app
-scripts/       Demo reset, health check, seeding
 research/      Evidence: measurements, graphs, the generated report
 research/bench/ The ablation, latency profile and tuning harnesses
-eval.py        Measures how good the matching is
 ```
 
 **Four different datasets, four different sizes.** `dataset/` (120 activities)
@@ -329,10 +330,10 @@ python -m pip install -r requirements.txt
 ⚠️ That downloads about 2–3 GB because of PyTorch. It is slow. It has not frozen.
 
 ```
-python -m uvicorn server.main:app --reload
+python -m uvicorn server.main:app --app-dir backend --reload
 ```
 
-**Run this from the project root, never from inside `server/`.** Then open
+**Run this from the project root, never from inside `backend/server/`.** Then open
 http://127.0.0.1:8000/docs to see every endpoint and try them live.
 
 In a second PowerShell window:
@@ -383,7 +384,7 @@ Ollama unless you are specifically working on the AI extraction path.
 Six workstreams. Each is genuinely separable — pick one and you can be useful
 without understanding the rest.
 
-**1 · Matching engine** — `matching/`
+**1 · Matching engine** — `backend/matching/`
 The most technically interesting work. Two things are open. Recall@20 is already
 100%, so **every remaining error is a ranking error** — retrieval tuning has no
 headroom left and has been measured to confirm it. And recognising when nothing
@@ -394,18 +395,18 @@ with maths and search? This is yours.
 Three user types are planned: Field Supervisor, Project Manager, Senior Management.
 Only two exist. `ROADMAP.md` §14 lists exactly what to build. React and TypeScript.
 
-**3 · Data and evaluation** — `dataset/`, `eval.py`, `research/`
+**3 · Data and evaluation** — `dataset/`, `backend/eval.py`, `research/`
 The v2 corpus now has proper train/dev/test splits and 814 mentions, and every
 headline carries a bootstrap confidence interval. The open work is that several
 of those intervals still span zero at n=185. Growing the corpus is high-value
 and needs no deep knowledge of the rest of the system. `ROADMAP.md` §12.
 
-**4 · Backend and API** — `server/`
+**4 · Backend and API** — `backend/server/`
 New features from `ROADMAP.md`: RAID logs, Earned Value Management, notifications.
 Python and FastAPI.
 
 **5 · Integrations** — new work
-Reading Primavera and MS Project files. `matching/providers.py` already declares
+Reading Primavera and MS Project files. `backend/matching/providers.py` already declares
 `PmxmlScheduleProvider` and `PrimaveraXerScheduleProvider` as explicit
 `NotImplementedError` stubs with the shape they must fill — that is the seam to
 build into. One library (MPXJ) does both. `ROADMAP.md` §10 has the verified
@@ -419,7 +420,7 @@ than the code. It is not — judges score what they see and hear.
 
 ## 11. Three things to know before you change code
 
-**Run the backend from the project root.** Not from inside `server/`. Running it from
+**Run the backend from the project root.** Not from inside `backend/server/`. Running it from
 the wrong place produces an error that looks like a broken database and is not.
 
 **Never put a colour code directly in a component.** Every colour lives in

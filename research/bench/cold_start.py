@@ -54,10 +54,10 @@ print("@@" + json.dumps(out))
 def run(schedule: str, cold: bool) -> dict:
     if cold:
         import shutil
-        sys.path.insert(0, str(ROOT))
+        sys.path.insert(0, str(ROOT / "backend"))
         from matching import embedcache
         shutil.rmtree(embedcache.cache_dir(), ignore_errors=True)
-    code = CHILD.format(root=str(ROOT), schedule=schedule)
+    code = CHILD.format(root=str(ROOT / "backend"), schedule=schedule)
     r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
                        cwd=str(ROOT))
     for line in r.stdout.splitlines():

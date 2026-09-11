@@ -2,7 +2,7 @@
 
 Roughly 20 minutes, most of it waiting on `pip`. No Docker.
 
-This repo is **two processes**: a Python API (`server/`) and a React frontend
+This repo is **two processes**: a Python API (`backend/server/`) and a React frontend
 (`frontend/`). They are not served from one another — the frontend calls the API
 over HTTP and CORS. For the full product you need both running, in two terminals.
 The API is usable on its own via <http://127.0.0.1:8000/docs>.
@@ -50,7 +50,7 @@ you on an unsupported version rather than letting you discover it later.
 ## 1. Get the repo and create a virtual environment
 
 Run everything from the **project root** — the folder containing
-`ARCHITECTURE.md`, `eval.py`, and the `server/` directory.
+`ARCHITECTURE.md`, `requirements.txt`, and the `backend/` directory.
 
 ```powershell
 cd "path\to\SIH 2026"
@@ -103,21 +103,21 @@ that loads it from disk with no network.
 > ## ⚠ Cache the model before you go offline.
 >
 > If the model is not cached and cannot be downloaded, **the matcher does not
-> fail.** `matching/retrieval.py` falls back to a deterministic hashed-ngram
+> fail.** `backend/matching/retrieval.py` falls back to a deterministic hashed-ngram
 > embedder and carries on with materially weaker dense recall. Nothing in the API
 > or the UI tells you this has happened — only a log line does.
 >
 > **Every measured number in this repository assumes the real model is loaded.**
 > On the fallback embedder the published Top-1, coverage and precision figures no
 > longer hold, and results from that run are not comparable to anything in
-> `research/` or `eval.py`.
+> `research/` or `backend/eval.py`.
 
 Step 3 below warms the cache as a side effect, so run it **while you still have a
 network**. Then confirm which path is actually live — do this before any offline
 demo:
 
 ```powershell
-python eval.py
+python backend/eval.py
 ```
 
 The second line of its output must name the real model:
@@ -126,7 +126,7 @@ The second line of its output must name the real model:
   schedule: 120 activities | dense: sentence-transformers all-MiniLM-L6-v2 (local, offline)
 ```
 
-If it says anything else, the fallback is active. `scripts\healthcheck.py` reports
+If it says anything else, the fallback is active. `backend\scripts\healthcheck.py` reports
 the same thing.
 
 ---
@@ -134,7 +134,7 @@ the same thing.
 ## 3. Seed the database
 
 ```powershell
-python scripts\seed.py
+python backend\scripts\seed.py
 ```
 
 This creates `dataset\epc_progress.db`, loads the 120-activity baseline
@@ -163,24 +163,24 @@ instead.
 
 If the server later refuses to start with `no such column: activities.wbs_level`,
 the local `dataset\epc_progress.db` predates the v2 baseline work. It is
-gitignored and fully regenerable: run `python scripts\reset_demo.py` once, which
+gitignored and fully regenerable: run `python backend\scripts\reset_demo.py` once, which
 detects the schema mismatch and recreates the tables.
 
 ---
 
 ## 4. Start the backend — from the PROJECT ROOT
 
-> ## ⚠ Start the backend from the PROJECT ROOT, never from inside `server\`.
+> ## ⚠ Start the backend from the PROJECT ROOT, never from inside `backend\server\`.
 >
-> The project root is the folder containing `ARCHITECTURE.md`, `eval.py`,
-> `requirements.txt` and the `server\` directory.
+> The project root is the folder containing `ARCHITECTURE.md`, `requirements.txt`
+> and the `backend\` directory.
 >
-> `cd server` first and it **will not work**: `server/main.py` resolves the repo
-> root from its own location and inserts it on `sys.path`, and the package uses
-> relative imports (`from .db import ...`). Running from inside `server\` gives
-> you `ModuleNotFoundError: No module named 'server'`.
+> `cd backend\server` first and it **will not work**: `--app-dir backend` is what
+> puts the `server` package on `sys.path`, and the package uses relative imports
+> (`from .db import ...`). Running from inside `backend\server\` gives you
+> `ModuleNotFoundError: No module named 'server'`.
 >
-> It also matters for the database. `server/db.py` anchors `DB_PATH` to the repo
+> It also matters for the database. `backend/server/db.py` anchors `DB_PATH` to the repo
 > root rather than the working directory precisely so this cannot happen — but a
 > wrong CWD elsewhere in the stack silently creates a **second, empty** database
 > and the app looks like it lost your data.
@@ -190,7 +190,7 @@ In terminal 1, with the venv activated:
 ```powershell
 cd "path\to\SIH 2026"
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn server.main:app --reload
+python -m uvicorn server.main:app --app-dir backend --reload
 ```
 
 Leave it running. Open <http://127.0.0.1:8000/docs> — you should see the
@@ -252,14 +252,14 @@ In a **third** terminal, with the venv activated:
 ```powershell
 cd "path\to\SIH 2026"
 .\.venv\Scripts\Activate.ps1
-python scripts\healthcheck.py
+python backend\scripts\healthcheck.py
 ```
 
 It imports every module, checks the dataset files, reports which retrieval
 and extraction paths are live, and exercises the API.
 
 > **Known failure — one check is wrong, not your install.**
-> `scripts/healthcheck.py` asserts that `/openapi.json` exposes exactly **8**
+> `backend/scripts/healthcheck.py` asserts that `/openapi.json` exposes exactly **8**
 > endpoints. The app has grown to **17 routes**, so that single check reports
 > FAIL on a correct installation. Every other check should pass. This is a stale
 > assertion in the healthcheck, not a problem with your setup — see `FLOW.md`
@@ -275,7 +275,7 @@ Finally, the test suite and the evaluation:
 
 ```powershell
 python -m pytest -q          # 580 tests (plus 55 frontend: cd frontend; npx vitest run)
-python eval.py               # matcher metrics table
+python backend/eval.py               # matcher metrics table
 ```
 
 ---
@@ -286,9 +286,9 @@ python eval.py               # matcher metrics table
 nothing installed, the system runs the deterministic rules-only extraction
 path and produces no errors and no warnings about a missing model. That is
 the default and the supported configuration — every number quoted in
-`ARCHITECTURE.md` and printed by `eval.py` comes from it.
+`ARCHITECTURE.md` and printed by `backend/eval.py` comes from it.
 
-`scripts\healthcheck.py` confirms it:
+`backend\scripts\healthcheck.py` confirms it:
 
 ```
   [PASS] extraction provider    rules-only (LLM off — this is the default)
@@ -387,12 +387,12 @@ read, never what it links to.
 | Path | What it is |
 |---|---|
 | `dataset/` | Baseline schedule, 11 DPRs, 2 spreadsheets, ground truth, the SQLite DB |
-| `extraction/` | Regex pre-pass, spreadsheet parser, optional LLM backend |
-| `matching/` | Hybrid retrieval (tag, BM25, fuzzy, dense) → feature scoring → decision |
-| `server/` | FastAPI app, SQLAlchemy models, the 17 routes |
+| `backend/extraction/` | Regex pre-pass, spreadsheet parser, optional LLM backend |
+| `backend/matching/` | Hybrid retrieval (tag, BM25, fuzzy, dense) → feature scoring → decision |
+| `backend/server/` | FastAPI app, SQLAlchemy models, the 17 routes |
 | `frontend/` | React 19 + Vite + TanStack Query; planner and field-supervisor screens |
-| `scripts/` | `seed.py`, `healthcheck.py`, `reset_demo.py`, `demo_reset.ps1` |
-| `eval.py` | Matcher evaluation against `ground_truth.csv` |
+| `backend/scripts/` | `seed.py`, `healthcheck.py`, `reset_demo.py`, `demo_reset.ps1` |
+| `backend/eval.py` | Matcher evaluation against `ground_truth.csv` |
 | `ARCHITECTURE.md` | The spec, including §7 Known Limitations |
 
 ---
@@ -406,12 +406,12 @@ project root, or the venv is not activated. `cd` to the folder containing
 **`ImportError` mentioning `python-multipart`** — `POST /ingest` needs it.
 It is in `requirements.txt`; re-run the install step.
 
-**Port 8000 already in use** — `python -m uvicorn server.main:app --reload
+**Port 8000 already in use** — `python -m uvicorn server.main:app --app-dir backend --reload
 --port 8001`, and pass `--base-url http://127.0.0.1:8001` to the
 healthcheck.
 
 **Database looks wrong or empty** — delete `dataset\epc_progress.db` and
-re-run `python scripts\seed.py`. Everything in it is regenerated from
+re-run `python backend\scripts\seed.py`. Everything in it is regenerated from
 `dataset/`, so there is nothing to preserve.
 
 **The server holds the database file** — stop the server before deleting the

@@ -10560,3 +10560,143 @@ also be a fallback.
 **Still open, and deliberately not done here:** `noUnusedLocals` reports 99
 findings outside this lane, and the login role cards logged by D-106 item 5 are
 still not keyboard reachable.
+
+---
+
+## 2026-09-12 / D-112 — All Python moved under `backend/`; the project root is no longer the import root
+
+### Status
+Active. Supersedes nothing architectural. It relocates files and changes how the
+process is launched; it changes no behaviour, no schema, no threshold and no
+metric.
+
+### Context
+The repository root had accumulated 61 tracked entries, and the backend was
+scattered across four top-level packages (`server/`, `matching/`, `extraction/`,
+`scripts/`) plus ten loose `.py` files (`eval.py`, `eval_real.py`, `evalstats.py`,
+`evalduration.py`, the three `generate_*.py`, `verify_duliajan_schedule.py`, and
+two root-level `test_*.py`). Nothing distinguished the backend from the 40 markdown
+documents, the PDFs and the deck build directories sitting beside it.
+
+The obstacle to moving them was never the imports. It was that **66 call sites
+computed the project root as `Path(__file__).resolve().parent.parent`** (or
+`parents[1]`), and used the result for two different things:
+
+| Use | What it must point at |
+|---|---|
+| `sys.path.insert(...)` so `from server.db import ...` resolves | the **import root** |
+| `/ "dataset"`, `/ "datasets"`, `/ ".env"`, `/ "frontend" / "dist"` | the **project root** |
+
+Before the move those were the same directory, so one expression served both and
+the ambiguity was invisible. Moving the packages one level down separates them
+permanently: the import root becomes `backend/`, the project root stays where it
+was.
+
+### Decision
+
+**1. `backend/` holds Python and nothing else.** `server/`, `matching/`,
+`extraction/` and `scripts/` moved wholesale; so did the ten root `.py` files.
+`dataset/`, `datasets/`, `frontend/`, `research/`, `requirements.txt`, the
+`Dockerfile` and every document stayed at the root. Data is shared between the
+backend, the research harnesses and the docs, so burying it under `backend/`
+would have bought tidiness with 900 file renames and a changed `DB_PATH`.
+
+**2. No import statement changed.** Every `from server.x import y` and
+`from matching.x import y` in the tree is untouched. `backend/` is put on
+`sys.path` instead of the project root, so the package names resolve exactly as
+before. The alternative — `backend.server.main:app` — would have required
+rewriting imports across ~100 files for no gain.
+
+**3. The launch command carries the anchor: `--app-dir backend`.**
+
+```
+python -m uvicorn server.main:app --app-dir backend --port 8000
+```
+
+Updated in `Dockerfile`, `run_navis.bat`, `run_navis_fast.bat`,
+`.claude/launch.json`, `frontend/.env.example` and every doc that prints the
+command. `pytest` needs no equivalent flag: with no `__init__.py` in `backend/`,
+pytest's rootdir insertion puts `backend/` on `sys.path` on its own, so
+`python -m pytest -q` still runs from the project root unchanged.
+
+**4. The two uses of "root" are now named separately.** Where one expression was
+serving both purposes, it was split rather than renumbered:
+
+```python
+BACKEND_ROOT = Path(__file__).resolve().parent.parent   # import root
+PROJECT_ROOT = BACKEND_ROOT.parent                      # dataset/, .env, frontend/
+sys.path.insert(0, str(BACKEND_ROOT))
+```
+
+Applied in `backend/eval.py`, `backend/eval_real.py`,
+`backend/generate_v2_dataset.py`, `backend/scripts/healthcheck.py`,
+`backend/scripts/seed.py`, `backend/extraction/test_extractor.py`,
+`backend/matching/test_matching.py` and `backend/matching/test_providers.py`.
+Sites that only ever reached the project root gained one `.parent`
+(`backend/server/db.py`, `backend/server/demo.py`, `backend/matching/vocabulary.py`,
+`backend/matching/embedcache.py`, `backend/extraction/llm_backend.py`,
+`backend/server/evidence.py`). Sites that only ever anchored an import were left
+alone — `parent.parent` now names `backend/`, which is what they always wanted.
+
+**5. `research/bench/` keeps its project-root `ROOT`** — it reads `dataset/` —
+and now inserts `ROOT / "backend"` on `sys.path`. `research/data/*.py` was left
+untouched: those files hardcode `C:/Users/tcgxu/OneDrive/Desktop/SIH 2026` and
+have been unrunnable on any other machine since long before this change.
+
+**6. `DECISIONS.md` was not rewritten.** Entries D-001…D-111 name `server/main.py`
+and `matching/config.py` because that is where those files were when the decision
+was taken. This file is an architectural history, and back-dating 475 paths in it
+would make every entry describe a repository that did not exist on its date.
+**Paths in entries before D-112 are pre-move paths; prefix them with `backend/`.**
+`FLOW.md` is the opposite case — it describes code that is running now, so all 353
+of its references were prefixed.
+
+### Trade-offs / Consequences
+- **`--app-dir backend` is a new way to get it wrong.** Omit it and uvicorn fails
+  with `ModuleNotFoundError: No module named 'server'` — the same error as the
+  old "don't `cd server`" mistake, from a new cause. `SETUP.md` §4 now names the
+  flag as the thing that puts the package on `sys.path`.
+- **`git log --follow` is needed** to trace any backend file across this commit.
+  All 98 files moved as renames, so history is preserved but not flat.
+- **`git blame` line attribution is unaffected**; the content edits are confined to
+  the ~30 path-anchor lines listed above.
+- The root drops from 61 tracked entries to 51, and all ten root-level `.py`
+  files are gone — no Python remains at the top level.
+
+### Verification
+- **`python -m pytest -q` — 1055 passed**, identical to the pre-move baseline
+  captured before the first `git mv`. An intermediate run caught the second path
+  idiom (`parents[1]`, used in `matching/test_terminology.py`,
+  `test_learned.py`, `test_equivalence.py` and `matching/embedcache.py`) that the
+  first sweep missed: 23 failures, all `FileNotFoundError` on
+  `backend/dataset/...`. Fixed and re-run clean.
+- **`cd frontend && npx vitest run` — 24 files, 257 passed.** No frontend source
+  was touched; run to confirm the boundary held.
+- **Server booted the real way**: `python -m uvicorn server.main:app --app-dir
+  backend --port 8077`. `GET /health` → `{"status":"ok"}`. `GET /schedule` → **120
+  activities**. `GET /executive/metrics` → **67 evidenced ÷ 120 total = 55.8%**,
+  the exact figures D-111 recorded, which proves `PROJECT_ROOT` still resolves to
+  the root `dataset/epc_progress.db` and not to a second, empty database under
+  `backend/`.
+- **`python backend/scripts/healthcheck.py` — 31 passed, 0 failed**, including
+  every `import matching.*` / `import server.*` probe, all five `dataset/` file
+  checks, `dense retrieval: MiniLM (offline)` (so `.cache/embeddings` resolves to
+  the root) and all 46 exposed endpoints.
+- **`python backend/eval.py`** — auto-link precision **100.0%**, coverage
+  **43.5%** (67 of 154), suggestion precision **81.8%**, recall **86.9%**,
+  auto-link recall **46.2%**. Every figure matches `METRICS.md` §-published values
+  to the decimal. Run because `matching/` files were edited; the edits were path
+  anchors only, and the numbers confirm it.
+
+### Future Notes
+The bug this move exposes is worth stating plainly: **`parent.parent` meant two
+incompatible things and nothing in the code said which.** It survived because the
+two meanings coincided. Any future relocation will break the same 66 sites again
+unless they go on using the split names. If a third root is ever needed, add a
+named constant next to `BACKEND_ROOT`/`PROJECT_ROOT` rather than another
+`.parent`.
+
+The remaining root clutter is documents, not code: 40 markdown files, four PDFs
+and `-.json` (an 85 KB stray). Consolidating those under `docs/` is the obvious
+next pass and was deliberately not bundled here, because a documentation move and
+a code move failing together would be indistinguishable.

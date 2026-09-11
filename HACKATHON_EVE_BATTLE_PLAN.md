@@ -2,7 +2,7 @@
 
 **Problem Statement SIH26122** · Oil India Limited / Ministry of Petroleum and Natural Gas
 **Event Date**: September 11, 2026 · **Execution Date**: September 10, 2026 (TODAY — the only full prep day)
-**Codebase State**: Commit `3db290c` · **1,431 passing tests** (1,202 pytest + 229 vitest, re-counted 2026-09-10 after D-099) · `tsc` clean · production build clean · `eval.py` reproduces `METRICS.md` §3.1 exactly
+**Codebase State**: Commit `3db290c` · **1,431 passing tests** (1,202 pytest + 229 vitest, re-counted 2026-09-10 after D-099) · `tsc` clean · production build clean · `backend/eval.py` reproduces `METRICS.md` §3.1 exactly
 
 > ### ⚠️ THIS FILE HAS BEEN OVERWRITTEN ONCE ALREADY
 > A previous revision of this plan was reverted, losing every correction below and
@@ -14,7 +14,7 @@
 > landed after the first draft — `ee9097e` (agent discipline detection) and `3db290c`
 > (field report rejection and resubmit flow). Both re-checked: full suite green, type
 > check clean, build clean, and **every matcher number unchanged**. Neither touches
-> `matching/`, `extraction/`, or any threshold.
+> `backend/matching/`, `backend/extraction/`, or any threshold.
 >
 > **The printable numbers sheet is `NUMBERS_SHEET.md`.** Print that, not this.
 >
@@ -35,8 +35,8 @@ and contingency drills.**
 
 - `research/JUDGE_QUESTIONS.md` Q2 tells presenters to concede: *"PMXML/XER exist as
   export only... Import is our first post-hackathon item."* **This is false.**
-  `matching/primavera.py` implements `parse_pmxml` and `parse_xer`, both providers are
-  wired in `matching/providers.py`, and `POST /schedule/import` accepts `.json`, `.xml`
+  `backend/matching/primavera.py` implements `parse_pmxml` and `parse_xer`, both providers are
+  wired in `backend/matching/providers.py`, and `POST /schedule/import` accepts `.json`, `.xml`
   and `.xer`. You built it. Conceding it forfeits a PS requirement you satisfy.
 - `pitch_deck.md` quotes dead-corpus numbers and claims features that do not exist.
 - **Four further research documents carry the same stale figures** (§3). The generated
@@ -86,7 +86,7 @@ unrehearsed team loses to both.
 | `npx vitest run` | **224 passed** (23 files) |
 | `npx tsc --noEmit` | 0 errors |
 | `npm run build` | clean |
-| `python eval.py` | 86.9% top-1 · 100% auto-link precision (67/67) · 43.5% coverage — **unchanged** |
+| `python backend/eval.py` | 86.9% top-1 · 100% auto-link precision (67/67) · 43.5% coverage — **unchanged** |
 | `git` | `main` == `origin/main`, in sync |
 
 **What only you can do:**
@@ -99,7 +99,7 @@ unrehearsed team loses to both.
    - **Presenter** — speaks the pitch, narrates the demo
    - **Driver** — operates the laptop. **Never the same person as the presenter**
    - **Q&A lead** — fields judges, owns `METRICS.md`
-   - **Reset operator** — runs `scripts/reset_demo.py` between runs, watches the clock
+   - **Reset operator** — runs `backend/scripts/reset_demo.py` between runs, watches the clock
 
    The remaining two are backup presenter and backup driver, and must be able to take
    over cold.
@@ -134,7 +134,7 @@ The previous revision quoted **254 → 128 → 76 → 11**. **That figure set is
 It came from the 2026-08-31 run, before D-015, over the full 254-mention corpus with
 **no train/dev/test split**. It is neither the build that ships nor the demo you show.
 
-**Funnel A — the evaluation** (`python eval.py`, held-out test split):
+**Funnel A — the evaluation** (`python backend/eval.py`, held-out test split):
 
 ```
 154  test mentions (no threshold tuned on them)
@@ -156,7 +156,7 @@ It came from the 2026-08-31 run, before D-015, over the full 254-mention corpus 
 ```
 
 **[ADDED] Re-read Funnel B off the running server today** after
-`python scripts/reset_demo.py`, and confirm it before rehearsal. Never present a number
+`python backend/scripts/reset_demo.py`, and confirm it before rehearsal. Never present a number
 you have not seen on screen that day.
 
 ---
@@ -175,11 +175,11 @@ earlier revision were themselves wrong and are rewritten here.
 | Slide claim | Replace with | Why |
 | :--- | :--- | :--- |
 | "96.7% Top-1 Precision" | **86.9% top-1 · 100% auto-link precision (67/67)** | 96.7% is a **recall@3** figure from a superseded corpus (`DECISIONS.md:4234`). Wrong metric name, wrong corpus |
-| "≥0.85 and margin ≥0.15" | **0.80 / 0.40 / margin 0.03** | `SHIPPED_THRESHOLDS`, `matching/config.py` |
+| "≥0.85 and margin ≥0.15" | **0.80 / 0.40 / margin 0.03** | `SHIPPED_THRESHOLDS`, `backend/matching/config.py` |
 | "audio hash" in the audit ledger | **Delete.** Provenance is file, line and character span | No audio is captured, stored or hashed. Zero occurrences in the codebase |
 | "Offline-First PWA, offline voice queue" | **"Runs entirely on-premise. No cloud service, no API key, nothing leaves your network."** | **[CORRECTED]** There is **no service worker**. The manifest makes it installable, not offline-capable. Do not say "offline-first architecture" either — see Phase 2. For a PSU, "nothing leaves your network" is the stronger claim anyway |
-| "Dual-engine OCR" beside "zero internet dependency" | Deterministic document and spreadsheet parsing with character-level provenance. If OCR comes up: *"optional, local Tesseract if installed; the cloud path needs a key and ships off"* | The two slides contradict each other. `extraction/ocr.py` falls back to Gemini/OpenAI, which needs a key and a network |
-| "bi-directional MS Project" | **"We parse real P6 PMXML and XER — pure Python, no MPXJ, no JVM. We export both; the XER writer is our own simplified shape, not a P6-valid file, and we say so."** | **[CORRECTED]** `matching/providers.py` states the XER writer "does not produce valid XER; see D-047". There is no `.mpp` support at all |
+| "Dual-engine OCR" beside "zero internet dependency" | Deterministic document and spreadsheet parsing with character-level provenance. If OCR comes up: *"optional, local Tesseract if installed; the cloud path needs a key and ships off"* | The two slides contradict each other. `backend/extraction/ocr.py` falls back to Gemini/OpenAI, which needs a key and a network |
+| "bi-directional MS Project" | **"We parse real P6 PMXML and XER — pure Python, no MPXJ, no JVM. We export both; the XER writer is our own simplified shape, not a P6-valid file, and we say so."** | **[CORRECTED]** `backend/matching/providers.py` states the XER writer "does not produce valid XER; see D-047". There is no `.mpp` support at all |
 | "0.42 spools/day" | **Delete.** | Appears nowhere in the code or any output |
 | "+35% Upper Assam monsoon" under "Pure Historical Truth" | **"Planning assumption: +35% monsoon, +20% remote site. Unadjusted figure shown alongside."** | **[CORRECTED]** The earlier revision proposed "empirical risk scenario factor". **"Empirical" claims data that does not exist.** These are assumptions. D-094 and the project's standing rule require them labelled as such, with the unadjusted value recoverable |
 | "1,250+ automated tests" | **1,431** | Stale |
@@ -191,7 +191,7 @@ earlier revision were themselves wrong and are rewritten here.
 
 > **Q: "Your schedule is just a JSON file. Can you read Primavera?"**
 >
-> **A:** *"Yes. `matching/primavera.py` implements pure-Python parsers for Oracle P6
+> **A:** *"Yes. `backend/matching/primavera.py` implements pure-Python parsers for Oracle P6
 > PMXML and tabular XER — no MPXJ, no JVM. `POST /schedule/import` accepts `.json`,
 > `.xml` and `.xer`, and an imported baseline becomes the project the matcher runs
 > against. We export both too — to be precise, our XER writer emits our own simplified
@@ -231,7 +231,7 @@ after the fixes, or do not distribute it.
 
 ### 1e · Build the master metric slide
 
-1. **The precision-at-coverage trade-off curve** — `eval.py` prints it. Mark the
+1. **The precision-at-coverage trade-off curve** — `backend/eval.py` prints it. Mark the
    operating point. Direct evidence of engineering judgment; pre-empts "only 43%?" by
    making the trade explicit.
 2. **The funnel** — Funnel A **or** Funnel B, labelled with which. Never a blend.
@@ -297,7 +297,7 @@ response goes on the list.
 ### 2c · [CORRECTED] Reset reliability drill
 
 ```powershell
-python scripts/reset_demo.py
+python backend/scripts/reset_demo.py
 ```
 
 Five consecutive runs; confirm identical counts each time.
@@ -314,7 +314,7 @@ Record the confirmed counts and hand them to Squad A for Funnel B.
 
 Fix **only** what the dead-button hunt found.
 
-**Do not touch `matching/`, `extraction/`, or any threshold in `config.py`.** A change
+**Do not touch `backend/matching/`, `backend/extraction/`, or any threshold in `config.py`.** A change
 there risks the 100% auto-link precision claim on the last day, with no time to
 re-verify.
 
@@ -399,17 +399,17 @@ discipline, that is where the hole is.
 
 ```powershell
 # 1. Reset to the clean demo baseline
-python scripts/reset_demo.py
+python backend/scripts/reset_demo.py
 
-# 2. Start the API — from the PROJECT ROOT, never from inside server/
-python -m uvicorn server.main:app --port 8000
+# 2. Start the API — from the PROJECT ROOT, never from inside backend/server/
+python -m uvicorn server.main:app --app-dir backend --port 8000
 
 # 3. Start the UI (second terminal)
 cd frontend
 npm run dev
 ```
 
-- [ ] `python scripts/healthcheck.py` returns green
+- [ ] `python backend/scripts/healthcheck.py` returns green
 - [ ] Browser at `http://localhost:5173`, 1280×800, **single tab**
 - [ ] All three roles reachable from the picker
 - [ ] Funnel B on the printed sheet matches the Schedule screen

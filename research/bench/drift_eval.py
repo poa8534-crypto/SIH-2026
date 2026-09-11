@@ -39,7 +39,7 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "backend"))
 
 import eval as evalmod  # noqa: E402
 from matching import MatchingEngine, Thresholds  # noqa: E402

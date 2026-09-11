@@ -106,14 +106,14 @@ Run what is relevant to what you touched.
 
 ```bash
 python -m pytest -q                    # backend + matching + extraction (1055 tests)
-cd frontend && npx vitest run          # frontend (246 tests)
+cd frontend && npx vitest run          # frontend (257 tests)
 cd frontend && npx tsc --noEmit        # frontend type check
-python eval.py                         # matching quality: precision/coverage/tau sweep
-python scripts/healthcheck.py          # end-to-end server health
+python backend/eval.py                 # matching quality: precision/coverage/tau sweep
+python backend/scripts/healthcheck.py  # end-to-end server health
 ```
 
-Changes to `matching/`, `extraction/` or the decision thresholds **must** be
-followed by `python eval.py`, and the resulting metric movement recorded in
+Changes to `backend/matching/`, `backend/extraction/` or the decision thresholds **must** be
+followed by `python backend/eval.py`, and the resulting metric movement recorded in
 `DECISIONS.md`. A change that moves auto-link precision off 100% is a
 correctness regression, not a tuning result.
 
@@ -213,7 +213,7 @@ before changing any of them.
 | Tags are **never** taken from the LLM | `tag_overlap` is near-decisive; a hallucinated tag corrupts linking. See D-006. |
 | `actual_finish` is written **only** at 100% complete | Partial-scope protection. See D-008. |
 | Voice/agent updates are **proposals**, never direct writes | `POST /review/{id}/resolve` is the only path that commits an actual date. See D-009. |
-| Source files are decoded **explicitly** (`extraction/textio.py`) | A lossy decode is permanent and propagates into the audit trail. See D-010. |
+| Source files are decoded **explicitly** (`backend/extraction/textio.py`) | A lossy decode is permanent and propagates into the audit trail. See D-010. |
 
 ---
 

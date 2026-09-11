@@ -8,6 +8,8 @@
         "-m",
         "uvicorn",
         "server.main:app",
+        "--app-dir",
+        "backend",
         "--port",
         "8000"
       ],
