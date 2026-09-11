@@ -438,4 +438,62 @@ describe('Schedule Page Gantt Integration', () => {
     expect(screen.queryByText(/^Data Date$/)).not.toBeInTheDocument();
     expect(container.querySelector('#gantt-bar-PIP-UG-010')).toBeInTheDocument();
   });
+
+  it('renders detailed day numbers and weekdays in detailed zoom mode', () => {
+    render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId={null}
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    // Switch to Detailed mode
+    const detailedBtn = screen.getByRole('button', { name: 'Detailed' });
+    fireEvent.click(detailedBtn);
+
+    // In detailed mode, weekdays (e.g. Su, Mo, Tu, We, Th, Fr, Sa) and day numbers exist
+    const dayCells = screen.getAllByTitle(/2026-03-/);
+    expect(dayCells.length).toBeGreaterThanOrEqual(28);
+
+    // First of month is highlighted
+    const marchFirst = screen.getByTitle('Su, 2026-03-01');
+    expect(marchFirst).toBeInTheDocument();
+    expect(marchFirst.className).toContain('border-l-accent');
+  });
+
+  it('renders unclipped month headers with full month names', () => {
+    render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId={null}
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    expect(screen.getByText('March 2026')).toBeInTheDocument();
+    expect(screen.getByText('April 2026')).toBeInTheDocument();
+  });
+
+  it('ensures toolbar and legend items have whitespace-nowrap to prevent multiline glitches', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId={null}
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    const critLegend = screen.getByText(/Critical \(Float ≤ 0\)/i);
+    expect(critLegend.className).toContain('whitespace-nowrap');
+
+    const focusBtn = screen.getByText(/Focus Data Date/i);
+    expect(focusBtn.closest('button')?.className).toContain('whitespace-nowrap');
+  });
 });

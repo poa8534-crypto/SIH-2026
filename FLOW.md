@@ -1291,6 +1291,105 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Committed the Gantt calendar-header rewrite left uncommitted by a parallel session — day-level ticks, scroll-pinned month labels, weekend shading.
+**Date:** 2026-09-11 · **Decision:** D-110 (authored elsewhere; recorded from the diff)
+
+```
+GANTT TIMELINE HEADER — WHAT BUILDS IT                            (D-110)
+
+  NOTE ON PROVENANCE
+      This rewrite came from a different Claude Code session in the same
+      worktree and was found uncommitted. What follows is read off the
+      code. Where the reasoning was not recorded, D-110 says so.
+
+  GEOMETRY MEMO  [activities, dataDate, pxPerDay]
+      minTime  = min(planned/actual dates, dataDate) - 7d, then aligned
+                 to the 1st of its month
+      maxTime  = max(planned/actual finishes) + 14d
+                 + float slack per activity, capped at 120d      <- D-110
+                     a long float tail used to draw past the canvas
+      alignedMaxTime = 1st of the month AFTER maxTime            <- D-110
+      totalDays = max(30, ceil((alignedMaxTime - minTime)/day), monthSpanDays)
+                 two guarantees of the same thing - D-107's monthSpanDays
+                 and D-110's month-end alignment. They agree; neither was
+                 removed.
+
+      months: GanttMonth[]   { label, shortLabel, offsetDays, durationDays }
+      days:   GanttDay[]     ONE ENTRY PER TIMELINE DAY          <- D-110
+              { dayIndex, timestamp, dayOfMonth, dayOfWeek, isWeekend,
+                isMonday, isFirstOfMonth, monthIndex, shortDate,
+                weekdayLabel, isoDate }
+              every tick, grid line and shading column reads from this one
+              list instead of recomputing dates inline
+
+  PX_PER_DAY_MAP   compact 7 | normal 14 | detailed 24           <- D-110
+      was 6/12/20. The wider column is what lets a day number fit at
+      standard zoom.
+
+  HORIZONTAL SCROLL TRACKING                                     <- D-110
+      onScroll -> requestAnimationFrame -> setScrollLeft(newLeft)
+          rAF-throttled so it does not setState per scroll event;
+          the pending frame is cancelled on unmount
+      used ONLY to pin month labels:
+          shift = clamp(scrollLeft - left + 8, 0, width - 110)
+          isNarrow = width - shift < 65  ->  m.shortLabel
+      a month wider than the viewport keeps its name visible instead of
+      scrolling away under the sticky pane
+
+  TICK TIERS
+      top     months, label translated by `shift`, Calendar icon, bg-surface/90
+      bottom  by zoom:
+        compact   days.filter(isMonday || isFirstOfMonth) -> "Sep 15"
+                  1st of month in accent
+        normal    EVERY day -> day number
+        detailed  EVERY day -> weekday initial over day number
+      D-107's labelEveryDays heuristic is REMOVED, superseded by this.
+
+  GRID + SHADING  (overlay, left: LEFT_PANE_PX, top: HEADER_PX, z-0)
+      normal/detailed   weekend shading column per weekend day
+                        one grid line per day, weighted:
+                          1st of month  hair/90   Monday  hair/40
+                          other         hair/20
+      compact           lines on Mondays and 1st only
+      data date         w-0.5 accent, opacity-85, glow
+
+  DATA DATE COLUMN                                               <- D-110
+      the day cell whose isoDate === dataDate gets bg-accent/20, ring-inset
+      and a title of "<Weekday>, <iso> (Project Data Date)"
+
+  parseISODate HARDENED                                          <- D-110
+      /^(\\d{4})-(\\d{2})-(\\d{2})/ out of any ISO string, NaN otherwise
+      the old split('-').map(Number) turned "2026-09-15T00:00:00" into
+      Date.UTC(2026, 8, NaN)
+
+  TOOLBAR / LEGEND                                               <- D-110
+      whitespace-nowrap + shrink-0 on every chip,
+      flex-wrap sm:flex-nowrap overflow-x-auto on the bar
+      stops the legend reflowing to a second line and pushing the chart down
+      "Focus Data Date" now CENTRES the data date in the visible timeline
+      instead of offsetting it by a fixed 300px
+
+  WHAT D-107 STILL OWNS, UNCHANGED BY THIS REWRITE
+      barTone / fillTone / barGlow      one chain, one winner
+      LIVE_BADGE_PX clamp on the pill
+      z-10 on bar and badge, under the sticky meta pane (z-20)
+      scrollIntoView gated on highlightId
+      the [zoom] lock-release effect
+      hasFieldProgress shared by renderer and auto-scroll
+      no dataDate default
+      All seven D-107 guards pass against this rewrite - which is what they
+      were written for.
+
+  COST, RECORDED BECAUSE IT WAS NOT
+      normal/detailed render one tick div + one grid line + possibly one
+      shading div PER DAY across the whole timeline. ~260 days on the
+      120-activity baseline is order 700 extra nodes, independent of
+      activity count. No virtualisation, not measured. First place to look
+      if the Gantt starts feeling heavy on a longer schedule.
+```
+
+## Previous Modification Area (2026-09-11, D-108/D-109) - retained for history
+
 **Task:** The PM decision dock on the schedule inspection panel wrote nothing — eight buttons, one cosmetic handler. Wired to the real resolve and RAID endpoints, and every write now names where its data landed.
 **Date:** 2026-09-11 · **Decision:** D-108, D-109
 

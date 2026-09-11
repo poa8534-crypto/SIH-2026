@@ -10279,3 +10279,119 @@ preserving.
 ### Affected Areas
 - `frontend/src/components/ActivityInspectionPanel.tsx`
 - `frontend/src/test/scheduleInspectionPanel.test.tsx`
+
+---
+
+## 2026-09-11 / D-110 — Gantt calendar header: day-level ticks, pinned month labels, weekend shading
+
+### Status
+Active.
+
+### Provenance — read this before trusting the reasoning below
+**This change was authored in a different Claude Code session working in the
+same worktree, and was found uncommitted.** It was committed on the user's
+instruction ("commit and push all of my current changes"). Everything in the
+Decision section is **read off the diff**, not stated by its author: the *what*
+is verified against the code, the *why* is inference. Where a choice looks
+deliberate but its rationale was not recorded, that is said plainly rather than
+invented. A later session that knows the intent should correct this entry rather
+than treat it as settled.
+
+### Context
+D-107 left the Gantt's timeline header at week granularity: a month band on top,
+a date label every 7 days below (14 at compact, where 42px could not hold "Sep
+15"), and grid lines at month and week boundaries. That is legible but coarse
+for a schedule whose unit of decision is a single day — the data date, an actual
+start, a finish variance are all day-precision, and the header could not show
+which day a bar landed on.
+
+### Decision
+1. **A `days: GanttDay[]` array is built once in the geometry memo**, one entry
+   per timeline day, carrying `dayOfMonth`, `dayOfWeek`, `isWeekend`,
+   `isMonday`, `isFirstOfMonth`, `shortDate`, `weekdayLabel` and `isoDate`.
+   Every tick, grid line and shading column now reads from that one list instead
+   of recomputing dates inline. `GanttMonth` is the same treatment for the month
+   band.
+
+2. **Tick density is chosen by zoom, replacing D-107's `labelEveryDays`.**
+   - compact — Mondays and the 1st only, 1st in accent;
+   - standard — every day, day number only;
+   - detailed — every day, weekday initial above the day number.
+
+   This supersedes the `pxPerDay * 7 < 48 ? 14 : 7` heuristic, which is removed.
+   `PX_PER_DAY_MAP` moved 6/12/20 → **7/14/24**, which is what makes a per-day
+   column wide enough to hold a number at standard zoom.
+
+3. **Month labels are pinned to the visible edge.** The container's horizontal
+   scroll is tracked in state (`scrollLeft`, updated from `onScroll` through a
+   `requestAnimationFrame` so it does not fire per scroll event, with the frame
+   cancelled on unmount), and each month label is translated by
+   `clamp(scrollLeft - left + 8, 0, width - 110)`. A month wider than the
+   viewport keeps its name visible instead of letting it scroll away under the
+   sticky pane; when the remaining box is under 65px the label falls back to
+   `shortLabel` ("Sep 2026").
+
+4. **`maxTime` is aligned to the end of its month** (`alignedMaxTime`, the 1st
+   of the following month) and the month loop became `while (cur < end)`. This
+   reaches the same guarantee as D-107's `monthSpanDays` term — the canvas
+   always holds the whole month band — from the other direction. Both are
+   present; `diffDays` still takes the max of the three, so the two agree rather
+   than compete.
+
+5. **Float slack is folded into the timeline bounds**, capped at 120 days per
+   activity, and the float connector's own width is clamped to
+   `timelineWidth - (pLeft + pWidth) - 4`. Previously a long float tail drew
+   past the end of the canvas.
+
+6. **`parseISODate` was hardened** to match `^(\d{4})-(\d{2})-(\d{2})` out of
+   any ISO string and return `NaN` for anything else, including empty input.
+   The old `split('-').map(Number)` produced `Date.UTC(2026, 8, NaN)` for a full
+   timestamp like `2026-09-15T00:00:00`.
+
+7. **Weekend columns are shaded and the data-date column is highlighted** in the
+   header and the grid; the data-date line gained a glow. Grid lines are now
+   per-day, weighted: 1st of month heaviest, Monday medium, other days lightest.
+
+8. **The toolbar and legend were made non-wrapping** — `whitespace-nowrap` and
+   `shrink-0` on every chip, `flex-wrap sm:flex-nowrap overflow-x-auto` on the
+   bar. This is presented as a fix for "multiline glitches"; the failure it
+   prevents is the legend reflowing onto a second line and pushing the chart
+   down at narrow widths.
+
+9. **"Focus Data Date" now centres** the data date in the visible timeline
+   rather than offsetting it by a fixed 300px, which was wrong at any container
+   width but 740px.
+
+### Consequences
+- The header answers "which day is this bar on" at standard and detailed zoom,
+  which it could not before.
+- **Cost, recorded because it was not:** standard and detailed zoom now render
+  one tick div, one grid line and possibly one shading div *per day* across the
+  full timeline. For the 120-activity baseline that is roughly 260 days — order
+  700 extra nodes in the header and grid, independent of activity count. No
+  virtualisation. It was not measured; it did not show up as jank in the suite
+  or in manual use, but it is the obvious thing to look at first if the Gantt
+  starts feeling heavy on a longer schedule.
+- D-107's `labelEveryDays` is gone. Nothing depended on it and no guard covered
+  it, so its removal is silent — noted here so it is not later read as a
+  regression.
+- **Every D-107 regression guard still passes against this rewrite**: the
+  single-background-class assertion, highlight-beats-critical, the z-10
+  layering, the badge clamp, the month-band fit, the no-page-hijack check and
+  the absent-data-date case. That is what those guards were for, and they held
+  through a rewrite by a different session that had not read them.
+
+### Verification
+- `npx tsc --noEmit` — clean.
+- `npx vitest run` — 24 files, **257 passed**, 0 failed.
+- `npm run build` — clean, 7.01s.
+- `gantt.test.tsx` 15 → 18, added by the same session: detailed zoom renders
+  weekday+day cells titled `Su, 2026-03-01` with the 1st carrying
+  `border-l-accent`; month headers render full names unclipped; the critical
+  legend chip and the Focus Data Date button both carry `whitespace-nowrap`.
+- Not re-verified in the browser by this session. The change was found complete
+  and idle for over an hour; it was committed as-is, not extended.
+
+### Affected Areas
+- `frontend/src/components/GanttChart.tsx`
+- `frontend/src/test/gantt.test.tsx`
