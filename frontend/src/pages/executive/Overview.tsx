@@ -3,24 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
-  ShieldAlert,
   Calendar,
   CalendarDays,
   AlertTriangle,
   ArrowRight,
   Sliders,
   Scale,
-  Sparkles,
-  LineChart as LineChartIcon,
-  FileText,
-  FileSearch,
-  Layers,
   ChevronRight,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { days } from '../../lib/units';
-import { ErrorState, SkeletonRows } from '../../components/ui';
+import { ErrorState, PageIntro, SkeletonRows, StatusBadge } from '../../components/ui';
 import type { ExecutiveMetricsResponse } from '../../types';
 
 export default function ExecutiveOverview() {
@@ -172,94 +166,71 @@ export default function ExecutiveOverview() {
     return list;
   }, [criticalDrivers, forecast, kpis, dispute]);
 
-  // Jump Links to the other 7 analytical workspaces
-  const workspaceLinks = [
-    {
-      title: 'Milestones',
-      path: '/executive/milestones',
-      icon: CalendarDays,
-      description: 'Which commitments are likely to slip? Timeline, variance in days, and driving predecessors.',
-    },
-    {
-      title: 'Progress',
-      path: '/executive/progress',
-      icon: LineChartIcon,
-      description: 'Where is execution ahead or behind? Discipline comparisons, EVM curves, and record drill-down.',
-    },
-    {
-      title: 'Risks & Delays',
-      path: '/executive/risks',
-      icon: ShieldAlert,
-      description: 'What threatens delivery, and who owns the response? Accepted RAID items, delays, and notices.',
-    },
-    {
-      title: 'Forecasts',
-      path: '/executive/forecasts',
-      icon: TrendingUp,
-      description: 'When might the project finish? Logic-driven completion outlook and interactive scenario modeling.',
-    },
-    {
-      title: 'Execution Insights',
-      path: '/executive/insights',
-      icon: Sparkles,
-      description: 'What can management learn from actuals? Duration distributions, bottlenecks, and low-sample alerts.',
-    },
-    {
-      title: 'Reports',
-      path: '/executive/reports',
-      icon: FileText,
-      description: 'What should be taken into the meeting? On-demand review pack, editable AI narrative, and exports.',
-    },
-    {
-      title: 'Data Confidence',
-      path: '/executive/confidence',
-      icon: FileSearch,
-      description: 'How much can I trust what I am seeing? Data date freshness, coverage denominators, and conflict audit.',
-    },
-  ];
-
   return (
     <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-6 font-sans">
-      {/* ── Top Strategic Context Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-hair">
-        <div>
-          <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
-            <span className="font-semibold text-fg">
-              {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
-            </span>
-            <span>·</span>
-            <span>
-              {financial?.available && financial.contract_value_cr !== null
-                ? `CONTRACT BASELINE: ₹${financial.contract_value_cr.toFixed(2)} CR`
-                : 'CONTRACT VALUE NOT SUPPLIED'}
-            </span>
-          </div>
-          <h1 className="text-h1 font-semibold tracking-tight text-heading">
-            Executive Schedule &amp; Financial Risk Intelligence
-          </h1>
-          <p className="mt-1 text-body text-muted leading-relaxed">
-            Real-time C-suite governance: float erosion, EVM S-Curve trajectory, and FIDIC dispute liability.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-label font-mono">
-          <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
-            FIDIC 1999 CLAUSE 20.1 / 8.4
-          </span>
-          <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
-            Exposure
-          </span>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface text-ok font-medium border border-hair">
-            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-            Senior Management (Read-Only)
-          </span>
-        </div>
-      </div>
+      <PageIntro
+        eyebrow={`${scheduleData?.project ?? 'Active project'} · Data date ${scheduleData?.data_date ?? '—'}`}
+        title="Executive delivery intelligence"
+        description="The schedule position, finish outlook, delivery exposure, and evidence confidence required for the next management decision."
+        actions={<StatusBadge tone="accent">Senior management · Read-only</StatusBadge>}
+      />
 
       {isLoading ? (
         <SkeletonRows rows={8} />
       ) : (
         <>
+          <section className="overflow-hidden rounded-2xl bg-sidebar text-white shadow-sm">
+            <div className="grid gap-6 p-6 lg:grid-cols-[1.4fr_1fr] lg:p-8">
+              <div>
+                <div className="mb-3 text-label font-mono uppercase tracking-[0.16em] text-blue-200">
+                  Current schedule forecast
+                </div>
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+                  <div className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {forecast?.logic_finish ?? forecast?.current_forecast_finish ?? '—'}
+                  </div>
+                  <div className="pb-1 font-mono text-sm text-blue-100">
+                    Baseline {forecast?.baseline_finish ?? '—'}
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 text-sm">
+                  <span className="rounded-full bg-white/10 px-3 py-1.5 font-mono text-blue-50">
+                    {forecast?.variance_days == null
+                      ? 'Variance unavailable'
+                      : `${forecast.variance_days > 0 ? '+' : ''}${forecast.variance_days} days vs baseline`}
+                  </span>
+                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-blue-50">
+                    {financial?.available && financial.contract_value_cr !== null
+                      ? `Contract baseline ₹${financial.contract_value_cr.toFixed(2)} Cr`
+                      : 'Financial exposure not quantified · contract value not supplied'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white/10 p-4 ring-1 ring-inset ring-white/10">
+                <div className="text-label font-mono uppercase tracking-[0.14em] text-blue-200">
+                  Recommended management action
+                </div>
+                {materialExceptions[0] ? (
+                  <>
+                    <div className="mt-2 text-lg font-semibold leading-snug">{materialExceptions[0].title}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-blue-100">{materialExceptions[0].description}</p>
+                    <Link
+                      to={materialExceptions[0].link}
+                      className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-sidebar transition-colors hover:bg-blue-50"
+                    >
+                      Review supporting evidence <ArrowRight size={15} />
+                    </Link>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm leading-relaxed text-blue-100">
+                    No material exception is currently ranked for escalation. Continue routine evidence review.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* ── Top 4 KPI Strategic Strip (understandable in ~30 seconds) ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* KPI 1: SPI */}
@@ -393,7 +364,7 @@ export default function ExecutiveOverview() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {materialExceptions.map((ex) => (
+              {materialExceptions.slice(0, 3).map((ex) => (
                 <Link
                   key={ex.id}
                   to={ex.link}
@@ -421,49 +392,6 @@ export default function ExecutiveOverview() {
                   </div>
                 </Link>
               ))}
-            </div>
-          </div>
-
-          {/* ── Jump Links to Analytical Workspaces ── */}
-          <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs flex flex-col gap-4">
-            <div className="pb-3 border-b border-hair flex items-center justify-between">
-              <div>
-                <h2 className="text-lead font-semibold text-heading flex items-center gap-2">
-                  <Layers size={18} className="text-fg" />
-                  Executive Analytical Workspaces
-                </h2>
-                <p className="text-body text-muted mt-0.5">
-                  Explore deep discipline breakdowns, forecasts, institutional memory, and review packs without modifying schedule data.
-                </p>
-              </div>
-              <span className="text-xs font-mono text-muted">7 Workspaces</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {workspaceLinks.map((ws) => {
-                const Icon = ws.icon;
-                return (
-                  <Link
-                    key={ws.path}
-                    to={ws.path}
-                    className="p-3.5 rounded-lg border border-hair bg-surface hover:bg-selected/50 hover:border-fg/40 transition-all flex flex-col justify-between gap-2 group"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 text-fg font-semibold text-body mb-1">
-                        <Icon size={16} className="text-muted group-hover:text-fg transition-colors" />
-                        <span>{ws.title}</span>
-                      </div>
-                      <p className="text-xs text-muted leading-relaxed line-clamp-2">
-                        {ws.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] font-mono text-muted group-hover:text-heading pt-2 border-t border-hair/50">
-                      <span>Open workspace</span>
-                      <ArrowRight size={12} />
-                    </div>
-                  </Link>
-                );
-              })}
             </div>
           </div>
 
@@ -549,7 +477,7 @@ export default function ExecutiveOverview() {
                   textAnchor="middle"
                   className="font-mono text-[9px] font-bold fill-danger uppercase"
                 >
-                  DATA DATE (15 SEP)
+                  DATA DATE ({scheduleData?.data_date ?? '—'})
                 </text>
 
                 {sCurve.filter((_, idx) => idx % 2 === 0).map((pt) => {

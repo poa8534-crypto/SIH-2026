@@ -97,6 +97,34 @@ export default function ExecutiveRisksDelays() {
     });
   }, [raidItems, statusFilter, riskLevelFilter]);
 
+  const topExposures = useMemo(() => {
+    const groups = new Map<string, RaidItem[]>();
+    (raidItems ?? [])
+      .filter((item) => item.status.toLowerCase() !== 'closed')
+      .forEach((item) => {
+        const title = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const activities = [...item.linked_activity_ids].sort().join('|') || 'unlinked';
+        const key = `${activities}:${title}`;
+        groups.set(key, [...(groups.get(key) ?? []), item]);
+      });
+
+    return [...groups.values()]
+      .map((group) => ({
+        item: [...group].sort((a, b) => {
+          const aExposure = a.exposure ?? ((a.probability || 0) * (a.impact_days || 0));
+          const bExposure = b.exposure ?? ((b.probability || 0) * (b.impact_days || 0));
+          return bExposure - aExposure;
+        })[0],
+        sourceCount: group.length,
+      }))
+      .sort((a, b) => {
+        const aExposure = a.item.exposure ?? ((a.item.probability || 0) * (a.item.impact_days || 0));
+        const bExposure = b.item.exposure ?? ((b.item.probability || 0) * (b.item.impact_days || 0));
+        return bExposure - aExposure;
+      })
+      .slice(0, 3);
+  }, [raidItems]);
+
   if (metricsError || raidError || delayError || conflictsError) {
     return <ErrorState error={metricsError || raidError || delayError || conflictsError} />;
   }
@@ -129,6 +157,42 @@ export default function ExecutiveRisksDelays() {
           </span>
         </div>
       </div>
+
+      {topExposures.length > 0 && (
+        <section className="rounded-xl bg-raised p-5 ring-1 ring-inset ring-hair">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-heading">Top unresolved exposure</h2>
+              <p className="mt-0.5 text-sm text-muted">Highest quantified open items, with accountable owner shown first.</p>
+            </div>
+            <span className="font-mono text-label text-muted">Top {topExposures.length}</span>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {topExposures.map(({ item, sourceCount }, index) => {
+              const exposure = item.exposure ?? ((item.probability || 0) * (item.impact_days || 0));
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('raid');
+                    setSelectedRaidItem(item);
+                  }}
+                  className="rounded-xl bg-surface p-4 text-left ring-1 ring-inset ring-hair transition-colors hover:bg-selected/50 hover:ring-focus"
+                >
+                  <span className="font-mono text-label text-danger">#{index + 1} · {exposure ? `${exposure.toFixed(1)}d exposure` : 'Exposure unquantified'}</span>
+                  <strong className="mt-1 block line-clamp-2 text-sm text-heading">{item.title}</strong>
+                  <span className="mt-1 block font-mono text-label text-muted">
+                    {sourceCount} preserved {sourceCount === 1 ? 'record' : 'records'}
+                  </span>
+                  <span className="mt-3 block text-label text-muted">Owner</span>
+                  <span className="block text-sm font-semibold text-fg">{item.owner ?? 'Unassigned'}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── Strategic Dispute Shield Exposure Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

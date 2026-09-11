@@ -348,6 +348,15 @@ export default function Reconcile() {
     return sortedQueue.find((item) => item.id === selectedId) || null;
   }, [sortedQueue, selectedId]);
 
+  const confirmationGaps = selectedItem
+    ? [
+        !selectedCandidate ? 'schedule activity' : null,
+        selectedItem.quantity == null ? 'quantity' : null,
+        !selectedItem.reported_date ? 'report date' : null,
+        !selectedItem.location ? 'location' : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
+
   const displayQueue = useMemo(() => {
     return sortedQueue.filter((item) => {
       if (filter === 'field' && item.match_method !== 'agent_turn') return false;
@@ -790,7 +799,18 @@ export default function Reconcile() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-lg relative overflow-hidden">
+    <div className="flex h-full w-full flex-col gap-4">
+      <div className="flex shrink-0 items-end justify-between gap-4">
+        <div>
+          <div className="text-label font-semibold uppercase tracking-[0.08em] text-accent">Evidence control</div>
+          <h1 className="mt-1 text-h2 font-semibold tracking-[-0.03em] text-heading">Review &amp; reconcile</h1>
+          <p className="mt-1 text-body text-muted">Confirm one field update against the schedule, with every write explained.</p>
+        </div>
+        <div className="rounded-full bg-warn/10 px-3 py-1.5 text-label font-semibold text-warn">
+          {sortedQueue.length} awaiting decision
+        </div>
+      </div>
+    <div className="flex min-h-0 flex-1 flex-col w-full bg-raised rounded-xl relative overflow-hidden ring-1 ring-hair shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
       {/* Toast Notifications */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
@@ -829,7 +849,7 @@ export default function Reconcile() {
 
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
         {/* LEFT PANE - QUEUE */}
-        <div className={`w-full lg:w-[38%] min-h-0 flex-1 lg:flex-shrink-0 lg:flex-initial border-b lg:border-b-0 lg:border-r border-hair flex flex-col bg-raised z-10 ${mobilePane === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`w-full lg:w-[34%] min-h-0 flex-1 lg:flex-shrink-0 lg:flex-initial border-b lg:border-b-0 lg:border-r border-hair flex flex-col bg-raised z-10 ${mobilePane === 'queue' ? 'flex' : 'hidden lg:flex'}`}>
         <PanelHeader
           title="Review Queue"
           right={
@@ -847,7 +867,7 @@ export default function Reconcile() {
               placeholder="Filter queue by text or activity ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-2.5 py-1.5 bg-raised border border-hair rounded text-label font-mono text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+              className="w-full min-h-10 pl-8 pr-2.5 bg-raised border border-hair rounded-lg text-label text-fg placeholder:text-muted transition-colors"
             />
           </div>
           <div className="flex items-center gap-1 overflow-x-auto text-label font-mono">
@@ -868,7 +888,7 @@ export default function Reconcile() {
                 onClick={() => setFilter(tab.id as any)}
                 className={`px-2 py-1 rounded text-[11px] whitespace-nowrap transition-colors ${
                   filter === tab.id
-                    ? 'bg-selected text-fg font-semibold border border-hair'
+                    ? 'bg-selected text-accent font-semibold'
                     : tab.highlight
                       ? 'text-amber-600 dark:text-amber-400 font-semibold hover:text-fg hover:bg-selected'
                       : 'text-muted hover:text-fg'
@@ -896,7 +916,7 @@ export default function Reconcile() {
                   setSelectedId(item.id);
                   setMobilePane('detail');
                 }}
-                className={`border-b border-hair p-3.5 cursor-pointer transition-colors ${
+                className={`border-b border-hair p-4 cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
                     : item.match_method === 'agent_turn'
@@ -907,14 +927,14 @@ export default function Reconcile() {
                 <div className="flex justify-between items-center mb-1.5 gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                     {item.match_method === 'agent_turn' && (
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shrink-0">
+                      <span className="text-label font-semibold px-2 py-0.5 rounded-full bg-warn/10 text-warn flex items-center gap-1 shrink-0">
                         <Zap size={10} className="fill-current" />
                         <span>FIELD REPORT</span>
                         {item.reference && <span className="text-fg font-semibold">· #{item.reference}</span>}
                       </span>
                     )}
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-muted font-medium shrink-0">
-                      PRIORITY: <strong className={item.priority === 'high' ? 'text-amber-500 font-bold' : 'text-fg font-semibold'}>{item.priority.toUpperCase()}</strong>
+                    <span className="text-label text-muted font-medium shrink-0">
+                      <strong className={item.priority === 'high' ? 'text-warn font-semibold' : 'text-fg font-semibold'}>{item.priority === 'high' ? 'PRIORITY: HIGH' : item.priority}</strong>
                     </span>
                   </div>
                   <ConfidenceBadge value={item.confidence} />
@@ -937,7 +957,7 @@ export default function Reconcile() {
           }))}
         </div>
         {/* Every bound key appears here */}
-        <div className="hidden lg:flex shrink-0 border-t border-hair flex-wrap items-center px-4 py-2 gap-x-3 gap-y-1 text-label font-mono text-muted uppercase bg-raised">
+        <div className="hidden shrink-0 border-t border-hair flex-wrap items-center px-4 py-2 gap-x-3 gap-y-1 text-label font-mono text-muted uppercase bg-raised">
           <span><Key>↑↓</Key> <Key>j/k</Key> Nav</span>
           <span><Key>1-9</Key> Pick</span>
           <span><Key>Enter</Key> Focus confirm</span>
@@ -989,7 +1009,7 @@ export default function Reconcile() {
                 </div>
               </div>
 
-              <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <section className="grid grid-cols-1 gap-4">
                 {/* Left Column: Field Report + NAVIS Extracted */}
                 <div className="flex flex-col gap-3 min-w-0">
                   <div className="flex flex-col gap-2 min-w-0">
@@ -1203,7 +1223,15 @@ export default function Reconcile() {
             </div>
 
             {/* Section 4: ACTIONS */}
-            <div className="absolute bottom-0 left-0 right-0 bg-raised border-t border-hair p-4 z-20">
+            <div className="absolute bottom-0 left-0 right-0 bg-raised/95 backdrop-blur-md border-t border-hair p-4 z-20 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
+              <div className={`mb-3 flex items-start gap-2 rounded-lg px-3 py-2 text-label ring-1 ${confirmationGaps.length > 0 ? 'bg-warn/10 text-warn ring-warn/25' : 'bg-ok/10 text-ok ring-ok/25'}`}>
+                <Check size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  {confirmationGaps.length > 0
+                    ? `Missing from this report: ${confirmationGaps.join(', ')}. Confirm only after reviewing these evidence gaps.`
+                    : 'Confirmation requirements complete: schedule activity, quantity, report date, and location are present.'}
+                </span>
+              </div>
               {/* After a confirm, the schedule row it wrote used to be two
                   navigations and a search away. */}
               {lastResolved?.activityId && (
@@ -1291,6 +1319,9 @@ export default function Reconcile() {
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5">
+                  {!selectedCandidate && (
+                    <span className="text-label font-medium text-warn">Select a candidate before confirming.</span>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       id="confirm-match"
@@ -1310,7 +1341,7 @@ export default function Reconcile() {
                       title="Flag as unplanned work for planning engineer review"
                     >
                       <Plus size={14} />
-                      Flag as Unplanned Work (Mark New) [N]
+                      Flag as Unplanned Work (Mark New)
                     </Button>
                     {/* Fourth action. It asks rather than resolves, so the
                         item stays in the queue and stays selected. */}
@@ -1321,7 +1352,7 @@ export default function Reconcile() {
                       disabled={resolveMutation.isPending || clarifyMutation.isPending}
                     >
                       <MessageCircleQuestion size={14} />
-                      Ask Supervisor [A]
+                      Ask Supervisor
                     </Button>
                   </div>
                   {/* Two presses. The first arms and relabels; the second
@@ -1336,7 +1367,7 @@ export default function Reconcile() {
                     className={rejectArmed ? 'bg-danger-bg' : ''}
                   >
                     <X size={14} />
-                    {rejectArmed ? 'Press again to reject report' : 'Reject Report [R]'}
+                    {rejectArmed ? 'Press again to reject' : 'Reject Report'}
                   </Button>
                 </div>
               )}
@@ -1347,6 +1378,7 @@ export default function Reconcile() {
             <EmptyState>Select an item from the queue.</EmptyState>
           </div>
         )}
+      </div>
       </div>
       </div>
     </div>

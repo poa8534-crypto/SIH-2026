@@ -534,6 +534,11 @@ export default function Delay() {
     refetchInterval: 3000,
   });
 
+  const { data: scheduleData } = useQuery({
+    queryKey: ['schedule'],
+    queryFn: () => api.getSchedule(),
+  });
+
   const events = useMemo(() => data?.events ?? [], [data]);
 
   // Filtered queue of events
@@ -666,7 +671,7 @@ export default function Delay() {
       {/* ── Context Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-hair bg-raised text-label">
         <div className="flex items-center gap-2.5">
-          <span className="font-semibold text-fg">Oil India Limited — Well Pad 04</span>
+          <span className="font-semibold text-fg">{scheduleData?.project ?? 'Active project'}</span>
           <span className="text-muted">·</span>
           <span className="text-fg font-medium">Forensic Delay Analysis</span>
         </div>
@@ -674,7 +679,7 @@ export default function Delay() {
           <span>
             Schedule Data Date:{' '}
             <strong className="font-mono text-fg">
-              {data?.notice_as_of ?? '2026-09-15'}
+              {data?.notice_as_of ?? scheduleData?.data_date ?? '—'}
             </strong>
           </span>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-fg border border-hair bg-surface font-mono">
@@ -751,10 +756,10 @@ export default function Delay() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 font-mono text-label text-muted">
                 <span>
-                  Calculated network finish: <strong className="text-fg">2026-10-12</strong>
+                  Calculated network finish: <strong className="text-fg">{network.project_finish ?? '—'}</strong>
                 </span>
                 <span>
-                  Authored baseline finish: <strong className="text-fg">2026-09-28</strong>
+                  Authored baseline finish: <strong className="text-fg">{network.authored_finish ?? '—'}</strong>
                 </span>
               </div>
               <p className="text-body text-muted leading-relaxed">

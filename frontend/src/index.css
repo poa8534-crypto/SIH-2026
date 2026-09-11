@@ -16,23 +16,23 @@
    ========================================================================= */
 
 [data-theme="dark"] {
-  /* NAVIS Deep Navy & Blue Tokens (Rich Navy Canvas, NOT pitch black) */
-  --bg: #0B132B;          /* deep navy canvas */
-  --bg-sidebar: #0E172F;  /* persistent left navigation */
-  --bg-raised: #141F3D;   /* cards, containers, elevated surfaces */
-  --bg-secondary: #1B2950; /* secondary card surfaces / subtle fill */
-  --bg-selected: #1E2E5C; /* selected row, active item, subtle hover */
+  /* Minimal command-centre palette: near-black ground, layered navy. */
+  --bg: #05080D;
+  --bg-sidebar: #071426;
+  --bg-raised: #0B1625;
+  --bg-secondary: #10213A;
+  --bg-selected: #152B4A;
 
   /* Text */
-  --text: #F8FAFC;        /* off-white primary */
-  --text-muted: #94A3B8;  /* cool grey secondary / labels */
+  --text: #F8FAFC;
+  --text-muted: #94A3B8;
 
   /* Lines */
-  --border: #1E2E52;      /* deep blue-tinted hairline dividers */
-  --border-strong: #2A3E6E; /* strong navy borders, focus rings */
+  --border: #1B2E49;
+  --border-strong: #355579;
 
   /* Accessible NAVIS Blue Primary Action */
-  --accent: #3B82F6;
+  --accent: #4C8DFF;
   --accent-text: #FFFFFF;
   --accent-hover: #60A5FA;
 
@@ -60,20 +60,20 @@
 }
 
 [data-theme="light"] {
-  /* NAVIS Enterprise Blue + White Tokens */
-  --bg: #F8FAFC;          /* light cool blue-grey canvas (Slate-50) */
-  --bg-sidebar: #FFFFFF;  /* clean persistent white sidebar */
-  --bg-raised: #FFFFFF;   /* pure white cards, containers, panels */
-  --bg-secondary: #F1F5F9; /* subtle hover / secondary background */
-  --bg-selected: #EFF6FF; /* soft light blue selected row (Blue-50) */
+  /* Minimal command-centre palette: navy navigation, white workspace. */
+  --bg: #F4F7FB;
+  --bg-sidebar: #0B1F3A;
+  --bg-raised: #FFFFFF;
+  --bg-secondary: #EDF2F8;
+  --bg-selected: #E8F0FF;
 
   /* Text */
   --text: #0F172A;        /* deep dark navy text (Slate-900) */
-  --text-muted: #475569;  /* cool grey secondary / labels (Slate-600) */
+  --text-muted: #526175;
 
   /* Lines */
-  --border: #E2E8F0;      /* cool grey hairline dividers (Slate-200) */
-  --border-strong: #CBD5E1; /* strong cool borders, focus rings (Slate-300) */
+  --border: #DCE4EF;
+  --border-strong: #AEBED1;
 
   /* Authoritative NAVIS Blue Primary Action */
   --accent: #1D4ED8;      /* authoritative NAVIS Blue (Blue-700) */
@@ -104,15 +104,15 @@
 }
 
 :root:not([data-theme]) {
-  --bg: #F8FAFC;
-  --bg-sidebar: #FFFFFF;
+  --bg: #F4F7FB;
+  --bg-sidebar: #0B1F3A;
   --bg-raised: #FFFFFF;
-  --bg-secondary: #F1F5F9;
-  --bg-selected: #EFF6FF;
+  --bg-secondary: #EDF2F8;
+  --bg-selected: #E8F0FF;
   --text: #0F172A;
-  --text-muted: #475569;
-  --border: #E2E8F0;
-  --border-strong: #CBD5E1;
+  --text-muted: #526175;
+  --border: #DCE4EF;
+  --border-strong: #AEBED1;
   --accent: #1D4ED8;
   --accent-text: #FFFFFF;
   --accent-hover: #1E40AF;
@@ -192,12 +192,21 @@
      28 -> h2, 36 -> h1).
      ======================================================================= */
   --text-*: initial;
-  --text-label: 12px;    /* labels, table headers, metadata, mono chrome */
+  --text-label: 13px;    /* labels, table headers, metadata, mono chrome */
   --text-body: 14px;     /* planner body copy                            */
   --text-lead: 16px;     /* mobile body copy and every mobile control    */
   --text-h3: 20px;       /* card and panel headings                      */
-  --text-h2: 24px;       /* page headings                                */
-  --text-h1: 32px;       /* display metrics                              */
+  --text-h2: 28px;       /* page headings                                */
+  --text-h1: 36px;       /* display metrics                              */
+
+  /* Compatibility aliases while legacy pages move onto the six-step scale. */
+  --text-xs: 13px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
 
   /* ==========================================================================
      RADII — consistent enterprise scale.
@@ -239,6 +248,46 @@ body {
   max-width: 100vw;
   width: 100%;
   overscroll-behavior: none;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline: none;
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: var(--accent);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* Field is a touch-first workspace even when it is presented on a laptop. */
+[data-field-workspace] :is(
+  button,
+  a,
+  [role="button"],
+  input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+) {
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 #root {

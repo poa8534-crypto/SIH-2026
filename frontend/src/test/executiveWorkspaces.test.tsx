@@ -561,7 +561,7 @@ describe('ExecutiveRisksDelays destination', () => {
     wrap(<ExecutiveRisksDelays />);
 
     expect(await screen.findByText(/Risks & Delay Exposure/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Monsoon Flooding Risk on Access Road/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Monsoon Flooding Risk on Access Road/i)).length).toBeGreaterThan(0);
 
     // Switch to delay attribution tab
     const delayTab = screen.getByRole('button', { name: /Delay Attribution Matrix/i });

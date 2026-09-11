@@ -1,286 +1,88 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Home,
-  FileText,
-  MessageSquare,
-  Settings,
-  Sun,
-  Moon,
-  LogOut,
-  MapPin,
-  Calendar,
-  Sparkles,
-  Bot
-} from 'lucide-react';
+import { LogOut, MapPin, Moon, Sparkles, Sun, Wifi, WifiOff } from 'lucide-react';
+import { api } from '../../lib/api';
 import { useTheme } from '../../hooks/useTheme';
 import { useSession } from '../../hooks/useSession';
 import { useSpeech } from '../../hooks/useSpeech';
-import { api } from '../../lib/api';
-import { FieldNav } from '../../components/FieldNav';
-import { FIELD_ROLE, LANGUAGES, PROJECT, SUPERVISOR } from '../../config';
-import { AskNavisChat } from '../../components/AskNavisChat';
-
 import { useTranslation } from '../../lib/i18n';
+import { PROJECT } from '../../config';
+import { AskNavisChat } from '../../components/AskNavisChat';
+import { FieldNav } from '../../components/FieldNav';
+import { BrandMark } from '../../components/ui';
 
-interface FieldWorkspaceShellProps {
-  children: React.ReactNode;
-}
-
-export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
+export function FieldWorkspaceShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useSession();
   const speech = useSpeech();
   const { t, lang, setLang, languages } = useTranslation();
-  const location = useLocation();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-
-  const { data: scheduleData } = useQuery({
+  const { data: schedule } = useQuery({
     queryKey: ['schedule', 'header'],
     queryFn: () => api.getSchedule(undefined, false),
     retry: false,
   });
 
-  const { data: clarifications } = useQuery({
-    queryKey: ['clarifications', 'unanswered'],
-    queryFn: () => api.getClarifications(true),
-  });
-  const unanswered = clarifications ? clarifications.filter((c) => !c.answered).length : 0;
-
-  const { data: fieldReports } = useQuery({
-    queryKey: ['fieldReports'],
-    queryFn: () => api.getFieldReports(),
-  });
-  const reportsCount = fieldReports?.length;
-
-  const navItems = [
-    { to: '/field', label: t('nav_home', 'Home'), icon: Home, end: true },
-    {
-      to: '/field/reports',
-      label: t('nav_updates', 'My Updates'),
-      icon: FileText,
-      badge: reportsCount && reportsCount > 0 ? String(reportsCount) : undefined,
-      end: false,
-    },
-    {
-      to: '/field/clarifications',
-      label: t('nav_clarifications', 'Clarifications'),
-      icon: MessageSquare,
-      badge: unanswered > 0 ? String(unanswered) : undefined,
-      badgeColor: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold',
-      end: false,
-    },
-    { to: '/field/profile', label: t('nav_preferences', 'Preferences'), icon: Settings, end: false },
-  ];
+  const cycleLanguage = () => {
+    const current = languages.findIndex((item) => item.code === lang);
+    const next = languages[(current + 1) % languages.length];
+    setLang(next.code);
+    speech.setLang(next.code);
+  };
 
   return (
-    <div className="flex h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg overflow-hidden font-sans">
-      {/* Desktop/Tablet Sidebar (hidden on small mobile screens) */}
-      <aside className="hidden md:flex w-64 shrink-0 border-r border-hair bg-sidebar flex-col justify-between z-10">
-        <div className="p-5 flex flex-col gap-5">
-          {/* Brand Header */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label">
-              N
+    <div className="flex h-[100dvh] w-full items-stretch justify-center overflow-hidden bg-secondary p-0 sm:p-4 xl:p-6">
+      <div data-field-workspace className="flex h-full w-full flex-col overflow-hidden bg-surface text-fg shadow-[0_24px_70px_rgba(2,8,23,0.22)] ring-1 ring-hair sm:max-w-3xl sm:rounded-2xl lg:max-w-[1440px]">
+        <header className="shrink-0 bg-sidebar px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] text-white lg:flex lg:items-center lg:gap-5 lg:px-6 lg:py-4">
+          <div className="flex items-center justify-between gap-3 lg:contents">
+            <div className="lg:hidden lg:order-1">
+              <BrandMark compact inverse />
             </div>
-            <div>
-              <div className="font-semibold text-body tracking-tight text-heading leading-none">
-                {t('app_name', 'NAVIS Field')}
-              </div>
-              <div className="text-label font-medium text-muted mt-0.5">
-                {t('app_sub', 'Site Capture OS')}
-              </div>
+            <div className="hidden lg:order-1 lg:block">
+              <BrandMark inverse />
             </div>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="flex flex-col gap-0.5">
-            <div className="text-label font-medium text-muted px-3 mb-1">
-              {t('operations', 'Operations')}
-            </div>
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `flex items-center justify-between px-3 py-2 rounded-md text-body font-medium transition-colors ${
-                    isActive
-                      ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
-                      : 'text-muted hover:bg-selected hover:text-heading'
-                  }`
-                }
-              >
-                <div className="flex items-center gap-2.5">
-                  <item.icon size={16} />
-                  <span>{item.label}</span>
-                </div>
-                {item.badge && (
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-label font-medium font-mono ${
-                      item.badgeColor
-                        ? item.badgeColor
-                        : location.pathname === item.to
-                        ? 'bg-selected text-heading'
-                        : 'bg-surface text-muted border border-hair'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        {/* Sidebar Footer: Supervisor Identity & Controls */}
-        <div className="p-4 border-t border-hair bg-sidebar/80 flex flex-col gap-2">
-          <div className="flex items-center gap-2.5 px-1 py-1">
-            <div className="h-7 w-7 rounded-md bg-raised border border-hair text-heading flex items-center justify-center font-bold text-label">
-              FS
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-body font-medium text-heading truncate">
-                {FIELD_ROLE}
-              </div>
-              <div className="text-label text-muted truncate">
-                {scheduleData?.project ? scheduleData.project : 'Oil India Limited'}
-              </div>
+            <div className="flex items-center gap-1 lg:order-4">
+              <button type="button" onClick={cycleLanguage} className="min-h-10 min-w-10 rounded-lg px-2 text-label font-semibold text-slate-200 hover:bg-white/10" title="Change language">
+                {languages.find((item) => item.code === lang)?.short ?? 'EN'}
+              </button>
+              <button type="button" onClick={() => setIsChatOpen(true)} className="flex min-h-10 min-w-10 items-center justify-center rounded-lg text-slate-200 hover:bg-white/10" aria-label={t('ask_navis', 'Ask NAVIS')}>
+                <Sparkles size={18} />
+              </button>
+              <button type="button" onClick={toggleTheme} className="flex min-h-10 min-w-10 items-center justify-center rounded-lg text-slate-200 hover:bg-white/10" aria-label="Toggle theme">
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button type="button" onClick={signOut} className="flex min-h-10 min-w-10 items-center justify-center rounded-lg text-slate-200 hover:bg-white/10" aria-label={t('switch_role', 'Switch role')}>
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-hair/50 flex flex-col gap-1">
-            <button
-              onClick={toggleTheme}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
-            >
-              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-              <span>{theme === 'dark' ? t('light_mode', 'Light mode') : t('dark_mode', 'Dark mode')}</span>
-            </button>
-            <button
-              onClick={signOut}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors"
-            >
-              <LogOut size={14} />
-              <span>{t('switch_role', 'Switch role')}</span>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface">
-        {/* Top Header Bar */}
-        <header className="h-14 shrink-0 border-b border-hair bg-surface px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 max-w-full">
-          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-            <MapPin size={15} className="text-accent shrink-0" />
-            <span className="font-semibold text-heading text-xs sm:text-sm truncate max-w-[110px] xs:max-w-[150px] sm:max-w-none">
-              {PROJECT.location}
-            </span>
-            <span className="text-xs text-muted hidden sm:inline">·</span>
-            <span className="text-xs font-medium text-muted truncate hidden sm:inline">
-              Piping · {FIELD_ROLE}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {/* Offline indicator toggle */}
+          <div className="mt-3 flex items-center justify-between gap-3 lg:contents">
+            <div className="flex min-w-0 items-center gap-2 text-label text-slate-300 lg:order-2 lg:flex-1 lg:pl-2">
+              <MapPin size={14} className="shrink-0 text-blue-300" />
+              <span className="truncate">{schedule?.project ?? PROJECT.location}</span>
+            </div>
             <button
               type="button"
-              onClick={() => setIsOffline(!isOffline)}
-              className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border transition-colors cursor-pointer ${
-                isOffline
-                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-              }`}
-              title={isOffline ? t('offline_desc', 'Offline Mode active · Updates cached locally') : 'Online · Live connected to project pilot'}
+              onClick={() => setIsOffline((value) => !value)}
+              className={`flex min-h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-label font-semibold lg:order-3 ${isOffline ? 'bg-amber-400/15 text-amber-200' : 'bg-emerald-400/15 text-emerald-200'}`}
+              title={isOffline ? t('offline_desc', 'Offline mode active') : 'Online and connected'}
             >
-              <span className={`h-2 w-2 rounded-full shrink-0 ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
-              <span className="hidden sm:inline font-sans">{isOffline ? t('offline', 'Offline — auto-sync') : t('online', 'Online')}</span>
-            </button>
-
-            {/* Multilingual Selector (Desktop & Tablet) */}
-            <div className="hidden sm:flex items-center rounded-lg border border-hair p-0.5 bg-raised text-xs">
-              {languages.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  onClick={() => {
-                    setLang(l.code);
-                    speech.setLang(l.code);
-                  }}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                    lang === l.code
-                      ? 'bg-surface text-heading font-semibold shadow-xs'
-                      : 'text-muted hover:text-heading'
-                  }`}
-                  title={`Switch language to ${l.label}`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Compact language pill for mobile (< sm) */}
-            <button
-              type="button"
-              onClick={() => {
-                const curIdx = languages.findIndex((l) => l.code === lang);
-                const nextLang = languages[(curIdx + 1) % languages.length];
-                setLang(nextLang.code);
-                speech.setLang(nextLang.code);
-              }}
-              className="sm:hidden px-2 py-1 rounded-lg border border-hair bg-raised text-[11px] font-mono font-semibold text-heading cursor-pointer"
-              title={`Switch language (current: ${languages.find((l) => l.code === lang)?.label ?? 'EN'})`}
-            >
-              {/* Read from the same `languages` list the desktop chips map over.
-                  This used to hand-roll 'HI' / 'MR' / 'EN' — and 'mr-IN'
-                  (Marathi) is not a language this app has, so selecting
-                  Assamese fell through to 'EN'. tsc caught it as a comparison
-                  with no overlap. See D-106. */}
-              {languages.find((l) => l.code === lang)?.short ?? 'EN'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
-              title="Ask NAVIS Assistant"
-              aria-label="Ask NAVIS"
-            >
-              <Sparkles size={13} className="text-accent" />
-              <span className="hidden sm:inline">{t('ask_navis', 'Ask NAVIS')}</span>
-            </button>
-
-            <button
-              onClick={signOut}
-              className="md:hidden flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-md border border-hair text-label text-muted hover:text-heading hover:bg-selected"
-              title={t('switch_role', 'Switch role')}
-            >
-              <LogOut size={13} />
-              <span className="hidden sm:inline">{t('switch_role', 'Switch role')}</span>
+              {isOffline ? <WifiOff size={13} /> : <Wifi size={13} />}
+              {isOffline ? t('offline', 'Offline') : t('online', 'Online')}
             </button>
           </div>
         </header>
 
-        {/* Workspace Content View */}
-        <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y bg-surface">
-          {children}
-        </main>
-
-        {/* Mobile Bottom Nav (rendered only on small screens < md) */}
-        <div className="md:hidden shrink-0 z-30">
-          <FieldNav />
+        <div className="flex min-h-0 flex-1">
+          <FieldNav desktop />
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-surface">{children}</main>
         </div>
+        <FieldNav />
       </div>
 
-      <AskNavisChat
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        role="field"
-      />
+      <AskNavisChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} role="field" />
     </div>
   );
 }

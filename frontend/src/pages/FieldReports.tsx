@@ -13,6 +13,7 @@ import {
 import { api } from '../lib/api';
 import { Button, EmptyState, ErrorState, SkeletonRows } from '../components/ui';
 import { useTranslation } from '../lib/i18n';
+import { PROJECT } from '../config';
 
 /**
  * Field Supervisor — My Updates
@@ -159,11 +160,11 @@ export default function FieldReports() {
   const open = reports.find((r) => r.id === openId) ?? null;
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-5 sm:py-6 pb-28 flex flex-col gap-5 font-sans">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 pb-8 font-sans sm:px-6 lg:px-8 lg:py-8">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-hair/60">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight">
+          <h1 className="text-h2 font-semibold text-heading tracking-[-0.03em]">
             {lang === 'en-IN' ? (
               'My Updates'
             ) : (
@@ -173,25 +174,25 @@ export default function FieldReports() {
               </>
             )}
           </h1>
-          <p className="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
+          <p className="text-body text-muted mt-1 leading-6">
             {t('my_updates_sub', 'Track your submitted field updates and respond when action is required.')}
           </p>
         </div>
 
         {/* Compact Summary Row */}
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-hair text-xs text-muted">
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-label text-muted">
             <span className="font-bold text-heading font-mono">{counts.total}</span>
             <span>{counts.total === 1 ? 'update' : 'updates'}</span>
           </span>
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 text-xs text-blue-700 dark:text-blue-300">
+          {counts.processing > 0 && <span className="inline-flex items-center gap-1.5 text-label text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
             <span className="font-bold font-mono">{counts.processing}</span>
             <span>processing</span>
-          </span>
+          </span>}
 
-          <span
+          {counts.needsResponse > 0 && <span
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs ${
               counts.needsResponse > 0
                 ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 font-semibold'
@@ -205,7 +206,7 @@ export default function FieldReports() {
             ></span>
             <span className="font-bold font-mono">{counts.needsResponse}</span>
             <span>{counts.needsResponse === 1 ? 'needs response' : 'need response'}</span>
-          </span>
+          </span>}
 
           {counts.rejected > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-700 dark:text-rose-300 font-semibold">
@@ -217,55 +218,18 @@ export default function FieldReports() {
         </div>
       </div>
 
-      {/* Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {FILTERS.map((f) => {
-          const active = filter === f;
-          const count =
-            f === 'All'
-              ? counts.total
-              : f === 'Processing'
-                ? counts.processing
-                : f === 'Needs Response'
-                  ? counts.needsResponse
-                  : f === 'Confirmed'
-                    ? counts.confirmed
-                    : counts.rejected;
-          const labelMap: Record<Filter, string> = {
-            All: t('all', 'All'),
-            Processing: t('filter_processing', 'Processing'),
-            'Needs Response': t('needs_response', 'Needs Response'),
-            Confirmed: t('filter_confirmed', 'Confirmed'),
-            Rejected: t('filter_rejected', 'Rejected'),
-          };
-          return (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                active
-                  ? 'bg-accent/10 text-accent border border-accent/30 shadow-xs'
-                  : 'bg-surface text-muted hover:text-heading hover:bg-selected border border-hair'
-              }`}
-            >
-              <span>{lang === 'en-IN' ? f : (
-                <>
-                  <span className="sr-only">{f}</span>
-                  <span>{labelMap[f] || f}</span>
-                </>
-              )}</span>
-              <span
-                className={`font-mono text-[11px] px-1.5 py-0.2 rounded-full ${
-                  active ? 'bg-accent text-accent-fg' : 'bg-raised text-muted'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {reports.length > 0 && (
+        <label className="flex items-center justify-between gap-3 rounded-xl bg-raised px-3 py-2 ring-1 ring-hair">
+          <span className="text-label font-semibold text-muted">Show updates</span>
+          <select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value as Filter)}
+            className="min-h-10 rounded-lg bg-secondary px-3 text-body font-semibold text-heading"
+          >
+            {FILTERS.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+      )}
 
       {/* Main Content Area */}
       {error ? (
@@ -273,12 +237,12 @@ export default function FieldReports() {
       ) : isLoading ? (
         <SkeletonRows rows={3} height="h-20" padded={false} />
       ) : reports.length === 0 ? (
-        <div className="border border-hair bg-raised rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center gap-4 max-w-lg mx-auto w-full my-4 shadow-xs">
+        <div className="bg-raised rounded-2xl p-8 text-center flex flex-col items-center gap-4 w-full my-4 ring-1 ring-hair">
           <div className="h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-950/50 text-accent flex items-center justify-center">
             <FileText size={24} />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-heading">
+            <h3 className="text-h3 font-semibold text-heading">
               {lang === 'en-IN' ? (
                 'No reports yet'
               ) : (
@@ -288,16 +252,16 @@ export default function FieldReports() {
                 </>
               )}
             </h3>
-            <p className="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
+            <p className="text-body text-muted mt-1 leading-6">
               {t('reports_appear_here', 'Your submitted updates will appear here.')}
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate('/field')}
-            className="px-5 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-bold shadow-xs transition-all cursor-pointer"
+            className="min-h-12 px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-fg text-body font-semibold transition-all cursor-pointer"
           >
-            Report from Home
+            Create an update
             <span className="sr-only">create first report</span>
           </button>
         </div>
@@ -314,10 +278,10 @@ export default function FieldReports() {
               <div
                 key={r.id}
                 onClick={() => setOpenId(isOpen ? null : r.id)}
-                className={`rounded-2xl border transition-all p-4 sm:p-5 cursor-pointer flex flex-col gap-2.5 shadow-xs ${
+                className={`rounded-2xl transition-all p-4 cursor-pointer flex flex-col gap-2.5 ring-1 ${
                   isOpen
-                    ? 'bg-selected/60 border-accent/40 ring-1 ring-accent/20'
-                    : 'bg-raised border-hair hover:bg-selected/40 hover:border-accent/20'
+                    ? 'bg-selected ring-accent/40'
+                    : 'bg-raised ring-hair hover:bg-selected/40'
                 }`}
               >
                 {/* Metadata & Status */}
@@ -344,7 +308,7 @@ export default function FieldReports() {
                 </div>
 
                 {/* Primary: What was reported */}
-                <div className="text-sm sm:text-base font-semibold text-heading leading-relaxed">
+                <div className="text-lead font-semibold text-heading leading-6">
                   {r.raw_text}
                 </div>
 
@@ -368,7 +332,7 @@ export default function FieldReports() {
                   )}
                   <span className="text-hair">|</span>
                   <span className="text-muted font-medium">
-                    {r.location ?? r.discipline_label ?? 'OIL Well Pad 04'}
+                    {r.location ?? r.discipline_label ?? PROJECT.location}
                   </span>
                 </div>
 
@@ -523,7 +487,7 @@ export default function FieldReports() {
                 <div className="p-3 rounded-xl border border-hair bg-raised">
                   <span className="text-[11px] text-muted block">Workfront</span>
                   <span className="text-xs font-bold text-heading mt-0.5 block">
-                    {open.location ?? 'Well Pad 04 · Sector A'}
+                    {open.location ?? PROJECT.location}
                   </span>
                 </div>
                 <div className="p-3 rounded-xl border border-hair bg-raised">

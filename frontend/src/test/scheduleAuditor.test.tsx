@@ -102,22 +102,22 @@ describe('ScheduleDoctor Component', () => {
 
     expect(await screen.findByText('68')).toBeInTheDocument();
     expect(screen.getByText(/CRITICAL RISK/i)).toBeInTheDocument();
-    expect(screen.getByText('CIV-FDN-1002')).toBeInTheDocument();
-    expect(screen.getByText(/Planned duration of 8d is 60.0% below OIL historical actuals/i)).toBeInTheDocument();
+    expect(screen.getAllByText('CIV-FDN-1002').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Planned duration of 8d is 60.0% below OIL historical actuals/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/CONTR-PROD-01/i)).toBeInTheDocument();
   });
 
   it('filters findings when clicking category pills', async () => {
     wrap(<ScheduleDoctor />);
 
-    expect(await screen.findByText('CIV-FDN-1002')).toBeInTheDocument();
-    expect(screen.getByText('PIP-SPL-1025')).toBeInTheDocument();
+    expect((await screen.findAllByText('CIV-FDN-1002')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('PIP-SPL-1025').length).toBeGreaterThan(0);
 
     // Click on "Duration Fantasy"
     const durBtn = screen.getByRole('button', { name: /Duration Fantasy/i });
     fireEvent.click(durBtn);
 
-    expect(screen.getByText('CIV-FDN-1002')).toBeInTheDocument();
+    expect(screen.getAllByText('CIV-FDN-1002').length).toBeGreaterThan(0);
     expect(screen.queryByText('PIP-SPL-1025')).not.toBeInTheDocument();
   });
 

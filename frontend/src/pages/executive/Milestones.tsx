@@ -16,6 +16,7 @@ import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import { DisciplineTag } from '../../components/DisciplineTag';
 import { DISCIPLINES } from '../../config';
+import { PROJECT } from '../../config';
 import type { Discipline, ExecutiveMetricsResponse } from '../../types';
 
 interface MilestoneRecord {
@@ -55,7 +56,7 @@ export default function ExecutiveMilestones() {
   const [periodFilter, setPeriodFilter] = useState<'30' | '60' | '90' | 'all'>('all');
   const [disciplineFilter, setDisciplineFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'contractual' | 'derived'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'timeline'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'timeline'>('timeline');
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneRecord | null>(null);
 
   // Queries
@@ -74,7 +75,7 @@ export default function ExecutiveMilestones() {
     queryFn: () => api.getRaid('risk'),
   });
 
-  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? '2026-09-15';
+  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? PROJECT.dataDate;
 
   // Build unified milestone list from genuine schedule records and executive derived milestones
   const milestonesList: MilestoneRecord[] = useMemo(() => {
@@ -212,7 +213,7 @@ export default function ExecutiveMilestones() {
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
             <span className="font-semibold text-fg">
-              {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
+              {scheduleData?.project ?? 'Active project'}
             </span>
             <span>·</span>
             <span>DATA DATE: {dataDate}</span>
@@ -534,33 +535,36 @@ export default function ExecutiveMilestones() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="overflow-x-auto pb-2">
+            <div className="relative grid min-w-max auto-cols-[230px] grid-flow-col gap-5 px-3 pt-1">
+              <div className="absolute left-8 right-8 top-5 h-px bg-hair" aria-hidden="true" />
             {filteredMilestones.map((m) => {
               const isLate = (m.varianceDays ?? 0) > 0;
               const isDone = m.status === 'COMPLETE';
               return (
-                <div
+                <button
+                  type="button"
                   key={m.id}
                   onClick={() => setSelectedMilestone(m)}
-                  className="p-3 rounded-lg border border-hair bg-surface hover:border-fg/40 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="group relative flex min-h-[176px] flex-col items-start rounded-xl bg-surface px-4 pb-4 pt-11 text-left ring-1 ring-inset ring-hair transition hover:-translate-y-0.5 hover:ring-focus"
                 >
+                  <span
+                    className={`absolute left-4 top-2.5 z-10 h-5 w-5 rounded-full border-4 border-surface ring-1 ${
+                      isDone ? 'bg-ok ring-ok' : isLate ? 'bg-danger ring-danger' : 'bg-accent ring-accent'
+                    }`}
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-heading truncate">{m.name}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-raised border border-hair text-muted uppercase">
-                        {m.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted font-mono">
-                      <span>Baseline: {m.baselineDate ?? '—'}</span>
-                      <span>·</span>
-                      <span className={isDone ? 'text-ok font-semibold' : isLate ? 'text-danger font-semibold' : 'text-fg'}>
-                        Forecast: {m.forecastDate ?? '—'}
-                      </span>
-                    </div>
+                    <span className="font-mono text-[11px] uppercase tracking-wide text-muted">{m.type}</span>
+                    <span className="mt-1 line-clamp-2 min-h-10 font-semibold leading-snug text-heading">{m.name}</span>
+                    <span className="mt-3 block text-label text-muted">Forecast</span>
+                    <span className={`font-mono text-sm font-semibold ${isDone ? 'text-ok' : isLate ? 'text-danger' : 'text-fg'}`}>
+                      {m.forecastDate ?? '—'}
+                    </span>
+                    <span className="mt-1 block font-mono text-[11px] text-muted">Baseline {m.baselineDate ?? '—'}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="mt-auto flex w-full items-center justify-between pt-3">
                     <span
                       className={`px-2 py-0.5 rounded font-mono text-xs font-bold ${
                         (m.varianceDays ?? 0) > 0
@@ -572,11 +576,12 @@ export default function ExecutiveMilestones() {
                     >
                       {m.varianceDays === null ? '—' : m.varianceDays > 0 ? `+${m.varianceDays}d` : `${m.varianceDays}d`}
                     </span>
-                    <ChevronRight size={16} className="text-muted" />
+                    <ChevronRight size={16} className="text-muted transition-transform group-hover:translate-x-0.5" />
                   </div>
-                </div>
+                </button>
               );
             })}
+            </div>
           </div>
         </div>
       )}

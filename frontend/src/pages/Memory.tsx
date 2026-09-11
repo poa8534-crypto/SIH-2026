@@ -1239,9 +1239,10 @@ function KnowledgeBaseView() {
   if (isLoading) return <Skeleton height="h-64" className="w-full" />;
   if (error || !kbData) return <ErrorState error={error ?? new Error('Failed to load rules')} />;
 
-  const rules = kbData.rules.filter(
-    (r) => selectedCat === 'all' || r.category === selectedCat
-  );
+  const severityRank: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const rules = kbData.rules
+    .filter((r) => selectedCat === 'all' || r.category === selectedCat)
+    .sort((a, b) => (severityRank[a.severity] ?? 9) - (severityRank[b.severity] ?? 9));
 
   return (
     <div className="flex flex-col gap-6">
@@ -1398,6 +1399,11 @@ export default function Memory() {
     queryFn: () => api.queryMemory({ query_type: 'all' }),
   });
 
+  const { data: scheduleData } = useQuery({
+    queryKey: ['schedule'],
+    queryFn: () => api.getSchedule(),
+  });
+
   if (error) {
     return (
       <ErrorState
@@ -1428,7 +1434,7 @@ export default function Memory() {
       {/* ── Context Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-hair bg-raised text-label">
         <div className="flex items-center gap-2.5">
-          <span className="font-semibold text-fg">Oil India Limited — Well Pad 04</span>
+          <span className="font-semibold text-fg">{scheduleData?.project ?? 'Active project'}</span>
           <span className="text-muted">·</span>
           <span className="text-fg font-medium">Project Knowledge</span>
           <span className="text-muted">·</span>
@@ -1538,44 +1544,22 @@ export default function Memory() {
               </button>
               <button
                 type="button"
-                onClick={() => setLearningScope('regional')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  learningScope === 'regional'
-                    ? 'bg-selected text-fg font-semibold shadow-xs'
-                    : 'text-muted hover:text-fg'
-                }`}
+                disabled
+                title="No regional benchmark source is connected"
+                className="px-2.5 py-1 rounded-md text-muted opacity-60"
               >
-                Site / Region History (Upper Assam · 4 Basins)
+                Regional history · not connected
               </button>
               <button
                 type="button"
-                onClick={() => setLearningScope('corporate')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  learningScope === 'corporate'
-                    ? 'bg-selected text-fg font-semibold shadow-xs'
-                    : 'text-muted hover:text-fg'
-                }`}
+                disabled
+                title="No corporate benchmark source is connected"
+                className="px-2.5 py-1 rounded-md text-muted opacity-60"
               >
-                Organization Benchmark (Corporate EPC · 12 Projects)
+                Corporate benchmark · not connected
               </button>
             </div>
           </div>
-
-          {learningScope !== 'current' && (
-            <div className="border border-hair bg-surface rounded-xl p-3 text-xs flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <History size={14} className="text-accent shrink-0" />
-                <span className="text-fg font-medium">
-                  {learningScope === 'regional'
-                    ? 'Upper Assam Regional Reference: Hydrotesting historical median is 6.2d across 16 packages; bored piling productivity averages 1.1 piles/day with 18% monsoon contingency.'
-                    : 'Corporate EPC Multi-Project Reference: Calibrated norms from 12 onshore processing installations with standard 14-point DCMA compliance thresholds.'}
-                </span>
-              </div>
-              <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-raised border border-hair text-muted shrink-0">
-                Multi-Project Reference
-              </span>
-            </div>
-          )}
 
           {/* Core Grid */}
           <div className="grid grid-cols-12 gap-4">

@@ -316,7 +316,7 @@ export function GanttChart({
 
       // 2. Center the bar horizontally in the visible timeline portion
       const containerWidth = container.clientWidth || 1000;
-      const visibleTimelineWidth = Math.max(200, containerWidth - LEFT_PANE_PX);
+      const visibleTimelineWidth = Math.max(40, containerWidth - LEFT_PANE_PX);
       let targetLeft = container.scrollLeft;
 
       if (barEl) {
@@ -404,7 +404,7 @@ export function GanttChart({
     if (scrollContainerRef.current && dataDateOffsetPx !== null) {
       const container = scrollContainerRef.current;
       const containerWidth = container.clientWidth || 1000;
-      const visibleTimelineWidth = Math.max(200, containerWidth - LEFT_PANE_PX);
+      const visibleTimelineWidth = Math.max(40, containerWidth - LEFT_PANE_PX);
       // Center data date in visible timeline portion
       const targetLeft = Math.max(0, dataDateOffsetPx - (visibleTimelineWidth / 2));
       if (typeof container.scrollTo === 'function') {
@@ -419,8 +419,34 @@ export function GanttChart({
     }
   };
 
+  // A Gantt that opens months away from the project's data date looks empty.
+  // On the first mount, centre the live decision horizon unless another screen
+  // explicitly asked us to reveal a selected/highlighted activity.
+  const didFocusDataDateRef = useRef(false);
+  useEffect(() => {
+    if (
+      didFocusDataDateRef.current ||
+      selectedId ||
+      highlightId ||
+      dataDateOffsetPx === null ||
+      !scrollContainerRef.current
+    ) return;
+
+    const frame = requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const visibleTimelineWidth = Math.max(40, (container.clientWidth || 1000) - LEFT_PANE_PX);
+      const targetLeft = Math.max(0, dataDateOffsetPx - visibleTimelineWidth / 2);
+      container.scrollLeft = targetLeft;
+      setScrollLeft(targetLeft);
+      didFocusDataDateRef.current = true;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [dataDateOffsetPx, highlightId, selectedId]);
+
   return (
-    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-raised overflow-hidden">
       {/* TOOLBAR CONTROLS */}
       <div className="shrink-0 min-h-10 px-4 py-1.5 border-b border-hair flex items-center justify-between gap-4 bg-surface flex-wrap sm:flex-nowrap overflow-x-auto">
         <div className="flex items-center gap-3 font-mono text-label shrink-0">

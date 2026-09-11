@@ -239,67 +239,49 @@ beforeEach(() => {
 });
 
 describe('Project Control Homepage — Information Architecture & Visual Clarity', () => {
-  it('renders top 4 EPC Project Control KPIs with variance callout and sub-strip', async () => {
+  it('renders four project-control KPIs derived from the schedule response', async () => {
     wrap(<Home />);
 
-    // 1. True EPC Progress KPIs
     expect(await screen.findByText('Planned progress')).toBeInTheDocument();
-    expect((await screen.findAllByText('67%')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('100%')).length).toBeGreaterThan(0);
 
     expect(screen.getByText('Actual progress')).toBeInTheDocument();
-    expect((await screen.findAllByText('61%')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('33%')).length).toBeGreaterThan(0);
 
     expect(screen.getByText('Schedule variance')).toBeInTheDocument();
-    expect(await screen.findByText('-6%')).toBeInTheDocument();
-    expect(await screen.findByText(/▼ 6% BEHIND/i)).toBeInTheDocument();
+    expect(await screen.findByText('-67%')).toBeInTheDocument();
+    expect(await screen.findByText(/▼ 67% BEHIND/i)).toBeInTheDocument();
 
     expect(screen.getByText('At-risk activities')).toBeInTheDocument();
     expect(await screen.findByText('8')).toBeInTheDocument();
-
-    // 2. Health sub-strip (replaces duplicate top KPI card)
-    expect((await screen.findAllByText(/pending reviews/i)).length).toBeGreaterThan(0);
-    expect(screen.getByText(/require manual decision/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/source conflicts/i).length).toBeGreaterThan(0);
   });
 
-  it('renders the core visual: Plan vs Actual progress bars and variance note', async () => {
+  it('renders the grounded plan-versus-verified completion visual and methodology', async () => {
     wrap(<Home />);
 
-    expect(await screen.findByText(/Project Progress \(Plan vs Actual\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Baseline Target \(Planned\)/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Actual Physical Progress/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/6% BEHIND PLAN/i)).toBeInTheDocument();
-    expect(screen.getByText(/SPI 0.91/i)).toBeInTheDocument();
-    expect(screen.getByText(/Divergence initiated in August due to torrential monsoon rainfall/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Activity completion \(plan vs verified\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Activities due by the data date/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Activities verified complete/i).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/67% BEHIND PLAN/i)).toBeInTheDocument();
+    expect(await screen.findByText(/not a financial earned-value measure/i)).toBeInTheDocument();
+    expect(screen.queryByText(/SPI 0.91/i)).not.toBeInTheDocument();
   });
 
-  it('renders the "NAVIS Did Something" live field update impact card', async () => {
+  it('shows latest verified activity from the audit feed without a fabricated live claim', async () => {
     wrap(<Home />);
 
-    expect(await screen.findByText(/Field Update Applied to Schedule/i)).toBeInTheDocument();
-    expect(screen.getByText('PIP-SUP-1049')).toBeInTheDocument();
-    expect(screen.getByText(/Pipe Support Installation — Tier 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/67.6% \(\+98 supports done\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/-14d → -2d \(\+12d\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/98.4% Match/i)).toBeInTheDocument();
-
-    // Action button
-    const inspectBtn = screen.getByRole('link', { name: /Inspect in Schedule →/i });
-    expect(inspectBtn).toHaveAttribute('href', '/schedule?activity=PIP-SUP-1049');
+    expect(await screen.findByText(/Recent changes/i)).toBeInTheDocument();
+    expect((await screen.findAllByText('PIP-SUP-1049')).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/approved by you/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Committed Just Now/i)).not.toBeInTheDocument();
   });
 
-  it('renders streamlined horizontal milestone timeline track with Rev-08 baseline', async () => {
+  it('uses the runtime baseline and does not render the removed seeded milestone story', async () => {
     wrap(<Home />);
 
-    expect(await screen.findByText(/Project Milestones vs Data Date \(2026-09-15\)/i)).toBeInTheDocument();
-    expect(screen.getByText('P6 Rev-08')).toBeInTheDocument();
-
-    // Milestones M-01 to M-06
-    expect(screen.getByText('M-01')).toBeInTheDocument();
-    expect(screen.getByText('Pad Site Mobilization')).toBeInTheDocument();
-    expect(screen.getByText('M-04')).toBeInTheDocument();
-    expect(screen.getByText('6d SLIP')).toBeInTheDocument();
-    expect(screen.getByText('M-06')).toBeInTheDocument();
+    expect(await screen.findByText('Rev-08')).toBeInTheDocument();
+    expect(screen.queryByText('M-01')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Committed Just Now/i)).not.toBeInTheDocument();
   });
 
   it('renders compact operational review queue without bloated text blocks', async () => {
@@ -341,6 +323,6 @@ describe('Project Control Homepage — Information Architecture & Visual Clarity
 
     // Discipline table with rigorous "Activity Completion" column
     expect(await screen.findByText('Discipline Work Packages')).toBeInTheDocument();
-    expect(screen.getByText(/Activity completion measures the proportion/i)).toBeInTheDocument();
+    expect(screen.getByText(/Activity completion is the share of schedule activities/i)).toBeInTheDocument();
   });
 });

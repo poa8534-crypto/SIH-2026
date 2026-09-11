@@ -91,7 +91,7 @@ describe('bottom navigation', () => {
 
   it('shows all four tabs', () => {
     wrap(routes);
-    for (const label of ['Home', 'Reports', 'Clarifications', 'Profile']) {
+    for (const label of ['Home', 'Updates', 'Questions', 'Settings']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
@@ -109,7 +109,7 @@ describe('bottom navigation', () => {
   it('marks the current tab active and no tab points at "#"', () => {
     const { container } = wrap(routes, '/field/reports');
     const active = container.querySelector('a[aria-current="page"]');
-    expect(active?.textContent).toContain('Reports');
+    expect(active?.textContent).toContain('Updates');
     for (const a of container.querySelectorAll('a')) {
       expect(a.getAttribute('href')).not.toBe('#');
     }

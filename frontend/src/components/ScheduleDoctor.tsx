@@ -95,7 +95,7 @@ export function ScheduleDoctor() {
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-[1600px] mx-auto">
       {/* Top Banner: Feasibility Score & Health Summary */}
-      <div className="bg-raised text-fg rounded-lg p-6 border border-hair">
+      <div className="bg-raised text-fg rounded-xl p-6 ring-1 ring-hair">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-hair">
           <div className="flex items-start gap-4">
             <div
@@ -112,7 +112,7 @@ export function ScheduleDoctor() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-label font-medium px-2 py-0.5 rounded-sm bg-surface border border-hair text-muted">
-                  AI Schedule Feasibility & Knowledge Auditor
+                  Schedule feasibility audit
                 </span>
                 <span
                   className={`text-label font-medium px-2 py-0.5 rounded-full border ${
@@ -154,6 +154,28 @@ export function ScheduleDoctor() {
             </button>
           </div>
         </div>
+
+        {filteredFindings.length > 0 && (
+          <div className="pt-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-body font-semibold text-heading">Act on these first</h3>
+              <span className="text-label text-muted">Top 3 of {filteredFindings.length} matching findings</span>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {filteredFindings.slice(0, 3).map((finding) => (
+                <div key={finding.id} className="rounded-xl bg-secondary/70 p-4 ring-1 ring-hair/70">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-label font-semibold ${finding.severity === 'critical' ? 'bg-danger-bg text-danger' : 'bg-warn/10 text-warn'}`}>
+                      {finding.severity}
+                    </span>
+                    <span className="font-mono text-label text-muted">{finding.activity_id || 'Network'}</span>
+                  </div>
+                  <p className="mt-3 line-clamp-3 text-body font-medium leading-6 text-heading">{finding.critique_message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 4 Score Breakdown Pillars */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">

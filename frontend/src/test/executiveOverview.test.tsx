@@ -197,7 +197,7 @@ describe('money', () => {
     expect(
       screen.getByText(/No claim value — no contract sum supplied/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/CONTRACT VALUE NOT SUPPLIED/)).toBeInTheDocument();
+    expect(screen.getByText(/contract value not supplied/i)).toBeInTheDocument();
   });
 
   it('never invents a rupee figure', async () => {
@@ -226,7 +226,7 @@ describe('money', () => {
       },
     });
 
-    expect(await screen.findByText(/CONTRACT BASELINE: ₹180.00 CR/)).toBeInTheDocument();
+    expect(await screen.findByText(/Contract baseline ₹180.00 Cr/)).toBeInTheDocument();
     expect(screen.getByText(/₹0.13 Cr LD Risk/)).toBeInTheDocument();
   });
 });

@@ -36,6 +36,7 @@ export default function ExecutiveManagementReports() {
   const [reportScope, setReportScope] = useState<'full' | 'critical_only' | 'discipline_focus'>('full');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [narrativeEdited, setNarrativeEdited] = useState(false);
 
   // Queries
   const { data: metrics, error: metricsError } = useQuery<ExecutiveMetricsResponse>({
@@ -54,7 +55,33 @@ export default function ExecutiveManagementReports() {
   });
 
   const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? null;
+  const projectName = scheduleData?.project ?? 'Active project';
   const generatedAt = useMemo(() => new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC', []);
+
+  const reportRiskGroups = useMemo(() => {
+    const groups = new Map<string, RaidItem[]>();
+    (raidItems ?? [])
+      .filter((item) => item.status.toLowerCase() !== 'closed')
+      .forEach((item) => {
+        const title = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const activities = [...item.linked_activity_ids].sort().join('|') || 'unlinked';
+        const key = `${activities}:${title}`;
+        groups.set(key, [...(groups.get(key) ?? []), item]);
+      });
+
+    return [...groups.values()]
+      .map((group) => ({
+        item: [...group].sort(
+          (a, b) => (b.exposure ?? b.impact_days ?? 0) - (a.exposure ?? a.impact_days ?? 0)
+        )[0],
+        sourceCount: group.length,
+      }))
+      .sort(
+        (a, b) =>
+          (b.item.exposure ?? b.item.impact_days ?? 0) -
+          (a.item.exposure ?? a.item.impact_days ?? 0)
+      );
+  }, [raidItems]);
 
   // ── The two builder controls, which now actually build ──────────────────
   //
@@ -158,7 +185,7 @@ export default function ExecutiveManagementReports() {
 
     return (
       `EXECUTIVE BRIEFING SUMMARY:\n` +
-      `The Well Pad 04 project is currently operating at an SPI of ${spi} with a cumulative critical path float drift of ${drift}. ` +
+      `${projectName} is currently operating at an SPI of ${spi} with a cumulative critical path float drift of ${drift}. ` +
       `${pressure} ` +
       `FIDIC contractual dispute exposure stands at ${disputeDays}, with 28-day notice deadlines actively monitored. ` +
       `Reporting evidence integrity covers ${cov} of active work nodes.\n\n` +
@@ -167,7 +194,7 @@ export default function ExecutiveManagementReports() {
       evidenceAction +
       `3. Align next executive review on logic finish milestone movement.`
     );
-  }, [metrics]);
+  }, [metrics, projectName]);
 
   const [aiNarrative, setAiNarrative] = useState(defaultNarrative);
 
@@ -194,12 +221,13 @@ export default function ExecutiveManagementReports() {
     setIsGeneratingAi(true);
     try {
       const resp = await api.askChat({
-        question: `Draft a concise 3-paragraph executive board briefing for project ${scheduleData?.project ?? 'Well Pad 04'} as of ${dataDate}. Include schedule performance, top milestone movements, and critical delay risks.`,
+        question: `Draft a concise 3-paragraph executive board briefing for project ${projectName} as of ${dataDate}. Include schedule performance, top milestone movements, and critical delay risks.`,
         role: 'executive',
       });
       if (resp.answer) {
         narrativeIsUserOwned.current = true;
         setAiNarrative(resp.answer);
+        setNarrativeEdited(false);
       }
     } catch {
       // Fallback stays in place
@@ -210,11 +238,11 @@ export default function ExecutiveManagementReports() {
 
   // Compile full Markdown for export
   const fullReportMarkdown = useMemo(() => {
-    const proj = scheduleData?.project ?? 'Oil India Limited — Well Pad 04';
+    const proj = projectName;
     const kpis = metrics?.kpis;
     const forecast = metrics?.completion_forecast;
     const milestones = reportMilestones;
-    const openRisks = (raidItems ?? []).slice(0, 4);
+    const openRisks = reportRiskGroups.slice(0, 4);
 
     let md = `# NAVIS Executive Management Review Pack\n`;
     md += `**Project:** ${proj}\n`;
@@ -247,8 +275,8 @@ export default function ExecutiveManagementReports() {
     if (openRisks.length === 0) {
       md += `No high-severity open RAID items recorded.\n\n`;
     } else {
-      openRisks.forEach((r) => {
-        md += `- **${r.id} (${r.kind.toUpperCase()}):** ${r.title} | Impact: ${r.impact_days ?? 0}d | Owner: ${r.owner ?? 'Unassigned'}\n`;
+      openRisks.forEach(({ item: r, sourceCount }) => {
+        md += `- **${r.id} (${r.kind.toUpperCase()}):** ${r.title} | Impact: ${r.impact_days ?? 0}d | Owner: ${r.owner ?? 'Unassigned'} | ${sourceCount} preserved source record${sourceCount === 1 ? '' : 's'}\n`;
       });
       md += `\n`;
     }
@@ -259,7 +287,7 @@ export default function ExecutiveManagementReports() {
     md += `- *All figures reflect data received up to cutoff date ${dataDate}. Unadjudicated field submissions are excluded from committed baseline schedule metrics.*\n`;
 
     return md;
-  }, [scheduleData, metrics, raidItems, dataDate, generatedAt, aiNarrative, reportMilestones, scopeStatement]);
+  }, [projectName, metrics, reportRiskGroups, dataDate, generatedAt, aiNarrative, reportMilestones, scopeStatement]);
 
   const handleCopy = async () => {
     // Only claim "Copied" if the write actually succeeded (D-106).
@@ -378,7 +406,7 @@ export default function ExecutiveManagementReports() {
           className="flex items-center gap-1.5 px-3 py-1 rounded border border-hair bg-surface hover:bg-selected text-xs font-mono text-fg transition-colors disabled:opacity-50"
         >
           <Sparkles size={13} className="text-accent" />
-          <span>{isGeneratingAi ? 'Synthesizing…' : 'Refresh AI Narrative'}</span>
+          <span>{isGeneratingAi ? 'Regenerating…' : 'Regenerate evidence-based summary'}</span>
         </button>
       </div>
 
@@ -391,14 +419,14 @@ export default function ExecutiveManagementReports() {
             <span>DATA CUTOFF: {dataDate}</span>
           </div>
           <h2 className="text-h1 font-bold tracking-tight text-heading">
-            {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
+            {projectName}
           </h2>
           <div className="flex items-center gap-4 mt-2 text-xs text-muted font-mono">
             <span>Assembled: {generatedAt}</span>
             <span>·</span>
             <span>Report Authority: Senior Management (Read-Only)</span>
             <span>·</span>
-            <span>Baseline: Primavera P6 Rev-08</span>
+            <span>Baseline: {scheduleData?.baseline?.name ?? 'Not supplied'}</span>
           </div>
         </div>
 
@@ -410,13 +438,14 @@ export default function ExecutiveManagementReports() {
               1. Executive Narrative Summary (Reviewable before sharing)
             </span>
             <span className="text-[10px] bg-raised px-2 py-0.5 rounded border border-hair">
-              AI-Assisted Synthesis
+              {narrativeEdited ? 'Edited · unsaved in this session' : 'Generated · ready to review'}
             </span>
           </div>
           <textarea
             value={aiNarrative}
             onChange={(e) => {
               narrativeIsUserOwned.current = true;
+              setNarrativeEdited(true);
               setAiNarrative(e.target.value);
             }}
             rows={5}
@@ -531,7 +560,7 @@ export default function ExecutiveManagementReports() {
           <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
             4. Critical Project Risks &amp; Delay Notices
           </h3>
-          {(raidItems ?? []).length === 0 ? (
+          {reportRiskGroups.length === 0 ? (
             <div className="p-4 rounded border border-hair bg-raised text-xs text-muted font-mono leading-relaxed">
               No RAID item has been accepted by the Project Manager, so this section is empty by
               construction rather than for want of data. Delay events and source disagreements are
@@ -543,12 +572,12 @@ export default function ExecutiveManagementReports() {
             </div>
           ) : (
           <div className="divide-y divide-hair border border-hair rounded-md bg-raised text-xs">
-            {(raidItems ?? []).slice(0, 3).map((r) => (
+            {reportRiskGroups.slice(0, 3).map(({ item: r, sourceCount }) => (
               <div key={r.id} className="p-3 flex items-center justify-between gap-3">
                 <div>
                   <span className="font-semibold text-heading block">{r.title}</span>
                   <span className="text-[11px] text-muted font-mono block mt-0.5">
-                    {r.id} · Kind: {r.kind.toUpperCase()} · Owner: {r.owner ?? 'Unassigned'}
+                    {r.id} · Kind: {r.kind.toUpperCase()} · Owner: {r.owner ?? 'Unassigned'} · {sourceCount} preserved {sourceCount === 1 ? 'record' : 'records'}
                   </span>
                 </div>
                 <div className="text-right font-mono shrink-0">

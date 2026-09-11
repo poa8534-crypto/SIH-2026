@@ -150,9 +150,9 @@ export default function ExecutiveDataConfidence() {
           <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
             Audit Grade: {auditGrade.letter} ({coverageLabel} Verified)
           </span>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface text-ok font-medium border border-hair">
-            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-            Zero Synthetic Data
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warn/10 text-warn font-medium border border-warn/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-warn" />
+            Synthetic baseline · live evidence separated
           </span>
         </div>
       </div>
@@ -244,8 +244,34 @@ export default function ExecutiveDataConfidence() {
           </div>
         </div>
 
+        <div className="overflow-hidden rounded-xl bg-surface ring-1 ring-inset ring-hair">
+          <div className="flex h-2 w-full bg-secondary" aria-label={`${coverageLabel} of activities have verified evidence`}>
+            <div className="bg-ok" style={{ width: `${coveragePct ?? 0}%` }} />
+            <div className="flex-1 bg-warn/60" />
+          </div>
+          <div className="grid grid-cols-2 gap-px bg-hair md:grid-cols-4">
+            <div className="bg-surface p-3">
+              <span className="block text-label text-muted">Verified</span>
+              <strong className="font-mono text-lg text-ok">{dashNum(kpis?.evidenced_activities)}</strong>
+            </div>
+            <div className="bg-surface p-3">
+              <span className="block text-label text-muted">Unevidenced</span>
+              <strong className="font-mono text-lg text-warn">{dashNum(kpis?.unevidenced_activities)}</strong>
+            </div>
+            <div className="bg-surface p-3">
+              <span className="block text-label text-muted">Stale evidence</span>
+              <strong className="font-mono text-lg text-fg">—</strong>
+              <span className="block text-[11px] text-muted">Timestamp not supplied</span>
+            </div>
+            <div className="bg-surface p-3">
+              <span className="block text-label text-muted">Source conflicts</span>
+              <strong className="font-mono text-lg text-danger">{conflicts.length}</strong>
+            </div>
+          </div>
+        </div>
+
         <div className="p-3 rounded border border-hair bg-surface text-xs font-mono text-muted flex items-center justify-between">
-          <span>Denominator Basis: Complete activity register in baseline_schedule.json</span>
+          <span>Demo baseline is synthetic; submitted field evidence remains separately auditable.</span>
           <span className="text-fg font-semibold">
             Formula: {dashNum(kpis?.evidenced_activities)} evidenced ÷{' '}
             {dashNum(kpis?.total_activities)} total = {coverageLabel}

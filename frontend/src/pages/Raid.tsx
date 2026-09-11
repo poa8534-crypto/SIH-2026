@@ -282,12 +282,14 @@ function SuggestionCard({
 
 function RegisterRow({
   item,
+  relatedItems,
   activityName,
   onClose,
   onViewEvidence,
   busy,
 }: {
   item: RaidItem;
+  relatedItems: RaidItem[];
   activityName?: string;
   onClose: (item: RaidItem) => void;
   onViewEvidence: (item: RaidItem) => void;
@@ -320,6 +322,11 @@ function RegisterRow({
           {item.category && (
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted bg-surface border border-hair px-1.5 py-0.5 rounded">
               {item.category}
+            </span>
+          )}
+          {relatedItems.length > 1 && (
+            <span className="rounded-full bg-selected px-2 py-0.5 font-mono text-[11px] font-semibold text-accent ring-1 ring-inset ring-accent/30">
+              {relatedItems.length} source records
             </span>
           )}
         </div>
@@ -361,6 +368,23 @@ function RegisterRow({
             </span>
           )}
         </div>
+
+        {relatedItems.length > 1 && (
+          <details className="mt-1 rounded-lg bg-surface ring-1 ring-inset ring-hair">
+            <summary className="cursor-pointer px-3 py-2 text-label font-semibold text-fg">
+              View every preserved audit record
+            </summary>
+            <div className="divide-y divide-hair border-t border-hair">
+              {relatedItems.map((record) => (
+                <div key={record.id} className="grid gap-1 px-3 py-2 text-label sm:grid-cols-[100px_1fr_auto]">
+                  <span className="font-mono text-muted">{record.id}</span>
+                  <span className="text-fg">{record.source_kind ?? 'manual'} · {record.source_id ?? 'no source reference'}</span>
+                  <span className="font-mono uppercase text-muted">{record.status}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
 
       <div className="shrink-0 flex items-center gap-2 self-end lg:self-center">
@@ -560,13 +584,32 @@ export default function Raid() {
     });
   }, [items, statusFilter, kindFilter, searchQuery]);
 
+  const groupedItems = useMemo(() => {
+    const groups = new Map<string, RaidItem[]>();
+    filteredItems.forEach((item) => {
+      const title = formatCandidateTitle(item.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      const activities = [...item.linked_activity_ids].sort().join('|') || 'unlinked';
+      const key = `${activities}:${title}`;
+      groups.set(key, [...(groups.get(key) ?? []), item]);
+    });
+    return [...groups.values()]
+      .map((group) => group.sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'open' ? -1 : 1;
+        return (b.exposure ?? b.impact_days ?? 0) - (a.exposure ?? a.impact_days ?? 0);
+      }))
+      .sort((a, b) => {
+        if (a[0].status !== b[0].status) return a[0].status === 'open' ? -1 : 1;
+        return (b[0].exposure ?? b[0].impact_days ?? 0) - (a[0].exposure ?? a[0].impact_days ?? 0);
+      });
+  }, [filteredItems]);
+
   return (
     <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
       {/* Context Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-raised border border-hair rounded-lg">
         <div>
           <span className="font-semibold text-heading text-body block">
-            Oil India Limited — Well Pad 04 · Project Exposure Register
+            {scheduleData?.project ?? 'Active project'} · Project Exposure Register
           </span>
           <span className="text-label text-muted">
             Formal project register for risks, issues, actions, decisions and schedule exposure.
@@ -654,7 +697,7 @@ export default function Raid() {
         action={
           <div className="flex items-center gap-2">
             <span className="text-label font-mono text-muted">
-              {filteredItems.length} of {items.length} shown
+              {groupedItems.length} exposure groups · {filteredItems.length} source records
             </span>
           </div>
         }
@@ -725,12 +768,13 @@ export default function Raid() {
             No register entries match the current status or search filter.
           </EmptyState>
         ) : (
-          filteredItems.map((item) => (
+          groupedItems.map((group) => (
             <RegisterRow
-              key={item.id}
-              item={item}
-              activityName={activityNames[item.linked_activity_ids[0]]}
-              busy={acting === item.id}
+              key={group.map((item) => item.id).join('-')}
+              item={group[0]}
+              relatedItems={group}
+              activityName={activityNames[group[0].linked_activity_ids[0]]}
+              busy={acting === group[0].id}
               onClose={(i) => {
                 setActing(i.id);
                 close.mutate(i);
@@ -741,7 +785,7 @@ export default function Raid() {
                   file: 'civil_progress.xlsx',
                   row: 'Row 18',
                   span:
-                    item.description ||
+                    i.description ||
                     'Drainage Channels Perimeter — Delayed by fencing conflict — Location: Plot Boundary',
                   activityId: i.linked_activity_ids[0] || 'CIV-DWG-1015',
                   variance: i.impact_days,
@@ -1006,4 +1050,3 @@ export default function Raid() {
     </div>
   );
 }
-

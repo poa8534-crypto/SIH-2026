@@ -9,6 +9,7 @@ import {
   Layers as WbsIcon,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { PROJECT } from '../../config';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { qty } from '../../lib/units';
 import { SkeletonRows, ErrorState } from '../../components/ui';
@@ -44,7 +45,7 @@ export default function ExecutiveProgress() {
 
   const sCurve = metrics?.s_curve ?? [];
   const activities = scheduleData?.activities ?? [];
-  const dataDate = scheduleData?.data_date ?? evmData?.data_date ?? '2026-09-15';
+  const dataDate = scheduleData?.data_date ?? evmData?.data_date ?? PROJECT.dataDate;
 
   // Discipline Progress Aggregation
   const disciplineAggregates = useMemo(() => {
@@ -220,7 +221,7 @@ export default function ExecutiveProgress() {
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
             <span className="font-semibold text-fg">
-              {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
+              {scheduleData?.project ?? 'Active project'}
             </span>
             <span>·</span>
             <span>SCHEDULE DATA DATE: {dataDate}</span>
@@ -241,14 +242,6 @@ export default function ExecutiveProgress() {
             <span className="h-1.5 w-1.5 rounded-full bg-ok" />
             Read-Only
           </span>
-        </div>
-      </div>
-
-      {/* ── Headline Invariant Alert ── */}
-      <div className="p-4 rounded-lg border border-hair bg-raised text-body flex items-start gap-3">
-        <Info size={18} className="text-fg shrink-0 mt-0.5" />
-        <div className="text-xs text-muted leading-relaxed">
-          <strong className="font-semibold text-fg">Measurement Standard &amp; Honesty Notice:</strong> Activity-count completion is never equated to physical percent complete or financial earned value. Earned Value (EV) reflects planned duration accrued upon verified activity completion (0/100 rule). Unadjudicated field updates remain categorized as reported progress until formally approved into committed actuals by the Project Manager.
         </div>
       </div>
 
@@ -382,6 +375,17 @@ export default function ExecutiveProgress() {
           </div>
         )}
       </div>
+
+      <details className="group rounded-xl bg-raised ring-1 ring-inset ring-hair">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 text-sm font-semibold text-fg">
+          <Info size={17} className="shrink-0 text-accent" />
+          How NAVIS measures progress
+          <span className="ml-auto text-xs font-normal text-muted group-open:hidden">Show methodology</span>
+        </summary>
+        <p className="border-t border-hair px-4 py-3 text-sm leading-relaxed text-muted">
+          Activity-count completion is never presented as physical percent complete or financial earned value. Earned Value reflects planned duration accrued only when a verified activity is complete (the 0/100 rule). Unadjudicated field updates remain reported progress until a Project Manager commits them.
+        </p>
+      </details>
 
       {/* ── Discipline Breakdown Table ── */}
       <div className="border border-hair rounded-lg bg-raised overflow-hidden shadow-xs flex flex-col gap-0">

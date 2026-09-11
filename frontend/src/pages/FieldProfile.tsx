@@ -36,20 +36,20 @@ export default function FieldProfile() {
     error ? 'Unavailable' : isLoading ? '…' : (value ?? '—');
 
   return (
-    <div className="w-full bg-surface text-fg font-sans pb-28">
-      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+    <div className="w-full bg-surface text-fg font-sans">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 pb-8 sm:px-6 lg:grid lg:grid-cols-2 lg:items-start lg:px-8 lg:py-8">
         {/* Page Header */}
-        <div className="border-b border-hair pb-5">
-          <h1 className="text-2xl font-bold tracking-tight text-heading">
-            {t('pref_title', 'Preferences')}
+        <div className="lg:col-span-2">
+          <h1 className="text-h2 font-semibold tracking-[-0.03em] text-heading">
+            {t('pref_title', 'Settings')}
           </h1>
-          <p className="text-sm text-muted mt-1">
+          <p className="text-body leading-6 text-muted mt-1">
             {t('pref_sub', 'Personalize how NAVIS works for you.')}
           </p>
         </div>
 
         {/* Compact User & Assignment Summary Card */}
-        <div className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-raised p-4 ring-1 ring-hair flex flex-col gap-4 lg:col-span-2">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="h-11 w-11 rounded-xl bg-accent text-accent-fg flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
               FS
@@ -72,7 +72,7 @@ export default function FieldProfile() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-hair text-xs">
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-hair text-label">
             <span className="px-2.5 py-1 rounded-lg bg-surface border border-hair font-medium text-heading">
               {PROJECT.location}
             </span>
@@ -86,9 +86,9 @@ export default function FieldProfile() {
         </div>
 
         {/* Section 1: Appearance & Theme (Settings First) */}
-        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
+        <section className="rounded-2xl bg-raised p-4 ring-1 ring-hair flex flex-col gap-4">
           <div>
-            <h3 className="text-sm font-bold text-heading">
+            <h3 className="text-lead font-semibold text-heading">
               {t('pref_theme', 'Appearance & Theme')}
             </h3>
             <p className="text-xs text-muted mt-0.5">
@@ -96,23 +96,18 @@ export default function FieldProfile() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
-            <div>
-              <span className="text-xs font-semibold text-heading block">
-                {t('pref_theme', 'Interface Theme')}
-              </span>
-              <span className="text-[11px] text-muted">
-                Currently using {theme === 'dark' ? 'Dark Navy' : 'NAVIS Blue & White'} mode
-              </span>
-            </div>
+          <div className="flex flex-col gap-3 pt-3 border-t border-hair">
+            <p className="text-label text-muted">
+              Currently using <strong className="font-semibold text-heading">{theme === 'dark' ? 'Dark Navy' : 'NAVIS Blue & White'}</strong> mode
+            </p>
 
-            <div className="inline-flex p-1 rounded-xl bg-surface border border-hair gap-1 shrink-0 self-start sm:self-auto">
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-secondary gap-1">
               <button
                 type="button"
                 onClick={() => setTheme('light')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                   theme === 'light'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                    ? 'bg-raised text-accent shadow-xs'
                     : 'text-muted hover:text-heading border border-transparent'
                 }`}
               >
@@ -124,7 +119,7 @@ export default function FieldProfile() {
                 onClick={() => setTheme('dark')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                   theme === 'dark'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                    ? 'bg-raised text-accent shadow-xs'
                     : 'text-muted hover:text-heading border border-transparent'
                 }`}
               >
@@ -136,9 +131,9 @@ export default function FieldProfile() {
         </section>
 
         {/* Section 2: Language & Input */}
-        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-4">
+        <section className="rounded-2xl bg-raised p-4 ring-1 ring-hair flex flex-col gap-4">
           <div>
-            <h3 className="text-sm font-bold text-heading">
+            <h3 className="text-lead font-semibold text-heading">
               {t('pref_lang', 'Language & input')}
             </h3>
             <p className="text-xs text-muted mt-0.5">
@@ -146,17 +141,12 @@ export default function FieldProfile() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-hair">
-            <div>
-              <span className="text-xs font-semibold text-heading block">
-                {t('pref_lang', 'Preferred language for voice')}
-              </span>
-              <span className="text-[11px] text-muted">
-                Preferred languages: {LANGUAGES.map((l) => l.label).join(', ')}
-              </span>
-            </div>
+          <div className="flex flex-col gap-3 pt-3 border-t border-hair">
+            <p className="text-label text-muted">
+              Voice recognition supports {LANGUAGES.map((l) => l.label).join(', ')}.
+            </p>
 
-            <div className="inline-flex p-1 rounded-xl bg-surface border border-hair gap-1 shrink-0 overflow-x-auto self-start sm:self-auto">
+            <div className="grid grid-cols-3 p-1 rounded-xl bg-secondary gap-1">
               {LANGUAGES.map((l) => (
                 <button
                   key={l.code}
@@ -167,7 +157,7 @@ export default function FieldProfile() {
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                     speech.lang === l.code
-                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-xs'
+                      ? 'bg-raised text-accent shadow-xs'
                       : 'text-muted hover:text-heading border border-transparent'
                   }`}
                 >
@@ -186,7 +176,7 @@ export default function FieldProfile() {
         </section>
 
         {/* Section 3: Current Assignment Metadata (Compact 3-column grid) */}
-        <section className="rounded-2xl border border-hair bg-raised p-5 shadow-xs flex flex-col gap-3.5">
+        <section className="rounded-2xl bg-raised p-4 ring-1 ring-hair flex flex-col gap-3.5 lg:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-heading">
@@ -201,7 +191,7 @@ export default function FieldProfile() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-hair text-xs">
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-hair text-label">
             <div className="p-3 rounded-xl bg-surface/70 border border-hair flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
                 {t('project', 'Project')}
@@ -259,18 +249,18 @@ export default function FieldProfile() {
         </section>
 
         {/* Session Navigation Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+        <div className="flex flex-col items-stretch gap-3 pt-2 lg:col-span-2 lg:flex-row lg:justify-end">
           <button
             type="button"
             onClick={() => navigate('/field')}
-            className="px-4 py-2.5 rounded-xl border border-hair bg-raised hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer text-center"
+            className="px-4 py-2.5 rounded-xl border border-hair bg-raised hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer text-center lg:min-w-40"
           >
             {t('back_home', 'Back to home')}
           </button>
           <button
             type="button"
             onClick={signOut}
-            className="px-4 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-semibold shadow-xs transition-all cursor-pointer text-center"
+            className="px-4 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-semibold shadow-xs transition-all cursor-pointer text-center lg:min-w-52"
           >
             {t('return_role', 'Return to role selection')}
           </button>
