@@ -49,7 +49,7 @@ export default function Login({ onPick }: LoginProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen w-full bg-surface text-fg font-sans flex flex-col justify-between p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <div className="h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg font-sans flex flex-col justify-between p-3 sm:p-6 lg:p-8 pb-12 overflow-y-auto overscroll-y-contain touch-pan-y">
       {/* Top Header Bar with NAVIS Brand & Theme Selector */}
       <div className="w-full max-w-[1180px] mx-auto mb-3 sm:mb-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export default function Login({ onPick }: LoginProps) {
         </div>
       </div>
 
-      <div className="flex-1 my-auto py-2 sm:py-4 flex items-center justify-center">
+      <div className="flex-1 shrink-0 py-2 sm:py-4 flex items-center justify-center">
         <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
           
           {/* Left Column: Product Context & Core Purpose */}
@@ -120,9 +120,9 @@ export default function Login({ onPick }: LoginProps) {
 
               {/* Authentic Schedule Baseline Context Card */}
               <div className="mt-5 sm:mt-6 border border-hair bg-raised rounded-lg p-4 sm:p-5">
-                <div className="flex items-center justify-between text-label font-medium text-muted pb-2.5 border-b border-hair">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-label font-medium text-muted pb-2.5 border-b border-hair">
                   <span className="font-semibold text-heading">Active Project Baseline</span>
-                  <span className="font-mono">Data date: 2026-03-01</span>
+                  <span className="font-mono text-xs text-muted">Data date: 2026-03-01</span>
                 </div>
 
                 <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">

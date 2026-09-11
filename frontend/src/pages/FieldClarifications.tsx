@@ -177,7 +177,7 @@ export default function FieldClarifications() {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface text-fg font-sans">
+    <div className="w-full bg-surface text-fg font-sans pb-28">
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
         {/* Toast feedback banner */}
         {toastMessage && (

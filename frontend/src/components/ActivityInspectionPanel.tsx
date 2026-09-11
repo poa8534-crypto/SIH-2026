@@ -544,11 +544,18 @@ export function ActivityInspectionPanel({
   const finishVariance = activity.finish_variance_days ?? (activity.actual_finish ? 23 : 0);
 
   return (
-    <aside
-      className="absolute top-0 right-0 bottom-0 w-[490px] max-w-full bg-raised border-l border-hair flex flex-col z-30 shadow-2xl animate-in slide-in-from-right duration-200"
-      role="dialog"
-      aria-label={`Activity inspection for ${activity.activity_id}`}
-    >
+    <>
+      {/* Backdrop on mobile / small screens */}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-40 lg:hidden transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside
+        className="fixed top-14 right-0 bottom-0 w-[520px] max-w-[95vw] bg-raised border-l border-hair flex flex-col z-50 shadow-2xl animate-in slide-in-from-right duration-200"
+        role="dialog"
+        aria-label={`Activity inspection for ${activity.activity_id}`}
+      >
       {/* ── Top Bar with Stepper & Status ──────────────────────────────────── */}
       <div className="border-b border-hair px-4 py-2.5 flex items-center justify-between gap-2 shrink-0 bg-surface/50">
         <div className="flex items-center gap-2 min-w-0">
@@ -1425,5 +1432,6 @@ export function ActivityInspectionPanel({
         </div>
       </div>
     </aside>
+    </>
   );
 }

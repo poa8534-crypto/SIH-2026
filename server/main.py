@@ -1668,7 +1668,7 @@ def get_review_queue(
         value=ReviewQueueItem.priority,
         else_=0,
     )
-    items = query.order_by(priority_rank.desc(), ReviewQueueItem.created_at).all()
+    items = query.order_by(priority_rank.desc(), ReviewQueueItem.created_at.desc()).all()
 
     events = {
         le.id: le
@@ -1732,6 +1732,7 @@ def get_review_queue(
                 uom=le.uom if le else None,
                 reported_date=str(le.reported_date) if le and le.reported_date else None,
                 event_status=le.status if le else None,
+                reference=_report_reference(le) if le else None,
             )
         )
 
@@ -5375,7 +5376,7 @@ def _create_event_from_slots(
         linked_event_id=le.id,
         activity_id=linked_id,
         reason=reason,
-        priority="high" if linked_id is None else "medium",
+        priority="high",
         status="pending",
     )
     db.add(review)

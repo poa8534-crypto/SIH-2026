@@ -30,7 +30,7 @@ export function FieldNav() {
   const unanswered = data?.length ?? 0;
 
   return (
-    <nav className="shrink-0 h-16 border-t border-hair bg-raised flex items-stretch gap-1 px-2 py-2">
+    <nav className="shrink-0 min-h-[58px] border-t border-hair bg-raised flex items-stretch gap-1 px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom,0px))]">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}

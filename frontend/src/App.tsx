@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -24,6 +24,7 @@ import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
 import { AskNavisChat } from './components/AskNavisChat';
+import { LiveNotificationToast } from './components/LiveNotificationToast';
 import Reconcile from './pages/Reconcile';
 import Schedule from './pages/Schedule';
 import Ingest from './pages/Ingest';
@@ -111,6 +112,17 @@ function DesktopShell({
   const title = forThisRoute?.title ?? currentNav?.label ?? '';
   const subtitle = forThisRoute?.subtitle ?? '';
 
+  const { data: reviewQueueData } = useQuery({
+    queryKey: ['reviewQueue'],
+    queryFn: () => api.getReviewQueue('pending'),
+    staleTime: 5000,
+  });
+
+  const pendingFieldCount = useMemo(() => {
+    if (!Array.isArray(reviewQueueData)) return 0;
+    return reviewQueueData.filter((i) => i.match_method === 'agent_turn').length;
+  }, [reviewQueueData]);
+
   const renderNavLinks = (onItemClick?: () => void) => (
     <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5 px-3 py-3">
       {navItems.map((item) => {
@@ -123,14 +135,21 @@ function DesktopShell({
             key={item.path}
             to={item.path}
             onClick={onItemClick}
-            className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-body font-medium transition-colors ${
+            className={`flex items-center justify-between rounded-md px-3 py-2 text-body font-medium transition-colors ${
               active
                 ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
                 : 'text-muted hover:bg-selected hover:text-heading'
             }`}
           >
-            <Icon size={16} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
-            <span>{item.label}</span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Icon size={16} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </div>
+            {item.path === '/reconcile' && pendingFieldCount > 0 && (
+              <span className="font-mono text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full shrink-0">
+                {pendingFieldCount}
+              </span>
+            )}
           </Link>
         );
       })}
@@ -170,7 +189,7 @@ function DesktopShell({
   );
 
   return (
-    <div className="flex h-screen w-full bg-surface text-fg overflow-hidden font-sans">
+    <div className="flex h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg overflow-hidden font-sans">
       {/* Persistent Left Navigation Sidebar for Desktop/Tablet */}
       <aside className="hidden md:flex w-[240px] flex-shrink-0 bg-sidebar border-r border-hair flex-col z-10">
         {/* Project & Engine Identity */}
@@ -248,7 +267,7 @@ function DesktopShell({
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-surface">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden bg-surface">
         {/* Compact Contextual Header */}
         <header className="h-14 shrink-0 border-b border-hair flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 bg-surface max-w-full">
           <div className="min-w-0 flex items-center gap-2 sm:gap-3">
@@ -294,7 +313,7 @@ function DesktopShell({
         </header>
 
         <PageHeaderContext.Provider value={setPageHeader}>
-          <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0">{children}</main>
+          <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0">{children}</main>
         </PageHeaderContext.Provider>
       </div>
 
@@ -303,6 +322,7 @@ function DesktopShell({
         onClose={() => setIsChatOpen(false)}
         role={location.pathname.startsWith('/executive') ? 'executive' : 'planner'}
       />
+      <LiveNotificationToast />
     </div>
   );
 }

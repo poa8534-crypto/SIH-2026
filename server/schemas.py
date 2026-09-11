@@ -133,6 +133,7 @@ class ReviewQueueItemResponse(BaseModel):
     reported_date: Optional[str] = None
     event_status: Optional[str] = None
     location: Optional[str] = None
+    reference: Optional[str] = None
 
 
 class ResolveRequest(BaseModel):

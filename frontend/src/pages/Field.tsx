@@ -308,8 +308,8 @@ export default function Field() {
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-surface overflow-hidden">
-      <main className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-col gap-4">
+    <div className="w-full bg-surface">
+      <div className="w-full max-w-[780px] mx-auto px-2 sm:px-4 py-2 sm:py-3 pb-28 flex flex-col gap-4">
         {stage === 'idle' && (
           <>
             {successToast && (
@@ -426,7 +426,7 @@ export default function Field() {
         {stage === 'submitted' && (
           <SubmittedStage reference={reference} turn={turn} onReturn={resetSession} />
         )}
-      </main>
+      </div>
 
       <ReportStudio
         mode="overlay"

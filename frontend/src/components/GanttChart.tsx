@@ -12,6 +12,7 @@ interface GanttChartProps {
   selectedId: string | null;
   onSelectActivity: (activityId: string) => void;
   dataDate?: string;
+  highlightId?: string | null;
 }
 
 const MS_PER_DAY = 86_400_000;
@@ -49,6 +50,7 @@ export function GanttChart({
   selectedId,
   onSelectActivity,
   dataDate = '2026-04-10',
+  highlightId,
 }: GanttChartProps) {
   const [zoom, setZoom] = useState<ZoomLevel>('normal');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -141,33 +143,49 @@ export function GanttChart({
   }, [activities, dataDate, pxPerDay]);
 
   const timelineWidth = totalDays * pxPerDay;
+  const lastScrolledTargetRef = useRef<string | null>(null);
 
-  // Scroll to selected activity or Data Date initially
+  // Scroll to selected / highlighted activity inside the Gantt container without hijacking the outer page
   useEffect(() => {
-    if (selectedId) {
-      if (typeof rowRefs.current[selectedId]?.scrollIntoView === 'function') {
-        rowRefs.current[selectedId]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }
-      const act = activities.find((a) => a.activity_id === selectedId);
+    const targetId = selectedId || highlightId;
+    if (!targetId) return;
+
+    // Only scroll when the targetId changes
+    if (lastScrolledTargetRef.current === targetId) return;
+    lastScrolledTargetRef.current = targetId;
+
+    const rowEl = rowRefs.current[targetId];
+    const container = scrollContainerRef.current;
+
+    if (container && rowEl) {
+      // Calculate vertical position inside the Gantt container
+      const targetTop = rowEl.offsetTop - (container.clientHeight / 2) + (rowEl.clientHeight / 2);
+      const act = activities.find((a) => a.activity_id === targetId);
       const dateStr = act?.actual_start || act?.planned_start;
-      if (dateStr && scrollContainerRef.current && minTimestamp !== Infinity) {
+      let targetLeft = container.scrollLeft;
+      if (dateStr && minTimestamp !== Infinity) {
         const t = parseISODate(dateStr);
         if (!isNaN(t)) {
           const offsetDays = Math.max(0, Math.round((t - minTimestamp) / MS_PER_DAY));
           const offsetPx = offsetDays * pxPerDay;
-          const targetLeft = Math.max(0, offsetPx - 240);
-          if (typeof scrollContainerRef.current.scrollTo === 'function') {
-            scrollContainerRef.current.scrollTo({
-              left: targetLeft,
-              behavior: 'smooth',
-            });
-          } else {
-            scrollContainerRef.current.scrollLeft = targetLeft;
-          }
+          targetLeft = Math.max(0, offsetPx - 240);
         }
       }
+
+      if (typeof container.scrollTo === 'function') {
+        container.scrollTo({
+          top: Math.max(0, targetTop),
+          left: targetLeft,
+          behavior: 'smooth',
+        });
+      } else {
+        container.scrollTop = Math.max(0, targetTop);
+        container.scrollLeft = targetLeft;
+      }
+    } else if (rowEl && typeof rowEl.scrollIntoView === 'function') {
+      rowEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [selectedId, activities, minTimestamp, pxPerDay]);
+  }, [selectedId, highlightId, activities, minTimestamp, pxPerDay]);
 
   const scrollToDataDate = () => {
     if (scrollContainerRef.current && dataDateOffsetPx !== null) {
@@ -254,6 +272,10 @@ export function GanttChart({
           <div className="flex items-center gap-1.5">
             <span className="inline-block w-4 h-0 border-t border-dashed border-warn" />
             <span>Slack / Float</span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-semibold tracking-wide animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            LIVE SYNC
           </div>
         </div>
       </div>
@@ -368,8 +390,14 @@ export function GanttChart({
           <div className="flex-1 flex flex-col z-10 divide-y divide-hair">
             {activities.map((act) => {
               const isSelected = act.activity_id === selectedId;
+              const isHighlighted = Boolean(highlightId && act.activity_id === highlightId);
               const isCritical = Boolean(act.critical);
-              const hasActual = Boolean(act.actual_start || act.actual_finish);
+              const hasActual = Boolean(
+                act.actual_start ||
+                act.actual_finish ||
+                (act.percent_complete !== null && act.percent_complete !== undefined && act.percent_complete > 0) ||
+                (act.actual_qty !== null && act.actual_qty !== undefined && act.actual_qty > 0)
+              );
 
               // Planned bar calculations
               let pLeft = 0;
@@ -389,14 +417,15 @@ export function GanttChart({
               // Actual bar calculations
               let aLeft = 0;
               let aWidth = 0;
-              if (act.actual_start) {
-                const as = parseISODate(act.actual_start);
+              const actualStartStr = act.actual_start || (hasActual ? (act.planned_start || dataDate) : null);
+              if (actualStartStr) {
+                const as = parseISODate(actualStartStr);
                 let af = act.actual_finish ? parseISODate(act.actual_finish) : parseISODate(dataDate);
                 if (isNaN(af) || af < as) af = as + MS_PER_DAY;
 
                 if (!isNaN(as)) {
                   aLeft = Math.round((as - minTimestamp) / MS_PER_DAY) * pxPerDay;
-                  aWidth = Math.max(6, Math.round((af - as) / MS_PER_DAY) * pxPerDay);
+                  aWidth = Math.max(8, Math.round((af - as) / MS_PER_DAY) * pxPerDay);
                 }
               }
 
@@ -416,7 +445,9 @@ export function GanttChart({
                   }}
                   onClick={() => onSelectActivity(act.activity_id)}
                   className={`flex h-12 cursor-pointer transition-colors group ${
-                    isSelected
+                    isHighlighted
+                      ? 'bg-emerald-500/15 dark:bg-emerald-500/25 ring-2 ring-emerald-500/70 ring-inset'
+                      : isSelected
                       ? 'bg-selected'
                       : isCritical
                       ? 'bg-danger-bg/20 hover:bg-selected'
@@ -426,7 +457,9 @@ export function GanttChart({
                   {/* LEFT PANE: Sticky Activity Meta */}
                   <div
                     className={`sticky left-0 z-20 w-[440px] shrink-0 border-r border-hair px-4 flex items-center font-mono text-label transition-colors ${
-                      isSelected
+                      isHighlighted
+                        ? 'bg-emerald-500/15 dark:bg-emerald-500/25 border-l-4 border-l-emerald-500'
+                        : isSelected
                         ? 'bg-selected'
                         : isCritical
                         ? 'bg-raised group-hover:bg-selected border-l-2 border-l-danger'
@@ -449,6 +482,11 @@ export function GanttChart({
                       <span className="font-semibold text-fg truncate">
                         {act.activity_id}
                       </span>
+                      {isHighlighted && (
+                        <span className="text-[9px] bg-emerald-500 text-white font-bold px-1 rounded-xs uppercase tracking-wider animate-pulse shrink-0">
+                          LIVE
+                        </span>
+                      )}
                     </div>
 
                     {/* Discipline Badge */}
@@ -535,13 +573,17 @@ export function GanttChart({
                       <div
                         style={{ left: aLeft, width: aWidth }}
                         className={`absolute top-5 h-4 rounded-xs border overflow-hidden transition-all shadow-xs ${
+                          isHighlighted
+                            ? 'ring-4 ring-emerald-400/90 ring-offset-2 ring-offset-surface animate-pulse z-20 '
+                            : ''
+                        }${
                           isCritical
                             ? 'bg-danger/20 border-danger'
                             : isDelayed
                             ? 'bg-warn/20 border-warn'
                             : 'bg-accent/20 border-accent'
                         }`}
-                        title={`Actual: ${act.actual_start} → ${
+                        title={`Actual: ${act.actual_start || (act.planned_start ? `${act.planned_start} (Inferred)` : '—')} → ${
                           act.actual_finish ?? 'In Progress'
                         }\nProgress: ${act.percent_complete ?? 0}%\nVariance: Start ${
                           act.start_variance_days ?? 0
@@ -551,7 +593,9 @@ export function GanttChart({
                         <div
                           style={{ width: `${Math.min(100, Math.max(0, act.percent_complete || 0))}%` }}
                           className={`h-full transition-all ${
-                            isCritical
+                            isHighlighted
+                              ? 'bg-emerald-500'
+                              : isCritical
                               ? 'bg-danger'
                               : isDelayed
                               ? 'bg-warn'
@@ -570,10 +614,25 @@ export function GanttChart({
                       hasPlanned && (
                         <div
                           style={{ left: pLeft, width: pWidth }}
-                          className="absolute top-5 h-3 border border-hair/50 border-dashed rounded-xs opacity-40 pointer-events-none"
+                          className={`absolute top-5 h-3 border border-hair/50 border-dashed rounded-xs opacity-40 pointer-events-none ${
+                            isHighlighted ? 'ring-4 ring-emerald-400/90 ring-offset-2 ring-offset-surface animate-pulse' : ''
+                          }`}
                           title="Pending field start"
                         />
                       )
+                    )}
+
+                    {/* LIVE UPDATED FLOATING BADGE OVER BAR */}
+                    {isHighlighted && (
+                      <div
+                        style={{ left: hasActual ? aLeft : pLeft }}
+                        className="absolute top-0 -translate-y-2.5 z-30 pointer-events-none"
+                      >
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-mono text-[9px] font-bold shadow-md animate-bounce whitespace-nowrap">
+                          <span className="w-1 h-1 rounded-full bg-white animate-ping" />
+                          UPDATED LIVE
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

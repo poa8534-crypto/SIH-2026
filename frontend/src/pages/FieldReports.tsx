@@ -159,7 +159,7 @@ export default function FieldReports() {
   const open = reports.find((r) => r.id === openId) ?? null;
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-6 flex flex-col gap-5 max-w-[1200px] mx-auto w-full font-sans">
+    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-5 sm:py-6 pb-28 flex flex-col gap-5 font-sans">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-hair/60">
         <div>
@@ -486,6 +486,21 @@ export default function FieldReports() {
                   <span>{statusBadge(open.status).label}</span>
                 </span>
               </div>
+
+              {/* Processing Info Banner */}
+              {open.status === 'Processing' && (
+                <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/30 flex items-start gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0 animate-pulse" />
+                  <div className="text-xs flex-1">
+                    <span className="font-bold text-blue-900 dark:text-blue-200 block">
+                      Awaiting Project Manager Review
+                    </span>
+                    <p className="text-blue-800/90 dark:text-blue-300 mt-0.5 leading-relaxed">
+                      This update has been logged and queued under reference <strong className="font-mono font-semibold">#{open.reference}</strong>. Switch to the <strong className="font-semibold">Project Manager</strong> role and open <strong className="font-semibold">Review & Reconcile</strong> to approve and commit it to the schedule.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* What you reported */}
               <div className="flex flex-col gap-1.5">

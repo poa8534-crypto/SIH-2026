@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { subscribeToScheduleUpdates } from '../lib/liveSync';
 import {
   ArrowRight,
   AlertTriangle,
@@ -9,6 +10,7 @@ import {
   TrendingDown,
   Layers,
   Check,
+  Zap,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { queryView } from '../lib/queryState';
@@ -472,12 +474,17 @@ function CompactNeedsAttention({
   items: ReviewItem[];
   activities: Map<string, ScheduleActivity>;
 }) {
+  const fieldItems = useMemo(
+    () => items.filter((i) => i.match_method === 'agent_turn'),
+    [items]
+  );
+
   const lowest = useMemo(
     () => [...items].sort((a, b) => a.confidence - b.confidence).slice(0, 5),
     [items]
   );
 
-  if (lowest.length === 0) {
+  if (lowest.length === 0 && fieldItems.length === 0) {
     return (
       <EmptyState>
         Queue clear — every extracted event has been matched or resolved.
@@ -487,6 +494,68 @@ function CompactNeedsAttention({
 
   return (
     <div className="flex flex-col">
+      {/* Prominent Callout for Live Field Submissions awaiting approval */}
+      {fieldItems.length > 0 && (
+        <div className="bg-amber-500/10 border-b border-amber-500/25 p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-label font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wide">
+              <Zap size={13} className="fill-current text-amber-500" />
+              Field Submissions Awaiting Approval ({fieldItems.length})
+            </span>
+            <Link
+              to="/reconcile?filter=field"
+              className="text-[11px] font-mono font-bold text-accent hover:underline flex items-center gap-1"
+            >
+              <span>View all field reports</span>
+              <span>→</span>
+            </Link>
+          </div>
+          <div className="divide-y divide-amber-500/15 bg-surface/90 rounded-md border border-amber-500/25 overflow-hidden shadow-xs">
+            {fieldItems.slice(0, 3).map((item) => {
+              const act = item.suggested_activity_id
+                ? activities.get(item.suggested_activity_id)
+                : undefined;
+
+              return (
+                <div
+                  key={item.id}
+                  className="px-3 py-2.5 flex items-center justify-between gap-3 hover:bg-selected transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    {item.reference && (
+                      <span className="font-mono text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                        #{item.reference}
+                      </span>
+                    )}
+                    <span className="font-mono text-label font-bold text-fg whitespace-nowrap shrink-0">
+                      {act ? act.activity_id : 'UNASSIGNED'}
+                    </span>
+                    <span
+                      className="text-label text-fg font-medium truncate max-w-[280px]"
+                      title={item.raw_text}
+                    >
+                      “{item.raw_text}”
+                    </span>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2.5">
+                    <ConfidenceBadge value={item.confidence} />
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      to={`/reconcile?item=${encodeURIComponent(item.id)}&filter=field`}
+                      className="font-mono text-[11px]"
+                    >
+                      Approve →
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* General Lowest-Confidence / Background Review Items */}
       <div className="divide-y divide-hair">
         {lowest.map((item) => {
           const act = item.suggested_activity_id
@@ -890,24 +959,40 @@ export default function Home() {
     '/home'
   );
 
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unsubscribe = subscribeToScheduleUpdates(() => {
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
+      queryClient.invalidateQueries({ queryKey: ['conflicts'] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
   const schedule = useQuery({
     queryKey: ['schedule', 'home'],
     queryFn: () => api.getSchedule(undefined, false),
+    refetchInterval: 3000,
   });
 
   const queue = useQuery({
     queryKey: ['reviewQueue'],
     queryFn: () => api.getReviewQueue('pending'),
+    refetchInterval: 3000,
   });
 
   const conflicts = useQuery({
     queryKey: ['conflicts'],
     queryFn: () => api.getConflicts(50),
+    refetchInterval: 3000,
   });
 
   const audit = useQuery({
     queryKey: ['auditRecent'],
     queryFn: () => api.getRecentAudit(20),
+    refetchInterval: 3000,
   });
 
   const jobs = useQuery({
@@ -933,6 +1018,10 @@ export default function Home() {
     return queue.data.filter(
       (item) => item.confidence < 0.65 || !item.suggested_activity_id
     ).length;
+  }, [queue.data]);
+  const pendingFieldUpdatesCount = useMemo(() => {
+    if (!queue.data) return 0;
+    return queue.data.filter((item) => item.match_method === 'agent_turn').length;
   }, [queue.data]);
   const unresolvedConflictsCount = conflicts.data?.length ?? 18;
   const failedJobsCount = useMemo(() => {
@@ -964,7 +1053,11 @@ export default function Home() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-label font-mono">
+        <div className="flex flex-wrap items-center gap-2.5 text-label font-mono">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded font-semibold text-[11px] tracking-wide animate-pulse shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            LIVE UPDATING
+          </div>
           <div className="px-2.5 py-1 bg-surface border border-hair rounded">
             <span className="text-muted">Data Date: </span>
             <span className="text-fg font-semibold">{dataDate}</span>
@@ -1024,6 +1117,18 @@ export default function Home() {
       {/* Secondary System Health Sub-Strip */}
       <div className="px-4 py-2 rounded-md bg-surface/70 border border-hair font-mono text-label text-muted flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3 flex-wrap">
+          {pendingFieldUpdatesCount > 0 && (
+            <>
+              <Link
+                to="/reconcile?filter=field"
+                className="text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1"
+              >
+                <Zap size={12} className="fill-current" />
+                <span>{pendingFieldUpdatesCount} field submission{pendingFieldUpdatesCount > 1 ? 's' : ''} awaiting approval</span>
+              </Link>
+              <span>•</span>
+            </>
+          )}
           <Link to="/reconcile" className="hover:text-fg transition-colors">
             <span className="font-bold text-fg">{pendingReviewsCount}</span> pending reviews
           </Link>

@@ -86,6 +86,38 @@ export function classifySpeechError(code: string): SpeechFailure | null {
   }
 }
 
+/**
+ * Merges two transcript fragments while eliminating repeating words,
+ * prefixes, or boundary overlaps that mobile browsers (especially Chrome Android)
+ * emit when combining finalized and interim speech chunks.
+ */
+export function mergeTranscripts(prev: string, curr: string): string {
+  const p = prev.trim();
+  const c = curr.trim();
+  if (!p) return c;
+  if (!c) return p;
+
+  // If one string already completely contains or starts with the other
+  if (c.toLowerCase().startsWith(p.toLowerCase())) return c;
+  if (p.toLowerCase().endsWith(c.toLowerCase())) return p;
+  if (p.toLowerCase() === c.toLowerCase()) return p;
+
+  const pWords = p.split(/\s+/);
+  const cWords = c.split(/\s+/);
+
+  // Check for word overlap of length k, from max possible overlap down to 1 word
+  const maxOverlap = Math.min(pWords.length, cWords.length);
+  for (let k = maxOverlap; k > 0; k--) {
+    const pTail = pWords.slice(pWords.length - k).join(' ').toLowerCase();
+    const cHead = cWords.slice(0, k).join(' ').toLowerCase();
+    if (pTail === cHead) {
+      return [...pWords, ...cWords.slice(k)].join(' ');
+    }
+  }
+
+  return `${p} ${c}`;
+}
+
 interface UseSpeechResult {
   /** False when the browser has no Web Speech API at all. */
   supported: boolean;
@@ -190,6 +222,7 @@ export function useSpeech(): UseSpeechResult {
   // recognition session on its own even with continuous = true, so the
   // transcript cannot live inside one session object.
   const finalText = useRef('');
+  const currentSessionFinal = useRef('');
   const cancelled = useRef(false);
   // Set only by Stop & Process or Cancel. While false, a spontaneous `onend`
   // is Chrome giving up, not the supervisor finishing, and we restart.
@@ -242,6 +275,7 @@ export function useSpeech(): UseSpeechResult {
     }
 
     finalText.current = '';
+    currentSessionFinal.current = '';
     cancelled.current = false;
     stopRequested.current = false;
     setTranscript('');
@@ -263,13 +297,24 @@ export function useSpeech(): UseSpeechResult {
     };
 
     r.onresult = (e) => {
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i += 1) {
+      let sessionFinal = '';
+      let sessionInterim = '';
+
+      for (let i = 0; i < e.results.length; i += 1) {
         const res = e.results[i];
-        if (res.isFinal) finalText.current += res[0].transcript;
-        else interim += res[0].transcript;
+        if (res.isFinal) {
+          sessionFinal = mergeTranscripts(sessionFinal, res[0].transcript);
+        } else {
+          sessionInterim = mergeTranscripts(sessionInterim, res[0].transcript);
+        }
       }
-      setTranscript((finalText.current + interim).trim());
+
+      currentSessionFinal.current = sessionFinal;
+      const combined = mergeTranscripts(
+        finalText.current,
+        mergeTranscripts(sessionFinal, sessionInterim)
+      );
+      setTranscript(combined.trim());
       markSilence();
     };
 
@@ -285,6 +330,14 @@ export function useSpeech(): UseSpeechResult {
         setSilent(false);
         setTranscript('');
         return;
+      }
+
+      if (currentSessionFinal.current) {
+        finalText.current = mergeTranscripts(
+          finalText.current,
+          currentSessionFinal.current
+        );
+        currentSessionFinal.current = '';
       }
 
       if (!stopRequested.current) {
@@ -333,6 +386,8 @@ export function useSpeech(): UseSpeechResult {
     cancelled.current = true;
     stopRequested.current = true;
     recognition.current?.abort();
+    finalText.current = '';
+    currentSessionFinal.current = '';
     setTranscript('');
     setElapsed(0);
     setSilent(false);

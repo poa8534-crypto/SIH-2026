@@ -186,7 +186,7 @@ export default function UpdatesLedger() {
   const selected = SAMPLE_UPDATES.find((u) => u.id === selectedId) ?? SAMPLE_UPDATES[0];
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="w-full max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-8 font-sans">
       {/* Top Header Bar */}
       <div className="pb-5 border-b border-hair">
         <div className="flex flex-wrap items-center justify-between gap-4">

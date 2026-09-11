@@ -45,6 +45,7 @@ import { DisciplineTag } from '../components/DisciplineTag';
 import { GanttChart } from '../components/GanttChart';
 import { ScheduleDoctor } from '../components/ScheduleDoctor';
 import { ActivityInspectionPanel } from '../components/ActivityInspectionPanel';
+import { subscribeToScheduleUpdates } from '../lib/liveSync';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
@@ -161,7 +162,14 @@ export default function Schedule() {
   const [onlyActuals, setOnlyActuals] = useState(false);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
   const [onlyCritical, setOnlyCritical] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>('table');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get('view');
+  const deepLinked = searchParams.get('activity');
+  const highlightParam = searchParams.get('highlight') === 'true';
+
+  const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>(() => {
+    return viewParam === 'gantt' ? 'gantt' : 'table';
+  });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
@@ -172,10 +180,22 @@ export default function Schedule() {
     confidence: false,
   });
   // The Ingest screen links auto-linked events here as /schedule?activity=ID.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const deepLinked = searchParams.get('activity');
   const [selectedId, setSelectedId] = useState<string | null>(deepLinked);
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked));
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked && viewParam !== 'gantt'));
+  const [liveHighlightId, setLiveHighlightId] = useState<string | null>(() => {
+    return highlightParam ? deepLinked : null;
+  });
+
+  // Auto-dismiss the live highlight after 8 seconds so it doesn't linger indefinitely
+  useEffect(() => {
+    if (liveHighlightId) {
+      const timer = setTimeout(() => {
+        setLiveHighlightId(null);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [liveHighlightId]);
+
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [exportFormat, setExportFormat] = useState<'pmxml' | 'xer'>('pmxml');
   const [exportState, setExportState] = useState<
@@ -188,7 +208,21 @@ export default function Schedule() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['schedule', 'page', discipline],
     queryFn: () => api.getSchedule(discipline || undefined, true),
+    refetchInterval: 3000,
   });
+
+  useEffect(() => {
+    const unsubscribe = subscribeToScheduleUpdates(() => {
+      refetch();
+    });
+    return unsubscribe;
+  }, [refetch]);
+
+  useEffect(() => {
+    if (viewParam === 'gantt' && viewMode !== 'gantt') {
+      setViewMode('gantt');
+    }
+  }, [viewParam]);
 
   const warnings: IntegrityWarning[] = data?.integrity_warnings ?? [];
 
@@ -229,26 +263,45 @@ export default function Schedule() {
   useEffect(() => {
     if (deepLinked) {
       setSelectedId(deepLinked);
-      setIsDrawerOpen(true);
+      if (viewParam !== 'gantt') {
+        setIsDrawerOpen(true);
+      }
+      if (highlightParam) {
+        setLiveHighlightId(deepLinked);
+      }
     }
-  }, [deepLinked]);
+  }, [deepLinked, viewParam, highlightParam]);
 
-  // Bring a deep-linked row into view. A row hidden behind a filter simply has
-  // no ref, and the drawer still opens.
+  // Bring a deep-linked row into view in table mode without scrolling outer page unnecessarily
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || viewMode !== 'table') return;
     const raf = requestAnimationFrame(() => {
-      rowRefs.current[selectedId]?.scrollIntoView({ block: 'center' });
+      rowRefs.current[selectedId]?.scrollIntoView({ block: 'nearest' });
     });
     return () => cancelAnimationFrame(raf);
-  }, [selectedId]);
+  }, [selectedId, viewMode]);
+
+  const handleSelectActivity = (id: string) => {
+    setSelectedId(id);
+    setIsDrawerOpen(true);
+    // Dismiss the live highlight immediately when user selects any activity
+    setLiveHighlightId(null);
+    if (searchParams.has('highlight') || searchParams.get('activity') !== id) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('highlight');
+      next.set('activity', id);
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedId(null);
-    if (searchParams.has('activity')) {
+    setLiveHighlightId(null);
+    if (searchParams.has('activity') || searchParams.has('highlight')) {
       const next = new URLSearchParams(searchParams);
       next.delete('activity');
+      next.delete('highlight');
       setSearchParams(next, { replace: true });
     }
   };
@@ -256,6 +309,7 @@ export default function Schedule() {
   const handleViewInGantt = (activityId: string) => {
     setViewMode('gantt');
     setSelectedId(activityId);
+    setLiveHighlightId(null);
     setIsDrawerOpen(false);
   };
 
@@ -716,20 +770,22 @@ export default function Schedule() {
         {warnings.length > 0 && (
           <button
             onClick={() => setOnlyFlagged((v) => !v)}
-            className={`shrink-0 h-8 px-4 flex items-center gap-2 border-b text-left font-mono text-label transition-colors ${
+            className={`shrink-0 min-h-[32px] py-1.5 px-3 sm:px-4 flex items-center gap-2 border-b text-left font-mono text-label transition-colors flex-wrap sm:flex-nowrap ${
               onlyFlagged
                 ? 'bg-danger-bg border-danger-line text-danger'
                 : 'bg-raised border-hair text-muted hover:text-fg'
             }`}
           >
-            <ListFilter size={12} className={onlyFlagged ? 'text-danger' : 'text-warn'} />
-            <span className="text-fg">{warnings.length} items flagged for review</span>
-            <span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ListFilter size={12} className={onlyFlagged ? 'text-danger' : 'text-warn'} />
+              <span className="text-fg font-semibold">{warnings.length} items flagged for review</span>
+            </div>
+            <span className="text-muted text-[11px] sm:text-xs">
               — {warningBreakdown.conflict} source conflict
               {warningBreakdown.conflict === 1 ? '' : 's'}, {warningBreakdown.warning} date
               warning{warningBreakdown.warning === 1 ? '' : 's'}
             </span>
-            <span className="ml-auto uppercase tracking-wider">
+            <span className="ml-auto uppercase tracking-wider text-[10px] sm:text-xs shrink-0 font-semibold">
               {onlyFlagged
                 ? `Showing ${flaggedIds.size} affected — click to clear`
                 : 'Click to filter'}
@@ -738,13 +794,13 @@ export default function Schedule() {
         )}
 
         {/* FILTER BAR */}
-        <div className="shrink-0 h-11 px-4 border-b border-hair flex items-center gap-3 flex-wrap">
+        <div className="shrink-0 min-h-[44px] py-2 px-3 sm:px-4 border-b border-hair flex items-center gap-2.5 sm:gap-3 flex-wrap bg-raised">
           {/* View Mode Switcher */}
-          <div className="flex items-center rounded-md border border-hair overflow-hidden mr-1 bg-surface/50">
+          <div className="flex items-center rounded-md border border-hair overflow-x-auto max-w-full mr-1 bg-surface/50 shrink-0">
             <button
               onClick={() => setViewMode('table')}
               aria-label="Table"
-              className={`px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 sm:px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'table'
                   ? 'bg-raised text-heading font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
@@ -756,7 +812,7 @@ export default function Schedule() {
             </button>
             <button
               onClick={() => setViewMode('gantt')}
-              className={`px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 sm:px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'gantt'
                   ? 'bg-raised text-heading font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
@@ -768,7 +824,7 @@ export default function Schedule() {
             </button>
             <button
               onClick={() => setViewMode('doctor')}
-              className={`px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 sm:px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'doctor'
                   ? 'bg-raised text-heading font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
@@ -780,10 +836,15 @@ export default function Schedule() {
             </button>
           </div>
 
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-mono font-semibold tracking-wide animate-pulse shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            LIVE SYNC
+          </div>
+
           <select
             value={discipline}
             onChange={(e) => setDiscipline(e.target.value)}
-            className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2 transition-colors focus:outline-none focus:border-accent"
+            className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2 transition-colors focus:outline-none focus:border-accent shrink-0"
             aria-label="Filter by discipline"
           >
             <option value="">All disciplines</option>
@@ -799,10 +860,10 @@ export default function Schedule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search descriptions"
-            className="rounded-sm h-7 w-full xs:w-44 sm:w-56 flex-1 sm:flex-none bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent"
+            className="rounded-sm h-7 w-full xs:w-44 sm:w-56 flex-1 sm:flex-none bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent min-w-[140px]"
           />
 
-          <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg">
+          <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg shrink-0">
             <input
               type="checkbox"
               checked={onlyActuals}
@@ -812,7 +873,7 @@ export default function Schedule() {
             Actuals only
           </label>
 
-          <label className="flex items-center gap-1.5 cursor-pointer font-mono text-label text-muted hover:text-fg">
+          <label className="flex items-center gap-1.5 cursor-pointer font-mono text-label text-muted hover:text-fg shrink-0">
             <input
               type="checkbox"
               aria-label="Critical Path"
@@ -833,7 +894,7 @@ export default function Schedule() {
           {viewMode === 'gantt' && selectedId && !isDrawerOpen && (
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="rounded-sm h-7 bg-accent/15 border border-accent/40 text-accent font-mono text-label px-2.5 flex items-center gap-1.5 hover:bg-accent/25 transition-colors cursor-pointer"
+              className="rounded-sm h-7 bg-accent/15 border border-accent/40 text-accent font-mono text-label px-2.5 flex items-center gap-1.5 hover:bg-accent/25 transition-colors cursor-pointer shrink-0"
               type="button"
               title={`Inspect activity ${selectedId}`}
             >
@@ -843,7 +904,7 @@ export default function Schedule() {
           )}
 
           {/* Columns Dropdown Toggle */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setShowColumnPicker((v) => !v)}
               className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2.5 flex items-center gap-1.5 hover:bg-surface transition-colors"
@@ -855,7 +916,7 @@ export default function Schedule() {
               <ChevronDown size={11} className="text-muted" />
             </button>
             {showColumnPicker && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-raised border border-hair rounded-lg shadow-xl p-2.5 z-40 text-label font-mono flex flex-col gap-1.5">
+              <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-48 bg-raised border border-hair rounded-lg shadow-xl p-2.5 z-40 text-label font-mono flex flex-col gap-1.5">
                 <span className="text-[10px] text-muted uppercase tracking-wider font-semibold border-b border-hair pb-1">
                   Optional Columns
                 </span>
@@ -908,12 +969,12 @@ export default function Schedule() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex sm:ml-auto items-center gap-2 shrink-0">
             {exportState.kind === 'done' && (
               <a
                 href={exportState.url}
                 download={exportState.name}
-                className="font-mono text-label text-ok max-w-[320px] truncate hover:underline"
+                className="font-mono text-label text-ok max-w-[180px] sm:max-w-[320px] truncate hover:underline"
                 title={`Downloaded ${exportState.name}. Click to download again.`}
               >
                 Downloaded {exportState.name}
@@ -992,10 +1053,7 @@ export default function Schedule() {
                         ref={(el) => {
                           rowRefs.current[a.activity_id] = el;
                         }}
-                        onClick={() => {
-                          setSelectedId(a.activity_id);
-                          setIsDrawerOpen(true);
-                        }}
+                        onClick={() => handleSelectActivity(a.activity_id)}
                         className={`border-b border-hair cursor-pointer transition-colors ${
                           isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
                         } ${hasActual ? 'text-fg' : 'text-muted'}`}
@@ -1024,10 +1082,8 @@ export default function Schedule() {
             <GanttChart
               activities={rows}
               selectedId={selectedId}
-              onSelectActivity={(id) => {
-                setSelectedId(id);
-                setIsDrawerOpen(true);
-              }}
+              highlightId={liveHighlightId}
+              onSelectActivity={handleSelectActivity}
               dataDate={data?.data_date}
             />
           </div>
@@ -1098,10 +1154,7 @@ export default function Schedule() {
           <ActivityInspectionPanel
             activity={selected}
             activitiesList={rows}
-            onSelectActivity={(id) => {
-              setSelectedId(id);
-              setIsDrawerOpen(true);
-            }}
+            onSelectActivity={handleSelectActivity}
             onClose={closeDrawer}
             onViewInGantt={handleViewInGantt}
           />

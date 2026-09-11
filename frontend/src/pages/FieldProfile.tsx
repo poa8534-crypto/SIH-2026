@@ -36,7 +36,7 @@ export default function FieldProfile() {
     error ? 'Unavailable' : isLoading ? '…' : (value ?? '—');
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface text-fg font-sans">
+    <div className="w-full bg-surface text-fg font-sans pb-28">
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
         {/* Page Header */}
         <div className="border-b border-hair pb-5">
