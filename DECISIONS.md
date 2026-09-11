@@ -9590,7 +9590,13 @@ behind A79), D-004 (the append-only trail behind A75).
 
 ### D-102 — External review answered: three findings confirmed, one wrong, and every URL removed from the deck
 
-**Date:** 2026-09-10 · **Status:** current · **Area:** deck, `research/`, `NUMBERS_SHEET.md`, retired pitch documents
+**Date:** 2026-09-10 · **Status:** current, **except its test count, which is superseded by D-104** · **Area:** deck, `research/`, `NUMBERS_SHEET.md`, retired pitch documents
+
+> **Superseded in part (2026-09-11, D-104).** The "1,431 = 1,202 pytest + 229 vitest"
+> figure below is wrong in its backend half. `pytest -q` prints **1,055**, at this
+> commit and at `3db290c`, verified in an isolated worktree. The 229 vitest recount
+> recorded here was correct; it was layered on top of a pytest figure that had never
+> been measured. The real total is **1,284**. Everything else in D-102 stands.
 
 **Context.** An external review produced an eight-row claim-versus-reality table. Every
 row was re-derived against the code rather than against documentation. **The critical
@@ -9690,3 +9696,55 @@ Node 26 was the fourth: it installs an experimental `localStorage` global that i
 - `server/test_schedule_auditor.py` (fixture teardown)
 - `frontend/src/test/setup.ts` (Storage polyfill)
 - `scripts/healthcheck.py` (endpoint count re-pinned)
+
+---
+
+## 2026-09-11 / D-104 — The test count was never a real run, the runbook had lost five executive screens, and today's plan is re-scoped to the time that is actually left
+
+### Status
+Active. Supersedes the test-count figure established in **D-102**.
+
+### Context
+`HACKATHON_EVE_BATTLE_PLAN.md` closed Phase 1 with the repository's documents reconciled against `METRICS.md`. Two claims survived that pass, and both were presenter-facing.
+
+**1 · The test count.** `NUMBERS_SHEET.md` row 7 — the printable authority a presenter carries on stage — read **1,431 (1,202 pytest + 229 vitest)**. The vitest half is exactly right. The pytest half is not: `pytest -q` prints **1,055**.
+
+This was not drift. It was checked properly rather than assumed:
+
+- `pytest --collect-only` at `HEAD` collects 1,055.
+- A clean `git worktree` at **`3db290c`** — the exact commit D-102 verified against, checked out in isolation and collected with the same interpreter — also collects **1,055**.
+- `git grep -E "^\s*(async )?def test_"` returns **102 test functions at both commits**, so the surface did not shrink between them, and every `parametrize` in the tree is over a statically defined list, so collection is deterministic and host-independent.
+- The one environment-sensitive gate, `needs_corpus` in `server/test_evidence.py`, is a `skipif` — it affects the pass/skip split, never the collected count — and the corpus is present anyway (0 skipped).
+
+So 1,202 was never produced by a run of this suite. It entered at `ppt_build/CONTENT_EVIDENCE_PLAN.md` and propagated into `NUMBERS_SHEET.md`, the deck, `FLOWCHART_PROMPTS.md`, `DECK_DIAGRAMS.md`, both judge-drill files, `demo_script.md` and `pitch_deck.md`. D-102 then "corrected" 1,426 to 1,431 — a real recount of the *frontend* half layered on top of a *backend* half that had never been measured. That is the failure mode the eve plan itself names as its third trap: a correction that leaves the underlying unsupported claim in place.
+
+**2 · The runbook had lost five screens.** `DEMO.md` stated *"Executive routes are `/executive`, `/executive/exposure`, `/executive/provenance`"* and described the Senior Management nav as three destinations. `App.tsx` routes **eight**, and `/executive/exposure` and `/executive/provenance` are now `<Navigate>` redirects to `/executive/risks` and `/executive/confidence`. The planner table was stale too: six entries under their old labels against seven actual, with three where the nav label and the path diverge (*Field Data* → `/ingest`, *Risk & Exposure* → `/raid`, *Project Knowledge* → `/memory`). Eve-plan item 1d listed `DEMO.md` and did not reach it. Anyone rehearsing off that table would have met five unlisted screens live, and a scripted legacy path would have changed the URL bar under the presenter mid-walkthrough.
+
+**3 · The plan itself had expired.** The eve plan is explicitly dated *"September 10 (TODAY — the only full prep day)"* and opens with *"You have no known bugs."* That was false on the presenting hardware — D-103 found `POST /ingest` returning 500 — and by 12:50 on the 11th its Phase 1 was spent, its Phase 5 documentation gap was closed by teammates, and the phases that decide the score (0, 2, 4) were untouched.
+
+### Decision
+1. **`NUMBERS_SHEET.md` row 7 becomes 1,284 — 1,055 pytest + 229 vitest**, with 1,431 struck through alongside the earlier withdrawn figures, and the verification stamp amended to say which rows were re-run on 2026-09-11 (1, 2, 3, 7, 8, 9) and which are `METRICS.md` figures that were not (4, 5, 6, 10). Claiming a blanket re-verification we did not perform would repeat the defect.
+2. **The deck is not rebuilt, and the discrepancy is handed to the presenters as a line to say.** The PPTX and PDF are final; rebuilding at T-2h risks the deliverable to fix a number. `NUMBERS_SHEET.md` now carries an explicit warning block and a scripted sentence for when a judge points at the slide. **Owning a stale slide in one sentence costs nothing; defending it costs the room**, and the test count is the one figure a judge can check in ten seconds on the presenting laptop.
+3. **Corrected in every document a human reads aloud or follows on stage** — `NUMBERS_SHEET.md`, `research/JUDGE_DRILL_01_QUESTIONS.md` Q62, `research/JUDGE_DRILL_02_ANSWERS.md` A62, `demo_script.md`, `pitch_deck.md`, and `DEMO.md`.
+4. **Left untouched as historical record** — `DECISIONS.md` D-102, `FLOW.md`'s D-102 area, `HACKATHON_EVE_BATTLE_PLAN.md`, `ppt_build/CONTENT_EVIDENCE_PLAN.md`, `FLOWCHART_PROMPTS.md` and `DECK_DIAGRAMS.md`. Those record what was believed when a deliverable was built. Rewriting them would destroy the audit trail that makes this entry checkable, and `CLAUDE.md` forbids deleting a superseded decision rather than marking it.
+5. **`DEMO.md` re-derived from `App.tsx`**, with the nav-label/path divergence spelled out, the two legacy redirects marked as redirects and banned from demo scripts, and `/field/report` noted as reachable from the Home screen rather than the bottom nav.
+6. **`RUN_SHEET_SEP11.md` supersedes the eve plan for today** — gate status as measured at 12:50, P0–P5 re-scoped to the 2h10m remaining, and the cut list stated explicitly. It opens with `git pull`, because the largest single risk this morning was a teammate presenting from a machine still on `3db290c` and hitting the 500 live.
+
+### Consequences
+- The printed sheet and the printed deck now disagree by design, with the disagreement documented and scripted. That is strictly better than agreeing on a false number.
+- `NUMBERS_SHEET.md`'s own rule — *"reproduce any of these live"* — is true of row 7 for the first time: `python -m pytest -q` prints 1,055 on any machine at `bee2694`.
+- The eve plan stays in the repository, unedited, as the record of what was planned. `RUN_SHEET_SEP11.md` is what to follow.
+
+### Verification
+- `pytest --collect-only` at `HEAD` and in an isolated worktree at `3db290c`: **1,055 both**.
+- `git grep` test-function count: **102 at both commits**.
+- Every route and nav label in the new `DEMO.md` table read directly off `frontend/src/App.tsx:396-417` (nav) and `:459-518` (routes), and `frontend/src/components/FieldNav.tsx:14-22`.
+- `research/JUDGE_DRILL_02_ANSWERS.md` line count confirmed at 575 before quoting it.
+- No code changed in this task, so the suites are unaffected; `bee2694`'s results stand — pytest 1,055 passed, vitest 229 passed, tsc clean, healthcheck 31/31, `eval.py` reproducing `METRICS.md` §3.1.
+
+### Affected Areas
+- `NUMBERS_SHEET.md` (row 7, verification stamp, judge-facing warning block)
+- `DEMO.md` (roles and routes re-derived)
+- `research/JUDGE_DRILL_01_QUESTIONS.md`, `research/JUDGE_DRILL_02_ANSWERS.md` (Q62/A62)
+- `demo_script.md`, `pitch_deck.md` (correction tables)
+- `RUN_SHEET_SEP11.md` (new; supersedes `HACKATHON_EVE_BATTLE_PLAN.md` for 11 September)

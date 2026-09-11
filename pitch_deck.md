@@ -13,7 +13,7 @@
 > | "Bi-directional Primavera P6 and MS Project" | **No `.mpp` support at all.** The XER writer emits a simplified shape that P6 will not import (D-047) |
 > | "Dual-engine OCR for scanned diaries" | Wrappers exist; **there is not one scanned diary image in the benchmark**, and the cloud path needs a key and a network |
 > | "The system learns from planner corrections" | Corrections are stored; `w_alias = 0.0`, so the matcher never reads them back (D-061) |
-> | "1,250+ automated tests" | **1,431** (1,202 pytest + 229 vitest), re-counted 2026-09-10 |
+> | "1,250+ automated tests" | **1,284** (1,055 pytest + 229 vitest), re-counted 2026-09-11 (D-104) |
 >
 > **What to present instead:** `NUMBERS_SHEET.md` for every figure,
 > `deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pptx` for the deck, and

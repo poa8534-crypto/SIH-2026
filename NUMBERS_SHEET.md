@@ -3,6 +3,9 @@
 **PRINT THIS. ONE COPY PER PERSON. CARRY IT ON STAGE.**
 
 Verified by running the code on **2026-09-10** against commit **`3db290c`**.
+**Row 7 re-counted 2026-09-11 against `bee2694` — see the warning under the table.**
+Rows 1, 2, 3, 8 and 9 were re-run on 2026-09-11 and are unchanged. Rows 4, 5, 6 and 10
+are `METRICS.md` figures and were not re-run today.
 Authority: `METRICS.md`. If this sheet and `METRICS.md` disagree, `METRICS.md` wins.
 
 > ## THE RULE
@@ -21,12 +24,24 @@ Authority: `METRICS.md`. If this sheet and `METRICS.md` disagree, `METRICS.md` w
 | 4 | **Held-out v2 top-1** | **71.4%** — 132 of 185, 218-activity corpus | — |
 | 5 | **Recall@3** (planner depth) | **88.1%** — 163 of 185 | ~~Recall@20 = 100%~~ |
 | 6 | **NO_MATCH refusal** | **80.0%** — 56 of 70, pooled | ~~8.3%~~ |
-| 7 | **Automated tests** | **1,431** — 1,202 pytest + 229 vitest, all passing | ~~580~~ ~~635~~ ~~1,250~~ ~~1,422~~ ~~1,426~~ |
+| 7 | **Automated tests** | **1,284** — 1,055 pytest + 229 vitest, all passing | ~~580~~ ~~635~~ ~~1,250~~ ~~1,422~~ ~~1,426~~ ~~1,431~~ |
 | 8 | **Demo schedule** | **120 activities** | ~~218~~ *(that's research only)* |
 | 9 | **Thresholds** | **0.80 / 0.40 / margin 0.03** | ~~0.85 / 0.15~~ |
 | 10 | **Wrong review rows** | **28 queued, never written** | — |
 
 **Reproduce any of these live:** `python eval.py`
+
+> ### ⚠ THE PRINTED DECK SAYS 1,431. IT IS WRONG.
+> `pytest -q` prints **1,055**, and it prints 1,055 at `3db290c` — the very commit the
+> deck was verified against — as well as at `bee2694`. The test surface is identical at
+> both commits (102 test functions, statically parametrised), so 1,202 was never a real
+> run; it was a transcription error that then propagated into the deck, the flow charts
+> and the drill answers. **1,284 is the number.**
+>
+> **If a judge points at the slide:** *"That figure on the slide is stale — the real
+> count is 1,284, 1,055 Python and 229 TypeScript. You can run `python -m pytest -q`
+> on this laptop right now."* Owning it costs you nothing. Defending 1,431 costs you
+> the room, because it is the one number they can check in ten seconds.
 
 ---
 

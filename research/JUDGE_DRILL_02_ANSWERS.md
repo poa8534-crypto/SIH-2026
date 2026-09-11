@@ -350,11 +350,11 @@ slide because it is the guarantee to the planner — the right activity is in th
 you are being shown. It is also why we stopped improving retrieval: four planned
 improvements each measured +0.00."
 
-**A62 · How many of your 1,426 tests would fail if the matcher were wrong?** ⚠
-"Not all of them — 1,202 are backend and 229 frontend, and plenty of the frontend ones
+**A62 · How many of your 1,284 tests would fail if the matcher were wrong?** ⚠
+"Not all of them — 1,055 are backend and 229 frontend, and plenty of the frontend ones
 are UI. The ones that pin behaviour are in `matching/` and `server/`: the threshold
 policy, the date-basis guard that withholds a report-header finish date, the append-only
-audit trail, and the P6 round trip. I would not claim all 1,426 are matcher tests."
+audit trail, and the P6 round trip. I would not claim all 1,284 are matcher tests."
 
 **A63 · Run it now.**
 "`python eval.py`." Have the terminal open, the venv active and the run rehearsed

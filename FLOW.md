@@ -1291,6 +1291,70 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Recounted the test suite against the code, corrected every presenter-facing document, re-derived the DEMO.md route table from App.tsx, and re-scoped today's plan into RUN_SHEET_SEP11.md.
+**Date:** 2026-09-11 · **Decision:** D-104
+
+```
+DOCUMENT TRUTH PASS — WHAT WAS MEASURED, AND AGAINST WHAT      (D-104)
+
+  NO CODE CHANGED IN THIS TASK. Documents only.
+
+  THE TEST COUNT — how 1,202 was disproved
+      pytest --collect-only            @ HEAD          -> 1055 collected
+      git worktree add <tmp> 3db290c
+        pytest --collect-only          @ 3db290c       -> 1055 collected
+      git grep -E "^\s*(async )?def test_"
+        3db290c -> 102 functions | HEAD -> 102 functions
+      every @pytest.mark.parametrize in the tree is over a STATIC list, so
+      collection is deterministic and host-independent
+      server/test_evidence.py :: needs_corpus is a skipif -> moves the
+      pass/skip split, never the collected count (and 0 skipped anyway)
+      => 1,202 was never a run of this suite.  1,055 + 229 = 1,284.
+
+  THE ROUTE TABLE — re-derived, not edited
+      frontend/src/App.tsx:396-402   PLANNER_NAV   7 items
+      frontend/src/App.tsx:410-417   EXEC_NAV      8 items
+      frontend/src/App.tsx:459-464   field routes  6 (incl. /field/report,
+                                     which is NOT in the bottom nav)
+      frontend/src/App.tsx:483-492   exec routes   8 real + 2 redirects
+          /executive/exposure   -> <Navigate to="/executive/risks">
+          /executive/provenance -> <Navigate to="/executive/confidence">
+      frontend/src/components/FieldNav.tsx:14-22   field nav  4 items
+      DEMO.md had claimed 3 executive destinations and 6 planner entries
+      under their old labels.
+
+  WHAT WAS CORRECTED (documents a human reads aloud or follows on stage)
+      NUMBERS_SHEET.md                 row 7, verification stamp, judge warning
+      research/JUDGE_DRILL_01_QUESTIONS.md   Q62
+      research/JUDGE_DRILL_02_ANSWERS.md     A62
+      demo_script.md, pitch_deck.md    correction tables
+      DEMO.md                          roles + routes re-derived
+
+  WHAT WAS DELIBERATELY LEFT ALONE (historical record)
+      DECISIONS.md D-102  -> marked "superseded in part", not rewritten
+      FLOW.md D-102 area, HACKATHON_EVE_BATTLE_PLAN.md,
+      ppt_build/CONTENT_EVIDENCE_PLAN.md, FLOWCHART_PROMPTS.md,
+      DECK_DIAGRAMS.md, and the built PPTX/PDF deliverables.
+      The deck keeps 1,431; the presenters get a scripted sentence instead.
+
+  NEW
+      RUN_SHEET_SEP11.md   supersedes the eve plan for 11 September.
+                           Opens with `git pull`, because the largest risk
+                           this morning was a teammate presenting from a
+                           machine still on 3db290c and hitting the D-103
+                           500 live.
+
+  Suites unaffected (no code touched); bee2694 results stand:
+             python -m pytest -q                  1055 passed
+             cd frontend && npx vitest run         229 passed
+             python scripts/healthcheck.py          31 passed
+             python eval.py       auto-link precision 100.0% (67/67)
+```
+
+---
+
+### Previous modification area (D-103)
+
 **Task:** Repaired the dense-retrieval dependency stack, made an unimportable embedder degrade instead of returning 500, and returned the backend, frontend and healthcheck suites to green.
 **Date:** 2026-09-11 · **Decision:** D-103
 

@@ -34,15 +34,33 @@ The app has three roles. Which one you are decides which application you see —
 different navigation, different screens, and for the field role a different
 shell entirely.
 
-| Role | Signed-in label | Nav | Lands on |
+> **Re-derived from `frontend/src/App.tsx` on 2026-09-11 (D-104).** This table had
+> said the planner nav was six items with their old labels and that Senior Management
+> had three destinations. It has eight. Anyone rehearsing off the old table would have
+> been surprised on stage by five screens that were not in the runbook.
+
+| Role | Signed-in label | Nav (exact labels, in order) | Lands on |
 |---|---|---|---|
-| `planner` | Project Manager | Home · Reconcile · Schedule · Ingest · Exposure · Memory | `/home` |
-| `executive` | Senior Management | Overview · Exposure · Data | `/executive` |
+| `planner` | Project Manager | Overview · Review & Reconcile · Schedule · Field Data · Risk & Exposure · Delay Analysis · Project Knowledge | `/home` |
+| `executive` | Senior Management | Overview · Milestones · Progress · Risks & Delays · Forecasts · Execution Insights · Reports · Data Confidence | `/executive` |
 | `field` | Field Supervisor | Home · Reports · Clarifications · Profile | `/field` |
 
-Executive routes are `/executive`, `/executive/exposure`,
-`/executive/provenance`. Field routes are `/field`, `/field/reports`,
-`/field/clarifications`, `/field/profile`.
+**Planner routes** (`App.tsx:512`) — `/home`, `/reconcile`, `/schedule`, `/ingest`,
+`/raid`, `/delay`, `/memory`. Note the nav label and the path differ for three of them:
+*Field Data* is `/ingest`, *Risk & Exposure* is `/raid`, *Project Knowledge* is
+`/memory`.
+
+**Executive routes** (`App.tsx:483`) — eight destinations: `/executive`,
+`/executive/milestones`, `/executive/progress`, `/executive/risks`,
+`/executive/forecasts`, `/executive/insights`, `/executive/reports`,
+`/executive/confidence`. Two legacy paths still resolve, as redirects only:
+`/executive/exposure` → `/executive/risks`, and `/executive/provenance` →
+`/executive/confidence`. **Do not put either legacy path in a demo script** — the URL
+bar will change under you mid-walkthrough.
+
+**Field routes** (`App.tsx:459`) — `/field`, `/field/report` (the Report Studio, which
+is *not* in the bottom nav — it is reached from the Home screen), `/field/reports`,
+`/field/reports/ledger`, `/field/clarifications`, `/field/profile`.
 
 ### There is no URL that skips the picker
 
