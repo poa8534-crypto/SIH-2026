@@ -16,6 +16,12 @@ dataset/uploads/
 # Large local backup archive (do not commit)
 *.7z
 
+# Fail-safe demo recordings (D-105). Large binaries, regenerated per rehearsal,
+# and a stray `git add -A` at 14:40 must not try to push a 500 MB .mov.
+*.mov
+*.mp4
+*.webm
+
 # Added by code-review-graph
 .code-review-graph/
 

@@ -9748,3 +9748,48 @@ So 1,202 was never produced by a run of this suite. It entered at `ppt_build/CON
 - `research/JUDGE_DRILL_01_QUESTIONS.md`, `research/JUDGE_DRILL_02_ANSWERS.md` (Q62/A62)
 - `demo_script.md`, `pitch_deck.md` (correction tables)
 - `RUN_SHEET_SEP11.md` (new; supersedes `HACKATHON_EVE_BATTLE_PLAN.md` for 11 September)
+
+---
+
+## 2026-09-11 / D-105 — The stage API pin is real but it is not free: it trades the second-device demo for a silent-failure mode
+
+### Status
+Active.
+
+### Context
+`HACKATHON_EVE_BATTLE_PLAN.md` item 2e instructed: *"Pin the API URL. Create `frontend/.env` with `VITE_API_URL=http://127.0.0.1:8000` and re-test both shells."* It was never done, and `RUN_SHEET_SEP11.md` carried it forward as an open P1 item.
+
+Doing it surfaced two things the instruction did not account for.
+
+**1 · The default it overrides is deliberate, not an oversight.** `frontend/src/lib/api.ts:73` resolves the base URL as `import.meta.env.VITE_API_URL || http://${window.location.hostname}:8000`, and the existing `frontend/.env.example` states the reason in its first sentence: leaving it unset *"is what makes the two-device LAN demo work without a rebuild."* Each client derives the API from the host it loaded the page from, so a phone on the same LAN reaches the laptop's backend with no configuration. **Pinning the loopback address breaks that completely** — a phone resolves `127.0.0.1` to itself. The retracted `demo_script.md:24` still describes *"a second presenter holding a mobile phone"*, and D-099 shipped mobile viewport adaptation the day before, so this is not a hypothetical capability to discard silently.
+
+**2 · The failure the pin prevents is narrower than the plan claimed, but worse in kind.** The plan said *"on a venue machine with a different hostname this breaks silently."* Opening `http://localhost:5173` derives `http://localhost:8000` on any machine, whatever its hostname, so the common path was never at risk. The real exposure is opening the UI through the machine's mDNS name — `http://Some-MacBook.local:5173` — against a uvicorn bound only to loopback, which is the default for `--port 8000` with no `--host`. The page renders, every request fails, and nothing on screen says why.
+
+**3 · `.env` does not travel.** `frontend/.gitignore:7` ignores `.env*` with a single negation for `.env.example`. The run sheet had implied that a `git pull` would carry the fix; it cannot. Every machine that might present has to create its own, and the backup laptop presents in P3 run 3.
+
+Separately, the run sheet's fail-safe video item was a one-line instruction with no shot list, no recording command and no statement of what the video is for — which is how a team ends up with a silent, unwatched screen capture that contradicts the rehearsed run.
+
+### Decision
+1. **Create the pin, and put the trade-off inside the file.** `frontend/.env` sets `VITE_API_URL=http://127.0.0.1:8000` with a header comment that names the silent-failure mode it prevents, states plainly that it breaks any phone demo, and gives the three-command revert. A pin whose cost is only recorded in a decision log is a pin nobody can safely undo at 14:40.
+2. **Rewrite `frontend/.env.example` as three named modes** — A unset (LAN-capable, needs `--host 0.0.0.0`), B stage pin (single laptop, breaks second devices), C backend elsewhere — and state that `.env` is gitignored so each machine must create its own. `.env.example` is the one file in that directory git will carry, so it is the only place this can propagate from.
+3. **The run sheet gives the one-liner, not a pull.** `printf 'VITE_API_URL=...' > frontend/.env`, plus the requirement to restart `npm run dev`, because Vite reads `.env` only at dev-server start — editing it under a running server changes nothing and looks like the pin failed.
+4. **Appendix A gives the fail-safe video a shot list bound to `DEMO.md`'s "The demo path, in order",** not a new sequence. A fallback that shows a different order from the rehearsed run undermines the run it is meant to rescue. It records **QuickTime with the microphone on** rather than a silent capture, records the **typed** field path rather than voice (browser speech needs the network, and the network is what has failed if the video is playing), and requires a `reset_demo.py` first so the counts on the video match Funnel B on the printed sheet.
+5. **`*.mov`, `*.mp4` and `*.webm` added to `.gitignore`.** P4 ends with `git add -A` ten minutes after the recording is made.
+
+### Consequences
+- The scripted demo (`NUMBERS_SHEET.md` §5) is laptop-only, so the pin costs nothing that is currently rehearsed. The mobile layout from D-099 is no longer demonstrable without reverting first — an explicit, documented trade, rather than a capability that quietly stops working.
+- Verified live rather than reasoned about: with `.env` in place and the dev server restarted, the Senior Management workspace and the Data Confidence screen both load, every API call resolves to `http://127.0.0.1:8000` and returns **200**, and the browser console is clean. The screens render 120 activities, 67 evidenced, 53 unevidenced and 55.6% coverage — matching `scripts/healthcheck.py` ("120 activities, 67 with actuals") and Funnel B.
+
+### Verification
+- `git check-ignore -v frontend/.env` → `frontend/.gitignore:7`, confirming it cannot be committed.
+- Dev server restarted; `read_network_requests` shows `GET http://127.0.0.1:8000/schedule`, `/executive/metrics` → all `200 OK`.
+- `read_console_messages(onlyErrors)` → none.
+- `screencapture -v -g` confirmed available on this host before documenting it.
+- `git check-ignore -v navis_failsafe.mov` → `.gitignore:21`.
+- No application code changed; `403745f`'s suite results stand.
+
+### Affected Areas
+- `frontend/.env` (new, gitignored — created per machine)
+- `frontend/.env.example` (three documented modes)
+- `RUN_SHEET_SEP11.md` (P1 `.env` step corrected; Appendix A added)
+- `.gitignore` (recording artefacts)

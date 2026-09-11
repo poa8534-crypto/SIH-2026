@@ -1291,6 +1291,81 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Pinned the stage API URL, documented the three env modes and the cost of the pin, and gave the fail-safe video a shot list bound to the canonical demo path.
+**Date:** 2026-09-11 · **Decision:** D-105
+
+```
+WHERE THE FRONTEND DECIDES WHICH API TO CALL                   (D-105)
+
+  NO APPLICATION CODE CHANGED. Config, docs and .gitignore only.
+
+  THE RESOLUTION POINT — one line, three outcomes
+      frontend/src/lib/api.ts:73
+          export const getBaseUrl = () =>
+            import.meta.env.VITE_API_URL
+            || `http://${window.location.hostname}:8000`
+
+      every request goes through it:
+          api.ts :: fetchWithHandler  ->  `${getBaseUrl()}${endpoint}`
+          and ExportResponse.download_url is made absolute with it too
+
+      MODE A  VITE_API_URL unset          (the shipped default)
+              browser at localhost:5173   -> http://localhost:8000       OK
+              phone at 192.168.x.y:5173   -> http://192.168.x.y:8000     OK
+                                             (needs uvicorn --host 0.0.0.0)
+              browser at Some-Mac.local   -> http://Some-Mac.local:8000  FAILS
+                                             silently against loopback-only
+                                             uvicorn: page renders, every
+                                             request errors
+
+      MODE B  VITE_API_URL=http://127.0.0.1:8000   <- CHOSEN FOR THE STAGE
+              any browser on the laptop            -> 127.0.0.1:8000     OK
+              phone over the LAN                   -> its OWN loopback   FAILS
+              => removes the hostname trap, COSTS the second-device demo
+
+      MODE C  VITE_API_URL=http://<other-host>:8000   backend elsewhere
+
+  WHEN IT IS READ
+      Vite loads frontend/.env at DEV-SERVER START ONLY. Editing it under a
+      running `npm run dev` changes nothing and reads as "the pin failed".
+
+  WHAT DOES NOT TRAVEL
+      frontend/.gitignore:7   `.env*`   (negated only for `.env.example`)
+      => `git pull` NEVER delivers the pin. Every presenting machine, the
+         backup laptop included, creates its own:
+             printf 'VITE_API_URL=http://127.0.0.1:8000\n' > frontend/.env
+      frontend/.env.example is the one carrier git will take, so it now
+      documents all three modes.
+
+  VERIFIED LIVE, NOT REASONED (dev server restarted with the pin in place)
+      GET http://127.0.0.1:8000/schedule?include_warnings=false   200 OK
+      GET http://127.0.0.1:8000/executive/metrics                 200 OK
+      GET http://127.0.0.1:8000/schedule?include_warnings=true    200 OK
+      console errors: none
+      screens rendered: Senior Management Overview, Data Confidence
+                        120 activities · 67 evidenced · 53 unevidenced
+                        · 55.6% coverage  == healthcheck + Funnel B
+
+  FAIL-SAFE VIDEO  (RUN_SHEET_SEP11.md Appendix A)
+      shot list is bound to DEMO.md "The demo path, in order" (line 246) so
+      the fallback cannot contradict the rehearsed run
+      QuickTime + microphone, not a silent capture
+      records the TYPED field path, never voice — browser speech needs the
+      network, and the network is what failed if the video is playing
+      reset_demo.py first, so on-screen counts match Funnel B
+      .gitignore:21  *.mov *.mp4 *.webm — P4 ends with `git add -A`
+
+  Suites unaffected (no application code touched); 403745f results stand:
+             python -m pytest -q                  1055 passed
+             cd frontend && npx vitest run         229 passed
+             python scripts/healthcheck.py          31 passed
+             python eval.py       auto-link precision 100.0% (67/67)
+```
+
+---
+
+### Previous modification area (D-104)
+
 **Task:** Recounted the test suite against the code, corrected every presenter-facing document, re-derived the DEMO.md route table from App.tsx, and re-scoped today's plan into RUN_SHEET_SEP11.md.
 **Date:** 2026-09-11 · **Decision:** D-104
 

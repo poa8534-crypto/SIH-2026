@@ -102,12 +102,23 @@ python scripts/healthcheck.py       # expect: 31 passed, 0 failed
 - [ ] The healthcheck output must contain **`dense retrieval   MiniLM (offline)`**.
       **If it says anything else, the hashed fallback is live and no number on the
       printed sheet is quotable.** Stop and say so immediately.
-- [ ] **Create `frontend/.env`** — still missing, and it is eve-plan item 2e:
+- [ ] **Create `frontend/.env`** — done on the primary machine (D-105), but
+      **`.env` is gitignored (`frontend/.gitignore:7`), so it does NOT arrive with
+      `git pull`.** Every machine that might present needs its own. One line:
+      ```bash
+      printf 'VITE_API_URL=http://127.0.0.1:8000\n' > frontend/.env
       ```
-      VITE_API_URL=http://127.0.0.1:8000
-      ```
-      Without it the UI calls `http://<hostname>:8000`. On a venue machine with a
-      different hostname that breaks **silently**.
+      Then **restart `npm run dev`** — Vite reads `.env` only at server start.
+      Without the pin the UI derives the API from the browser's hostname
+      (`lib/api.ts:73`), so opening the UI through a machine's mDNS name
+      (`http://Some-MacBook.local:5173`) sends calls to a port uvicorn is not
+      bound to. The page renders and every request fails — **silently**.
+      > **⚠ The pin breaks any phone/second-device demo.** A phone resolves
+      > `127.0.0.1` to *itself*. The scripted demo is laptop-only so the pin is
+      > right for it — but if a judge asks to see the D-099 mobile layout:
+      > `rm frontend/.env`, restart `npm run dev`, and relaunch the API with
+      > `--host 0.0.0.0`. All three modes are written out in
+      > `frontend/.env.example`.
 - [ ] `python scripts/reset_demo.py` three times; identical counts each time.
       Do **not** restart the server between runs — the script is designed to run
       while it is up.
@@ -186,8 +197,9 @@ was on the backup machine · every presenter has delivered the six core answers 
 
 ## P4 · LOCK + FAIL-SAFE — 14:35 → 14:45 · lead + driver
 
-- [ ] **Screen-record one clean full run.** You have no fail-safe video. At ten minutes
-      of cost this is the single cheapest insurance on this sheet.
+- [ ] **Screen-record one clean full run — Appendix A has the shot list and the
+      exact command.** At ten minutes of cost this is the single cheapest insurance
+      on this sheet, and you currently have nothing.
 - [ ] ```bash
       git status && git add -A && git commit -m "..." && git push
       ```
@@ -226,6 +238,78 @@ cd frontend && npm run dev                        # 3. UI, second terminal
 - **Standalone chaos drills** (backend-kill, mic-denied) — folded into P3 as *"if it
   happens, here is the sentence you say."* Rehearsing a real run beats rehearsing a
   failure you can narrate.
+
+---
+
+## Appendix A · The fail-safe video
+
+**What it is for.** One thing only: the laptop dies, the server will not come back, or
+a screen hangs with judges watching. You play the video, keep narrating live over it,
+and finish your slot. It is **not** a substitute for the live demo and you never open
+with it.
+
+### Before you record
+
+- [ ] `python scripts/reset_demo.py` — record against the clean baseline, so what is on
+      the video matches Funnel B on the printed sheet. A video showing different counts
+      from the sheet is worse than no video.
+- [ ] `python scripts/healthcheck.py` green, and it says `MiniLM (offline)`.
+- [ ] Browser at **1280×800, single tab**, no bookmarks bar, no other windows.
+- [ ] Notifications silenced. A Slack toast mid-frame is permanent.
+- [ ] Sign out to the role picker first — `localStorage.removeItem('navis.role')` in the
+      console, or *Switch Role* in the sidebar.
+
+### Recording it
+
+**Use QuickTime** — it is the only option here that captures your narration:
+
+> QuickTime Player → File → **New Screen Recording** → click the **⌄** next to the
+> record button → set **Microphone** to your input → record the screen area, not the
+> whole display.
+
+Narrate while you record. A silent screen capture is much weaker: if it plays because
+something broke, you will be talking over it anyway, and a rehearsed voice track means
+you are not improvising during the one moment you are already rattled.
+
+CLI fallback if QuickTime misbehaves (`-g` captures the default audio input):
+
+```bash
+screencapture -v -g ~/Desktop/navis_failsafe.mov
+```
+
+Stop with **Ctrl-C** in that terminal, or **Cmd-Ctrl-Esc**.
+
+### Shot list — follow `DEMO.md` "The demo path, in order"
+
+Do not invent a new order for the video. It must match what you rehearse, or the
+fallback contradicts the live run. Target **3 minutes**; trim to your confirmed slot.
+
+| Time | Shot | Say |
+|---|---|---|
+| 0:00–0:15 | **Role picker**, all three cards | The honesty line: no authentication, no endpoint restricted, and the screen says so itself |
+| 0:15–0:45 | **Project Manager → `/ingest`**, upload a DPR from `dataset/` | What went in, and that nothing was hand-fed |
+| 0:45–1:30 | **`/reconcile`** — the human-in-the-loop beat | **Read the queue reason off the screen.** Reject the wrong suggestion, confirm the right activity, show the audit trail entry |
+| 1:30–2:00 | **`/schedule`** — dates written, Funnel B visible | 67 of 120 evidenced; why the other 53 got no date |
+| 2:00–2:30 | **Senior Management → Overview, then Data Confidence** | Same data, executive altitude; 55.6% coverage stated plainly |
+| 2:30–3:00 | **Field Supervisor → `/field`**, a report through the typed path | Typed, not voice — the fallback that always works |
+
+**Record the typed field path, not voice.** Browser speech needs the network, and a
+fail-safe video is exactly the situation where the network is the thing that failed.
+
+### After
+
+- [ ] Watch it once, end to end. An unwatched fail-safe is not a fail-safe.
+- [ ] Copy to **both** laptops and one phone. Not cloud-only — assume no network.
+- [ ] Open in a player, **paused on frame one, minimised**, before you go on stage.
+- [ ] Do **not** commit it. `*.mov` and `*.mp4` are large binaries; keep them out of git.
+
+### If you have to play it
+
+> *"Our demo machine has just gone down. I am going to keep talking you through it over
+> a recording of the same run, and I am happy to take questions on anything you see."*
+
+Then carry on at the same pace. Judges score composure here more than they score the
+laptop.
 
 ---
 
