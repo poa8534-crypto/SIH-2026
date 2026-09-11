@@ -140,8 +140,10 @@ def check_endpoints(base: str) -> None:
     # so the check had been failing on every run regardless of server health.
     # It then read 36 while the surface was 44, and failed every run again -
     # which is the argument for re-pinning it in the same commit as any change
-    # that adds or removes an operation, not later.
-    expected_endpoints = 44
+    # that adds or removes an operation, not later. It then read 46 while
+    # pinned at 44, because the Schedule Doctor operations were added without
+    # re-pinning it. Re-pinned to 46 on 2026-09-11 (D-103).
+    expected_endpoints = 46
     record("GET  /openapi.json (/docs)", status == 200 and n_endpoints == expected_endpoints,
            f"{n_endpoints} endpoints exposed, expected {expected_endpoints}")
 

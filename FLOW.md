@@ -1291,6 +1291,86 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Repaired the dense-retrieval dependency stack, made an unimportable embedder degrade instead of returning 500, and returned the backend, frontend and healthcheck suites to green.
+**Date:** 2026-09-11 · **Decision:** D-103
+
+```
+INGEST — WHY IT WAS RETURNING 500, AND WHERE IT NOW DEGRADES        (D-103)
+
+  THE CALL CHAIN (line numbers are CURRENT, i.e. after the fix)
+      POST /ingest
+        -> server/main.py:1375        ingest_file
+        -> server/main.py:557         get_matching_engine
+        -> server/main.py:607         _build_engine_from_db_or_disk
+        -> server/main.py:583         _engine_from_index
+        -> matching/engine.py:58      MatchingEngine.__init__
+        -> matching/retrieval.py:210  HybridRetriever.__init__
+        -> matching/retrieval.py:218  _embed_docs
+        -> matching/retrieval.py:118  MiniLMEmbedder.cache_name
+        -> matching/retrieval.py:75   MiniLMEmbedder._load
+
+      BEFORE: the sentence_transformers import sat OUTSIDE the try in _load.
+      A NameError/ImportError escaped _load(), unwound all eight frames above,
+      and became HTTP 500 — the fallback below was never reached.
+
+  THE REPAIRED _load  (matching/retrieval.py:75)
+        try:  from sentence_transformers import SentenceTransformer
+        except Exception:
+              logger.error(... "falling back to hashing embedder")
+              self._failed = True ; return
+        try:  SentenceTransformer(MODEL_NAME, local_files_only=True)
+        except: SentenceTransformer(MODEL_NAME)      # first-run download
+        except: self._failed = True                  # offline, uncached
+
+      _failed = True  ->  cache_name  = "hashed-ngram-384"
+                          is_neural   = False
+                          encode()    -> _hashed_embeddings(texts, dim=384)
+      The dense channel weakens; BM25, rapidfuzz and tag_overlap are untouched,
+      so retrieval still runs and /ingest still answers 200.
+
+  WHY IT FAILED — THE DEPENDENCY CHAIN
+      numpy 2.5.2  x  torch 2.2.2 (built against the NumPy 1.x C API)
+          -> "Failed to initialize NumPy: _ARRAY_API not found"
+      transformers 5.16.1 requires torch >= 2.5, finds 2.2.2, disables torch
+          -> `import torch.nn as nn` skipped, but accelerate.py:65 annotates
+             nn.Module at module scope -> NameError: name 'nn' is not defined
+      sentence-transformers 3.x imports `datasets` at module scope
+          -> resolves this repo's own corpus directory `datasets/` as an
+             implicit namespace package -> cannot import name 'Dataset'
+      torch 2.2.2 is the LAST x86_64 macOS wheel, so the stack is pinned
+      DOWN to meet it: numpy 1.26.4, scipy 1.13.1, transformers 4.44.2,
+      sentence-transformers 2.7.0 (requirements.txt).
+
+  LIVE STATE AFTER THE FIX  (scripts/healthcheck.py, 31/31)
+      dense retrieval        MiniLM (offline)      <- loads from local HF cache
+      schedule index         120 activities
+      GET  /schedule         120 activities, 67 with actuals
+      GET  /review-queue     135 pending
+      POST /ingest           200
+      GET  /openapi.json     46 endpoints (re-pinned from 44)
+
+  TEST-HARNESS PATHS ALSO REPAIRED
+      server/test_schedule_auditor.py   setup_db teardown now calls
+                                        test_engine.dispose() BEFORE unlinking
+                                        dataset/test_schedule_auditor.db; a
+                                        pooled connection to a deleted inode
+                                        reads as "readonly database".
+      frontend/src/test/setup.ts        installs an in-memory Storage when the
+                                        platform provides none (Node 26's
+                                        inert localStorage global shadows
+                                        jsdom's) — unblocks roleRouting,
+                                        fieldStudio and chatSeparation.
+
+  Pinned by: python -m pytest -q                  1052 passed
+             cd frontend && npx vitest run         223 passed
+             python scripts/healthcheck.py          31 passed
+             python eval.py       auto-link precision 100.0% (67/67)
+```
+
+---
+
+### Previous modification area (D-102)
+
 **Task:** External review answered; deck de-linked, test count corrected, slide 4 rebuilt native (D-102).
 **Date:** 2026-09-10 · **Decision:** D-102
 

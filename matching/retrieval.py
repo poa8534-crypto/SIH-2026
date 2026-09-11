@@ -78,7 +78,21 @@ class MiniLMEmbedder:
         with self._lock:
             if self._model is not None or self._failed:
                 return          # another thread won the race
-            from sentence_transformers import SentenceTransformer
+            try:
+                from sentence_transformers import SentenceTransformer
+            except Exception as e:
+                # Not just "package missing": a torch/numpy ABI mismatch raises
+                # from inside transformers at import time. This import used to
+                # sit outside the try, so any such failure escaped _load(),
+                # propagated out of HybridRetriever.__init__, and turned
+                # POST /ingest into a 500 — the exact outcome the hashing
+                # fallback below exists to prevent. See D-103.
+                logger.error(
+                    "sentence-transformers unimportable (%s) — falling back to hashing embedder",
+                    e,
+                )
+                self._failed = True
+                return
             try:
                 # Offline first — model must already be in the local HF cache.
                 self._model = SentenceTransformer(self.MODEL_NAME, local_files_only=True)

@@ -59,6 +59,11 @@ def setup_db():
         db.close()
     yield
     Base.metadata.drop_all(bind=test_engine)
+    # Dispose before unlinking. The engine pools its SQLite connections, so a
+    # connection handed back to the next test still points at the deleted
+    # inode, and SQLite reports that as "attempt to write a readonly database"
+    # — which is what broke every test in this module after the first.
+    test_engine.dispose()
     if TEST_DB_PATH.exists():
         try:
             TEST_DB_PATH.unlink()

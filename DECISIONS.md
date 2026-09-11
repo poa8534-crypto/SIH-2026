@@ -9638,3 +9638,55 @@ force.
 
 **Related:** D-100 and D-101 (the deck), D-099 (the five new frontend tests), D-061
 (learning loop), D-047 (XER), D-015 (the same fabricated-date class as the open item).
+
+---
+
+## 2026-09-11 / D-103 — Dense retrieval pinned to the torch that this hardware can actually run, and an unimportable embedder must degrade, not 500
+
+### Status
+Active.
+
+### Context
+On hackathon morning the backend suite was **83 failed / 41 errors out of 1052**, the frontend suite **43 failed of 223**, and `POST /ingest` returned **500** — the single endpoint the entire demo narrative runs through. None of it was caused by application logic. Three independent environment defects were stacked on top of each other:
+
+1. **NumPy ABI break.** `requirements.txt` pinned `numpy==2.5.2`. The installed `torch` was `2.2.2`, compiled against the NumPy 1.x C API, so `import torch` emitted *"Failed to initialize NumPy: `_ARRAY_API` not found"* and left its NumPy bridge dead. torch 2.2.2 is not an arbitrary version: it is the **last release with an x86_64 macOS wheel**, so on this hardware it is a ceiling, not a floor, and "upgrade torch" is not available as a fix.
+
+2. **transformers requires a torch that cannot be installed here.** `transformers==5.16.1` requires torch >= 2.5. Finding 2.2.2, it logged *"Disabling PyTorch because PyTorch >= 2.5 is required"*, which left the guarded `import torch.nn as nn` in `transformers/integrations/accelerate.py` unexecuted while line 65 still used `nn.Module` in a module-level annotation — `NameError: name 'nn' is not defined` at import time.
+
+3. **The repo's own `datasets/` directory shadows the PyPI `datasets` package.** `sentence-transformers` 3.x imports `datasets` at module scope; run from the project root, Python resolves the research-corpus folder as an implicit namespace package instead, giving `cannot import name 'Dataset' from 'datasets' (unknown location)`.
+
+The application had a designed defence against exactly this class of failure — `MiniLMEmbedder` falls back to a hashed-ngram embedder when the model cannot be loaded — and it did not fire, because `matching/retrieval.py` placed `from sentence_transformers import SentenceTransformer` **outside** the `try`. The guard covered model *construction* but not module *import*, so an ImportError escaped `_load()`, propagated out of `HybridRetriever.__init__`, and surfaced as a 500.
+
+Separately, `server/test_schedule_auditor.py` unlinked its SQLite file in teardown without disposing the engine. SQLAlchemy handed the next test a pooled connection pointing at the deleted inode, which SQLite reports as `attempt to write a readonly database` — every test in that module after the first.
+
+Node 26 was the fourth: it installs an experimental `localStorage` global that is inert without `--localstorage-file`. Vitest copies Node globals onto the jsdom window, so that inert getter shadowed jsdom's real Storage and `window.localStorage` read back `undefined`, crashing setup/teardown in the three suites that clear it — `roleRouting`, `fieldStudio`, `chatSeparation`, i.e. precisely the coverage of the role boundary and the field reporting flow.
+
+### Decision
+1. **Pin the dependency set to what this hardware can run**, and say why in `requirements.txt` so it is not "tidied" back:
+   - `numpy==1.26.4` (was `2.5.2`) — the NumPy 1.x line torch 2.2.2 was compiled against.
+   - `scipy==1.13.1` — added explicitly; it is transitive, and scipy >= 1.18 hard-requires NumPy >= 2.0.
+   - `transformers==4.44.2`, `huggingface_hub==0.24.6` — added explicitly; the last line that works with torch 2.2.2.
+   - `sentence-transformers==2.7.0` (was `6.0.0`) — also the last line that does not import `datasets` at module scope, which sidesteps the `datasets/` shadowing permanently rather than renaming a directory the research corpus depends on.
+2. **The import moves inside the `try` in `matching/retrieval.py::MiniLMEmbedder._load`.** A broken, missing or ABI-mismatched transformer stack now degrades to the hashing embedder with a logged `error`, which is what the fallback was written for. NAVIS answering with weaker dense recall is a bad day; NAVIS returning 500 on `/ingest` is no demo at all. This is the same principle as D-005 (an Ollama outage must not be a NAVIS outage) applied to the embedding stack.
+3. **`test_engine.dispose()` before unlinking** in `server/test_schedule_auditor.py`.
+4. **`src/test/setup.ts` installs a real in-memory `Storage`** when the platform failed to provide one. The role, the view override, the speech language and the saved discipline are all localStorage-backed; a test environment without Storage is not a test environment for this application.
+5. **`scripts/healthcheck.py` re-pinned to 46 endpoints** (was 44). The Schedule Doctor operations (`/schedule/audit`, `/schedule/{activity_id}/audit`, `/knowledge/rules`, `/audit/recent`) were added without re-pinning the count, which is the drift that check exists to catch.
+
+### Consequences
+- Dense retrieval is live again: `scripts/healthcheck.py` reports `dense retrieval — MiniLM (offline)`, confirming the model loads **from the local HF cache with no network**, which is the condition that matters in a venue.
+- `eval.py` reproduces **every figure in `METRICS.md` §3.1 exactly** — Top-1 86.9%, auto-link precision 100.0% (67/67, zero wrong auto-links), coverage 43.5%, suggestion precision/recall 81.8% / 86.9%. This is the strongest available evidence that the defect was environmental: the documentation was right and the machine had drifted away from it.
+- The hashing fallback is now reachable in production rather than theoretical. It is measurably worse — with it active, `test_ground_truth_coverage` measured 0.0 against a 0.18 floor — so it is a survival mode, not an acceptable steady state. The pins exist so it stays unused.
+
+### Verification
+- `python -m pytest -q` — **1052 passed, 0 failed, 0 errors** (from 83 failed + 41 errors).
+- `cd frontend && npx vitest run` — **223 passed, 0 failed** (from 43 failed).
+- `cd frontend && npx tsc --noEmit` — clean.
+- `python scripts/healthcheck.py` — **31 passed, 0 failed**, against a live server.
+- `python eval.py` — auto-link precision 100.0%; all §3.1 metrics reproduce unchanged. No threshold, feature weight or decision rule was touched, so no metric movement was expected and none occurred.
+
+### Affected Areas
+- `requirements.txt` (pins + rationale)
+- `matching/retrieval.py` (`MiniLMEmbedder._load`)
+- `server/test_schedule_auditor.py` (fixture teardown)
+- `frontend/src/test/setup.ts` (Storage polyfill)
+- `scripts/healthcheck.py` (endpoint count re-pinned)

@@ -31,13 +31,28 @@ pillow>=10.0.0
 # ── Matching pipeline (matching/) ────────────────────────────────────────────
 rank-bm25==0.2.2          # lexical retrieval
 rapidfuzz==3.14.5         # fuzzy token-set similarity
-numpy==2.5.2              # brute-force cosine over 120 x 384 vectors
+# Held below 2.0 on purpose. torch 2.2.2 is the last release that ships an
+# x86_64 macOS wheel, and it is compiled against the NumPy 1.x C API: pairing
+# it with NumPy 2.x makes `import torch` warn "Failed to initialize NumPy:
+# _ARRAY_API not found", which cascades into transformers and takes dense
+# retrieval down with it. See D-103.
+numpy==1.26.4             # brute-force cosine over 120 x 384 vectors
+scipy==1.13.1             # transitive (sentence-transformers); last NumPy 1.x line
 
 # Dense retrieval. This is the heavy one: it pulls torch (~2-3 GB).
 # matching/retrieval.py degrades to a hashed-ngram embedder if it is missing
 # or the model is not cached, so the system still runs without it — with
 # weaker dense recall. See SETUP.md.
-sentence-transformers==6.0.0
+#
+# The version floor here is set by torch, not by preference. transformers >= 5
+# requires torch >= 2.5, which does not exist for x86_64 macOS; on such a host
+# it disables torch, leaves `nn` unbound, and dies with a module-level
+# NameError. sentence-transformers 2.7.0 is also the last line that does not
+# import `datasets` at module scope, which matters here because this repo has
+# a top-level `datasets/` directory that shadows the PyPI package. See D-103.
+sentence-transformers==2.7.0
+transformers==4.44.2
+huggingface_hub==0.24.6
 
 # ── Optional LLM provider config (extraction/llm_backend.py) ─────────────────
 # Reads .env. The LLM path itself is OFF by default and needs no package:
