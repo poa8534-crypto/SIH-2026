@@ -10190,3 +10190,92 @@ concurrent rewrite from another session working in the same tree (day-level
 tick rendering, new `PX_PER_DAY_MAP` values, float slack in the timeline
 bounds). It was left uncommitted for its author. The D-107 regression guards
 survive that rewrite and pass against it.
+
+---
+
+## 2026-09-11 / D-109 — A write you cannot go and look at is not visibly different from one that never happened
+
+### Status
+Active. Extends D-108.
+
+### Context
+D-108 made the PM decision dock write for real. The next report from the screen
+was, verbatim: *"it's not re-directing me to wherever the hell that data is being
+stored so I can see the damn changes."*
+
+That is the correct complaint, and it is the same complaint as D-108. From the
+planner's seat, a button that writes silently and a button that writes nothing
+look **identical**: a banner appears, four seconds pass, the panel sits there
+unchanged. D-108 fixed the write. It did not fix the thing that made the
+original defect invisible for as long as it survived — that nobody could see
+whether anything had happened.
+
+Two separate problems were reported together, and only one was a defect.
+
+**1 · A stale bundle, not a bug.** The screenshot showed `Accept Field Actual`
+with no count, looking enabled. Checked live against the same dev server:
+`CIV-APN-1022` carries **6** pending items and the running code renders
+**`Accept Field Actual (6)`**, enabled, tooltip *"Confirm 6 pending review
+item(s) and write the field actuals"*. The browser was holding pre-D-108 assets.
+Nothing to fix; recorded because the same screenshot will be taken again.
+
+**2 · No destination. A real gap.** A confirm writes to two places — audit rows
+for the activity, and the activity's own actual dates — and the panel pointed at
+neither.
+
+### Decision
+**Every successful write now names where its data landed, and takes you there.**
+`actionFeedback` stopped being a `string` and became `{ text, cta?, to? }`.
+
+| Action | What it writes | Where the banner sends you |
+|---|---|---|
+| Accept | audit rows + the activity's actual dates | switches to the **Audit Trail tab** itself, and offers *"See the bar move on the Gantt"* → `/schedule?view=gantt&activity=…&highlight=<ts>` |
+| Keep Baseline | closes the review items, no date | *"Open the review queue"* → `/reconcile` |
+| Flag Conflict | a RAID issue | *"Open Risk & Exposure"* → `/raid` |
+
+Three things worth stating about that table:
+
+- **Accept shows one destination and offers the other.** The audit rows are one
+  tab away inside the panel, so the panel goes there on its own rather than
+  asking. The bar that moved is on another screen, so it is offered as a link
+  instead of a forced navigation — the planner may want to keep adjudicating.
+- **The Gantt link is the `highlight=<ts>` deep link**, so it lands on the D-107
+  path: the row centres in the chart and the bar glows. That path only works
+  because of the timestamp key and the container-height fix; a `highlight=true`
+  link would be swallowed by the one-shot scroll lock on a second visit.
+- **Keep Baseline is deliberately not offered the Gantt.** Nothing moved on the
+  schedule. Sending a planner to look at an unchanged bar and calling it the
+  result of their decision would be a smaller version of the original lie. What
+  changed is the queue, so that is where it points.
+
+Following the link closes the drawer before navigating: leaving an inspection
+panel for one activity floating over a different screen is not a state worth
+preserving.
+
+### Consequences
+- The three decisions are now observable from the seat that takes them. This is
+  what makes D-108 checkable by the person using it rather than only by reading
+  the network tab.
+- No new endpoint, no new query, no new route — `/reconcile`, `/schedule` and
+  `/raid` all already existed, and the Gantt deep link is the one Reconcile has
+  used since D-107.
+
+### Verification
+- **`npx tsc --noEmit`** — clean. **`npm run build`** — clean, 5.55s.
+- **`npx vitest run`** — 24 files, **257 passed**, 0 failed.
+  `scheduleInspectionPanel.test.tsx` 12 → 15: accept switches the panel to the
+  audit trail *and* offers the Gantt link; Keep Baseline offers the review queue
+  and **asserts the Gantt link is absent**; flag offers Risk & Exposure.
+- **Live** — `CIV-APN-1022` renders `Accept Field Actual (6)` against a real
+  queue of 6, confirming finding 1 was a stale bundle.
+- **The real Accept was not fired.** A scripted click on it was refused by the
+  sandbox as an irreversible write, which is the correct outcome: it commits
+  actual dates into an append-only ledger (D-004) on the demo dataset. Its
+  payloads and its destinations are pinned by the tests above; the endpoint is
+  covered by the backend suite; and the sibling write path *was* proven live in
+  D-108 (RAID row `bd8bc7ed`, register 9 → 10, rejected afterwards). Recovery if
+  it is fired in anger: `python scripts/reset_demo.py`.
+
+### Affected Areas
+- `frontend/src/components/ActivityInspectionPanel.tsx`
+- `frontend/src/test/scheduleInspectionPanel.test.tsx`

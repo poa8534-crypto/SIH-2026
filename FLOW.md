@@ -1291,8 +1291,8 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** The PM decision dock on the schedule inspection panel wrote nothing — eight buttons, one cosmetic handler. Wired to the real resolve and RAID endpoints.
-**Date:** 2026-09-11 · **Decision:** D-108
+**Task:** The PM decision dock on the schedule inspection panel wrote nothing — eight buttons, one cosmetic handler. Wired to the real resolve and RAID endpoints, and every write now names where its data landed.
+**Date:** 2026-09-11 · **Decision:** D-108, D-109
 
 ```
 PM DECISION DOCK — WHAT RUNS WHEN A BUTTON IS PRESSED             (D-108)
@@ -1358,6 +1358,21 @@ PM DECISION DOCK — WHAT RUNS WHEN A BUTTON IS PRESSED             (D-108)
                     nothing to accept"
             Flag stays enabled: raising an issue never depended on the queue.
       in flight                  "Writing…" / "Raising…"    all disabled
+
+  WHERE THE DATA LANDED — every success names a destination     <- D-109
+      accept   -> setDrawerTab('audit')   the rows are one tab away, so the
+                                          panel goes there itself
+                  + CTA "See the bar move on the Gantt"
+                    /schedule?view=gantt&activity=<id>&highlight=<ts>
+                    the D-107 path: timestamp key, not "true", or the
+                    one-shot scroll lock swallows a second visit
+      override -> CTA "Open the review queue"   /reconcile
+                  deliberately NOT the Gantt: nothing moved on the schedule,
+                  and pointing at an unchanged bar would be a smaller
+                  version of the original lie
+      flag     -> CTA "Open Risk & Exposure"    /raid
+      following a CTA closes the drawer first: an inspection panel for one
+      activity floating over another screen is not a state worth keeping
 
   FEEDBACK — two states, two elements, never one falling back to the other
       actionFeedback  green banner, only on a write that returned
