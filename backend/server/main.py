@@ -278,7 +278,25 @@ CORS_ALLOWED_ORIGIN_REGEX = (
     r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"
     r"|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}"
     r")(:\d+)?"
+    # Deployed: the UI is a static site on its own origin and the API is a
+    # separate web service, so every call the browser makes is cross-origin
+    # and preflighted. Both are HTTPS — the regex above is http-only, and a
+    # hosted https page cannot call an http API anyway, so without this arm
+    # the entire deployed UI fails at the preflight. Scoped to Render's own
+    # domains rather than `*` so this stays a deployment allowance and not an
+    # open API. See D-113.
+    r"|https://[a-z0-9-]+\.onrender\.com"
 )
+
+# Any other deployed origin — a custom domain, a preview host, a second
+# frontend — is added here rather than by widening the regex. Comma-separated,
+# full origins including scheme:
+#     NAVIS_ALLOWED_ORIGINS=https://navis.example.org,https://demo.example.org
+CORS_ALLOWED_ORIGINS += [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("NAVIS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,

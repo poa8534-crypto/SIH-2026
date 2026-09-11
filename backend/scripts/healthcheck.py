@@ -1,6 +1,6 @@
 """Verify an installation end to end: imports, data, and all 8 endpoints.
 
-    python -m uvicorn server.main:app --reload     # in one terminal
+    python -m uvicorn server.main:app --app-dir backend --reload     # in one terminal
     python scripts/healthcheck.py                  # in another
 
 Non-destructive. The /ingest check re-uploads a file that is already in the
@@ -227,7 +227,7 @@ def main() -> int:
         except Exception as e:                        # noqa: BLE001
             record(f"server at {args.base_url}", False,
                    f"unreachable ({type(e).__name__}) — start it with: "
-                   "python -m uvicorn server.main:app --reload")
+                   "python -m uvicorn server.main:app --app-dir backend --reload")
 
     width = max(len(name) for _, name, _ in results) + 2
     print()

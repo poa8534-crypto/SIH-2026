@@ -1291,6 +1291,157 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** NAVIS deployed to Render as two connected services — a static site for the SPA and a Python web service for the API. Fixed the start command D-112 invalidated, the frontend's API-base fallback, the HTTP-only CORS policy, the empty deployed database and SPA deep links. No schema, threshold, matcher or metric changed.
+**Date:** 2026-09-12 · **Decision:** D-113
+
+```
+DEPLOYED TOPOLOGY — WHAT RUNS WHERE                              (D-113)
+
+  browser
+     |
+     |  GET /  and every client-side route
+     v
+  ┌──────────────────────────────────────────┐
+  │ STATIC SITE   navis-yuvf.onrender.com    │   Render CDN, no server
+  │   rootDir      frontend/                 │
+  │   build        npm install; npm run build│
+  │   publish      frontend/dist/            │
+  │   built with   VITE_API_URL=<api origin> │ <-- the ONLY link between them,
+  └──────────────────────────────────────────┘     inlined by Vite at BUILD time
+     |
+     |  fetch(`${getBaseUrl()}${endpoint}`)       frontend/src/lib/api.ts:77
+     |  cross-origin, preflighted
+     v
+  ┌──────────────────────────────────────────┐
+  │ WEB SERVICE   navis-api.onrender.com     │   uvicorn, 1 instance
+  │   build        bash render-build.sh      │
+  │   start        python -m uvicorn         │
+  │                  server.main:app         │
+  │                  --app-dir backend       │ <-- D-112's anchor. Without it:
+  │                  --host 0.0.0.0          │     ModuleNotFoundError: 'server'
+  │                  --port $PORT            │
+  │   health       GET /health               │
+  └──────────────────────────────────────────┘
+
+
+HOW THE FRONTEND DECIDES WHERE THE API IS      frontend/src/lib/api.ts:72
+
+  getBaseUrl()
+    |
+    +-- 1. import.meta.env.VITE_API_URL set?
+    |        -> return it, trailing slashes stripped
+    |        ......... the deployed split. Set on the STATIC SITE only;
+    |                  setting it on the API service does nothing at all.
+    |
+    +-- 2. isDevelopmentHost(window.location.hostname)?      api.ts:56
+    |        localhost | 127.0.0.1 | [::1] | *.local
+    |        | 192.168.x.x | 10.x.x.x | 172.16-31.x.x
+    |        -> return `http://${hostname}:8000`
+    |        ......... run_navis.bat, and the two-device LAN demo: the phone
+    |                  derives the laptop's IP from the page it loaded.
+    |
+    +-- 3. otherwise
+             -> return window.location.origin
+             ......... the unified Dockerfile build (SERVE_FRONTEND=1), where
+                       one FastAPI process serves both the SPA and the API.
+
+  Case 3 was previously `http://${hostname}:8000` unconditionally, which on any
+  hosted HTTPS origin is a mixed-content request to a closed port: blocked by
+  the browser before it is even refused by the network.
+
+  The host set in case 2 is deliberately the same one the backend's CORS regex
+  allows. If these two disagree the URL is right and the browser blocks it.
+
+
+WHAT THE BROWSER'S PREFLIGHT HITS              backend/server/main.py:255
+
+  OPTIONS <any non-GET>
+    -> CORSMiddleware                          main.py:298
+         allow_origins        CORS_ALLOWED_ORIGINS      main.py:261
+                                localhost:5173, 127.0.0.1:5173
+                                + NAVIS_ALLOWED_ORIGINS env, comma-separated
+         allow_origin_regex   CORS_ALLOWED_ORIGIN_REGEX main.py:274
+                                http://  localhost | 127.0.0.1
+                                         | 192.168/16 | 10/8 | 172.16/12
+                                https:// [a-z0-9-]+.onrender.com   <-- D-113
+         allow_credentials    False  (no cookie or session auth anywhere)
+
+  Starlette matches the regex with fullmatch, so
+  http://evil.onrender.com.attacker.net is refused, not matched as a prefix.
+
+
+BUILD-TIME WORK THAT RUNTIME DEPENDS ON        render-build.sh
+
+  Render builds and runs a native service in the SAME directory
+  (/opt/render/project/src), so everything below survives into the instance.
+
+  1. pip install torch==2.2.2 --index-url download.pytorch.org/whl/cpu
+         PyPI's Linux torch bundles ~2.5 GB of nvidia-* CUDA wheels this
+         service can never use. Installed first so requirements.txt resolves
+         against it.
+  2. pip install -r requirements.txt
+  3. python backend/scripts/seed.py
+         |
+         +-- init_db()                          backend/server/db.py
+         +-- _seed_schedule_if_empty()          backend/server/main.py:332
+         |     120 activities from dataset/baseline_schedule.json
+         +-- ingest_one() over dataset/*.txt, *.xlsx   backend/server/demo.py
+         |     266 events, 75 auto-linked, 198 review items, 141 audit records
+         +-- writes dataset/epc_progress.db     (gitignored; absent on a clone)
+         +-- warms .hfcache/ (HF_HOME) and .cache/embeddings/
+
+  Without step 3 the deployed app is an empty shell: startup() seeds the
+  baseline schedule but never the field reports, so the schedule has no
+  progress, no audit trail and no review queue.
+
+  The database is ephemeral by design: every deploy resets it to this state.
+
+
+SPA DEEP LINKS                                 frontend/package.json
+
+  GET /executive/milestones on the static site asks for a file that was never
+  built. Two layers answer it:
+
+    npm run build -> vite build
+                  -> postbuild:spa-fallback   cp dist/index.html dist/404.html
+                     ......... works with no dashboard access; serves the app
+                               with a 404 status, and react-router takes over.
+
+    render.yaml routes: rewrite /* -> /index.html
+                     ......... the correct fix, 200 status. CANNOT be set
+                               through Render's API — dashboard or Blueprint
+                               only, so it is declared but applied by hand.
+```
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `frontend/src/lib/api.ts:56` | new `isDevelopmentHost()` — loopback, `.local`, the three private IPv4 ranges |
+| `frontend/src/lib/api.ts:72` | `getBaseUrl()` three-case resolution; same-origin replaces the `:8000` guess |
+| `frontend/package.json` | `build` now emits `dist/404.html` via `postbuild:spa-fallback` |
+| `backend/server/main.py:274` | CORS regex gained `https://[a-z0-9-]+\.onrender\.com` |
+| `backend/server/main.py:284` | `NAVIS_ALLOWED_ORIGINS` merged into `CORS_ALLOWED_ORIGINS` |
+| `render.yaml` | **new** — Blueprint recording both services |
+| `render-build.sh` | **new** — CPU torch, dependencies, seed |
+| `backend/scripts/seed.py:109` | stale `--reload` launch line gained `--app-dir backend` (D-112 leftover) |
+| `backend/scripts/healthcheck.py:3,230` | same |
+
+**Render service configuration (not in the repo):**
+
+| Setting | Value | Why it cannot be guessed |
+|---|---|---|
+| API `startCommand` | `python -m uvicorn server.main:app --app-dir backend --host 0.0.0.0 --port $PORT` | the D-112 import root |
+| API `HF_HOME` | `/opt/render/project/src/.hfcache` | `$HOME/.cache` does not survive the build |
+| API `PYTHON_VERSION` | `3.12.10` | numpy 1.26.4 and torch 2.2.2 stop at cp312 |
+| Static site `VITE_API_URL` | the API's origin | build-time constant; a change needs a **rebuild**, not a restart |
+
+**Verified:** recorded in the commit that lands this section.
+
+---
+
+## Previous Modification Area (2026-09-12, D-112) - retained for history
+
 **Task:** All Python moved under `backend/`. `server/`, `matching/`, `extraction/`, `scripts/` and the ten loose root `.py` files now live in `backend/`; `dataset/`, `datasets/`, `frontend/`, `research/`, `requirements.txt` and the `Dockerfile` stayed at the project root. No import statement, schema, threshold or metric changed.
 **Date:** 2026-09-12 · **Decision:** D-112
 

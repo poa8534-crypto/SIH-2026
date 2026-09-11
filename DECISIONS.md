@@ -10700,3 +10700,157 @@ The remaining root clutter is documents, not code: 40 markdown files, four PDFs
 and `-.json` (an 85 KB stray). Consolidating those under `docs/` is the obvious
 next pass and was deliberately not bundled here, because a documentation move and
 a code move failing together would be indistinguishable.
+
+---
+
+## 2026-09-12 / D-113 — NAVIS deployed as two connected Render services; the browser no longer guesses where the API lives
+
+### Status
+Active. Adds a deployment target. Changes no schema, no threshold, no matching
+behaviour and no metric. The one code path it changes for existing users is the
+frontend's API-base fallback, which was unreachable in every supported local
+setup and wrong in every hosted one.
+
+### Context
+The project ran only on a laptop. `run_navis.bat` starts uvicorn on `:8000` and
+Vite on `:5173`, and the two-device demo works because a phone on the same LAN
+loads the page from the laptop's IP and derives the API from it. Nothing about
+that survives being put on the public internet.
+
+Two Render services already existed and neither worked:
+
+| Service | Symptom |
+|---|---|
+| `navis-backend` (web service) | Every deploy failed: `ModuleNotFoundError: No module named 'server'` |
+| `NAVIS` (static site) | Built and served, but every API call failed |
+
+Both failures were real bugs, not configuration slips, and the first one was
+caused by the commit immediately before this: **D-112 moved all Python under
+`backend/`**, so `uvicorn server.main:app` with the project root on `sys.path`
+can no longer find the package. The start command still said `PYTHONPATH=.`.
+
+### Decision
+
+**1. Two services, connected by one build-time value.**
+A static site for the SPA and a Python web service for the API, rather than the
+unified `SERVE_FRONTEND=1` container the `Dockerfile` builds. The SPA is then
+served from a CDN and costs nothing, and the API can be restarted, scaled or
+rebuilt without taking the UI offline. They are joined by exactly one value:
+the static site is built with `VITE_API_URL` set to the API's origin. Vite
+inlines it at build time, so **changing it requires rebuilding the static site,
+not restarting it** — the single most common way to get this wrong.
+
+`render.yaml` records both services. The live services were created through the
+API and are kept in step with it by hand; the Blueprint becomes authoritative
+only if they are re-adopted in the dashboard.
+
+**2. `--app-dir backend` in the start command, not a shim at the root.**
+The alternative — putting a `server/` package back at the project root that
+re-exports from `backend/server` — would have un-done D-112 the week it landed,
+and a `sitecustomize.py` doing the same thing implicitly would be worse, because
+nothing at the call site would say why it works. The launch command carries the
+anchor, exactly as `run_navis.bat` and the `Dockerfile` already do.
+
+**3. The frontend stopped guessing.** `getBaseUrl()` was:
+
+```ts
+import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`
+```
+
+On any hosted origin that fallback produces a cross-origin **plaintext** request
+to a port nothing listens on — which a browser on an HTTPS page refuses as mixed
+content before it is even refused as a connection. It is now three explicit
+cases: configured URL, then a *recognised development host* (loopback, `.local`,
+the three private IPv4 ranges), then **same origin**. The third case is the
+unified Docker deployment, which had no correct answer before.
+
+The development-host test is deliberately the same set the backend's CORS regex
+allows. These two have to agree or the browser blocks a request whose URL was
+right.
+
+**4. CORS gained an HTTPS arm, scoped to Render.** The existing regex is
+`http://`-only — correct for a LAN demo, useless for a hosted one. Added
+`https://[a-z0-9-]+\.onrender\.com`, plus a `NAVIS_ALLOWED_ORIGINS` env var for
+a custom domain. Scoped rather than `*` so this stays a deployment allowance and
+not an open API. Verified that `https://evil.com` and the suffix attack
+`http://evil.onrender.com.attacker.net` are both still refused — Starlette
+matches `allow_origin_regex` with `fullmatch`, which is what makes the second
+one fail.
+
+**5. The database is seeded at build time, and is deliberately ephemeral.**
+`dataset/epc_progress.db` is gitignored, so a fresh instance has no data.
+`startup()` seeds the 120-activity baseline but **not** the ingested DPRs, so
+without this the deployed app is an empty shell: a schedule with no progress, no
+audit trail and no review queue. `render-build.sh` runs `backend/scripts/seed.py`
+during the build, whose output persists into the running instance because Render
+builds and runs a native service in the same directory.
+
+Every deploy therefore resets to the seeded state. For a demo that is the
+desirable behaviour, not a limitation to apologise for — but it means **anything
+a judge enters on the hosted app is lost on the next deploy**, and that is only
+acceptable because it is stated here and in `SETUP.md`. Persisting it needs a
+Render Disk (paid) or Postgres, which is a schema migration, not a config change.
+
+**6. CPU-only torch, pinned, from PyTorch's own index.** `pip install
+sentence-transformers` on Linux pulls the CUDA build: ~2.5 GB of `nvidia-*`
+wheels this service can never use. `render-build.sh` installs `torch==2.2.2`
+from `download.pytorch.org/whl/cpu` first, so the requirements resolve against
+it instead of dragging CUDA back in.
+
+**7. `HF_HOME` points inside the project directory.** Its default, `$HOME/.cache`,
+does *not* survive from the build into the running instance, so the MiniLM
+weights would be re-downloaded on the first real request — on a cold free
+instance, on top of a 50-second spin-up. Pointing it at
+`/opt/render/project/src/.hfcache` is what makes the build-time download count.
+
+**8. A `404.html` fallback is emitted by `npm run build`.** The SPA uses
+`BrowserRouter` with real paths (`/executive/milestones`), so a refresh or a
+shared deep link asks Render for a file that was never built. The correct fix is
+a rewrite rule (`/*` to `/index.html`), which `render.yaml` declares but which
+**cannot be set through Render's API** — only the dashboard or a Blueprint.
+Copying `index.html` to `404.html` at build time makes deep links work with no
+dashboard access at all; the rewrite rule upgrades them from a 404 status to a
+200.
+
+### Alternatives Considered
+
+**Drop `sentence-transformers` to fit Render's 512 MB free tier.** Measured
+rather than assumed, by blocking the import and re-running `backend/eval.py`:
+
+| | With MiniLM | Hashed-ngram fallback |
+|---|---|---|
+| Auto-link precision | **100.0%** | **95.1%** |
+| Coverage (auto-linked) | 43.5% | 26.6% |
+| Top-1 accuracy | 86.9% | 72.4% |
+| Suggestion precision | 81.8% | 67.8% |
+
+**Rejected.** `CLAUDE.md` states that moving auto-link precision off 100% is a
+correctness regression, and it is right: at 95.1% the deployed demo writes wrong
+activity links into the schedule *with no planner review*, which is the exact
+guarantee the product is built to make. A cheaper deployment that silently
+breaks the central claim is not a cheaper deployment.
+
+The cost of keeping it is memory. Measured locally, RSS is **132 MB** for
+FastAPI and its dependencies and **579 MB** once MiniLM is loaded and encoding —
+over the 512 MB that both Render's `free` and `starter` plans provide. The
+service is deployed on `free` anyway, because the pinned Linux `torch==2.2.2+cpu`
+is leaner than the Windows `torch 2.14` build that number came from, and the real
+figure is close enough to the limit that measuring beats guessing. **If it OOMs,
+the fix is the 2 GB `standard` plan, not a quality downgrade.**
+
+**A `_redirects` file** for the SPA rewrite: not supported by Render (that is
+Netlify), which is why the `404.html` copy is there instead.
+
+### Consequences
+- **`VITE_API_URL` belongs on the static site, never on the API service.** It is
+  a build-time constant. Setting it on the API does nothing at all.
+- **A free API instance spins down after ~15 minutes idle**, and the next request
+  pays ~50 s of cold start. Before a demo, open the API's `/health` once.
+- `eval.py`, `pytest` and local development are untouched: `requirements.txt` is
+  unchanged and the full-quality path is still the default everywhere.
+- The stale `python -m uvicorn server.main:app --reload` left in
+  `backend/scripts/seed.py` and `backend/scripts/healthcheck.py` by D-112 is
+  fixed here; both now print the `--app-dir backend` form.
+
+### Verification
+Recorded in the commit that lands this entry.

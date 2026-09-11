@@ -106,7 +106,7 @@ def main() -> int:
     print("=" * 62)
     print()
     print("Seeded. Start the server from the project root:")
-    print("    python -m uvicorn server.main:app --reload")
+    print("    python -m uvicorn server.main:app --app-dir backend --reload")
     return 0
 
 
