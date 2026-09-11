@@ -10023,3 +10023,170 @@ the bug read as "it scrolls, just to the wrong place".
 - `frontend/src/components/GanttChart.tsx`
 - `frontend/src/pages/Schedule.tsx` (Gantt container height only)
 - `frontend/src/test/gantt.test.tsx` (+7 regression tests)
+
+---
+
+## 2026-09-11 / D-108 — The PM decision dock committed nothing: eight buttons, one handler, zero writes
+
+### Status
+Active.
+
+### Context
+Asked what **Accept Field Actual** does on the schedule inspection panel, the
+answer turned out to be: nothing. `ActivityInspectionPanel.tsx:506` was, in
+full:
+
+```jsx
+const handleAction = (kind: 'accept' | 'flag' | 'override') => {
+  if (kind === 'accept') {
+    setActionFeedback('Actuals verified and confirmed in project ledger.');
+  } else if (kind === 'flag') { ... } else { ... }
+  const timer = setTimeout(() => setActionFeedback(null), 4000);
+  return () => clearTimeout(timer);          // returned to nobody; never cleared
+};
+```
+
+It set a string, showed it for four seconds, and returned. The whole component
+imported `useQuery` only — no `useMutation`, no POST anywhere in 1400 lines.
+**Eight** buttons across three clusters routed into it: *Update Actuals* and
+*Flag for Review* (Overview), *Approve Ground Truth*, *Request Clarification*
+and *Contest Report* (Evidence), and *Accept Field Actual*, *Flag Conflict* and
+*Keep Baseline* (the bottom dock).
+
+Confirmed live before changing anything — clicked on `SEQ-PMP-1061` with the
+network log open:
+
+```
+actual_start      2026-09-09  ->  2026-09-09      requests issued:
+actual_finish     null        ->  null              zero POST / PUT / PATCH
+percent_complete  null        ->  null              (only the 3s GET polling)
+audit rows        3           ->  3
+```
+
+The banner it printed — *"Actuals verified and confirmed in project ledger"* —
+was false in the most direct sense available: nothing reached the ledger.
+
+Three things made this worse than an ordinary dead button.
+
+**1 · It was a second, fake commit path beside the real one.** D-009 states that
+`POST /review/{id}/resolve` is the only route that commits an actual date. That
+route exists, works, and is what Review & Reconcile uses. This panel sat next to
+it claiming to do the same job.
+
+**2 · A bare `Enter` fired it.** `ActivityInspectionPanel.tsx:455` bound
+`handleAction('accept')` to a `window` keydown with no target check. Reconcile
+had already faced exactly this and decided against it, in a comment at
+`Reconcile.tsx:688`: *"Confirm writes an actual date to the schedule. It is no
+longer a single keystroke away from a stray Enter."* The panel had the opposite
+binding. It was harmless only because the handler was inert — it would have
+become a hazard the moment anyone wired it up.
+
+**3 · The test suite pinned the lie.** `scheduleInspectionPanel.test.tsx:358`
+clicked each button and asserted its banner text appeared. It passed. It would
+have kept passing for as long as the buttons did nothing, and would have failed
+the moment they started working.
+
+### Decision
+1. **`handleAction` now performs real writes against endpoints that already
+   existed.** No new server surface, no new client methods — `getReviewQueue`,
+   `resolveReview` and `createRaidItem` were all already in `lib/api.ts`.
+
+   | Button | Action | Endpoint |
+   |---|---|---|
+   | Accept Field Actual / Update Actuals / Approve Ground Truth | `confirm` every pending review item on the activity | `POST /review/{id}/resolve` |
+   | Keep Baseline / Contest Report | `ignore` every pending review item | `POST /review/{id}/resolve` |
+   | Flag Conflict / Flag for Review / Raise as Issue | raise an `issue` linked to the activity | `POST /raid` |
+
+2. **Accept covers every pending item on the activity, and says how many.** The
+   panel is activity-scoped and offers no item picker, so resolving one would
+   leave the rest pending and the badge unchanged — it would look broken. The
+   count is on the button (`Accept Field Actual (3)`) so the label is honest
+   about its scope. Items go one at a time, not concurrently: each appends to
+   `audit_records`, and a partial failure has to leave a truthful count rather
+   than an unknown one. The result line states it: `2 of 3 review item(s)
+   confirmed · 4 audit record(s) written`.
+
+3. **With no pending item, accept and overrule are disabled**, with the reason
+   in the tooltip, rather than firing and reporting success. There is genuinely
+   nothing to adjudicate: under D-009 the review item *is* the unit of decision.
+   Flag stays enabled — raising an issue never depended on the queue.
+
+4. **A failed write renders a `role="alert"` banner and never the success one.**
+   This is the actual defect being repaired, so the two states are now separate
+   elements with separate state, and the error path clears the success text
+   before setting its own.
+
+5. **`Enter` focuses the accept button instead of pressing it**, matching the
+   protocol Reconcile chose for the same reason.
+
+6. **RAID entries are `kind: 'issue'`, never `risk`.** `server/raid.py:89`
+   refuses `probability`/`impact_days` on a non-risk, and an observed source
+   conflict is not a scored possibility. Neither field is sent.
+
+7. **`Request Clarification` was relabelled to `Raise as Issue`.** It routes to
+   the register, not to the clarification loop. `POST /review/{item_id}/clarify`
+   does exist and would need a question to send; wiring a button to an action
+   its label does not name is the same category of defect as the one above, so
+   the label was corrected rather than the behaviour bent to fit it.
+
+8. **Deliberately not fixed, on instruction.** The fabricated content in this
+   same panel stays: the `'23 days'` variance fallback
+   (`ActivityInspectionPanel.tsx:960`), the hardcoded `Evidence (3)` tab label,
+   the `auditRecords?.length || 8` fallback, `Log #8931-REV2`, and the invented
+   `VN_<date>_0842.wav` filename. These were raised, and the instruction was to
+   wire the buttons only. They remain open — see the ISSUES note below.
+
+### Consequences
+- The three PM decisions are real, and they land in screens that already exist:
+  a confirm moves the schedule and shows on the Gantt; a flag appears in Risk &
+  Exposure.
+- Both write paths invalidate the same query keys as Reconcile and share the
+  `['reviewQueue']` cache key, so a decision taken on either screen refreshes
+  the other.
+- A confirm also calls `notifyScheduleUpdate`, so it drives the same live toast
+  and Gantt highlight as Reconcile does (D-107). An `ignore` does not: nothing
+  moved on the schedule, so announcing it would be a second false claim.
+- **No backend code was touched.** No endpoint, schema, matcher, extractor or
+  threshold changed; the panel now calls routes that were already there and
+  already tested. No metric can have moved, which is why `python eval.py` was
+  not run.
+
+### Verification
+- **`npx tsc --noEmit`** — clean.
+- **`npx vitest run`** — 24 files, **254 passed**, 0 failed.
+- `scheduleInspectionPanel.test.tsx` went 7 → 12. The banner-text test was
+  **deleted, not amended** — it asserted the defect. The six that replaced it
+  assert payloads: that accept calls `resolveReview` once per pending item with
+  `action: 'confirm'`, that Keep Baseline sends `ignore`, that the flag sends
+  `kind: 'issue'` with **no** `probability`/`impact_days`, that both are
+  disabled with no pending item, that a rejected write renders `role="alert"`
+  and no success text, and that a bare `Enter` calls nothing and focuses
+  `#panel-accept-actual`.
+- **Live, against the running API**, not only against mocks:
+  - `PIP-RCK-1024` has 3 pending items and the button read
+    **`Accept Field Actual (3)`** — the count matches the server;
+  - `Enter` left the queue at 3 pending and put focus on
+    `#panel-accept-actual`;
+  - **Flag Conflict fired for real**: the register went 9 → 10 and returned
+    `bd8bc7ed… kind=issue status=open linked=[PIP-RCK-1024] probability=null
+    impact_days=null`, with the banner naming the id. That row was then
+    `PATCH`ed to `status: rejected` — it was verification traffic, not a
+    planner's decision, and is annotated as such;
+  - on `CIV-BKL-1011`, which has no pending item, accept and Keep Baseline were
+    **disabled**, the tooltip read *"No pending review item for this activity —
+    nothing to accept"*, clicking accept produced **no banner at all**, and Flag
+    stayed enabled.
+- **Accept was deliberately not fired against the live database.** It commits
+  actual dates into an append-only ledger (D-004) and cannot be undone, and this
+  is the demo dataset. Its payloads are pinned by the unit tests above, and the
+  endpoint itself is covered by the backend suite (1055 passing, unchanged).
+
+### Affected Areas
+- `frontend/src/components/ActivityInspectionPanel.tsx`
+- `frontend/src/test/scheduleInspectionPanel.test.tsx`
+
+Not in this commit: `GanttChart.tsx` and `gantt.test.tsx` carry an unrelated
+concurrent rewrite from another session working in the same tree (day-level
+tick rendering, new `PX_PER_DAY_MAP` values, float slack in the timeline
+bounds). It was left uncommitted for its author. The D-107 regression guards
+survive that rewrite and pass against it.

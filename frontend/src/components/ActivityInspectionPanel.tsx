@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -27,10 +27,12 @@ import {
   Flag,
   MoreHorizontal,
 } from 'lucide-react';
-import { api } from '../lib/api';
+import { api, errorDetail } from '../lib/api';
+import { notifyScheduleUpdate } from '../lib/liveSync';
 import {
   AuditRecord,
   DateBasis,
+  ReviewItem,
   ScheduleActivity,
 } from '../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
@@ -431,12 +433,33 @@ export function ActivityInspectionPanel({
   const [isForecastOpen, setIsForecastOpen] = useState(true);
   const [isAuditOpen, setIsAuditOpen] = useState(true);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
 
   // Fetch audit records to ground the supervisor statements and sources
   const { data: auditRecords } = useQuery({
     queryKey: ['audit', activity.activity_id],
     queryFn: () => api.getActivityAudit(activity.activity_id),
   });
+
+  // The decision dock adjudicates REVIEW ITEMS, not the activity row directly.
+  // D-009: POST /review/{id}/resolve is the only path that commits an actual
+  // date, so with no pending item there is genuinely nothing here to accept.
+  // Shares the ['reviewQueue'] key with Reconcile so either screen's write
+  // refreshes the other.
+  const { data: reviewQueue } = useQuery({
+    queryKey: ['reviewQueue'],
+    queryFn: () => api.getReviewQueue('pending'),
+  });
+
+  const pendingItems: ReviewItem[] = useMemo(
+    () =>
+      (reviewQueue ?? []).filter(
+        (i) => i.activity_id === activity.activity_id && i.status === 'pending'
+      ),
+    [reviewQueue, activity.activity_id]
+  );
 
   // Calculate next/prev activities for stepper
   const currentIndex = useMemo(() => {
@@ -452,7 +475,12 @@ export function ActivityInspectionPanel({
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        handleAction('accept');
+        // Accept now commits actual dates to an append-only ledger, so it is
+        // not a single stray keystroke away. The key focuses the primary
+        // action and the planner presses it — the same protocol Reconcile
+        // uses for its own confirm (Reconcile.tsx:688).
+        e.preventDefault();
+        document.getElementById('panel-accept-actual')?.focus();
       } else if (e.key === 'ArrowLeft' && prevActivity && onSelectActivity) {
         onSelectActivity(prevActivity.activity_id);
       } else if (e.key === 'ArrowRight' && nextActivity && onSelectActivity) {
@@ -503,16 +531,154 @@ export function ActivityInspectionPanel({
 
   const audioDate = activity.actual_start || '2026-09-14';
 
+  /** Invalidate everything a resolve or a register write can move. Mirrors
+   *  the Reconcile screen, so both paths leave the app in the same state. */
+  const refreshAfterWrite = () => {
+    queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+    queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    queryClient.invalidateQueries({ queryKey: ['fieldReports'] });
+    queryClient.invalidateQueries({ queryKey: ['evm'] });
+    queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
+    queryClient.invalidateQueries({ queryKey: ['audit', activity.activity_id] });
+    queryClient.invalidateQueries({ queryKey: ['raid'] });
+  };
+
+  /**
+   * Resolve every pending review item on this activity with one action.
+   *
+   * The panel is activity-scoped and offers no item picker, so a single
+   * decision has to cover all of them — resolving one would leave the rest
+   * pending and the badge unchanged. Items are sent one at a time rather than
+   * concurrently: each write appends to `audit_records`, and a partial failure
+   * must leave a truthful count rather than an unknown one.
+   */
+  const resolveAll = useMutation({
+    mutationFn: async ({
+      action,
+      note,
+    }: {
+      action: 'confirm' | 'ignore';
+      note: string;
+    }) => {
+      let resolved = 0;
+      let auditRecords = 0;
+      const failures: string[] = [];
+
+      for (const item of pendingItems) {
+        try {
+          const res = await api.resolveReview(item.id, { action, note });
+          resolved += 1;
+          auditRecords += res.audit_records_created ?? 0;
+        } catch (e) {
+          failures.push(errorDetail(e));
+        }
+      }
+      return { resolved, auditRecords, failures, attempted: pendingItems.length };
+    },
+    onSuccess: (res, vars) => {
+      refreshAfterWrite();
+
+      if (res.resolved === 0) {
+        setActionFeedback(null);
+        setActionError(
+          `Nothing was written — all ${res.attempted} item(s) failed. ${res.failures[0] ?? ''}`
+        );
+        return;
+      }
+
+      setActionError(
+        res.failures.length
+          ? `${res.failures.length} of ${res.attempted} failed: ${res.failures[0]}`
+          : null
+      );
+
+      const verb = vars.action === 'confirm' ? 'confirmed' : 'left unwritten';
+      setActionFeedback(
+        `${res.resolved} of ${res.attempted} review item(s) ${verb} · ` +
+          `${res.auditRecords} audit record(s) written`
+      );
+
+      // Only a confirm moves the schedule, so only a confirm announces it.
+      if (vars.action === 'confirm') {
+        notifyScheduleUpdate({
+          activityId: activity.activity_id,
+          activityDescription: activity.description,
+          message: `Field actual accepted for ${activity.activity_id}`,
+          source: 'Schedule inspection',
+          percentComplete: activity.percent_complete ?? undefined,
+          varianceDays: activity.finish_variance_days ?? undefined,
+        });
+      }
+    },
+    onError: (e) => {
+      setActionFeedback(null);
+      setActionError(errorDetail(e));
+    },
+  });
+
+  /**
+   * Raise the conflict in the RAID register — the one place this system keeps
+   * issues. Kind is `issue`, never `risk`: `server/raid.py:89` refuses
+   * probability/impact on a non-risk, and this is an observed conflict rather
+   * than a scored possibility.
+   */
+  const flagConflict = useMutation({
+    mutationFn: () =>
+      api.createRaidItem({
+        kind: 'issue',
+        title: `Source conflict on ${activity.activity_id}`,
+        description:
+          `${activity.description}\n\n` +
+          `Flagged from the schedule inspection panel. ` +
+          `Planned ${activity.planned_start ?? '—'} → ${activity.planned_finish ?? '—'}; ` +
+          `actual ${activity.actual_start ?? '—'} → ${activity.actual_finish ?? '—'}. ` +
+          `${pendingItems.length} review item(s) pending at the time of flagging.`,
+        status: 'open',
+        linked_activity_ids: [activity.activity_id],
+        source_kind: 'schedule_inspection',
+        source_id: activity.activity_id,
+      }),
+    onSuccess: (item) => {
+      refreshAfterWrite();
+      setActionError(null);
+      setActionFeedback(
+        `Raised as issue ${item.id.slice(0, 8)} in the RAID register — see Risk & Exposure.`
+      );
+    },
+    onError: (e) => {
+      setActionFeedback(null);
+      setActionError(errorDetail(e));
+    },
+  });
+
+  const actionBusy = resolveAll.isPending || flagConflict.isPending;
+
   const handleAction = (kind: 'accept' | 'flag' | 'override') => {
-    if (kind === 'accept') {
-      setActionFeedback('Actuals verified and confirmed in project ledger.');
-    } else if (kind === 'flag') {
-      setActionFeedback('Flagged for contractual dispute & delay attribution review.');
-    } else {
-      setActionFeedback('Baseline target locked; field variance quarantined.');
+    if (actionBusy) return;
+    setActionError(null);
+    setActionFeedback(null);
+
+    if (kind === 'flag') {
+      flagConflict.mutate();
+      return;
     }
-    const timer = setTimeout(() => setActionFeedback(null), 4000);
-    return () => clearTimeout(timer);
+
+    // accept / override both adjudicate the pending items, in opposite
+    // directions: confirm writes the field actual, ignore closes the item and
+    // leaves the baseline standing.
+    if (pendingItems.length === 0) {
+      setActionError(
+        `No pending review item for ${activity.activity_id} — there is nothing to accept or overrule. ` +
+          `Flag Conflict still works.`
+      );
+      return;
+    }
+
+    resolveAll.mutate(
+      kind === 'accept'
+        ? { action: 'confirm', note: 'Accepted from the schedule inspection panel' }
+        : { action: 'ignore', note: 'Baseline kept from the schedule inspection panel' }
+    );
   };
 
   // Status Badge resolution
@@ -619,6 +785,27 @@ export function ActivityInspectionPanel({
             {actionFeedback}
           </span>
           <button onClick={() => setActionFeedback(null)} className="opacity-80 hover:opacity-100">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* A refused or failed write says so. It must never fall back to the
+          success banner above — that is the defect this replaced. */}
+      {actionError && (
+        <div
+          role="alert"
+          className="bg-danger/15 border-y border-danger/40 text-danger px-4 py-2 font-mono text-label flex items-start justify-between gap-2 animate-in fade-in slide-in-from-top duration-150"
+        >
+          <span className="flex items-start gap-1.5">
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            {actionError}
+          </span>
+          <button
+            onClick={() => setActionError(null)}
+            className="opacity-80 hover:opacity-100 shrink-0"
+            aria-label="Dismiss error"
+          >
             <X size={12} />
           </button>
         </div>
@@ -841,11 +1028,19 @@ export function ActivityInspectionPanel({
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={() => handleAction('accept')}
-              className="py-2 px-3 rounded bg-accent text-accent-fg font-semibold text-xs hover:bg-accent/90 transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99]"
+              disabled={actionBusy || pendingItems.length === 0}
+              className="py-2 px-3 rounded bg-accent text-accent-fg font-semibold text-xs hover:bg-accent/90 transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
               type="button"
+              title={
+                pendingItems.length === 0
+                  ? 'No pending review item for this activity — nothing to accept'
+                  : `Confirm ${pendingItems.length} pending review item(s)`
+              }
             >
               <CheckCircle2 size={13} />
-              <span>Update Actuals</span>
+              <span>
+                Update Actuals{pendingItems.length ? ` (${pendingItems.length})` : ''}
+              </span>
             </button>
             <button
               onClick={() => onViewInGantt?.(activity.activity_id)}
@@ -857,8 +1052,10 @@ export function ActivityInspectionPanel({
             </button>
             <button
               onClick={() => handleAction('flag')}
-              className="py-1.5 px-3 rounded bg-surface hover:bg-warn/10 text-warn border border-warn/30 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
+              disabled={actionBusy}
+              className="py-1.5 px-3 rounded bg-surface hover:bg-warn/10 text-warn border border-warn/30 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
               type="button"
+              title="Raise this activity as an issue in the RAID register"
             >
               <Flag size={12} />
               <span>Flag for Review</span>
@@ -1353,24 +1550,44 @@ export function ActivityInspectionPanel({
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleAction('accept')}
-                className="py-2 px-2 rounded bg-accent text-accent-fg font-semibold text-[11px] hover:bg-accent/90 transition-colors flex items-center justify-center gap-1"
+                disabled={actionBusy || pendingItems.length === 0}
+                className="py-2 px-2 rounded bg-accent text-accent-fg font-semibold text-[11px] hover:bg-accent/90 transition-colors flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 type="button"
+                title={
+                  pendingItems.length === 0
+                    ? 'No pending review item for this activity — nothing to approve'
+                    : `Confirm ${pendingItems.length} pending review item(s)`
+                }
               >
                 <CheckCircle2 size={12} />
-                <span>Approve Ground Truth</span>
+                <span>
+                  Approve Ground Truth{pendingItems.length ? ` (${pendingItems.length})` : ''}
+                </span>
               </button>
+              {/* Relabelled: this routes to the RAID register, not to the
+                  clarification loop (POST /review/{id}/clarify), which needs a
+                  question to send. A button must not name an action it does
+                  not perform. */}
               <button
                 onClick={() => handleAction('flag')}
-                className="py-2 px-2 rounded bg-surface hover:bg-warn/10 text-warn border border-warn/30 font-semibold text-[11px] transition-colors flex items-center justify-center gap-1"
+                disabled={actionBusy}
+                className="py-2 px-2 rounded bg-surface hover:bg-warn/10 text-warn border border-warn/30 font-semibold text-[11px] transition-colors flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 type="button"
+                title="Raise this conflict as an issue in the RAID register"
               >
                 <AlertTriangle size={12} />
-                <span>Request Clarification</span>
+                <span>Raise as Issue</span>
               </button>
               <button
                 onClick={() => handleAction('override')}
-                className="py-2 px-2 rounded bg-surface hover:bg-selected text-muted hover:text-fg border border-hair font-semibold text-[11px] transition-colors flex items-center justify-center gap-1"
+                disabled={actionBusy || pendingItems.length === 0}
+                className="py-2 px-2 rounded bg-surface hover:bg-selected text-muted hover:text-fg border border-hair font-semibold text-[11px] transition-colors flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 type="button"
+                title={
+                  pendingItems.length === 0
+                    ? 'No pending review item for this activity — nothing to contest'
+                    : `Close ${pendingItems.length} pending review item(s) without writing an actual date`
+                }
               >
                 <Lock size={12} />
                 <span>Contest Report</span>
@@ -1404,27 +1621,44 @@ export function ActivityInspectionPanel({
         </div>
         <div className="flex gap-2">
           <button
+            id="panel-accept-actual"
             onClick={() => handleAction('accept')}
-            className="flex-1 py-2 px-3 rounded bg-accent text-accent-fg font-semibold text-xs hover:bg-accent/90 transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99]"
+            disabled={actionBusy || pendingItems.length === 0}
+            className="flex-1 py-2 px-3 rounded bg-accent text-accent-fg font-semibold text-xs hover:bg-accent/90 transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
             type="button"
+            title={
+              pendingItems.length === 0
+                ? 'No pending review item for this activity — nothing to accept'
+                : `Confirm ${pendingItems.length} pending review item(s) and write the field actuals`
+            }
           >
             <CheckCircle2 size={14} />
-            <span>Accept Field Actual</span>
+            <span>
+              {resolveAll.isPending
+                ? 'Writing…'
+                : `Accept Field Actual${pendingItems.length ? ` (${pendingItems.length})` : ''}`}
+            </span>
           </button>
           <button
             onClick={() => handleAction('flag')}
-            className="py-2 px-3 rounded bg-raised text-warn border border-warn/40 hover:bg-warn/10 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
+            disabled={actionBusy}
+            className="py-2 px-3 rounded bg-raised text-warn border border-warn/40 hover:bg-warn/10 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
             type="button"
-            title="Flag for delay attribution or contractual dispute triage"
+            title="Raise this conflict as an issue in the RAID register"
           >
             <AlertTriangle size={14} />
-            <span>Flag Conflict</span>
+            <span>{flagConflict.isPending ? 'Raising…' : 'Flag Conflict'}</span>
           </button>
           <button
             onClick={() => handleAction('override')}
-            className="py-2 px-2.5 rounded bg-raised text-muted border border-hair hover:text-fg hover:bg-surface font-semibold text-xs transition-colors flex items-center justify-center gap-1 active:scale-[0.99]"
+            disabled={actionBusy || pendingItems.length === 0}
+            className="py-2 px-2.5 rounded bg-raised text-muted border border-hair hover:text-fg hover:bg-surface font-semibold text-xs transition-colors flex items-center justify-center gap-1 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
             type="button"
-            title="Lock baseline date and suppress field variance"
+            title={
+              pendingItems.length === 0
+                ? 'No pending review item for this activity — nothing to overrule'
+                : `Close ${pendingItems.length} pending review item(s) without writing an actual date`
+            }
           >
             <Lock size={12} />
             <span>Keep Baseline</span>

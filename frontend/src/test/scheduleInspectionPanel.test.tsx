@@ -232,6 +232,17 @@ const MOCK_PRODUCTIVITY: ActivityProductivity = {
   forecast_note: 'A forecast is a projection and is never written to the schedule.',
 };
 
+const MOCK_REVIEW_QUEUE = [
+  { id: 'rq-1', linked_event_id: 'le-1', activity_id: 'PIP-SUP-1049',
+    reason: 'low_confidence', priority: 'high', status: 'pending',
+    source_span: null, raw_text: '98 of 145 supports done', confidence: 0.55,
+    tags: [], suggested_activity_id: null, candidates: [] },
+  { id: 'rq-2', linked_event_id: 'le-2', activity_id: 'PIP-SUP-1049',
+    reason: 'defaulted_finish_date', priority: 'high', status: 'pending',
+    source_span: null, raw_text: 'tier 1 complete', confidence: 0.61,
+    tags: [], suggested_activity_id: null, candidates: [] },
+];
+
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(api, 'getSchedule').mockResolvedValue({
@@ -260,6 +271,22 @@ beforeEach(() => {
   );
   vi.spyOn(api, 'getQuantityLedger').mockResolvedValue(MOCK_LEDGER as never);
   vi.spyOn(api, 'getActivityProductivity').mockResolvedValue(MOCK_PRODUCTIVITY as never);
+  // The decision dock adjudicates review items, so the queue is part of its
+  // state, not a detail. PIP-SUP-1049 carries two; PIP-SUP-1050 carries none.
+  vi.spyOn(api, 'getReviewQueue').mockResolvedValue(MOCK_REVIEW_QUEUE as never);
+  vi.spyOn(api, 'resolveReview').mockImplementation(async (itemId, body) => ({
+    review_item_id: itemId,
+    resolution: body.action,
+    activity_id: 'PIP-SUP-1049',
+    alias_entries_created: 1,
+    audit_records_created: 2,
+    message: 'resolved',
+  }) as never);
+  vi.spyOn(api, 'createRaidItem').mockResolvedValue({
+    id: 'raid-abcd1234-0000',
+    kind: 'issue',
+    title: 'Source conflict on PIP-SUP-1049',
+  } as never);
 });
 
 describe('Schedule Activity Inspection Panel & Evidence Dossier Integration', () => {
@@ -355,29 +382,97 @@ describe('Schedule Activity Inspection Panel & Evidence Dossier Integration', ()
     expect(await screen.findByText(/PLANNED BASELINE/i)).toBeInTheDocument();
   });
 
-  it('triggers PM Single-Click Action Protocol decisions', async () => {
+  // ── The PM decision dock writes for real (D-108) ─────────────────────────
+  //
+  // These three buttons used to call a handler that set a string and returned.
+  // "Actuals verified and confirmed in project ledger" appeared while nothing
+  // was sent. The tests that existed passed, because they asserted the string.
+
+  it('commits every pending review item when Accept Field Actual is pressed', async () => {
     wrap(<Schedule />);
     fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
 
-    const acceptBtn = await screen.findByRole('button', { name: /Accept Field Actual/i });
-    const flagBtn = screen.getByRole('button', { name: /Flag Conflict/i });
-    const overrideBtn = screen.getByRole('button', { name: /Keep Baseline/i });
-
-    expect(acceptBtn).toBeInTheDocument();
-    expect(flagBtn).toBeInTheDocument();
-    expect(overrideBtn).toBeInTheDocument();
-
-    // Test Accept Field Actual
+    // The count is on the button: the panel is activity-scoped, so one click
+    // has to cover all the items or it leaves the badge unchanged.
+    const acceptBtn = await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
     fireEvent.click(acceptBtn);
-    expect(await screen.findByText(/Actuals verified and confirmed in project ledger/i)).toBeInTheDocument();
 
-    // Test Flag Conflict
-    fireEvent.click(flagBtn);
-    expect(await screen.findByText(/Flagged for contractual dispute & delay attribution review/i)).toBeInTheDocument();
+    await screen.findByText(/2 of 2 review item\(s\) confirmed/i);
+    expect(api.resolveReview).toHaveBeenCalledTimes(2);
+    expect(api.resolveReview).toHaveBeenCalledWith('rq-1', expect.objectContaining({ action: 'confirm' }));
+    expect(api.resolveReview).toHaveBeenCalledWith('rq-2', expect.objectContaining({ action: 'confirm' }));
+  });
 
-    // Test Override Baseline
-    fireEvent.click(overrideBtn);
-    expect(await screen.findByText(/Baseline target locked; field variance quarantined/i)).toBeInTheDocument();
+  it('closes the items without writing a date when Keep Baseline is pressed', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+
+    // Wait for the queue to land: until it does the button is correctly
+    // disabled, and a click on a disabled button is silently a no-op.
+    await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
+    fireEvent.click(screen.getByRole('button', { name: /Keep Baseline/i }));
+
+    await screen.findByText(/2 of 2 review item\(s\) left unwritten/i);
+    expect(api.resolveReview).toHaveBeenCalledWith('rq-1', expect.objectContaining({ action: 'ignore' }));
+    expect(api.resolveReview).toHaveBeenCalledWith('rq-2', expect.objectContaining({ action: 'ignore' }));
+  });
+
+  it('raises a RAID issue when Flag Conflict is pressed', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+
+    await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
+    fireEvent.click(screen.getByRole('button', { name: /Flag Conflict/i }));
+
+    await screen.findByText(/Raised as issue raid-abc/i);
+    expect(api.createRaidItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'issue',
+        linked_activity_ids: ['PIP-SUP-1049'],
+      })
+    );
+    // server/raid.py:89 refuses probability/impact on a non-risk.
+    const body = (api.createRaidItem as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(body).not.toHaveProperty('probability');
+    expect(body).not.toHaveProperty('impact_days');
+  });
+
+  it('disables accept and overrule when the activity has no pending review item', async () => {
+    wrap(<Schedule />);
+    // PIP-SUP-1050 carries no queue item, so there is nothing to adjudicate.
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 2'));
+
+    const acceptBtn = await screen.findByRole('button', { name: /Accept Field Actual/i });
+    expect(acceptBtn).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Keep Baseline/i })).toBeDisabled();
+    // Flagging does not depend on the queue, so it stays available.
+    expect(screen.getByRole('button', { name: /Flag Conflict/i })).not.toBeDisabled();
+    expect(api.resolveReview).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed write as an error and never as success', async () => {
+    vi.spyOn(api, 'resolveReview').mockRejectedValue(new Error('Review item already resolved'));
+
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+    fireEvent.click(await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/Nothing was written/i);
+    expect(screen.queryByText(/review item\(s\) confirmed/i)).not.toBeInTheDocument();
+  });
+
+  it('does not commit on a bare Enter — it focuses the action instead', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+    await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+
+    // Accept writes actual dates to an append-only ledger; a stray Enter must
+    // not commit it. Same protocol as Reconcile's confirm.
+    expect(api.resolveReview).not.toHaveBeenCalled();
+    expect(document.getElementById('panel-accept-actual')).toHaveFocus();
   });
 
   it('supports closing the panel via Escape key and Close button', async () => {

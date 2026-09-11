@@ -1291,6 +1291,117 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** The PM decision dock on the schedule inspection panel wrote nothing — eight buttons, one cosmetic handler. Wired to the real resolve and RAID endpoints.
+**Date:** 2026-09-11 · **Decision:** D-108
+
+```
+PM DECISION DOCK — WHAT RUNS WHEN A BUTTON IS PRESSED             (D-108)
+
+  BEFORE
+    ActivityInspectionPanel.tsx:506   handleAction(kind)
+        setActionFeedback('Actuals verified and confirmed in project
+                           ledger.')
+        setTimeout(clear, 4000)
+        return                       <- that was the whole function
+    The component imported useQuery only. No useMutation, no POST, in
+    1400 lines. Eight buttons routed here:
+        Overview   Update Actuals | Flag for Review
+        Evidence   Approve Ground Truth | Request Clarification |
+                   Contest Report
+        Dock       Accept Field Actual | Flag Conflict | Keep Baseline
+    Measured live on SEQ-PMP-1061: zero POST/PUT/PATCH, activity row and
+    audit count identical before and after.
+
+  NOW — the dock adjudicates REVIEW ITEMS, not the activity row
+
+  useQuery ['reviewQueue']  api.getReviewQueue('pending')
+        same cache key Reconcile uses (Reconcile.tsx:274), so a decision
+        on either screen refreshes the other
+        |
+        v
+  pendingItems = queue.filter(activity_id === this activity && pending)
+        D-009: POST /review/{id}/resolve is the ONLY path that commits an
+        actual date, so the review item is the unit of decision. With none,
+        there is nothing to adjudicate and the buttons say so.
+        |
+        +--> accept  ──> resolveAll.mutate({action:'confirm'})
+        |                  for each pending item, SEQUENTIALLY:
+        |                    api.resolveReview(id, {action:'confirm', note})
+        |                  sequential, not Promise.all: each call appends to
+        |                  audit_records and a partial failure must leave a
+        |                  truthful count
+        |                  -> server _apply_confirmed_event_to_schedule
+        |                  -> notifyScheduleUpdate  -> toast + Gantt highlight
+        |
+        +--> override ──> resolveAll.mutate({action:'ignore'})
+        |                  closes the item, writes no actual date
+        |                  NO notifyScheduleUpdate: nothing moved, so
+        |                  announcing it would be a second false claim
+        |
+        +--> flag    ──> api.createRaidItem({kind:'issue', ...})
+                           kind is 'issue', never 'risk': server/raid.py:89
+                           refuses probability/impact_days on a non-risk, and
+                           an observed conflict is not a scored possibility.
+                           Neither field is sent.
+                           -> lands in Risk & Exposure
+
+  AFTER ANY WRITE   refreshAfterWrite()
+      invalidates ['reviewQueue'] ['schedule'] ['fieldReports'] ['evm']
+                  ['auditRecent'] ['audit', activityId] ['raid']
+      the same set Reconcile invalidates, so both paths leave the app in
+      the same state
+
+  BUTTON STATE — the label tells the truth about scope
+      pendingItems.length > 0   "Accept Field Actual (3)"   enabled
+      pendingItems.length === 0  "Accept Field Actual"      DISABLED
+            title: "No pending review item for this activity —
+                    nothing to accept"
+            Flag stays enabled: raising an issue never depended on the queue.
+      in flight                  "Writing…" / "Raising…"    all disabled
+
+  FEEDBACK — two states, two elements, never one falling back to the other
+      actionFeedback  green banner, only on a write that returned
+            "2 of 3 review item(s) confirmed · 4 audit record(s) written"
+      actionError     role="alert", on refusal, failure, or nothing-to-do
+            a failed write clears actionFeedback before setting this
+      The defect being repaired was exactly a success banner shown for a
+      write that never happened, so these can no longer share a path.
+
+  KEYBOARD                                                    <- D-108
+      Enter   -> document.getElementById('panel-accept-actual')?.focus()
+               NOT handleAction('accept'). Accept commits actual dates to an
+               append-only ledger (D-004); it is not one stray keystroke
+               away. Same protocol, and the same reason, as Reconcile's
+               confirm (Reconcile.tsx:688).
+      Escape  -> onClose        ArrowLeft/Right -> prev/next activity
+
+  RELABELLED
+      "Request Clarification" -> "Raise as Issue"
+          it routes to the RAID register, not to the clarification loop
+          (POST /review/{item_id}/clarify, which needs a question to send).
+          A button must not name an action it does not perform.
+
+  STILL COSMETIC IN THIS PANEL — raised, left on instruction
+      :960  '23 days' fallback when finish_variance_days is 0/absent
+      :835  "Evidence (3)" hardcoded
+      :847  auditRecords?.length || 8
+      :871  "Log #8931-REV2" on every activity
+      :529  VN_<date>_0842.wav invented filename
+      "More" button is still an alert().
+
+  REGRESSION GUARDS  src/test/scheduleInspectionPanel.test.tsx  (7 -> 12)
+    The old banner-text test was DELETED, not amended: it asserted the
+    defect, and would have failed the moment the buttons started working.
+    accept calls resolveReview once per pending item with action:'confirm'
+    Keep Baseline sends action:'ignore'
+    flag sends kind:'issue' and NO probability / impact_days
+    no pending item -> accept and overrule disabled, flag still enabled
+    a rejected write renders role="alert" and no success text
+    bare Enter calls nothing and focuses #panel-accept-actual
+```
+
+## Previous Modification Area (2026-09-11, D-107) - retained for history
+
 **Task:** Gantt rendering sweep — a highlighted bar with no background, a chart whose vertical scroll never engaged, a page-hijacking row click, and tsc broken again.
 **Date:** 2026-09-11 · **Decision:** D-107
 
