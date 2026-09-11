@@ -1291,6 +1291,48 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Wrote `DEMO_VIDEO_SCRIPT.md` — a recording script for the demo video, derived by walking the running application (API :8000, UI :5173) rather than from `DEMO.md`, which has drifted from the build. Documentation only: no source file, schema, threshold, matcher, endpoint or metric was changed, so no execution path moved.
+**Date:** 2026-09-12 · **Decision:** D-114
+
+```
+HOW THE SCRIPT WAS DERIVED — READ PATHS ONLY                     (D-114)
+
+  every route walked in the browser, signed in per role via
+  localStorage 'navis.role'  (frontend/src/lib/role.ts)
+
+    planner    /home /reconcile /schedule /ingest /raid /delay /memory
+    executive  /executive + /milestones /progress /risks /forecasts
+               /insights /reports /confidence
+    field      /field /field/reports /field/clarifications /field/profile
+
+  two beats exercised end to end, both unchanged by this task:
+
+    field three-turn capture
+      Field.tsx -> ReportStudio.tsx -> POST /agent/turn
+        -> QAAgent slot-filling (backend/server/agent_llm.py, LLM OFF:
+           .env EXTRACTION_PROVIDER=rules)
+        -> matcher -> review card  PIP-INS-1045 @ 69%  -> NOT applied (D-009)
+
+    audit drawer
+      Schedule.tsx row click -> Activity Inspection Panel
+        -> GET /audit/{activity_id}
+        -> 8 append-only records for CIV-FNC-1016 across 3 source files,
+           incl. SOURCE CONFLICT and FINISH WITHHELD (D-004, D-015)
+
+  metrics re-run, not modified:
+    backend/eval.py   -> 100.0% auto-link precision, 43.5% coverage,
+                         86.9% top-1, R@3 97.2%  (held-out, 154 mentions)
+    pytest -q         -> 2 failed, 1053 passed   (leakage, green in isolation)
+    npx vitest run    -> 257 passed              (flaky band 253-257, D-113)
+
+  NOT reset: dataset/epc_progress.db is dirty from rehearsals; the script's
+  pre-flight makes backend/scripts/reset_demo.py the presenter's first step.
+```
+
+---
+
+## Previous Modification Area
+
 **Task:** NAVIS deployed to Render as two connected services — a static site for the SPA and a Python web service for the API. Fixed the start command D-112 invalidated, the frontend's API-base fallback, the HTTP-only CORS policy, the empty deployed database and SPA deep links. No schema, threshold, matcher or metric changed.
 **Date:** 2026-09-12 · **Decision:** D-113
 

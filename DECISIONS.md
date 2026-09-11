@@ -10921,3 +10921,91 @@ a lucky run, not a stable baseline. The failing assertion looks for
 `Accept Field Actual (2)`, a count that depends on query state resolving before
 the assertion, so the likely cause is a missing `await`/`findBy` rather than
 anything in the component.
+
+---
+
+## 2026-09-12 / D-114 — The demo video gets its own script, written from the running application rather than from `DEMO.md`
+
+**Context.** `demo_script.md` has been retracted since 2026-09-10 — an external
+review found six false claims in it. `DEMO.md` is the surviving runbook, but it
+was walked end to end on 2026-09-03 and only partly re-derived on 2026-09-11,
+and a large uncommitted UI redesign has landed since. `RUN_SHEET_SEP11.md`
+Appendix A carries a shot list, but it is scoped to a 3-minute **fail-safe**
+video played when the laptop dies, not to a demo video as a deliverable.
+
+Asked to prepare a script for recording a demo video, the choice was whether to
+assemble it from the existing documents or from the application.
+
+**Decision. The script is derived from the running application, and every
+screen, label and quoted sentence in it was read off `localhost:5173` on
+2026-09-12.** Metrics were re-run the same day (`backend/eval.py`,
+`pytest -q`, `npx vitest run`). The result is `DEMO_VIDEO_SCRIPT.md`.
+
+**Why.** The documents and the build have diverged, and the divergence is
+exactly the class of error that got `demo_script.md` retracted — a presenter
+saying a sentence the screen no longer prints. Seven concrete drifts were found
+and are tabulated in §0 of the new file:
+
+- planner Home no longer shows the `120 / 67 / 135 / 38` tiles;
+- Senior Management has eight destinations, not three;
+- the executive "Data" screen is now **Data Confidence** and no longer shows the
+  corpus-provenance tiles `DEMO.md` §8 describes;
+- **the role picker no longer prints the "there is no authentication here"
+  paragraph** — it is absent from `HEAD` as well as from the working tree, so
+  `DEMO.md`'s instruction to point at it, and its argument that "we chose to say
+  that on the screen", no longer hold;
+- the field bottom nav reads Home / Updates / Questions / Settings;
+- the field agent asks for a missing slot with a free-text box, not Today /
+  Yesterday chips;
+- Reconcile is a Queue/Detail two-tab layout, not three columns.
+
+**What still reproduces, and is therefore what the script is built on.** The
+`CIV-FNC-1016` worked example still yields eight append-only audit records
+across three source files, with `2 SOURCES ASSERTED THIS FIELD`, a
+`SOURCE CONFLICT` row and a `FINISH WITHHELD · RECORDED, NOT APPLIED` row. The
+three-turn field script still produces `PIP-INS-1045 · Insulation —
+24"-P-1001-A1A` at **69% confidence** and still refuses to auto-apply. Both are
+scripted as the two load-bearing beats.
+
+**Three defects found while verifying, none introduced here, none fixed here.**
+
+1. **The Reconcile screen contradicts the numbers sheet.** It renders
+   `AUTO-LINK THRESHOLD 77.5% · calibrated τ_high` and `τ_high=0.775`, from a
+   hardcoded `autoLinkThreshold={0.775}` at `frontend/src/pages/Reconcile.tsx:1096`
+   and the same default at `frontend/src/components/MatchReasoning.tsx:155`. The
+   shipped matcher runs `tau_high=0.80` (`backend/matching/config.py:163`,
+   `SHIPPED_THRESHOLDS`), which is what `backend/eval.py` measures and what
+   `NUMBERS_SHEET.md` row 9 instructs the team to say. Not fixed here because
+   changing a displayed threshold is a matching-lane change and belongs with a
+   re-run of `backend/eval.py`; the script instead forces an explicit choice
+   before recording.
+2. **`pytest -q` reports `2 failed, 1053 passed`** —
+   `test_learned.py::TestAliasChannel::test_key_matches_what_the_server_writes`
+   and
+   `test_delay_evidence.py::TestKeywordListStaysShared::test_memory_uses_the_raid_keyword_list`.
+   Both files are green in isolation (20 passed, 8 passed), so this is
+   cross-test state leakage rather than a product fault — the same shape as the
+   vitest flakiness recorded in D-113. It matters for the demo because
+   `NUMBERS_SHEET.md` row 7 says "all passing" and invites a live run.
+3. **The test total has moved.** `pytest` collects **1,055** and vitest now runs
+   **257** (D-113 records this suite as landing between 253 and 257), so the
+   total is **1,312**, not the **1,284** on the printed sheet.
+
+**Numbers re-run 2026-09-12 and unchanged**, held-out test split, 154 mentions:
+auto-link precision **100.0%** (67/67), coverage **43.5%**, top-1 **86.9%**
+(126/145, 95% CI 81.4–92.4), wrong review rows **28**, NO_MATCH refused **0 of
+9** on this split. `eval.py` prints Recall@3 = **97.2%** (141/145) on the v1
+held-out split; `NUMBERS_SHEET.md` row 5's 88.1% is the **v2 research corpus**.
+The script names the corpus on both.
+
+**Deliberately not done.** The demo database was not reset — it is dirty from
+rehearsals (review queue 120 rather than 135, RAID register holding 53 accepted
+items) and `backend/scripts/reset_demo.py` was blocked by this environment's
+permission classifier. The reset is therefore the first item of the script's
+pre-flight, with a table of expected counts for the presenter to confirm on
+screen rather than trust.
+
+**Supersedes nothing.** `demo_script.md` stays retracted, `DEMO.md` stays the
+operational runbook for a live stage run, and `NUMBERS_SHEET.md` stays the
+authority for any spoken figure. `DEMO_VIDEO_SCRIPT.md` is additive and is
+scoped to recording.
