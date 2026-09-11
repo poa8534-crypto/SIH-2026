@@ -1291,6 +1291,88 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Senior Management sweep, second pass. Every figure in the executive lane is now derived from the API payload rather than from a literal fallback; two decorative report selectors were wired; a dead RAID click, an empty report section and a mislabelled staleness panel were fixed.
+**Date:** 2026-09-11 · **Decision:** D-111
+
+```
+SENIOR MANAGEMENT — WHERE EACH NUMBER NOW COMES FROM            (D-111)
+
+  DataConfidence.tsx
+    useQuery ['executiveMetrics']  api.getExecutiveMetrics()
+        -> GET /executive/metrics          server/main.py:2887
+        -> kpis.evidence_coverage_pct      coverageLabel
+                                           auditGrade (banded, scale shown)
+           kpis.evidenced_activities  \
+           kpis.total_activities       >-- the "Formula:" line
+           kpis.unevidenced_activities/    (was the literal "77 / 120 = 64.2%")
+
+    useQuery ['recentAudit', 1]     api.getRecentAudit(1)
+        -> GET /audit/recent?limit=1
+        -> [0].timestamp                   LATEST FIELD REPORT INGEST
+           [0].source_file                 the caption beneath it
+           (was the literal '2026-09-15 07:15:00 IST')
+
+    activities.filter(actual_start && !actual_finish
+                      && finish_variance_days > OVERRUN_THRESHOLD_DAYS)
+        -> "Overrunning In-Progress Activities (> 5 Days Past Planned
+            Finish)".  The same filter previously sat under the heading
+            "> 7 Days Without Update"; GET /schedule carries no
+            per-activity evidence timestamp, so no recency claim is made.
+
+  ManagementReports.tsx  — the two selectors are now inputs to the pack
+    reportPeriod  -> periodWindowDays (7 | 30 | null)
+    reportScope   -> status filter | CIV/PIP prefix filter
+                        |
+                        v
+                  reportMilestones  (useMemo over metrics.milestones)
+                        |
+          +-------------+-------------+
+          v                           v
+     on-screen table §3        fullReportMarkdown §3
+     scopeStatement            "**Review Scope:** ..." header line
+                                    |
+                                    v
+                        copyText() / .md download / window.print()
+
+    defaultNarrative (useMemo over metrics)
+        metrics.critical_drivers[0]  -> the driving activity + its slip
+        .driving_delay               -> action 1, quoted with its activity
+        kpis.unevidenced_activities  -> action 2
+        (replaces the fabricated tag "Skid B-4")
+            |
+            v
+        useEffect syncs into aiNarrative until
+        narrativeIsUserOwned.current flips true — set by typing in the
+        textarea, or by handleGenerateAi's api.askChat() reply.
+
+  RisksDelays.tsx
+    activeTab: 'raid'|'delays'|'conflicts'|null   (null = not yet chosen)
+        resolvedTab = activeTab ?? first tab with rows
+                      raidCount -> delayCount -> conflictCount -> 'raid'
+        Every render reads resolvedTab; only the tab buttons setActiveTab,
+        so a refetch cannot move the reader.
+
+    <tr onClick> setSelectedRaidItem(toggle)
+        -> selectedRaidItem?.id === item.id
+        -> a second <tr> carrying RaidDetailField x6
+           (previously the state was set and never read)
+
+  lib/units.ts — shared by Overview, RisksDelays, Forecasts,
+                 ExecutionInsights, Progress, ManagementReports
+    pluralise(n, singular, plural?)   "1 Day"  not "1 Days"
+    days(n) / signedDays(n)           KPI tiles and variance chips
+    qty(value, uom)                   discrete UOM -> whole numbers
+                                      ("1,447 / 1,693 nos", not 1,446.94)
+```
+
+**Deleted:** `pages/executive/Exposure.tsx` and `pages/executive/Provenance.tsx`
+— imported by nothing; `/executive/exposure` and `/executive/provenance` already
+redirected to `/executive/risks` and `/executive/confidence` in `App.tsx`.
+
+---
+
+## Previous Modification Area (2026-09-11, D-110) - retained for history
+
 **Task:** Committed the Gantt calendar-header rewrite left uncommitted by a parallel session — day-level ticks, scroll-pinned month labels, weekend shading.
 **Date:** 2026-09-11 · **Decision:** D-110 (authored elsewhere; recorded from the diff)
 
@@ -1387,6 +1469,8 @@ GANTT TIMELINE HEADER — WHAT BUILDS IT                            (D-110)
       activity count. No virtualisation, not measured. First place to look
       if the Gantt starts feeling heavy on a longer schedule.
 ```
+
+---
 
 ## Previous Modification Area (2026-09-11, D-108/D-109) - retained for history
 

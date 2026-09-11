@@ -7,6 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "typecheck:executive": "tsc -p tsconfig.executive.json --noEmit",
     "dev": "vite --port=5173 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",

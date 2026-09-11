@@ -1,21 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  TrendingUp,
   Sliders,
-  Calendar,
-  AlertTriangle,
   RotateCcw,
-  Clock,
-  ArrowRight,
   Info,
-  ShieldAlert,
-  CheckCircle2,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
+import { pluralise } from '../../lib/units';
 import { SkeletonRows, ErrorState } from '../../components/ui';
-import type { ExecutiveMetricsResponse, ExecutiveCriticalDriver } from '../../types';
+import type { ExecutiveMetricsResponse } from '../../types';
 
 export default function ExecutiveForecasts() {
   usePageHeader(
@@ -35,7 +29,7 @@ export default function ExecutiveForecasts() {
     queryFn: api.getExecutiveMetrics,
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery({
+  const { data: scheduleData, error: scheduleError } = useQuery({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
   });
@@ -310,7 +304,7 @@ export default function ExecutiveForecasts() {
             </span>
           </div>
           <span className="text-xs font-mono text-muted">
-            {criticalDrivers.length} Driving Activities
+            {pluralise(criticalDrivers.length, 'Driving Activity', 'Driving Activities')}
           </span>
         </div>
 

@@ -10395,3 +10395,168 @@ which day a bar landed on.
 ### Affected Areas
 - `frontend/src/components/GanttChart.tsx`
 - `frontend/src/test/gantt.test.tsx`
+
+---
+
+## 2026-09-11 / D-111 — The Senior Management lane stopped asserting numbers it did not have
+
+### Status
+Active. Supersedes nothing; it completes the sweep D-106 began.
+
+### Context
+D-106 swept this lane for dead buttons and concluded, in its own words, that
+*"No ungrounded number was found."* A second pass, run the same way — live app,
+every destination, every control, console and network read after each — found
+that conclusion was wrong, and wrong in the one place it costs most.
+
+**Data Confidence contradicted itself on screen.** Three figures were literals:
+
+| Site | Rendered | Live truth |
+|---|---|---|
+| `DataConfidence.tsx:112` | `Audit Grade: C (64.2% Verified)` | 55.8% |
+| `DataConfidence.tsx:208` | `Formula: 77 evidenced ÷ 120 total = 64.2%` | 67 ÷ 120 = 55.8% |
+| `DataConfidence.tsx:76` | `'2026-09-15 07:15:00 IST (Daily Voice & PDF Logs)'` | whatever the audit trail last recorded |
+
+The "77" sat three centimetres below a tile reading **67**, on the page whose
+subject is whether the numbers can be trusted, beneath a badge reading *Zero
+Synthetic Data*. The ingest timestamp was worse than stale: it is the tile a
+judge watches while a report is ingested live, and it could not move.
+
+Two related shapes ran through the lane:
+
+1. **`?` where `??` was meant.** `kpis?.evidence_coverage_pct ? … : '64.2%'`
+   falls back on a *falsy* value, so a genuine 0% — coverage collapsing, SPI at
+   zero, no drift — printed last quarter's literal at precisely the moment the
+   real figure mattered most. The same shape appeared eight times across
+   `DataConfidence.tsx` and `ManagementReports.tsx`, including `?? 31` critical
+   activities against a live 12.
+2. **Captions describing a different quantity than the number above them.**
+   Notice compliance read `0 served · 2 lapsed` under **50%** — arithmetic no
+   reader can reproduce, because the two OPEN windows forming the numerator
+   were not shown. The Milestones tile captioned a count of CRITICAL/AT_RISK
+   rows as "Positive variance days", a different set. An Overview row labelled
+   "Contractor LD Risk" and printed a count of delay days, while the panel
+   below it correctly said no liquidated damages were computed.
+
+**A fabricated tag was shipping in the board pack.** `ManagementReports.tsx:83`
+recommended *"Verify unevidenced piping spools on **Skid B-4**"*. No such tag
+exists in the dataset — the skids are CS-01 and HS-01. It reached the exported
+`.md` and the printed PDF.
+
+**Two controls did nothing.** `reportPeriod` and `reportScope` were read only by
+their own `<select value=>`. Choosing "Critical Path & Milestones Only" produced
+a byte-identical pack, export and print. `Current Week (W13)` was a literal too.
+
+**Two more clicks led nowhere.** A RAID row carried `cursor-pointer`, a hover
+highlight and `setSelectedRaidItem(item)` — and `selectedRaidItem` was never
+read. Invisible at 0 accepted items, which is exactly the state D-106 told the
+presenter to change. Report §4 rendered a heading over an empty bordered box.
+
+**A panel measured the wrong thing.** "Missing or Stale Field Reporting (> 7
+Days Without Update)" filtered `finish_variance_days > 5`. Variance is not
+recency and 5 is not 7, and it then asserted *"All in-progress activities carry
+current telemetry."*
+
+### Decision
+1. **Every figure on Data Confidence is derived.** The grade is a banding of the
+   coverage figure with its scale printed beside it, because a grade whose
+   boundaries are invisible is an opinion wearing a number's clothes. The
+   ingest tile reads `GET /audit/recent` — timestamp and source file — so it
+   moves when an ingest happens. The engine-run tile shows the metrics `as_of`
+   date and no invented clock time.
+2. **`??` everywhere a real zero is possible**, and `!= null` for the nullable
+   `spi`. New `dashNum()` renders an em dash rather than a fossil.
+3. **New `lib/units.ts`** — `pluralise`, `days`, `signedDays`, `qty`. It exists
+   because "1 Days" was live on three screens at once (contractor delay is
+   exactly 1 day), and because `toLocaleString()` with no rounding printed
+   "1,446.94 / 1,693 nos" — 0.94 of a flange. Rounding is per UOM: discrete
+   units go whole, continuous units keep one decimal.
+4. **The narrative is read from the payload.** The driving activity, its
+   recorded delay cause and the unevidenced count replace the invented skid.
+   Fixing this exposed a second bug the literals had been hiding: the narrative
+   was seeded on first render, before the metrics query resolved, and the sync
+   effect's guard (`!aiNarrative`) could never fire because the box is never
+   empty. With the fallbacks gone the pack opened with *"an SPI of —"*. The
+   guard is now a `useRef` that yields ownership the moment the supervisor
+   types or asks for a regeneration.
+5. **Both report selectors filter**, the rule is stated on screen and carried
+   into the markdown as a `**Review Scope:**` line, and the window defaults to
+   the whole project — a board pack should be complete unless someone narrows
+   it deliberately.
+6. **The RAID row opens the rest of its record** (description, dates, category,
+   linked activities, origin). **Risks & Delays opens on the first tab that has
+   content**, resolved once and never re-resolved, so a refetch cannot pull a
+   reader off the tab they chose.
+7. **The stale panel says what it measures**: "Overrunning In-Progress
+   Activities (> 5 Days Past Planned Finish)", with an explicit sentence that
+   per-activity evidence recency is *not* carried on `GET /schedule` and no
+   claim about it is being made.
+8. **`Exposure.tsx` (528 lines) and `Provenance.tsx` deleted.** Neither was
+   imported; both routes already redirected elsewhere.
+9. **`tsconfig.executive.json`** turns `noUnusedLocals` / `noUnusedParameters`
+   on for this lane only, run by `npm --prefix frontend run typecheck:executive`.
+   Scoped deliberately: globally the rule reports **99** findings across the
+   planner, field and test files, and a sweep that size does not belong beside
+   a behaviour change the night before a demo. It is the rule that catches the
+   dead RAID state and the `/evm` request `ManagementReports.tsx` fired on every
+   visit and never read — both of which this entry removes.
+
+### Alternatives Considered
+- **Infer report recency from the audit feed** for finding 7. Rejected: the feed
+  is truncated, so absence from it is not evidence of absence. Renaming the
+  panel to its real computation is honest; inferring would repeat the mistake.
+- **Enable `noUnusedLocals` repo-wide.** Rejected for tonight, on scope. The 99
+  remaining findings are recorded here as known work, not as a clean bill.
+- **Delete the two report selectors** rather than wire them. Rejected: a review
+  window is a real need for this reader; the defect was that it lied, not that
+  it existed.
+
+### Affected Areas
+- `frontend/src/lib/units.ts` (new), `frontend/tsconfig.executive.json` (new)
+- `frontend/src/pages/executive/` — `DataConfidence.tsx`, `ManagementReports.tsx`,
+  `RisksDelays.tsx`, `Overview.tsx`, `Progress.tsx`, `Milestones.tsx`,
+  `Forecasts.tsx`, `ExecutionInsights.tsx`; `Exposure.tsx` and `Provenance.tsx`
+  deleted
+- `frontend/src/test/executiveWorkspaces.test.tsx`,
+  `frontend/src/test/executiveOverview.test.tsx`
+- `frontend/package.json` (one script)
+
+### Trade-offs / Consequences
+- **Two tests were pinning the defects.** `executiveOverview` asserted
+  `'1 Days'`; `executiveWorkspaces` asserted `/77 evidenced ÷ 120 total = 64.2%/`
+  — and passed *synchronously*, before the mocked metrics query resolved, which
+  is the clearest possible proof the literal was doing the work. Both now await
+  the derived value, so they fail if a fallback is ever reintroduced.
+- Data Confidence reads **Grade D (55.8%)** where it read **C (64.2%)**. That is
+  a worse-looking screen and a true one.
+- No backend, matcher, extractor or threshold code was touched, so **no metric
+  can have moved** and `eval.py` was not re-run.
+
+### Verification
+- **`npx tsc --noEmit`** — clean. **`npm --prefix frontend run typecheck:executive`**
+  — clean. **`npm run build`** — clean, 3.31s.
+- **`npx vitest run`** — 24 files, **254 passed**, 0 failed.
+- **`python -m pytest -q`** — unchanged; no backend code touched.
+- **Live, against the running API**, in a fresh tab with an empty console:
+  Data Confidence reads `Grade D (55.8%)`, `Formula: 67 evidenced ÷ 120 total =
+  55.8%`, and `LATEST FIELD REPORT INGEST 2026-09-11 17:38:28 · Newest audit
+  write · dpr_day_10.txt`. Risks & Delays reads `1 Day` and `0 served · 2 open ·
+  2 lapsed`; a RAID row expands to its record (`Tank TK-1 Hydrotest … ORIGIN
+  schedule_inspection`). Progress reads `1,447 / 1,693 nos` and keeps
+  `5,969.7 / 8,097 m`. Execution Insights reads `LARGEST DELAY CAUSE … (1
+  event)`. Forecasts reads `1 Driving Activity`. Reports reads `Showing 7 of 7
+  milestones — all dates, all disciplines and statuses` and a narrative naming
+  the real driver: *"Primary schedule pressure is on Bored Piling — Pipe Rack
+  P1–P12 (CIV-PLY-1004), +1d against plan … the recorded delay cause 'piling rig
+  breakdown'"*. No "Skid B-4" anywhere.
+
+### Future Notes
+The two tests that pinned the fossils are the lesson worth keeping: a test that
+asserts a rendered literal will pass whether or not the query behind it ever
+resolves. When an executive screen shows a figure, assert it with `findByText`
+against the mocked payload, never with `getByText` against a string that could
+also be a fallback.
+
+**Still open, and deliberately not done here:** `noUnusedLocals` reports 99
+findings outside this lane, and the login role cards logged by D-106 item 5 are
+still not keyboard reachable.

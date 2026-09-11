@@ -1,13 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  CalendarDays,
   Filter,
   Layers,
   ChevronRight,
   Clock,
-  AlertTriangle,
-  CheckCircle2,
   X,
   ArrowRight,
   ShieldAlert,
@@ -19,7 +16,7 @@ import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import { DisciplineTag } from '../../components/DisciplineTag';
 import { DISCIPLINES } from '../../config';
-import type { Discipline, ExecutiveMetricsResponse, ExecutiveMilestone } from '../../types';
+import type { Discipline, ExecutiveMetricsResponse } from '../../types';
 
 interface MilestoneRecord {
   id: string;
@@ -271,7 +268,11 @@ export default function ExecutiveMilestones() {
           <div className="text-3xl font-extrabold text-danger font-mono">
             {milestonesList.filter((m) => m.status === 'CRITICAL' || m.status === 'AT_RISK').length}
           </div>
-          <span className="text-xs text-danger mt-1 block">Positive variance days</span>
+          {/* The tile counts CRITICAL and AT_RISK milestones. It used to be
+              captioned "Positive variance days", which is a different set —
+              two COMPLETE rows carry +15d and +1d and are not counted here.
+              See D-111. */}
+          <span className="text-xs text-danger mt-1 block">Critical or at-risk status</span>
         </div>
 
         <div className="border border-hair rounded-lg p-4 bg-raised shadow-xs">

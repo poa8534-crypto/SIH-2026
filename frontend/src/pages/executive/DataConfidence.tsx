@@ -1,36 +1,32 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  FileSearch,
-  CheckCircle2,
   AlertTriangle,
-  Clock,
-  Layers,
   Database,
   FileCheck2,
-  FileSpreadsheet,
   Info,
-  ShieldAlert,
-  ShieldCheck,
   AlertCircle,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
-import { SkeletonRows, ErrorState, Panel } from '../../components/ui';
+import { SkeletonRows, ErrorState } from '../../components/ui';
 import type {
-  EvidenceCorpus,
   ExecutiveMetricsResponse,
   SourceConflict,
-  ScheduleResponse,
   CorpusCaveat,
+  AuditFeedItem,
 } from '../../types';
+
+/** A count, or an em dash when the API did not supply one.
+ *
+ *  Deliberately `??` and not `?`: these tiles used to fall back to literals
+ *  (120 / 77 / 43) behind a truthiness test, so a genuine zero would have
+ *  rendered last quarter's numbers. See D-111. */
+function dashNum(n: number | null | undefined): string {
+  return n === null || n === undefined ? '—' : n.toLocaleString();
+}
 
 function bytesToGb(n: number): string {
   return `${(n / 1_000_000_000).toFixed(2)} GB`;
-}
-
-function labelise(key: string): string {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function caveatText(c: CorpusCaveat): string {
@@ -65,25 +61,68 @@ export default function ExecutiveDataConfidence() {
     queryFn: () => api.getConflicts(50),
   });
 
+  // Newest-first audit writes; [0] is the most recent thing this system
+  // recorded, with the file it was read from.
+  const recentAudit = useQuery<AuditFeedItem[]>({
+    queryKey: ['recentAudit', 1],
+    queryFn: () => api.getRecentAudit(1),
+  });
+
   const kpis = metricsQuery.data?.kpis;
   const scheduleData = scheduleQuery.data;
   const activities = scheduleData?.activities ?? [];
   const conflicts = conflictsQuery.data ?? [];
   const corpusData = corpus.data;
 
-  const dataDate = scheduleData?.data_date ?? metricsQuery.data?.as_of ?? '2026-09-15';
-  const lastCalculationTime = metricsQuery.data?.as_of ? `${metricsQuery.data.as_of} 08:30:00 IST` : '2026-09-15 08:30:00 IST';
-  const lastReportReceiptTime = '2026-09-15 07:15:00 IST (Daily Voice & PDF Logs)';
+  const coveragePct = kpis?.evidence_coverage_pct ?? null;
+  const coverageLabel = coveragePct === null ? '—' : `${coveragePct.toFixed(1)}%`;
 
-  // Stale activities: in progress (actual_start exists, actual_finish null) without recent updates
-  const staleActivities = activities.filter(
-    (a) => a.actual_start && !a.actual_finish && a.finish_variance_days && a.finish_variance_days > 5
+  // The letter is a banding of the coverage figure and nothing else. The
+  // boundaries are stated on screen beside it, because a grade whose scale is
+  // invisible is an opinion wearing a number's clothes. It used to be the
+  // literal "C (64.2% Verified)", which by this point disagreed with the
+  // coverage tile directly beneath it (55.8%). See D-111.
+  const auditGrade = ((): { letter: string; scale: string } => {
+    const scale = 'A ≥ 90% · B ≥ 75% · C ≥ 60% · D ≥ 40% · E < 40%';
+    if (coveragePct === null) return { letter: '—', scale };
+    if (coveragePct >= 90) return { letter: 'A', scale };
+    if (coveragePct >= 75) return { letter: 'B', scale };
+    if (coveragePct >= 60) return { letter: 'C', scale };
+    if (coveragePct >= 40) return { letter: 'D', scale };
+    return { letter: 'E', scale };
+  })();
+
+  const dataDate = scheduleData?.data_date ?? metricsQuery.data?.as_of ?? null;
+
+  // The engine run is the metrics `as_of`, and nothing more. The clock time
+  // that used to sit beside it ("08:30:00 IST") was a literal: no part of the
+  // payload carries one, so it was a fabricated precision on the one page
+  // whose subject is whether the numbers can be trusted.
+  const lastCalculationTime = metricsQuery.data?.as_of ?? null;
+
+  // Latest field report ingest, read from the append-only audit trail rather
+  // than asserted. This tile used to be the string '2026-09-15 07:15:00 IST
+  // (Daily Voice & PDF Logs)' — hardcoded, so ingesting a report live left it
+  // unchanged while claiming to report ingest time. See D-111.
+  const latestIngest = recentAudit.data?.[0] ?? null;
+
+  // Activities that started, have not finished, and have already overrun their
+  // planned finish by more than this many days.
+  //
+  // This is NOT report recency. It was previously presented as "> 7 Days
+  // Without Update" while testing `finish_variance_days > 5` — a different
+  // quantity against a different number. Per-activity evidence recency is not
+  // carried on GET /schedule, so rather than infer it, the panel now states
+  // what it actually measures. See D-111.
+  const OVERRUN_THRESHOLD_DAYS = 5;
+  const overrunActivities = activities.filter(
+    (a) =>
+      a.actual_start &&
+      !a.actual_finish &&
+      a.finish_variance_days !== null &&
+      a.finish_variance_days !== undefined &&
+      a.finish_variance_days > OVERRUN_THRESHOLD_DAYS
   );
-
-  // Reported vs committed divergence
-  const uncommittedReportedCount = activities.filter(
-    (a) => !a.actual_start && !a.actual_finish && a.critical
-  ).length;
 
   if (corpus.error || metricsQuery.error || scheduleQuery.error || conflictsQuery.error) {
     return <ErrorState error={corpus.error || metricsQuery.error || scheduleQuery.error || conflictsQuery.error} />;
@@ -109,7 +148,7 @@ export default function ExecutiveDataConfidence() {
 
         <div className="flex items-center gap-2 text-label font-mono">
           <span className="px-2.5 py-1 rounded-full bg-surface text-fg font-medium border border-hair">
-            Audit Grade: C (64.2% Verified)
+            Audit Grade: {auditGrade.letter} ({coverageLabel} Verified)
           </span>
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface text-ok font-medium border border-hair">
             <span className="h-1.5 w-1.5 rounded-full bg-ok" />
@@ -127,7 +166,7 @@ export default function ExecutiveDataConfidence() {
               Primavera Schedule Data Date
             </span>
             <div className="text-3xl font-extrabold text-heading font-mono">
-              {dataDate}
+              {dataDate ?? '—'}
             </div>
           </div>
           <span className="text-xs text-muted mt-2 pt-2 border-t border-hair font-mono">
@@ -142,11 +181,13 @@ export default function ExecutiveDataConfidence() {
               Latest Field Report Ingest
             </span>
             <div className="text-lg font-bold text-fg font-mono">
-              {lastReportReceiptTime}
+              {latestIngest ? latestIngest.timestamp.replace('T', ' ').slice(0, 19) : '—'}
             </div>
           </div>
           <span className="text-xs text-muted mt-2 pt-2 border-t border-hair font-mono">
-            Voice, text &amp; PDF submissions from Well Pad 04
+            {latestIngest
+              ? `Newest audit write · ${latestIngest.source_file ?? latestIngest.source}`
+              : 'No audit record has been written yet'}
           </span>
         </div>
 
@@ -157,11 +198,11 @@ export default function ExecutiveDataConfidence() {
               Engine Metrics Calculation Run
             </span>
             <div className="text-lg font-bold text-fg font-mono">
-              {lastCalculationTime}
+              {lastCalculationTime ?? '—'}
             </div>
           </div>
           <span className="text-xs text-muted mt-2 pt-2 border-t border-hair font-mono">
-            EVM, float drift &amp; dispute shield compilation
+            EVM, float drift &amp; dispute shield, computed as of this date
           </span>
         </div>
       </div>
@@ -179,33 +220,36 @@ export default function ExecutiveDataConfidence() {
             </p>
           </div>
           <span className="px-2.5 py-1 rounded font-mono text-xs font-bold bg-ok/10 text-ok border border-ok/30">
-            {kpis?.evidence_coverage_pct ? `${kpis.evidence_coverage_pct.toFixed(1)}%` : '64.2%'} Coverage
+            {coverageLabel} Coverage
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-lg border border-hair bg-surface">
             <span className="text-xs font-mono text-muted uppercase block mb-1">Total Schedule Activities</span>
-            <span className="text-2xl font-bold font-mono text-fg">{kpis?.total_activities ?? 120}</span>
+            <span className="text-2xl font-bold font-mono text-fg">{dashNum(kpis?.total_activities)}</span>
             <span className="text-[11px] text-muted block mt-1">Authoritative denominator</span>
           </div>
 
           <div className="p-4 rounded-lg border border-hair bg-surface">
             <span className="text-xs font-mono text-muted uppercase block mb-1">Evidenced Activities</span>
-            <span className="text-2xl font-bold font-mono text-ok">{kpis?.evidenced_activities ?? 77}</span>
+            <span className="text-2xl font-bold font-mono text-ok">{dashNum(kpis?.evidenced_activities)}</span>
             <span className="text-[11px] text-muted block mt-1">Verified with field citations</span>
           </div>
 
           <div className="p-4 rounded-lg border border-hair bg-surface">
             <span className="text-xs font-mono text-muted uppercase block mb-1">Unevidenced Nodes</span>
-            <span className="text-2xl font-bold font-mono text-warn">{kpis?.unevidenced_activities ?? 43}</span>
+            <span className="text-2xl font-bold font-mono text-warn">{dashNum(kpis?.unevidenced_activities)}</span>
             <span className="text-[11px] text-muted block mt-1">Relying on planned duration</span>
           </div>
         </div>
 
         <div className="p-3 rounded border border-hair bg-surface text-xs font-mono text-muted flex items-center justify-between">
           <span>Denominator Basis: Complete activity register in baseline_schedule.json</span>
-          <span className="text-fg font-semibold">Formula: 77 evidenced ÷ 120 total = 64.2%</span>
+          <span className="text-fg font-semibold">
+            Formula: {dashNum(kpis?.evidenced_activities)} evidenced ÷{' '}
+            {dashNum(kpis?.total_activities)} total = {coverageLabel}
+          </span>
         </div>
       </div>
 
@@ -214,16 +258,21 @@ export default function ExecutiveDataConfidence() {
         <div className="pb-3 border-b border-hair">
           <h3 className="text-body font-semibold text-heading flex items-center gap-2">
             <AlertTriangle size={16} className="text-warn" />
-            Missing or Stale Field Reporting (&gt; 7 Days Without Update)
+            Overrunning In-Progress Activities (&gt; {OVERRUN_THRESHOLD_DAYS} Days Past Planned Finish)
           </h3>
           <p className="text-body text-muted mt-0.5">
-            Activities marked in-progress that have received zero field updates or progress telemetry over the last 7 reporting days.
+            Activities with a recorded actual start, no actual finish, and a finish already
+            drifted more than {OVERRUN_THRESHOLD_DAYS} days beyond plan. This measures schedule
+            drift, not reporting recency — per-activity evidence timestamps are not carried on
+            the schedule record, so no claim is made here about when each activity was last
+            reported on.
           </p>
         </div>
 
-        {staleActivities.length === 0 ? (
+        {overrunActivities.length === 0 ? (
           <div className="p-4 rounded border border-hair bg-surface text-center text-xs text-muted font-mono">
-            No stale active activities detected. All in-progress activities carry current telemetry.
+            No in-progress activity has drifted more than {OVERRUN_THRESHOLD_DAYS} days past its
+            planned finish.
           </div>
         ) : (
           <div className="overflow-x-auto border border-hair rounded-md">
@@ -239,7 +288,7 @@ export default function ExecutiveDataConfidence() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-hair">
-                {staleActivities.slice(0, 4).map((act) => (
+                {overrunActivities.slice(0, 4).map((act) => (
                   <tr key={act.activity_id} className="hover:bg-selected/40 transition-colors">
                     <td className="py-2.5 px-3">
                       <span className="font-semibold text-heading block">{act.description}</span>
@@ -253,7 +302,7 @@ export default function ExecutiveDataConfidence() {
                     </td>
                     <td className="py-2.5 px-2">
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-warn/10 text-warn border border-warn/30">
-                        STALE REPORTING (&gt;7d)
+                        OVERRUN (&gt;{OVERRUN_THRESHOLD_DAYS}d)
                       </span>
                     </td>
                   </tr>

@@ -188,7 +188,12 @@ describe('money', () => {
 
     expect(await screen.findByText(/FIDIC Contractual Dispute Shield/i)).toBeInTheDocument();
     expect(screen.getByText('0 Days')).toBeInTheDocument();
-    expect(screen.getByText('1 Days')).toBeInTheDocument();
+    // One day is one Day. This screen read "1 Days" on every tile that hit a
+    // count of exactly one, which is the live value for contractor delay.
+    // See D-111.
+    // Two places carry it: the KPI strip and the dispute-shield panel.
+    expect(screen.getAllByText('1 Day').length).toBeGreaterThan(0);
+    expect(screen.queryByText('1 Days')).not.toBeInTheDocument();
     expect(
       screen.getByText(/No claim value — no contract sum supplied/)
     ).toBeInTheDocument();

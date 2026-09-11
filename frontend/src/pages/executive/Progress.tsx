@@ -1,23 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LineChart as LineChartIcon,
-  TrendingUp,
-  Filter,
+  LineChart as TrendingUp,
   Layers,
   ChevronRight,
   ChevronDown,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  FileCheck2,
   Info,
   Layers as WbsIcon,
-  Activity as ActivityIcon,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
-import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
+import { qty } from '../../lib/units';
+import { SkeletonRows, ErrorState } from '../../components/ui';
 import { DisciplineTag } from '../../components/DisciplineTag';
 import type { Discipline, ExecutiveMetricsResponse, EvmResponse, Activity } from '../../types';
 
@@ -38,12 +32,12 @@ export default function ExecutiveProgress() {
     queryFn: api.getExecutiveMetrics,
   });
 
-  const { data: evmData, isLoading: evmLoading, error: evmError } = useQuery<EvmResponse>({
+  const { data: evmData, error: evmError } = useQuery<EvmResponse>({
     queryKey: ['evm'],
     queryFn: api.getEvm,
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery({
+  const { data: scheduleData, error: scheduleError } = useQuery({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
   });
@@ -481,7 +475,7 @@ export default function ExecutiveProgress() {
                     <td className="py-3 px-3 font-mono text-right text-xs">
                       {d.totalPlannedQty > 0 ? (
                         <span>
-                          {d.totalInstalledQty.toLocaleString()} / {d.totalPlannedQty.toLocaleString()} {d.uom}
+                          {qty(d.totalInstalledQty, d.uom)} / {qty(d.totalPlannedQty, d.uom)} {d.uom}
                         </span>
                       ) : (
                         <span className="text-muted">Lump-sum duration</span>
@@ -580,7 +574,6 @@ export default function ExecutiveProgress() {
               <tbody className="divide-y divide-hair text-xs">
                 {filteredContributingActivities.map((act) => {
                   const isDone = !!act.actual_finish;
-                  const isLate = (act.finish_variance_days || 0) > 0;
                   return (
                     <tr key={act.activity_id} className="hover:bg-selected/40 transition-colors">
                       <td className="py-2.5 px-3 font-mono font-bold text-fg">
@@ -635,7 +628,7 @@ export default function ExecutiveProgress() {
                       <td className="py-2.5 px-2 font-mono text-right">
                         {act.planned_qty ? (
                           <span>
-                            {act.actual_qty || 0} / {act.planned_qty} {act.uom}
+                            {qty(act.actual_qty ?? 0, act.uom)} / {qty(act.planned_qty, act.uom)} {act.uom}
                           </span>
                         ) : (
                           <span className="text-muted">—</span>

@@ -1,27 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Sparkles,
   Search,
-  AlertTriangle,
-  Clock,
   Layers,
-  ArrowUpRight,
-  TrendingDown,
-  FileText,
   Info,
-  CheckCircle2,
-  Database,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
+import { pluralise } from '../../lib/units';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import { DISCIPLINES } from '../../config';
 import type {
   MemoryQueryResponse,
-  DurationDistribution,
-  ProductivityMetric,
-  DelayReasonRow,
   ScheduleResponse,
 } from '../../types';
 
@@ -41,7 +31,10 @@ export default function ExecutiveExecutionInsights() {
     queryFn: () => api.queryMemory({ query_type: 'all' }),
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery<ScheduleResponse>({
+  // The schedule is fetched for its error state only: this page reads its
+  // figures from the memory query, and the shared ['schedule'] cache entry
+  // means the request is not an extra round trip.
+  const { error: scheduleError } = useQuery<ScheduleResponse>({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
   });
@@ -135,13 +128,18 @@ export default function ExecutiveExecutionInsights() {
         {/* Top Delay Reason */}
         <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs">
           <span className="text-label font-mono text-muted uppercase tracking-wider block mb-1">
-            Top Recurring Delay Cause
+            {/* "Recurring" is a claim about frequency, so it is only made
+                when the frequency supports it. The tile previously read
+                "TOP RECURRING DELAY CAUSE ... (1 events)". See D-111. */}
+            {(delayReasons[0]?.frequency ?? 0) > 1 ? 'Top Recurring Delay Cause' : 'Largest Delay Cause'}
           </span>
           <div className="text-xl font-extrabold text-fg font-mono truncate">
             {delayReasons[0]?.reason ?? 'None logged'}
           </div>
           <span className="text-xs text-danger mt-1 block font-mono">
-            {delayReasons[0] ? `${delayReasons[0].days_lost} days lost (${delayReasons[0].frequency} events)` : '—'}
+            {delayReasons[0]
+              ? `${pluralise(delayReasons[0].days_lost, 'day')} lost (${pluralise(delayReasons[0].frequency, 'event')})`
+              : '—'}
           </span>
         </div>
 

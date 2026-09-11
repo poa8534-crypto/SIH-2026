@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -7,14 +7,10 @@ import {
   Calendar,
   CalendarDays,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
   ArrowRight,
   Sliders,
   Scale,
   Sparkles,
-  FileCheck2,
-  Info,
   LineChart as LineChartIcon,
   FileText,
   FileSearch,
@@ -23,9 +19,9 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
-import { EmptyState, ErrorState, SkeletonRows } from '../../components/ui';
-import { DisciplineTag } from '../../components/DisciplineTag';
-import type { Discipline, ExecutiveMetricsResponse } from '../../types';
+import { days } from '../../lib/units';
+import { ErrorState, SkeletonRows } from '../../components/ui';
+import type { ExecutiveMetricsResponse } from '../../types';
 
 export default function ExecutiveOverview() {
   usePageHeader(
@@ -334,11 +330,21 @@ export default function ExecutiveOverview() {
                 </div>
               </div>
               <div className="mt-3 text-label text-muted pt-3 border-t border-hair flex items-center justify-between">
-                <span>Contractor LD Risk:</span>
+                {/* The label follows the value. With no contract sum there
+                    is no LD figure to show, so this row used to print a count
+                    of culpable delay days under the words "LD Risk" — two
+                    different quantities behind one label, while the panel
+                    below correctly said no liquidated damages were computed.
+                    See D-111. */}
+                <span>
+                  {financial?.available && financial.contractor_ld_risk_cr !== null
+                    ? 'Contractor LD Risk:'
+                    : 'Contractor Culpable Delay:'}
+                </span>
                 <span className="font-mono font-bold text-warn">
                   {financial?.available && financial.contractor_ld_risk_cr !== null
                     ? `₹${financial.contractor_ld_risk_cr.toFixed(2)} Cr`
-                    : `${dash(dispute?.contractor_delay_days)} days`}
+                    : days(dispute?.contractor_delay_days)}
                 </span>
               </div>
             </div>
@@ -615,7 +621,7 @@ export default function ExecutiveOverview() {
                       Employer Delay (EOT Claimable)
                     </span>
                     <div className="text-3xl font-extrabold text-fg font-mono">
-                      {dispute ? `${dispute.employer_delay_days} Days` : '—'}
+                      {days(dispute?.employer_delay_days)}
                     </div>
                   </div>
                   <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
@@ -631,7 +637,7 @@ export default function ExecutiveOverview() {
                       Contractor Delay (Culpable)
                     </span>
                     <div className="text-3xl font-extrabold text-danger font-mono">
-                      {dispute ? `${dispute.contractor_delay_days} Days` : '—'}
+                      {days(dispute?.contractor_delay_days)}
                     </div>
                   </div>
                   <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
