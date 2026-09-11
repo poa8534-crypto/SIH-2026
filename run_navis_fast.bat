@@ -3,6 +3,10 @@ title NAVIS Blazing Fast Launcher (Production Build)
 echo ========================================================
 echo       NAVIS // ULTRA-FAST LAUNCHER (OPTIMIZED FOR MOBILE)
 echo ========================================================
+echo 0. Freeing port 8000 and port 5173 if already in use...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8000, 5173 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { if ($_.OwningProcess -gt 0) { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
+timeout /t 1 /nobreak >nul 2>&1
+
 echo.
 echo 1. Building optimized frontend bundle (Takes ~8s once)...
 cd /d "%~dp0frontend"

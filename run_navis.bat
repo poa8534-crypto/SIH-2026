@@ -3,7 +3,10 @@ title NAVIS AI Launcher
 echo ========================================================
 echo           NAVIS // AI-DRIVEN EPC PROGRESS ENGINE
 echo ========================================================
-echo.
+echo Freeing port 8000 and port 5173 if already in use...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8000, 5173 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { if ($_.OwningProcess -gt 0) { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
+timeout /t 1 /nobreak >nul 2>&1
+
 echo Starting FastAPI Backend (Port 8000)...
 start "NAVIS Backend (FastAPI)" cmd /k "python -m uvicorn server.main:app --host 0.0.0.0 --port 8000 --reload"
 

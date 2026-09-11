@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { subscribeToScheduleUpdates } from '../lib/liveSync';
 import {
   ArrowRight,
   AlertTriangle,
@@ -958,24 +959,40 @@ export default function Home() {
     '/home'
   );
 
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unsubscribe = subscribeToScheduleUpdates(() => {
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
+      queryClient.invalidateQueries({ queryKey: ['conflicts'] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
   const schedule = useQuery({
     queryKey: ['schedule', 'home'],
     queryFn: () => api.getSchedule(undefined, false),
+    refetchInterval: 3000,
   });
 
   const queue = useQuery({
     queryKey: ['reviewQueue'],
     queryFn: () => api.getReviewQueue('pending'),
+    refetchInterval: 3000,
   });
 
   const conflicts = useQuery({
     queryKey: ['conflicts'],
     queryFn: () => api.getConflicts(50),
+    refetchInterval: 3000,
   });
 
   const audit = useQuery({
     queryKey: ['auditRecent'],
     queryFn: () => api.getRecentAudit(20),
+    refetchInterval: 3000,
   });
 
   const jobs = useQuery({
@@ -1036,7 +1053,11 @@ export default function Home() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-label font-mono">
+        <div className="flex flex-wrap items-center gap-2.5 text-label font-mono">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded font-semibold text-[11px] tracking-wide animate-pulse shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            LIVE UPDATING
+          </div>
           <div className="px-2.5 py-1 bg-surface border border-hair rounded">
             <span className="text-muted">Data Date: </span>
             <span className="text-fg font-semibold">{dataDate}</span>

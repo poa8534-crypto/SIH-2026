@@ -1,10 +1,12 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { GanttChart } from '../components/GanttChart';
+import { LiveNotificationToast } from '../components/LiveNotificationToast';
+import { notifyScheduleUpdate } from '../lib/liveSync';
 import Schedule from '../pages/Schedule';
 import { api } from '../lib/api';
 import type { ScheduleActivity, ScheduleResponse } from '../types';
@@ -189,5 +191,45 @@ describe('Schedule Page Gantt Integration', () => {
     // Only CIV-FTG-001 should remain
     expect(screen.getByText('CIV-FTG-001')).toBeInTheDocument();
     expect(screen.queryByText('PIP-UG-010')).not.toBeInTheDocument();
+  });
+
+  it('renders highlighted bar and UPDATED LIVE marker when highlightId is set', () => {
+    const onSelect = vi.fn();
+    render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId="PIP-UG-010"
+        highlightId="PIP-UG-010"
+        onSelectActivity={onSelect}
+        dataDate="2026-04-10"
+      />
+    );
+
+    expect(screen.getByText('PIP-UG-010')).toBeInTheDocument();
+    const liveBadges = screen.getAllByText('LIVE');
+    expect(liveBadges.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/UPDATED LIVE/i)).toBeInTheDocument();
+    expect(screen.getAllByText('50%').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('displays LiveNotificationToast when schedule update is broadcasted', async () => {
+    wrap(<LiveNotificationToast />);
+
+    expect(screen.queryByText(/Live Schedule Sync/i)).not.toBeInTheDocument();
+
+    act(() => {
+      notifyScheduleUpdate({
+        activityId: 'PIP-UG-010',
+        activityDescription: 'Underground Spool Fabrication & Laying',
+        message: 'Field report confirmed: 50% completed',
+        source: 'Reconcile',
+        percentComplete: 50,
+      });
+    });
+
+    expect(await screen.findByText(/Live Schedule Sync/i)).toBeInTheDocument();
+    expect(screen.getByText(/PIP-UG-010/i)).toBeInTheDocument();
+    expect(screen.getByText(/Underground Spool Fabrication/i)).toBeInTheDocument();
+    expect(screen.getByText(/View Updated Bar in Gantt/i)).toBeInTheDocument();
   });
 });

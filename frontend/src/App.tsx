@@ -24,6 +24,7 @@ import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
 import { AskNavisChat } from './components/AskNavisChat';
+import { LiveNotificationToast } from './components/LiveNotificationToast';
 import Reconcile from './pages/Reconcile';
 import Schedule from './pages/Schedule';
 import Ingest from './pages/Ingest';
@@ -321,6 +322,7 @@ function DesktopShell({
         onClose={() => setIsChatOpen(false)}
         role={location.pathname.startsWith('/executive') ? 'executive' : 'planner'}
       />
+      <LiveNotificationToast />
     </div>
   );
 }

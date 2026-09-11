@@ -45,6 +45,7 @@ import { DisciplineTag } from '../components/DisciplineTag';
 import { GanttChart } from '../components/GanttChart';
 import { ScheduleDoctor } from '../components/ScheduleDoctor';
 import { ActivityInspectionPanel } from '../components/ActivityInspectionPanel';
+import { subscribeToScheduleUpdates } from '../lib/liveSync';
 import { usePageHeader } from '../hooks/usePageHeader';
 import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
@@ -161,7 +162,14 @@ export default function Schedule() {
   const [onlyActuals, setOnlyActuals] = useState(false);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
   const [onlyCritical, setOnlyCritical] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>('table');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get('view');
+  const deepLinked = searchParams.get('activity');
+  const highlightParam = searchParams.get('highlight') === 'true';
+
+  const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>(() => {
+    return viewParam === 'gantt' ? 'gantt' : 'table';
+  });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
@@ -172,10 +180,22 @@ export default function Schedule() {
     confidence: false,
   });
   // The Ingest screen links auto-linked events here as /schedule?activity=ID.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const deepLinked = searchParams.get('activity');
   const [selectedId, setSelectedId] = useState<string | null>(deepLinked);
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked));
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked && viewParam !== 'gantt'));
+  const [liveHighlightId, setLiveHighlightId] = useState<string | null>(() => {
+    return highlightParam ? deepLinked : null;
+  });
+
+  // Auto-dismiss the live highlight after 8 seconds so it doesn't linger indefinitely
+  useEffect(() => {
+    if (liveHighlightId) {
+      const timer = setTimeout(() => {
+        setLiveHighlightId(null);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [liveHighlightId]);
+
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [exportFormat, setExportFormat] = useState<'pmxml' | 'xer'>('pmxml');
   const [exportState, setExportState] = useState<
@@ -188,7 +208,21 @@ export default function Schedule() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['schedule', 'page', discipline],
     queryFn: () => api.getSchedule(discipline || undefined, true),
+    refetchInterval: 3000,
   });
+
+  useEffect(() => {
+    const unsubscribe = subscribeToScheduleUpdates(() => {
+      refetch();
+    });
+    return unsubscribe;
+  }, [refetch]);
+
+  useEffect(() => {
+    if (viewParam === 'gantt' && viewMode !== 'gantt') {
+      setViewMode('gantt');
+    }
+  }, [viewParam]);
 
   const warnings: IntegrityWarning[] = data?.integrity_warnings ?? [];
 
@@ -229,26 +263,45 @@ export default function Schedule() {
   useEffect(() => {
     if (deepLinked) {
       setSelectedId(deepLinked);
-      setIsDrawerOpen(true);
+      if (viewParam !== 'gantt') {
+        setIsDrawerOpen(true);
+      }
+      if (highlightParam) {
+        setLiveHighlightId(deepLinked);
+      }
     }
-  }, [deepLinked]);
+  }, [deepLinked, viewParam, highlightParam]);
 
-  // Bring a deep-linked row into view. A row hidden behind a filter simply has
-  // no ref, and the drawer still opens.
+  // Bring a deep-linked row into view in table mode without scrolling outer page unnecessarily
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || viewMode !== 'table') return;
     const raf = requestAnimationFrame(() => {
-      rowRefs.current[selectedId]?.scrollIntoView({ block: 'center' });
+      rowRefs.current[selectedId]?.scrollIntoView({ block: 'nearest' });
     });
     return () => cancelAnimationFrame(raf);
-  }, [selectedId]);
+  }, [selectedId, viewMode]);
+
+  const handleSelectActivity = (id: string) => {
+    setSelectedId(id);
+    setIsDrawerOpen(true);
+    // Dismiss the live highlight immediately when user selects any activity
+    setLiveHighlightId(null);
+    if (searchParams.has('highlight') || searchParams.get('activity') !== id) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('highlight');
+      next.set('activity', id);
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedId(null);
-    if (searchParams.has('activity')) {
+    setLiveHighlightId(null);
+    if (searchParams.has('activity') || searchParams.has('highlight')) {
       const next = new URLSearchParams(searchParams);
       next.delete('activity');
+      next.delete('highlight');
       setSearchParams(next, { replace: true });
     }
   };
@@ -256,6 +309,7 @@ export default function Schedule() {
   const handleViewInGantt = (activityId: string) => {
     setViewMode('gantt');
     setSelectedId(activityId);
+    setLiveHighlightId(null);
     setIsDrawerOpen(false);
   };
 
@@ -782,6 +836,11 @@ export default function Schedule() {
             </button>
           </div>
 
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-mono font-semibold tracking-wide animate-pulse shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+            LIVE SYNC
+          </div>
+
           <select
             value={discipline}
             onChange={(e) => setDiscipline(e.target.value)}
@@ -994,10 +1053,7 @@ export default function Schedule() {
                         ref={(el) => {
                           rowRefs.current[a.activity_id] = el;
                         }}
-                        onClick={() => {
-                          setSelectedId(a.activity_id);
-                          setIsDrawerOpen(true);
-                        }}
+                        onClick={() => handleSelectActivity(a.activity_id)}
                         className={`border-b border-hair cursor-pointer transition-colors ${
                           isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
                         } ${hasActual ? 'text-fg' : 'text-muted'}`}
@@ -1026,10 +1082,8 @@ export default function Schedule() {
             <GanttChart
               activities={rows}
               selectedId={selectedId}
-              onSelectActivity={(id) => {
-                setSelectedId(id);
-                setIsDrawerOpen(true);
-              }}
+              highlightId={liveHighlightId}
+              onSelectActivity={handleSelectActivity}
               dataDate={data?.data_date}
             />
           </div>
@@ -1100,10 +1154,7 @@ export default function Schedule() {
           <ActivityInspectionPanel
             activity={selected}
             activitiesList={rows}
-            onSelectActivity={(id) => {
-              setSelectedId(id);
-              setIsDrawerOpen(true);
-            }}
+            onSelectActivity={handleSelectActivity}
             onClose={closeDrawer}
             onViewInGantt={handleViewInGantt}
           />

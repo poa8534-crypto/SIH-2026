@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ApiError, api, errorDetail } from '../lib/api';
+import { notifyScheduleUpdate } from '../lib/liveSync';
 import { ReviewCandidate, ReviewItem, ScheduleActivity } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
@@ -468,9 +469,23 @@ export default function Reconcile() {
       addToast(
         `${data.message} • alias entries: ${data.alias_entries_created}, audit records: ${data.audit_records_created}`
       );
+      const actId = variables.activityId || (data as any)?.activity_id;
+      if (actId) {
+        const act = activityMap.get(actId);
+        notifyScheduleUpdate({
+          activityId: actId,
+          activityDescription: act?.description,
+          message: data.message || `Field report confirmed for ${actId}`,
+          source: 'Reconcile',
+          percentComplete: act?.percent_complete,
+          varianceDays: act?.finish_variance_days,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['fieldReports'] });
+      queryClient.invalidateQueries({ queryKey: ['evm'] });
+      queryClient.invalidateQueries({ queryKey: ['auditRecent'] });
       setActionError(null);
       setNewMode(false);
       setNewDesc('');

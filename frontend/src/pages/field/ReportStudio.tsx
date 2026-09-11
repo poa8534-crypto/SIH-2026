@@ -889,7 +889,13 @@ export function ReportSubmissionFlow({
                   {renderWithSrOnly(t('report_details'), 'Report details')}
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  {renderWithSrOnly(t('report_details_sub'), 'Structured parameters (optional) to strengthen automated schedule linking.')}
+                  {renderWithSrOnly(
+                    <>
+                      {t('report_details_sub', 'Structured parameters to strengthen automated schedule linking')}{' '}
+                      <strong className="font-bold text-heading">({t('optional', 'optional')})</strong>.
+                    </>,
+                    'Structured parameters to strengthen automated schedule linking (optional).'
+                  )}
                 </p>
               </div>
 

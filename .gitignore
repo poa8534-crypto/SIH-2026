@@ -23,6 +23,9 @@ dataset/uploads/
 # keyed by content hash, never a source of truth.
 .cache/
 .DS_Store
+desktop.ini
+Desktop.ini
+Thumbs.db
 .venv/
 
 # Scratch outputs from eval/benchmark runs. Every one is regenerable by the
