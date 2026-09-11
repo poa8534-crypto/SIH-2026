@@ -1436,7 +1436,9 @@ SPA DEEP LINKS                                 frontend/package.json
 | API `PYTHON_VERSION` | `3.12.10` | numpy 1.26.4 and torch 2.2.2 stop at cp312 |
 | Static site `VITE_API_URL` | the API's origin | build-time constant; a change needs a **rebuild**, not a restart |
 
-**Verified:** recorded in the commit that lands this section.
+**Verified:** `pytest` 1055 passed · `tsc --noEmit` clean · build emits `dist/404.html` · `eval.py` auto-link precision **100.0%**, coverage 43.5% · CORS matched against six origins, two of which must fail · Render build 85 s with **no `nvidia-*` wheel** · build-time seed **120/266/75/198/141**, identical to local, which is what proves the deployed matcher runs MiniLM and not the 39-auto-link hashing fallback · `healthcheck.py --base-url https://navis-api-0t15.onrender.com` **31 passed, 0 failed** · a preflighted cross-origin `POST /agent/turn` from the static site origin returns **200** · the shipped bundle contains the API origin and no longer contains the `:8000` guess · no OOM on the free 512 MB instance.
+
+> **Two pre-existing defects surfaced while verifying, neither introduced nor fixed here** (see D-113): `GET /executive/metrics` returns **46 evidenced / 38.3%**, not the 67 / 55.8% D-111 and D-112 record — local and deployed agree exactly, so the recorded figure is what is wrong; and `frontend/src/test/scheduleInspectionPanel.test.tsx` is **flaky**, putting the suite anywhere between 253 and 257 of 257, confirmed by re-running at `5d3da5c`.
 
 ---
 

@@ -280,6 +280,121 @@ python backend/eval.py               # matcher metrics table
 
 ---
 
+## Deployed: the public demo on Render
+
+Everything above is the local setup, and it stays the way the demo is presented.
+This section is the hosted copy — a URL you can send someone who does not have
+the repo. See **D-113** for why it is built this way.
+
+| | URL | Render service |
+|---|---|---|
+| **App** (open this) | https://navis-yuvf.onrender.com | `NAVIS` — static site |
+| **API** | https://navis-api-0t15.onrender.com | `navis-api` — web service |
+| API health | https://navis-api-0t15.onrender.com/health | |
+| API docs | https://navis-api-0t15.onrender.com/docs | |
+
+Two services, not one. The SPA is static files on a CDN; the API is a uvicorn
+process. They are joined by **exactly one value**:
+
+```
+static site  env  VITE_API_URL = https://navis-api-0t15.onrender.com
+```
+
+### The three things that will bite you
+
+**1. `VITE_API_URL` is a build-time constant.** Vite inlines it into the bundle.
+Changing it on the static site and restarting does nothing — you have to
+**rebuild** the static site. It also belongs on the *static site* only; setting
+it on the API service has no effect whatsoever.
+
+**2. A free instance sleeps.** The API spins down after ~15 minutes idle and the
+next request pays ~50 seconds of cold start. Before presenting, open
+`https://navis-api-0t15.onrender.com/health` once and wait for `{"status":"ok"}`.
+Then the app is warm.
+
+**3. The database resets on every deploy.** `dataset/epc_progress.db` is
+gitignored, so `render-build.sh` rebuilds it during the build by running
+`backend/scripts/seed.py` — 120 activities, 266 events, 75 auto-linked, 198
+review items. That is a clean, known demo state every time, which is what you
+want on stage. It also means **anything typed into the hosted app is lost on the
+next deploy.** If it has to survive, add a Render Disk or move to Postgres.
+
+### Pushing a change
+
+`main` auto-deploys both services. Push, and:
+
+- backend change → the API rebuilds (~5 min: CPU torch, dependencies, seed)
+- frontend change → the static site rebuilds (~1 min)
+
+Watch either in the dashboard, or check `/health` once the deploy is green.
+
+### Deep links
+
+The SPA uses `BrowserRouter`, so `/executive/milestones` is a path Render has no
+file for. `npm run build` emits `dist/404.html` as a copy of `index.html`, which
+makes deep links and refreshes work everywhere. To serve them with a proper
+`200` instead of a `404`, add the rewrite rule once in the dashboard —
+**Static site → Redirects/Rewrites → Add**:
+
+| Source | Destination | Action |
+|---|---|---|
+| `/*` | `/index.html` | Rewrite |
+
+This cannot be set through Render's API, which is why it is a manual step.
+
+### Deploying it again from scratch
+
+`render.yaml` is the Blueprint for both services. **New → Blueprint** in the
+dashboard, point it at the repo, and it recreates the pair — including the
+rewrite rule and the `VITE_API_URL` wiring, which the API cannot set.
+
+The settings that are not guessable, if you build the services by hand instead:
+
+| Service | Setting | Value |
+|---|---|---|
+| API | Build command | `bash render-build.sh` |
+| API | Start command | `python -m uvicorn server.main:app --app-dir backend --host 0.0.0.0 --port $PORT` |
+| API | Health check path | `/health` |
+| API | `PYTHON_VERSION` | `3.12.10` |
+| API | `HF_HOME` | `/opt/render/project/src/.hfcache` |
+| Static | Root directory | `frontend` |
+| Static | Build command | `npm install; npm run build` |
+| Static | Publish directory | `dist` |
+| Static | `VITE_API_URL` | the API service's URL |
+
+`--app-dir backend` is not optional: D-112 moved the Python under `backend/`, and
+without it uvicorn exits immediately with `ModuleNotFoundError: No module named
+'server'`. `HF_HOME` is not optional either — its default is `$HOME/.cache`,
+which does **not** survive from the build into the running instance, so the
+MiniLM weights would be re-downloaded on a user's first request.
+
+### Custom domain
+
+Add it in the dashboard, then set `NAVIS_ALLOWED_ORIGINS` on the **API** service
+to the new origin (comma-separated for several):
+
+```
+NAVIS_ALLOWED_ORIGINS=https://navis.example.org
+```
+
+Render's own `*.onrender.com` origins are already allowed by the CORS regex in
+`backend/server/main.py`; this variable is only for anything else.
+
+### If the API returns 502, or dies at boot
+
+Check the logs for `Out of memory`. The matcher loads `all-MiniLM-L6-v2`, and
+the full pipeline measured **579 MB** resident locally — over the 512 MB that
+Render's `free` and `starter` plans both provide. The Linux CPU-only torch build
+is leaner than that measurement, which is why `free` is worth trying, but if it
+OOMs the fix is the **2 GB `standard` plan**.
+
+Do **not** "fix" it by dropping `sentence-transformers`. That was measured
+(D-113): auto-link precision falls from **100.0% to 95.1%**, and coverage from
+43.5% to 26.6%. At 95.1% the demo writes wrong activity links into the schedule
+with no planner review — the one thing NAVIS promises it will never do.
+
+---
+
 ## The LLM is optional and OFF by default
 
 **You do not need Ollama, a GPU, or an API key.** With no `.env` file and

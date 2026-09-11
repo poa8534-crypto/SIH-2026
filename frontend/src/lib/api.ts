@@ -105,7 +105,15 @@ function isDevelopmentHost(hostname: string): boolean {
  */
 export const getBaseUrl = () => {
   const configured = import.meta.env.VITE_API_URL;
-  if (configured) return configured.replace(/\/+$/, '');
+  if (configured) {
+    const trimmed = configured.trim().replace(/\/+$/, '');
+    // A bare hostname is accepted and assumed HTTPS. Render's Blueprint can
+    // only interpolate another service's `host`, which has no scheme, so
+    // `VITE_API_URL=navis-api.onrender.com` is what render.yaml actually
+    // produces. Without this it would be read as a relative path and every
+    // request would go to the static site instead of the API.
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
   if (isDevelopmentHost(window.location.hostname)) {
     return `http://${window.location.hostname}:8000`;
   }

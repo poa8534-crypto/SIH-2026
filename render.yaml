@@ -1,7 +1,9 @@
 # Render Blueprint — NAVIS deployed as two connected services (D-113).
 #
 #   navis-api   a Python web service running FastAPI (backend/server/main.py)
+#               live: https://navis-api-0t15.onrender.com
 #   navis-web   a static site serving the built React SPA (frontend/dist)
+#               live: https://navis-yuvf.onrender.com  (service name "NAVIS")
 #
 # They are connected by exactly one value: navis-web is built with
 # VITE_API_URL pointing at navis-api's URL. Vite inlines that at BUILD time,
@@ -64,4 +66,8 @@ services:
         fromService:
           name: navis-api
           type: web
+          # `host` is the only property available here and it carries NO
+          # scheme — this resolves to `navis-api-xxxx.onrender.com`.
+          # getBaseUrl() in frontend/src/lib/api.ts assumes https:// for a
+          # bare hostname precisely so this works.
           property: host

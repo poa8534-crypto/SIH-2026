@@ -10853,4 +10853,71 @@ Netlify), which is why the `404.html` copy is there instead.
   fixed here; both now print the `--app-dir backend` form.
 
 ### Verification
-Recorded in the commit that lands this entry.
+
+**Local, before deploying**
+- `python -m pytest -q` — **1055 passed**.
+- `npx tsc --noEmit` — clean. `npm run build` — clean, and `dist/404.html` is
+  emitted as a byte-identical copy of `dist/index.html`.
+- `python backend/eval.py` — auto-link precision **100.0%**, coverage **43.5%**
+  (67 of 154), top-1 **86.9%**, suggestion precision **81.8%**. Every figure
+  matches `METRICS.md`. Run because the slim-build question turns on it; no
+  matcher code was touched.
+- CORS matched against six origins in-process, using Starlette's own `fullmatch`
+  semantics: `http://localhost:5173`, `http://192.168.1.9:5173`,
+  `https://navis-yuvf.onrender.com` and `https://navis-api-abc.onrender.com`
+  allowed; `https://evil.com` and `http://evil.onrender.com.attacker.net`
+  refused.
+
+**On Render, against the live services**
+- Build: **85 seconds**, and the CPU index held — the install log lists
+  `mpmath, typing-extensions, sympy, networkx, MarkupSafe, fsspec, filelock,
+  jinja2, torch` and **no `nvidia-*` package at all**.
+- The build-time seed reported **120 activities, 266 events, 75 auto-linked, 198
+  review items, 141 audit records, 25 source conflicts** — identical, to the
+  row, to the same seed run locally. That is the proof the deployed matcher is
+  running **MiniLM and not the hashing fallback**: the fallback produces 39
+  auto-links, not 75. The logs contain no `falling back to hashing embedder`,
+  no `unimportable` and no OOM.
+- `GET /health` → `200 {"status":"ok"}`.
+- **`python backend/scripts/healthcheck.py --base-url https://navis-api-0t15.onrender.com`
+  — 31 passed, 0 failed**, including `GET /schedule` (120 activities, 46 with
+  actuals), `GET /review-queue` (198 pending), `POST /ingest`,
+  `POST /schedule/export`, `GET /memory/query` and `POST /agent/turn`.
+- **Memory held on the free 512 MB instance.** `POST /ingest` and `POST
+  /agent/turn` both exercise the matcher, so MiniLM was resident when they
+  answered. The 579 MB local measurement did not reproduce on Linux with the
+  CPU-only wheel.
+- **Cross-origin, executed in a browser on `https://navis-yuvf.onrender.com`:**
+  `GET /schedule` → 200, 120 activities, 46 with actuals; `GET /review-queue` →
+  200, 198 pending; and a genuinely **preflighted** `POST /agent/turn` (JSON
+  content-type) → **200**. The preflight is the case the old http-only regex
+  would have failed.
+- The built bundle contains the API origin (`VITE_API_URL` really is inlined)
+  and **no longer contains the `:8000` guess**.
+- Deep links: `/executive/milestones`, `/field/reports` and an unknown path all
+  return the full app shell and boot react-router. Status is **404 until the
+  dashboard rewrite rule is added** — expected, and the reason the rule is
+  documented in `SETUP.md` as a manual step.
+
+### Two pre-existing defects found while verifying — neither introduced here, neither fixed here
+
+**1. `GET /executive/metrics` returns 46 evidenced / 38.3%, not the 67 / 55.8%
+that D-111 and D-112 both record as verified.** The deployed instance and the
+local development database agree with each other exactly (46, 38.3%), and a
+clean `seed.py` database agrees too — so this is not a deployment artefact. The
+figure quoted in those two entries does not reproduce against the current code
+and dataset. Not corrected here: the number is load-bearing for the Senior
+Management lane, and changing either the metric or the record of it belongs in a
+task that is about that lane, not about deployment. **`NUMBERS_SHEET.md` and any
+rehearsed script quoting 55.8% should be re-checked before it is said aloud.**
+
+**2. `frontend/src/test/scheduleInspectionPanel.test.tsx` is flaky.** It passes
+15/15 in isolation and intermittently fails inside the full suite, which
+therefore lands anywhere between **253 and 257 of 257**. Established as
+pre-existing by checking out `frontend/src/lib/api.ts` and
+`frontend/package.json` at `5d3da5c` — the commit before any of this work — and
+re-running: 1 failure, then 4. The "257 passed" recorded in D-111 and D-112 was
+a lucky run, not a stable baseline. The failing assertion looks for
+`Accept Field Actual (2)`, a count that depends on query state resolving before
+the assertion, so the likely cause is a missing `await`/`findBy` rather than
+anything in the component.
