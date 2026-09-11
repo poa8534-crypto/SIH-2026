@@ -16,6 +16,7 @@ import {
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
+import { DISCIPLINES } from '../../config';
 import type {
   MemoryQueryResponse,
   DurationDistribution,
@@ -179,10 +180,13 @@ export default function ExecutiveExecutionInsights() {
               className="bg-surface text-fg border border-hair rounded px-2 py-1 text-xs focus:outline-none"
             >
               <option value="all">All Disciplines</option>
-              <option value="civil">Civil (CIV)</option>
-              <option value="piping">Piping (PIP)</option>
-              <option value="electrical">Electrical (ELE)</option>
-              <option value="instrumentation">Instrumentation (INS)</option>
+              {/* Rendered from config, not hand-listed: this select used to carry
+                  four of the six disciplines, omitting `static_equipment` and
+                  `hse` while the header counted "6 Disciplines Active".
+                  See D-106. */}
+              {DISCIPLINES.map((d) => (
+                <option key={d.value} value={d.value}>{`${d.label} (${d.short})`}</option>
+              ))}
             </select>
           </div>
         </div>

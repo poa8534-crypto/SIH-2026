@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { copyText } from '../lib/clipboard';
 import {
   Bot,
   X,
@@ -237,10 +238,11 @@ export function AskNavisChat({
     }
   };
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (text: string, id: string) => {
+    if (await copyText(text)) {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
   };
 
   const handleAction = (action: ChatAction) => {
@@ -248,9 +250,9 @@ export function AskNavisChat({
       if (onInsertDraft) {
         onInsertDraft(action.text);
       } else {
-        // Fallback: copy to clipboard and navigate to report studio
-        navigator.clipboard.writeText(action.text);
-        navigate('/field/report');
+        // Fallback: copy to clipboard and navigate to report studio. Awaited —
+        // navigating mid-write used to drop the draft silently (D-106).
+        void copyText(action.text).then(() => navigate('/field/report'));
       }
       onClose();
     } else if (action.type === 'link' && action.url) {

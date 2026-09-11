@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { copyText } from '../lib/clipboard';
 import { api } from '../lib/api';
 import { Panel, Skeleton, ErrorState } from './ui';
 import { DurationDistribution, TenderEstimateResponse } from '../types';
@@ -35,11 +36,12 @@ export function TenderEstimator({ durations }: Props) {
     queryFn: () => api.estimateTender(queryPayload),
   });
 
-  const handleCopyXml = () => {
+  const handleCopyXml = async () => {
     if (estimate?.pmxml_snippet) {
-      navigator.clipboard.writeText(estimate.pmxml_snippet);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (await copyText(estimate.pmxml_snippet)) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 

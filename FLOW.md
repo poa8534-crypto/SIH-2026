@@ -1291,6 +1291,87 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Dead-button sweep of all eight Senior Management destinations; fixed three private copies of canonical config lists, a clipboard that reported success it had not achieved, and the sole error breaking tsc.
+**Date:** 2026-09-11 · **Decision:** D-106
+
+```
+EXECUTIVE LANE SWEEP — WHAT WAS CLICKED, AND WHAT BROKE        (D-106)
+
+  SWEPT LIVE (API :8000, UI :5173, 1024x768, every control clicked)
+      /executive              Overview            0 findings
+      /executive/milestones   Milestones          1  -> fixed
+      /executive/progress     Progress            0 findings
+      /executive/risks        Risks & Delays      0 defects (see sequencing)
+      /executive/forecasts    Forecasts           0 findings
+      /executive/insights     Execution Insights  1  -> fixed
+      /executive/reports      Management Reports  2  -> fixed
+      /executive/confidence   Data Confidence     0 findings (read-only)
+
+  ROOT CAUSE SHARED BY THREE SCREENS — a private copy of a config list
+      config.ts:45-53 says, verbatim:
+        "six private copies is how a screen ends up one discipline short"
+
+      Milestones.tsx:316          5 hand-listed disciplines, no `hse`
+          ...while Timeline Track on the SAME page drew "HSE scope complete"
+      ExecutionInsights.tsx:182   4 hand-listed, no `static_equipment`, no `hse`
+          ...while its own header counted "6 Disciplines Active"
+      FieldWorkspaceShell.tsx:238 lang === 'mr-IN' ? 'MR' : 'EN'
+          ...`mr-IN` is Marathi. config.ts:105 has en-IN / hi-IN / as-IN only,
+             so Assamese fell through to 'EN'. This was ALSO the only error
+             breaking `npx tsc --noEmit` (from 7c47d97 / D-099).
+
+      NOW:  {DISCIPLINES.map(...)}                    <- config.ts:83
+            {languages.find(l => l.code === lang)?.short}
+
+  THE CLIPBOARD PATH — before
+      ManagementReports.tsx:163  navigator.clipboard.writeText(md)  // no await
+      ScheduleDoctor.tsx:74           "                             // no catch
+      TenderEstimator.tsx:40          "
+      AskNavisChat.tsx:241,252        "
+      setCopied(true)                                  // unconditional
+        -> observed: button read "Copied" while the console carried
+           NotAllowedError as an UNCAUGHT promise rejection
+        -> on a plain-HTTP LAN origin navigator.clipboard is UNDEFINED,
+           so this is a synchronous TypeError inside a click handler.
+           Same Secure-Context rule that produced lib/uuid.ts (D-098).
+
+  THE CLIPBOARD PATH — after
+      lib/clipboard.ts :: copyText(text): Promise<boolean>
+        1. navigator.clipboard?.writeText   <- optional-chained, no throw
+        2. off-screen <textarea> + document.execCommand('copy')
+        every call site:  if (await copyText(x)) setCopied(true)
+
+      Verified by forcing navigator.clipboard = undefined in the live page:
+        no exception, and the button STAYED "Copy Markdown".
+
+  ALSO FIXED
+      ManagementReports.tsx  URL.revokeObjectURL deferred to setTimeout(,0);
+                             revoking synchronously after a.click() can race
+                             the browser's read of the blob.
+
+  LOGGED, DELIBERATELY NOT FIXED
+      Login.tsx:194   role cards are <div onClick onDoubleClick> with no role,
+                      no tabIndex, no onKeyDown -> not keyboard reachable and
+                      absent from the a11y tree. Real defect, but it is the
+                      entry point to all three roles and the presenter uses a
+                      mouse. After the finale.
+
+  DEMO SEQUENCING, NOT DEFECTS
+      /executive/risks opens on "Accepted RAID Register (0)".
+      Delay Attribution Matrix is (0) too. Source Disagreements is (18) and
+      carries the best content on the page — real conflicting dates citing
+      dpr_day_03.txt vs piping_progress.xlsx. Click straight to that tab.
+
+  Pinned by: cd frontend && npx tsc --noEmit    clean (was 1 error)
+             cd frontend && npx vitest run       229 passed
+             cd frontend && npm run build        clean, 3.32s
+             python -m pytest -q                1055 passed (no backend change)
+```
+
+---
+
+### Previous modification area (D-105)
+
 **Task:** Pinned the stage API URL, documented the three env modes and the cost of the pin, and gave the fail-safe video a shot list bound to the canonical demo path.
 **Date:** 2026-09-11 · **Decision:** D-105
 

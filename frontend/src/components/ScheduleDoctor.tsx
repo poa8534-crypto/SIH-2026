@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { copyText } from '../lib/clipboard';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -69,11 +70,12 @@ export function ScheduleDoctor() {
   const isCritical = score < 70;
   const isModerate = score >= 70 && score < 85;
 
-  const handleCopyXml = () => {
+  const handleCopyXml = async () => {
     if (audit.calibrated_schedule_snippet) {
-      navigator.clipboard.writeText(audit.calibrated_schedule_snippet);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (await copyText(audit.calibrated_schedule_snippet)) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 

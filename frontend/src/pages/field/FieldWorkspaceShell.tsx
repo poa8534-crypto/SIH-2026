@@ -235,7 +235,12 @@ export function FieldWorkspaceShell({ children }: FieldWorkspaceShellProps) {
               className="sm:hidden px-2 py-1 rounded-lg border border-hair bg-raised text-[11px] font-mono font-semibold text-heading cursor-pointer"
               title={`Switch language (current: ${languages.find((l) => l.code === lang)?.label ?? 'EN'})`}
             >
-              {lang === 'hi-IN' ? 'HI' : lang === 'mr-IN' ? 'MR' : 'EN'}
+              {/* Read from the same `languages` list the desktop chips map over.
+                  This used to hand-roll 'HI' / 'MR' / 'EN' — and 'mr-IN'
+                  (Marathi) is not a language this app has, so selecting
+                  Assamese fell through to 'EN'. tsc caught it as a comparison
+                  with no overlap. See D-106. */}
+              {languages.find((l) => l.code === lang)?.short ?? 'EN'}
             </button>
 
             <button

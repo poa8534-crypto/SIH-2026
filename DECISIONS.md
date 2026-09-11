@@ -9793,3 +9793,68 @@ Separately, the run sheet's fail-safe video item was a one-line instruction with
 - `frontend/.env.example` (three documented modes)
 - `RUN_SHEET_SEP11.md` (P1 `.env` step corrected; Appendix A added)
 - `.gitignore` (recording artefacts)
+
+---
+
+## 2026-09-11 / D-106 — Dead-button sweep of the Senior Management lane: three private copies of a canonical list, and a clipboard that lied
+
+### Status
+Active.
+
+### Context
+`RUN_SHEET_SEP11.md` P2 assigns a dead-button sweep of all eight Senior Management destinations, with an explicit instruction to hunt *ungrounded numbers* — D-090 having removed eight fabricated figures from these screens. The sweep was run against the live app (API on :8000, UI on :5173), clicking every interactive element on every destination and reading the console and network after each.
+
+**The lane is structurally sound.** All eight destinations render real API-backed data with no stubs, no placeholder copy, and no blank tiles. Overview, Progress, Forecasts and Data Confidence produced **zero** findings. The what-if scenario simulator on Forecasts recomputes correctly (`+14` weather → `Simulated Completion Delta: +14 Days`, with a Reset to Baseline that restores `0 Days`), the Progress drill-down opens a record-level audit with real activity rows, `Refresh AI Narrative` regenerates, and Ask NAVIS answers with a cited source and a working deep link. No ungrounded number was found.
+
+Six defects were found. Three share one root cause.
+
+**1 · Three private copies of a list `config.ts` already owns.** `config.ts:45-53` carries this comment, verbatim:
+
+> *"Every legend, filter, colour map and chart axis reads from here rather than keeping its own copy — six private copies is how a screen ends up one discipline short."*
+
+Three screens kept their own copy anyway, and each had drifted differently:
+
+- `Milestones.tsx:316` hand-listed **five** disciplines, omitting `hse` — while the Timeline Track on the same screen happily drew an "HSE scope complete" milestone. A filtered view could not reach a row the same page was already showing. It also relabelled `static_equipment` as "Equipment" against the canonical "Static Equipment".
+- `ExecutionInsights.tsx:182` hand-listed **four**, omitting both `static_equipment` and `hse` — while its own header counted **"6 Disciplines Active"**. Selecting SEQ now returns 8 activity types that were previously unreachable.
+- `FieldWorkspaceShell.tsx:238` hand-rolled the mobile language chip as `lang === 'hi-IN' ? 'HI' : lang === 'mr-IN' ? 'MR' : 'EN'`. **`mr-IN` is Marathi, which this application does not have** — `config.ts:105` defines exactly English, Hindi and Assamese. So selecting Assamese fell through to the `'EN'` branch and the mobile chip displayed the wrong language. This was also the sole error breaking `npx tsc --noEmit`, introduced by `7c47d97` (D-099) and unnoticed since, which means the eve plan's Phase 2f type check had been failing on every run.
+
+**2 · The clipboard reported success it had not achieved.** Five call sites — `ManagementReports.tsx:163`, `ScheduleDoctor.tsx:74`, `TenderEstimator.tsx:40`, `AskNavisChat.tsx:241` and `:252` — all followed the same shape:
+
+```
+navigator.clipboard.writeText(x);   // not awaited, not caught
+setCopied(true);                    // unconditional
+```
+
+Observed live: clicking **Copy Markdown** rendered **"✓ Copied"** while the console carried `NotAllowedError: Failed to execute 'writeText' on 'Clipboard': Write permission denied.` as an **uncaught promise rejection**. The button was reporting the opposite of what happened.
+
+The more serious half is the context rule. `navigator.clipboard` is a Secure Context API: present on HTTPS and `localhost`, **undefined** on a plain-HTTP LAN origin such as `http://192.168.1.7:5173`. That is the exact constraint behind **D-098**, which added `lib/uuid.ts` because `crypto.randomUUID` is undefined in the same situation. The clipboard has the identical restriction and never received the same treatment, so on a LAN origin these five handlers throw `TypeError: Cannot read properties of undefined` synchronously inside a click. `AskNavisChat.tsx:252` is the worst of them: it copies a draft and immediately navigates, so a failure loses the user's text silently mid-flow.
+
+**3 · `handleDownloadMd` revoked its object URL synchronously** after `a.click()` (`ManagementReports.tsx:174`), which can race the browser's read of the blob and produce an empty or failed download.
+
+### Decision
+1. **Both executive discipline selects now render from `DISCIPLINES`** (`config.ts:83`), so they cannot drift again. The `hse` and `static_equipment` rows are reachable for the first time.
+2. **The mobile language chip reads `languages.find(...)?.short`** — the same array the desktop chips at `FieldWorkspaceShell.tsx:206` already map over. Fixing the type error and fixing the wrong-label bug are the same edit, because the type error *was* the bug.
+3. **New `lib/clipboard.ts` exporting `copyText(text): Promise<boolean>`**, deliberately mirroring `lib/uuid.ts` (D-098) in shape and in its documentation of *why* the fallback exists: try `navigator.clipboard?.writeText` (optional-chained, so a missing API is not a throw), else an off-screen `<textarea>` + `document.execCommand('copy')`, which is deprecated but is the only thing that works on a non-secure origin. All five call sites now `await` it and set their success state **only** on `true`.
+4. **`URL.revokeObjectURL` deferred** to a `setTimeout(..., 0)`.
+5. **Not fixed, reported instead — the role cards on the login screen** (`Login.tsx:194`) are a plain `<div onClick onDoubleClick>` with no `role`, no `tabIndex` and no `onKeyDown`. They are not keyboard reachable and do not appear in the accessibility tree as controls; `read_page` on the picker returns only the two theme radios. This is a real accessibility defect, but the presenter drives with a mouse, it changes nothing about the scripted demo, and the login screen is the entry point to all three roles — breaking it breaks everything. Per the run sheet's ten-minute rule and "fix only what the sweep found, and only where the fix is cheaper than the risk", it is logged for after the finale.
+6. **Not defects, recorded as demo sequencing.** Risks & Delays opens on **Accepted RAID Register (0)**, and Delay Attribution Matrix is also **(0)**; only **Source Disagreements (18)** carries data, and it is the strongest content on the page — real conflicting dates with `dpr_day_03.txt` versus `piping_progress.xlsx` citations. Anyone demoing that screen should click straight to Source Disagreements, or have the Project Manager accept a RAID item first. Likewise Milestones → "Contractual Only" correctly yields 0 of 13, because the KPI tile above it already reads "0 Contractual commitments".
+
+### Consequences
+- `npx tsc --noEmit` is **clean for the first time since `7c47d97`**. The build was always passing because Vite does not type-check, which is why this survived a full day.
+- Copy buttons now degrade honestly. Verified live by redefining `navigator.clipboard` to `undefined` and clicking: **no exception, and the button stayed "Copy Markdown"** rather than claiming success. Before this change that path was a `TypeError`.
+- Three screens stopped carrying private copies of canonical lists. The `config.ts` comment is now true rather than aspirational.
+- No backend, matcher, extractor or threshold code was touched, so no metric can have moved.
+
+### Verification
+- **Live sweep** of all eight destinations at 1024×768 against a running API: every interactive control clicked, console and network read after each.
+- Fixes confirmed **in the browser**, not just in tests: Milestones discipline select now lists all six and filtering to HSE returns the previously unreachable "HSE scope complete" row; Execution Insights lists all six and SEQ returns 8 activity types; Copy Markdown with `navigator.clipboard` forced to `undefined` neither throws nor falsely reports success.
+- `npx tsc --noEmit` — **clean** (was 1 error).
+- `npx vitest run` — **229 passed, 0 failed**.
+- `npm run build` — clean, 3.32s.
+- `python -m pytest -q` — **1055 passed, 0 failed** (unchanged; no backend code touched).
+
+### Affected Areas
+- `frontend/src/lib/clipboard.ts` (new)
+- `frontend/src/pages/executive/Milestones.tsx`, `ExecutionInsights.tsx`, `ManagementReports.tsx`
+- `frontend/src/components/AskNavisChat.tsx`, `ScheduleDoctor.tsx`, `TenderEstimator.tsx`
+- `frontend/src/pages/field/FieldWorkspaceShell.tsx`

@@ -18,6 +18,7 @@ import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import { DisciplineTag } from '../../components/DisciplineTag';
+import { DISCIPLINES } from '../../config';
 import type { Discipline, ExecutiveMetricsResponse, ExecutiveMilestone } from '../../types';
 
 interface MilestoneRecord {
@@ -313,11 +314,13 @@ export default function ExecutiveMilestones() {
               className="bg-surface text-fg border border-hair rounded px-2 py-1 text-xs focus:outline-none focus:border-fg"
             >
               <option value="all">All Disciplines</option>
-              <option value="civil">Civil</option>
-              <option value="piping">Piping</option>
-              <option value="electrical">Electrical</option>
-              <option value="instrumentation">Instrumentation</option>
-              <option value="static_equipment">Equipment</option>
+              {/* Rendered from config, not hand-listed: this select used to omit
+                  `hse` outright while the Timeline Track below it happily drew
+                  HSE milestones, so a filtered view could not reach rows the
+                  same screen was already showing. See D-106. */}
+              {DISCIPLINES.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
             </select>
           </div>
 

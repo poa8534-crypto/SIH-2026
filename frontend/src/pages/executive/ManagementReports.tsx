@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { copyText } from '../../lib/clipboard';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState } from '../../components/ui';
 import type {
@@ -159,10 +160,12 @@ export default function ExecutiveManagementReports() {
     return md;
   }, [scheduleData, metrics, raidItems, dataDate, generatedAt, aiNarrative]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(fullReportMarkdown);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    // Only claim "Copied" if the write actually succeeded (D-106).
+    if (await copyText(fullReportMarkdown)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDownloadMd = () => {
@@ -172,7 +175,9 @@ export default function ExecutiveManagementReports() {
     a.href = url;
     a.download = `NAVIS_Executive_Report_${dataDate}.md`;
     a.click();
-    URL.revokeObjectURL(url);
+    // Deferred: revoking synchronously after click() can race the browser's
+    // read of the blob and yield an empty or failed download (D-106).
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   const handlePrint = () => {
