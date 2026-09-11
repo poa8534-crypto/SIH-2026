@@ -11,11 +11,30 @@ interface GanttChartProps {
   activities: ScheduleActivity[];
   selectedId: string | null;
   onSelectActivity: (activityId: string) => void;
+  /** Project data date. Absent while the schedule query is still in flight —
+   *  there is deliberately no default, because a hardcoded one renders a Data
+   *  Date marker on a day the project never had. */
   dataDate?: string;
   highlightId?: string | null;
+  highlightKey?: string | null;
 }
 
 const MS_PER_DAY = 86_400_000;
+
+/** Width of the sticky activity-meta pane. The header, every row and the
+ *  horizontal scroll maths must agree on this number — a literal in one of the
+ *  three is how a bar and its label drift apart. */
+const LEFT_PANE_PX = 440;
+
+/** Height of the sticky two-tier timeline header (months + week ticks). */
+const HEADER_PX = 48;
+
+/** Row height. Matches the `h-12` on each row. */
+const ROW_PX = 48;
+
+/** Approximate rendered width of the "UPDATED LIVE" pill. Used only to keep it
+ *  clamped inside the timeline; it is nowrap, so it cannot shrink to fit. */
+const LIVE_BADGE_PX = 280;
 
 function parseISODate(d: string): number {
   const parts = d.split('-').map(Number);
@@ -37,6 +56,20 @@ function formatMonthHeader(timestamp: number): string {
   return `${monthNames[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+/** An activity counts as started when any field signal says so — an actual
+ *  date, a percentage, or a reported quantity. The bar renderer and the
+ *  auto-scroll fallback must agree on this: when they disagree, the scroll
+ *  aims at a bar the renderer did not draw. */
+function hasFieldProgress(act: ScheduleActivity | undefined): boolean {
+  if (!act) return false;
+  return Boolean(
+    act.actual_start ||
+    act.actual_finish ||
+    (act.percent_complete !== null && act.percent_complete !== undefined && act.percent_complete > 0) ||
+    (act.actual_qty !== null && act.actual_qty !== undefined && act.actual_qty > 0)
+  );
+}
+
 type ZoomLevel = 'compact' | 'normal' | 'detailed';
 
 const PX_PER_DAY_MAP: Record<ZoomLevel, number> = {
@@ -49,8 +82,9 @@ export function GanttChart({
   activities,
   selectedId,
   onSelectActivity,
-  dataDate = '2026-04-10',
+  dataDate,
   highlightId,
+  highlightKey,
 }: GanttChartProps) {
   const [zoom, setZoom] = useState<ZoomLevel>('normal');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -58,8 +92,13 @@ export function GanttChart({
 
   const pxPerDay = PX_PER_DAY_MAP[zoom];
 
+  // A tick label ("Sep 15") needs roughly 48px. At the compact 6px/day a weekly
+  // label gets 42px and the labels collide, so compact halves their density.
+  // The grid lines below stay weekly at every zoom.
+  const labelEveryDays = pxPerDay * 7 < 48 ? 14 : 7;
+
   // Compute timeline boundaries across all activities and dataDate
-  const { minTimestamp, maxTimestamp, totalDays, months, dataDateOffsetPx } = useMemo(() => {
+  const { minTimestamp, totalDays, months, dataDateOffsetPx } = useMemo(() => {
     let minTime = Infinity;
     let maxTime = -Infinity;
 
@@ -104,8 +143,6 @@ export function GanttChart({
     const minD = new Date(minTime);
     minTime = Date.UTC(minD.getUTCFullYear(), minD.getUTCMonth(), 1);
 
-    const diffDays = Math.max(30, Math.ceil((maxTime - minTime) / MS_PER_DAY));
-
     // Generate month headers
     const monthList: { label: string; offsetDays: number; durationDays: number }[] = [];
     const cur = new Date(minTime);
@@ -128,6 +165,17 @@ export function GanttChart({
       cur.setUTCMonth(cur.getUTCMonth() + 1);
     }
 
+    // The month band always runs to the end of the month containing maxTime, so
+    // the timeline has to be at least that wide. Sizing it from maxTime alone
+    // clipped the final month header by up to a month's worth of pixels.
+    const lastMonth = monthList[monthList.length - 1];
+    const monthSpanDays = lastMonth ? lastMonth.offsetDays + lastMonth.durationDays : 0;
+    const diffDays = Math.max(
+      30,
+      Math.ceil((maxTime - minTime) / MS_PER_DAY),
+      monthSpanDays
+    );
+
     const ddTime = dataDate ? parseISODate(dataDate) : null;
     const ddOffset = ddTime && ddTime >= minTime
       ? Math.round((ddTime - minTime) / MS_PER_DAY) * pxPerDay
@@ -135,7 +183,6 @@ export function GanttChart({
 
     return {
       minTimestamp: minTime,
-      maxTimestamp: maxTime,
       totalDays: diffDays,
       months: monthList,
       dataDateOffsetPx: ddOffset,
@@ -144,48 +191,124 @@ export function GanttChart({
 
   const timelineWidth = totalDays * pxPerDay;
   const lastScrolledTargetRef = useRef<string | null>(null);
+  const lastScrolledHighlightRef = useRef<string | null>(null);
 
-  // Scroll to selected / highlighted activity inside the Gantt container without hijacking the outer page
+  // Changing the scale invalidates every pixel offset the locks below were
+  // computed at, so release them and let the auto-scroll re-centre at the new
+  // pxPerDay. Declared before that effect so it runs first on the same commit —
+  // clearing the locks afterwards would leave them stale for a whole render.
   useEffect(() => {
-    const targetId = selectedId || highlightId;
+    lastScrolledTargetRef.current = null;
+    lastScrolledHighlightRef.current = null;
+  }, [zoom]);
+
+  // Auto-scroll target row and bar directly into view
+  useEffect(() => {
+    const targetId = highlightId || selectedId;
     if (!targetId) return;
 
-    // Only scroll when the targetId changes
-    if (lastScrolledTargetRef.current === targetId) return;
-    lastScrolledTargetRef.current = targetId;
+    const currentHighlightKey = (highlightKey || highlightId) ?? null;
 
-    const rowEl = rowRefs.current[targetId];
-    const container = scrollContainerRef.current;
+    // If highlightId is provided, scroll unless already locked on this specific highlight key
+    if (highlightId) {
+      if (lastScrolledHighlightRef.current === currentHighlightKey) return;
+    } else {
+      if (lastScrolledTargetRef.current === targetId) return;
+    }
 
-    if (container && rowEl) {
-      // Calculate vertical position inside the Gantt container
-      const targetTop = rowEl.offsetTop - (container.clientHeight / 2) + (rowEl.clientHeight / 2);
-      const act = activities.find((a) => a.activity_id === targetId);
-      const dateStr = act?.actual_start || act?.planned_start;
+    let isCancelled = false;
+    let retries = 0;
+    const maxRetries = 35; // Retries up to ~2s while query/DOM mounts
+
+    const attemptScroll = () => {
+      if (isCancelled) return;
+      const container = scrollContainerRef.current;
+      if (!container) {
+        if (retries++ < maxRetries) setTimeout(attemptScroll, 50);
+        return;
+      }
+
+      const rowEl = document.getElementById(`gantt-row-${targetId}`) || rowRefs.current[targetId];
+      if (!rowEl) {
+        if (retries++ < maxRetries) setTimeout(attemptScroll, 50);
+        return;
+      }
+
+      const barEl =
+        document.getElementById(`gantt-bar-${targetId}`) ||
+        document.getElementById(`gantt-ghost-${targetId}`);
+
+      // 1. Center the row vertically in the container, below the sticky header
+      const containerHeight = container.clientHeight || 500;
+      const visibleHeight = Math.max(100, containerHeight - HEADER_PX);
+      const rowTop = rowEl.offsetTop;
+      const rowHeight = rowEl.clientHeight || ROW_PX;
+      const targetTop = Math.max(0, rowTop - HEADER_PX - (visibleHeight / 2) + (rowHeight / 2));
+
+      // 2. Center the bar horizontally in the visible timeline portion
+      const containerWidth = container.clientWidth || 1000;
+      const visibleTimelineWidth = Math.max(200, containerWidth - LEFT_PANE_PX);
       let targetLeft = container.scrollLeft;
-      if (dateStr && minTimestamp !== Infinity) {
-        const t = parseISODate(dateStr);
-        if (!isNaN(t)) {
-          const offsetDays = Math.max(0, Math.round((t - minTimestamp) / MS_PER_DAY));
-          const offsetPx = offsetDays * pxPerDay;
-          targetLeft = Math.max(0, offsetPx - 240);
+
+      if (barEl) {
+        // offsetLeft is measured from the row's timeline canvas, which already
+        // starts after the sticky pane — so it needs no LEFT_PANE_PX term.
+        const barLeft = barEl.offsetLeft;
+        const barWidth = barEl.offsetWidth || 40;
+        targetLeft = Math.max(0, barLeft - (visibleTimelineWidth / 2) + (barWidth / 2));
+      } else {
+        const act = activities.find((a) => a.activity_id === targetId);
+        const dateStr =
+          act?.actual_start ||
+          (hasFieldProgress(act) ? act?.planned_start || dataDate : act?.planned_start) ||
+          dataDate;
+        if (dateStr && minTimestamp !== Infinity) {
+          const t = parseISODate(dateStr);
+          if (!isNaN(t)) {
+            const offsetDays = Math.max(0, Math.round((t - minTimestamp) / MS_PER_DAY));
+            const offsetPx = offsetDays * pxPerDay;
+            targetLeft = Math.max(0, offsetPx - (visibleTimelineWidth / 2));
+          }
         }
       }
 
-      if (typeof container.scrollTo === 'function') {
-        container.scrollTo({
-          top: Math.max(0, targetTop),
-          left: targetLeft,
-          behavior: 'smooth',
-        });
-      } else {
-        container.scrollTop = Math.max(0, targetTop);
-        container.scrollLeft = targetLeft;
+      // Execute immediate scroll so there is no animation cancellation or freezing
+      container.scrollTop = targetTop;
+      container.scrollLeft = targetLeft;
+
+      // Only a live highlight arriving from elsewhere in the app may move the
+      // outer page. An ordinary click inside the Gantt must not yank the
+      // viewport out from under the user — it changes selectedId too, and this
+      // effect runs for both.
+      if (highlightId) {
+        const workbench =
+          document.getElementById('schedule-workbench') || container.closest('.min-h-\\[580px\\]');
+        if (workbench && typeof workbench.scrollIntoView === 'function') {
+          workbench.scrollIntoView({ block: 'start', behavior: 'auto' });
+        }
       }
-    } else if (rowEl && typeof rowEl.scrollIntoView === 'function') {
-      rowEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  }, [selectedId, highlightId, activities, minTimestamp, pxPerDay]);
+
+      // Mark as scrolled
+      if (highlightId) {
+        lastScrolledHighlightRef.current = currentHighlightKey;
+      }
+      lastScrolledTargetRef.current = targetId;
+    };
+
+    // Run immediately and queue follow-up settling passes as DOM layout stabilizes
+    const rafId = requestAnimationFrame(attemptScroll);
+    const t1 = setTimeout(attemptScroll, 60);
+    const t2 = setTimeout(attemptScroll, 180);
+    const t3 = setTimeout(attemptScroll, 350);
+
+    return () => {
+      isCancelled = true;
+      cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [selectedId, highlightId, highlightKey, activities, minTimestamp, pxPerDay, dataDate]);
 
   const scrollToDataDate = () => {
     if (scrollContainerRef.current && dataDateOffsetPx !== null) {
@@ -286,7 +409,7 @@ export function GanttChart({
         className="flex-1 min-h-0 overflow-auto relative bg-raised select-none"
       >
         <div
-          style={{ width: 440 + timelineWidth }}
+          style={{ width: LEFT_PANE_PX + timelineWidth }}
           className="relative min-h-full flex flex-col"
         >
           {/* HEADER ROW */}
@@ -324,8 +447,8 @@ export function GanttChart({
 
               {/* Bottom tier: Weeks / Day markers */}
               <div className="h-6 relative">
-                {Array.from({ length: Math.ceil(totalDays / 7) }).map((_, wIdx) => {
-                  const dayOffset = wIdx * 7;
+                {Array.from({ length: Math.ceil(totalDays / labelEveryDays) }).map((_, wIdx) => {
+                  const dayOffset = wIdx * labelEveryDays;
                   const time = minTimestamp + dayOffset * MS_PER_DAY;
                   const left = dayOffset * pxPerDay;
                   return (
@@ -356,8 +479,8 @@ export function GanttChart({
 
           {/* BACKGROUND VERTICAL GRID LINES & DATA DATE LINE */}
           <div
-            style={{ left: 440, width: timelineWidth }}
-            className="absolute top-12 bottom-0 pointer-events-none z-0 overflow-hidden"
+            style={{ left: LEFT_PANE_PX, top: HEADER_PX, width: timelineWidth }}
+            className="absolute bottom-0 pointer-events-none z-0 overflow-hidden"
           >
             {/* Monthly grid lines */}
             {months.map((m, idx) => (
@@ -386,18 +509,18 @@ export function GanttChart({
             )}
           </div>
 
-          {/* ACTIVITY ROWS */}
-          <div className="flex-1 flex flex-col z-10 divide-y divide-hair">
+          {/* ACTIVITY ROWS.
+              Painting order here is DOM order, not z-index: this container is
+              static, so a `z-*` on it would be inert. The grid overlay above is
+              positioned at z-0, which already puts it over the rows' own
+              backgrounds (grid lines stay visible across a row) and under the
+              bars (z-10) and the sticky meta pane (z-20). */}
+          <div className="flex-1 flex flex-col divide-y divide-hair">
             {activities.map((act) => {
               const isSelected = act.activity_id === selectedId;
               const isHighlighted = Boolean(highlightId && act.activity_id === highlightId);
               const isCritical = Boolean(act.critical);
-              const hasActual = Boolean(
-                act.actual_start ||
-                act.actual_finish ||
-                (act.percent_complete !== null && act.percent_complete !== undefined && act.percent_complete > 0) ||
-                (act.actual_qty !== null && act.actual_qty !== undefined && act.actual_qty > 0)
-              );
+              const hasActual = hasFieldProgress(act);
 
               // Planned bar calculations
               let pLeft = 0;
@@ -420,7 +543,13 @@ export function GanttChart({
               const actualStartStr = act.actual_start || (hasActual ? (act.planned_start || dataDate) : null);
               if (actualStartStr) {
                 const as = parseISODate(actualStartStr);
-                let af = act.actual_finish ? parseISODate(act.actual_finish) : parseISODate(dataDate);
+                // An unfinished activity runs to the data date. With no data
+                // date yet, NaN falls through to the one-day stub below.
+                let af = act.actual_finish
+                  ? parseISODate(act.actual_finish)
+                  : dataDate
+                  ? parseISODate(dataDate)
+                  : NaN;
                 if (isNaN(af) || af < as) af = as + MS_PER_DAY;
 
                 if (!isNaN(as)) {
@@ -437,9 +566,44 @@ export function GanttChart({
 
               const isDelayed = (act.finish_variance_days ?? 0) > 0;
 
+              // One chain, one winner. These states are mutually exclusive and
+              // must be resolved here in JS: emitting a fragment per state and
+              // concatenating them leaves conflicting `bg-*`/`border-*` classes
+              // on the element, and which one paints is then decided by
+              // stylesheet order rather than by intent.
+              const barTone = isHighlighted
+                ? 'bg-emerald-500/30 border-emerald-400'
+                : isCritical
+                ? 'bg-danger/20 border-danger'
+                : isDelayed
+                ? 'bg-warn/20 border-warn'
+                : 'bg-accent/20 border-accent';
+
+              const fillTone = isHighlighted
+                ? 'bg-emerald-500 shadow-[0_0_16px_rgba(52,211,153,0.9)]'
+                : isCritical
+                ? 'bg-danger'
+                : isDelayed
+                ? 'bg-warn'
+                : 'bg-accent';
+
+              // z-10 keeps a highlighted bar under the sticky meta pane (z-20)
+              // instead of floating over the activity IDs when scrolled.
+              const barGlow = isHighlighted
+                ? ' ring-4 ring-emerald-400 ring-offset-2 ring-offset-surface shadow-[0_0_25px_rgba(16,185,129,0.95)] animate-pulse z-10'
+                : '';
+
+              // The pill is nowrap and cannot shrink, so clamp it inside the
+              // timeline rather than letting it run off the scroll area.
+              const badgeLeft = Math.max(
+                0,
+                Math.min(hasActual ? aLeft : pLeft, Math.max(0, timelineWidth - LIVE_BADGE_PX))
+              );
+
               return (
                 <div
                   key={act.activity_id}
+                  id={`gantt-row-${act.activity_id}`}
                   ref={(el) => {
                     rowRefs.current[act.activity_id] = el;
                   }}
@@ -458,7 +622,7 @@ export function GanttChart({
                   <div
                     className={`sticky left-0 z-20 w-[440px] shrink-0 border-r border-hair px-4 flex items-center font-mono text-label transition-colors ${
                       isHighlighted
-                        ? 'bg-emerald-500/15 dark:bg-emerald-500/25 border-l-4 border-l-emerald-500'
+                        ? 'bg-emerald-500/20 dark:bg-emerald-500/30 border-l-4 border-l-emerald-400 shadow-[inset_0_0_16px_rgba(16,185,129,0.35)]'
                         : isSelected
                         ? 'bg-selected'
                         : isCritical
@@ -483,7 +647,8 @@ export function GanttChart({
                         {act.activity_id}
                       </span>
                       {isHighlighted && (
-                        <span className="text-[9px] bg-emerald-500 text-white font-bold px-1 rounded-xs uppercase tracking-wider animate-pulse shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-500 text-white font-mono font-bold px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider animate-pulse shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                           LIVE
                         </span>
                       )}
@@ -571,18 +736,9 @@ export function GanttChart({
                     {/* BOTTOM BAR: Actual / Earned Progress */}
                     {hasActual ? (
                       <div
+                        id={`gantt-bar-${act.activity_id}`}
                         style={{ left: aLeft, width: aWidth }}
-                        className={`absolute top-5 h-4 rounded-xs border overflow-hidden transition-all shadow-xs ${
-                          isHighlighted
-                            ? 'ring-4 ring-emerald-400/90 ring-offset-2 ring-offset-surface animate-pulse z-20 '
-                            : ''
-                        }${
-                          isCritical
-                            ? 'bg-danger/20 border-danger'
-                            : isDelayed
-                            ? 'bg-warn/20 border-warn'
-                            : 'bg-accent/20 border-accent'
-                        }`}
+                        className={`absolute top-5 h-4 rounded-xs border overflow-hidden transition-all shadow-xs cursor-pointer ${barTone}${barGlow}`}
                         title={`Actual: ${act.actual_start || (act.planned_start ? `${act.planned_start} (Inferred)` : '—')} → ${
                           act.actual_finish ?? 'In Progress'
                         }\nProgress: ${act.percent_complete ?? 0}%\nVariance: Start ${
@@ -592,15 +748,7 @@ export function GanttChart({
                         {/* Interior progress fill */}
                         <div
                           style={{ width: `${Math.min(100, Math.max(0, act.percent_complete || 0))}%` }}
-                          className={`h-full transition-all ${
-                            isHighlighted
-                              ? 'bg-emerald-500'
-                              : isCritical
-                              ? 'bg-danger'
-                              : isDelayed
-                              ? 'bg-warn'
-                              : 'bg-accent'
-                          }`}
+                          className={`h-full transition-all ${fillTone}`}
                         />
                         {/* Progress label if width is sufficient */}
                         {aWidth > 32 && (
@@ -613,9 +761,12 @@ export function GanttChart({
                       // Ghost bar if not started yet
                       hasPlanned && (
                         <div
+                          id={`gantt-ghost-${act.activity_id}`}
                           style={{ left: pLeft, width: pWidth }}
-                          className={`absolute top-5 h-3 border border-hair/50 border-dashed rounded-xs opacity-40 pointer-events-none ${
-                            isHighlighted ? 'ring-4 ring-emerald-400/90 ring-offset-2 ring-offset-surface animate-pulse' : ''
+                          className={`absolute top-5 h-3 border rounded-xs pointer-events-auto cursor-pointer ${
+                            isHighlighted
+                              ? 'border-emerald-400 ring-4 ring-emerald-400 ring-offset-2 ring-offset-surface shadow-[0_0_20px_rgba(16,185,129,0.95)] animate-pulse bg-emerald-500/20'
+                              : 'border-hair/50 border-dashed opacity-40'
                           }`}
                           title="Pending field start"
                         />
@@ -625,12 +776,17 @@ export function GanttChart({
                     {/* LIVE UPDATED FLOATING BADGE OVER BAR */}
                     {isHighlighted && (
                       <div
-                        style={{ left: hasActual ? aLeft : pLeft }}
-                        className="absolute top-0 -translate-y-2.5 z-30 pointer-events-none"
+                        id={`gantt-badge-${act.activity_id}`}
+                        style={{ left: badgeLeft }}
+                        className="absolute top-0 -translate-y-3.5 z-10 pointer-events-auto cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectActivity(act.activity_id);
+                        }}
                       >
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-mono text-[9px] font-bold shadow-md animate-bounce whitespace-nowrap">
-                          <span className="w-1 h-1 rounded-full bg-white animate-ping" />
-                          UPDATED LIVE
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[10px] font-bold shadow-[0_0_20px_rgba(16,185,129,0.95)] border border-emerald-300 animate-bounce whitespace-nowrap cursor-pointer transition-transform hover:scale-105">
+                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          <span>UPDATED LIVE — Click to Stop Glow &amp; Inspect</span>
                         </span>
                       </div>
                     )}

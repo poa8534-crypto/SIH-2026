@@ -165,7 +165,7 @@ export default function Schedule() {
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view');
   const deepLinked = searchParams.get('activity');
-  const highlightParam = searchParams.get('highlight') === 'true';
+  const highlightParam = Boolean(searchParams.get('highlight'));
 
   const [viewMode, setViewMode] = useState<'table' | 'gantt' | 'doctor'>(() => {
     return viewParam === 'gantt' ? 'gantt' : 'table';
@@ -181,20 +181,10 @@ export default function Schedule() {
   });
   // The Ingest screen links auto-linked events here as /schedule?activity=ID.
   const [selectedId, setSelectedId] = useState<string | null>(deepLinked);
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked && viewParam !== 'gantt'));
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(Boolean(deepLinked && viewParam !== 'gantt' && !highlightParam));
   const [liveHighlightId, setLiveHighlightId] = useState<string | null>(() => {
     return highlightParam ? deepLinked : null;
   });
-
-  // Auto-dismiss the live highlight after 8 seconds so it doesn't linger indefinitely
-  useEffect(() => {
-    if (liveHighlightId) {
-      const timer = setTimeout(() => {
-        setLiveHighlightId(null);
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [liveHighlightId]);
 
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [exportFormat, setExportFormat] = useState<'pmxml' | 'xer'>('pmxml');
@@ -263,11 +253,27 @@ export default function Schedule() {
   useEffect(() => {
     if (deepLinked) {
       setSelectedId(deepLinked);
-      if (viewParam !== 'gantt') {
-        setIsDrawerOpen(true);
-      }
       if (highlightParam) {
         setLiveHighlightId(deepLinked);
+        setViewMode('gantt');
+        setIsDrawerOpen(false);
+        // Clear any filters that could hide the highlighted activity
+        setDiscipline('');
+        setSearch('');
+        setOnlyActuals(false);
+        setOnlyFlagged(false);
+        setOnlyCritical(false);
+
+        // Immediately scroll workbench into view without any manual page scrolling needed
+        const raf = requestAnimationFrame(() => {
+          const workbench = document.getElementById('schedule-workbench');
+          if (workbench) {
+            workbench.scrollIntoView({ block: 'start', behavior: 'auto' });
+          }
+        });
+        return () => cancelAnimationFrame(raf);
+      } else if (viewParam !== 'gantt') {
+        setIsDrawerOpen(true);
       }
     }
   }, [deepLinked, viewParam, highlightParam]);
@@ -765,7 +771,7 @@ export default function Schedule() {
       </div>
 
       {/* ── MAIN WORKBENCH: SCHEDULE TABLE / GANTT / DOCTOR ────────────────── */}
-      <div className="flex flex-col w-full bg-raised border border-hair rounded-lg relative overflow-hidden min-h-[580px] shadow-xs">
+      <div id="schedule-workbench" className="flex flex-col w-full bg-raised border border-hair rounded-lg relative overflow-hidden min-h-[580px] shadow-xs">
         {/* INTEGRITY BANNER */}
         {warnings.length > 0 && (
           <button
@@ -1055,7 +1061,11 @@ export default function Schedule() {
                         }}
                         onClick={() => handleSelectActivity(a.activity_id)}
                         className={`border-b border-hair cursor-pointer transition-colors ${
-                          isSelected ? 'bg-selected' : 'even:bg-surface hover:bg-selected'
+                          a.activity_id === liveHighlightId
+                            ? 'bg-emerald-500/20 dark:bg-emerald-500/30 border-l-4 border-l-emerald-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.3)] animate-pulse'
+                            : isSelected
+                            ? 'bg-selected'
+                            : 'even:bg-surface hover:bg-selected'
                         } ${hasActual ? 'text-fg' : 'text-muted'}`}
                       >
                         {row.getVisibleCells().map((cell) => (
@@ -1078,11 +1088,17 @@ export default function Schedule() {
             )}
           </div>
         ) : viewMode === 'gantt' ? (
-          <div className="flex-1 min-h-0">
+          // A definite height, not flex-1. The workbench is a flex column of
+          // auto height, so `flex-1` resolved to the Gantt's own content height
+          // (5809px for 120 activities) — its overflow-auto never engaged, its
+          // sticky header never stuck, and `scrollTop` was a silent no-op, which
+          // is why the auto-scroll could not land on a highlighted row.
+          <div className="h-[calc(100vh-240px)] min-h-[420px]">
             <GanttChart
               activities={rows}
               selectedId={selectedId}
               highlightId={liveHighlightId}
+              highlightKey={searchParams.get('highlight') || liveHighlightId}
               onSelectActivity={handleSelectActivity}
               dataDate={data?.data_date}
             />

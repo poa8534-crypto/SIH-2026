@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, api, errorDetail } from '../lib/api';
 import { notifyScheduleUpdate } from '../lib/liveSync';
 import { ReviewCandidate, ReviewItem, ScheduleActivity } from '../types';
@@ -231,6 +231,7 @@ export default function Reconcile() {
   const [question, setQuestion] = useState('');
   const [resolvedCount, setResolvedCount] = useState(0);
   const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const deepItem = searchParams.get('item');
   const deepEvent = searchParams.get('event');
@@ -480,6 +481,9 @@ export default function Reconcile() {
           percentComplete: act?.percent_complete,
           varianceDays: act?.finish_variance_days,
         });
+
+        // Automatically navigate directly to the Gantt chart for this confirmed activity
+        navigate(`/schedule?view=gantt&activity=${encodeURIComponent(actId)}&highlight=${Date.now()}`);
       }
       queryClient.invalidateQueries({ queryKey: ['reviewQueue'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
@@ -1208,11 +1212,11 @@ export default function Reconcile() {
                     Wrote <span className="font-mono text-fg">{lastResolved.activityId}</span>
                   </span>
                   <Button
-                    variant="secondary"
+                    variant="primary"
                     size="xs"
-                    to={`/schedule?activity=${encodeURIComponent(lastResolved.activityId)}`}
+                    to={`/schedule?view=gantt&activity=${encodeURIComponent(lastResolved.activityId)}&highlight=${Date.now()}`}
                   >
-                    See it on the schedule
+                    View Updated Bar in Gantt
                     <ArrowUpRight size={12} />
                   </Button>
                 </div>

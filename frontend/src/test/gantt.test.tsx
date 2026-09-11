@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -231,5 +231,211 @@ describe('Schedule Page Gantt Integration', () => {
     expect(screen.getByText(/PIP-UG-010/i)).toBeInTheDocument();
     expect(screen.getByText(/Underground Spool Fabrication/i)).toBeInTheDocument();
     expect(screen.getByText(/View Updated Bar in Gantt/i)).toBeInTheDocument();
+  });
+
+  it('clicking the UPDATED LIVE floating badge triggers activity selection to stop glow', () => {
+    const onSelect = vi.fn();
+    render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId="PIP-UG-010"
+        onSelectActivity={onSelect}
+        dataDate="2026-04-10"
+      />
+    );
+
+    const badge = screen.getByText(/Click to Stop Glow/i);
+    expect(badge).toBeInTheDocument();
+    fireEvent.click(badge);
+    expect(onSelect).toHaveBeenCalledWith('PIP-UG-010');
+  });
+
+  it('automatically triggers zero-scroll alignment and centers target row when highlightId and highlightKey are provided', async () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    const onSelect = vi.fn();
+    render(
+      <div id="schedule-workbench">
+        <GanttChart
+          activities={MOCK_ACTIVITIES}
+          selectedId="PIP-UG-010"
+          highlightId="PIP-UG-010"
+          highlightKey="test-key-123"
+          onSelectActivity={onSelect}
+          dataDate="2026-04-10"
+        />
+      </div>
+    );
+
+    expect(screen.getByText('PIP-UG-010')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
+    });
+  });
+  // ── Regression guards for the Gantt rendering sweep (D-107) ───────────────
+  //
+  // Every test below pins a defect that shipped into the working tree and was
+  // invisible to the suite that existed at the time: the whole module type
+  // checked and every assertion passed while the highlighted bar rendered with
+  // no background at all.
+
+  /** The timeline canvas width, read off the row's right-hand pane. */
+  function timelineWidthOf(container: HTMLElement, activityId: string): number {
+    const row = container.querySelector(`#gantt-row-${activityId}`)!;
+    const canvas = row.lastElementChild as HTMLElement;
+    return parseFloat(canvas.style.width);
+  }
+
+  it('gives the highlighted bar exactly one background class, not a merged one', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId="PIP-UG-010"
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    const bar = container.querySelector('#gantt-bar-PIP-UG-010') as HTMLElement;
+    const classes = bar.className.split(/\s+/);
+
+    // The concatenation bug produced the single token "bg-emerald-500/30bg-accent/20",
+    // which matches no rule, so the bar lost every background it was meant to have.
+    for (const cls of classes) {
+      expect(cls.match(/bg-/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    }
+    expect(classes).toContain('bg-emerald-500/30');
+    expect(classes).toContain('border-emerald-400');
+    expect(classes.filter((c) => c.startsWith('bg-'))).toHaveLength(1);
+  });
+
+  it('keeps a highlighted critical activity green rather than letting red win on stylesheet order', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId="CIV-FTG-001"
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    // CIV-FTG-001 is critical: the old code emitted both states onto the element.
+    const bar = container.querySelector('#gantt-bar-CIV-FTG-001') as HTMLElement;
+    const classes = bar.className.split(/\s+/);
+    expect(classes).toContain('bg-emerald-500/30');
+    expect(classes).not.toContain('bg-danger/20');
+    expect(classes).not.toContain('border-danger');
+  });
+
+  it('keeps the highlighted bar under the sticky activity pane', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId="PIP-UG-010"
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    // The meta pane is z-20; a bar or badge at z-20+ floats over the activity IDs.
+    const bar = container.querySelector('#gantt-bar-PIP-UG-010') as HTMLElement;
+    expect(bar.className.split(/\s+/)).toContain('z-10');
+
+    const badge = container.querySelector('#gantt-badge-PIP-UG-010') as HTMLElement;
+    expect(badge.className.split(/\s+/)).toContain('z-10');
+  });
+
+  it('clamps the live badge inside the timeline instead of letting it run off the edge', () => {
+    // PIP-UG-010 runs to the data date, which sits near the end of the timeline —
+    // exactly where an unclamped nowrap pill overflowed the scroll area.
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId="PIP-UG-010"
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    const badge = container.querySelector('#gantt-badge-PIP-UG-010') as HTMLElement;
+    const left = parseFloat(badge.style.left);
+    const width = timelineWidthOf(container, 'PIP-UG-010');
+
+    expect(left).toBeGreaterThanOrEqual(0);
+    expect(left).toBeLessThanOrEqual(width);
+  });
+
+  it('sizes the timeline to hold the whole month band, including the final month', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId={null}
+        onSelectActivity={vi.fn()}
+        dataDate="2026-04-10"
+      />
+    );
+
+    const width = timelineWidthOf(container, 'PIP-UG-010');
+    const monthBand = Array.from(
+      container.querySelectorAll('div[class*="font-semibold"][class*="truncate"]')
+    ) as HTMLElement[];
+    expect(monthBand.length).toBeGreaterThan(0);
+
+    // The band always runs to the end of the month containing the last date, so
+    // sizing the canvas from that date alone clipped the final header.
+    const bandEnd = Math.max(
+      ...monthBand.map((m) => parseFloat(m.style.left) + parseFloat(m.style.width))
+    );
+    expect(bandEnd).toBeLessThanOrEqual(width);
+  });
+
+  it('does not scroll the outer page for an ordinary selection', () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    render(
+      <div id="schedule-workbench">
+        <GanttChart
+          activities={MOCK_ACTIVITIES}
+          selectedId="PIP-UG-010"
+          highlightId={null}
+          onSelectActivity={vi.fn()}
+          dataDate="2026-04-10"
+        />
+      </div>
+    );
+
+    // Only a live highlight may move the viewport. Clicking a row inside the
+    // Gantt must scroll the Gantt's own container and nothing else.
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(scrollIntoViewMock).not.toHaveBeenCalled();
+        resolve();
+      }, 500);
+    });
+  });
+
+  it('renders without a data date instead of inventing one', () => {
+    const { container } = render(
+      <GanttChart
+        activities={MOCK_ACTIVITIES}
+        selectedId={null}
+        highlightId={null}
+        onSelectActivity={vi.fn()}
+      />
+    );
+
+    // The schedule query has not resolved yet. A hardcoded default put a Data
+    // Date marker on 2026-04-10 for every project, whatever its real one.
+    expect(screen.queryByText(/Focus Data Date/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Data Date$/)).not.toBeInTheDocument();
+    expect(container.querySelector('#gantt-bar-PIP-UG-010')).toBeInTheDocument();
   });
 });

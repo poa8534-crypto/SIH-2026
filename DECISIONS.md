@@ -9858,3 +9858,168 @@ The more serious half is the context rule. `navigator.clipboard` is a Secure Con
 - `frontend/src/pages/executive/Milestones.tsx`, `ExecutionInsights.tsx`, `ManagementReports.tsx`
 - `frontend/src/components/AskNavisChat.tsx`, `ScheduleDoctor.tsx`, `TenderEstimator.tsx`
 - `frontend/src/pages/field/FieldWorkspaceShell.tsx`
+
+---
+
+## 2026-09-11 / D-107 — The Gantt rendering sweep: a bar with no colour, a chart that could not scroll, and tsc broken again
+
+### Status
+Active.
+
+### Context
+The Gantt module was reviewed end to end after the live-sync highlight work in
+`bb048ba` / `4970285` was reported as visibly wrong on screen. The review covered
+`GanttChart.tsx`, its call site in `Schedule.tsx`, the toast that deep-links into
+it, and `gantt.test.tsx`. Eight defects were found. **Every one of them shipped
+past a green test suite**, and one had already broken the build.
+
+**1 · `npx tsc --noEmit` was failing again.** `GanttChart.tsx:234` assigned
+`highlightKey || highlightId` — type `string | null | undefined`, because both
+props are optional — into a `useRef<string | null>`. D-106 had left tsc clean
+that same day; this reintroduced the same class of break, and for the same
+reason: Vite does not type-check, so the dev server was perfectly happy.
+
+**2 · The highlighted bar rendered with no background colour at all.** Two
+template slots were concatenated with no separator:
+
+```jsx
+}${          // GanttChart.tsx:646 — nothing between the interpolations
+```
+
+The version this replaced ended its highlight branch with a trailing space, so
+the join worked by accident. Rendering the component and reading the DOM gives:
+
+```
+... animate-pulse z-20 border-emerald-400 bg-emerald-500/30bg-accent/20 border-accent
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+`bg-emerald-500/30bg-accent/20` is one token matching no rule, so **both**
+backgrounds were destroyed and the bar drew as an empty outline. A second defect
+sat underneath: even joined correctly, the two branches emit conflicting
+`bg-*`/`border-*` classes onto the same element, so a highlighted **critical**
+activity would paint red or green depending on Tailwind's output order rather
+than on intent.
+
+**3 · The "UPDATED LIVE" pill escaped its container.** `whitespace-nowrap`, no
+right-edge clamp, so an activity near the end of the timeline ran the pill off
+the scroll area — observed cut off mid-word. It was also `z-30` against the
+sticky meta pane's `z-20` and later in the DOM than the `z-30` header, so it
+painted over the activity-ID column and over the month band. The highlighted bar
+had the same problem at `z-20`.
+
+**4 · Every row click yanked the whole page.** The scroll effect runs for
+`selectedId` as well as `highlightId`, and called `workbench.scrollIntoView`
+unconditionally. The code it replaced carried the comment *"without hijacking the
+outer page"*.
+
+**5 · Zoom stranded the selection.** `pxPerDay` is in the effect's deps, but the
+one-shot locks were never released, so the effect re-ran and immediately
+early-returned. Changing scale left the selected bar drifting off screen.
+
+**6 · Four smaller ones.** A hardcoded `dataDate = '2026-04-10'` default drew a
+Data Date marker on a day this project never had, for the whole first paint
+(`data?.data_date` is `undefined` until the query resolves — the real one is
+2026-09-15). The month band always runs to the end of the month containing the
+last date, but the canvas was sized from that date alone, clipping the final
+month header by up to a month of pixels. `maxTimestamp` was computed, returned
+and never read. `z-10` sat on a static element, where it is inert.
+
+**7 · `hasActual` was computed two different ways** — the renderer counted
+`actual_qty > 0`, the auto-scroll fallback did not — so the scroll could aim at a
+bar the renderer had not drawn. And `barEl.offsetLeft > 0` silently rejected any
+activity starting on the timeline's first day.
+
+**8 · Found only by running it: the Gantt could not scroll vertically at all.**
+This one is invisible to static reading and to jsdom. The chart sat in
+`<div className="flex-1 min-h-0">` inside a flex column of *auto* height, so
+`flex: 1 1 0%` resolved to the Gantt's own content height. Measured live:
+
+```
+container.clientHeight  5809      window.innerHeight  900
+container.scrollHeight  5809      scrollHeight > clientHeight  ->  FALSE
+```
+
+`overflow-auto` never engaged on the vertical axis. So `container.scrollTop = …`
+was a silent no-op, the sticky header could not stick, and **the live-highlight
+auto-scroll never landed on its row** — the whole point of the feature. The
+horizontal axis worked, because width *was* constrained, which is exactly why
+the bug read as "it scrolls, just to the wrong place".
+
+### Decision
+1. **`currentHighlightKey` is normalised to `string | null` at its source**
+   (`(highlightKey || highlightId) ?? null`) rather than coerced at the
+   assignment. `||` is kept over `??` so an empty highlight key still falls back.
+2. **Bar colour is resolved in JS, once, as `barTone` / `fillTone`** — a single
+   ternary chain with one winner. Conflicting classes can no longer reach the
+   element, so stylesheet order stops being load-bearing. A highlighted critical
+   activity is now green by decision, not by accident.
+3. **The pill is clamped** to `timelineWidth - LIVE_BADGE_PX` and dropped to
+   `z-10`, as is the highlighted bar — both now slide *under* the sticky meta
+   pane (`z-20`) and under the header (`z-30`) instead of over them. Verified by
+   `elementFromPoint` at the pane with both scrolled behind it: the pane's own
+   cells paint on top.
+4. **The page-level `scrollIntoView` is gated on `highlightId`.** A live update
+   arriving from elsewhere in the app may move the viewport; a click inside the
+   Gantt may not.
+5. **A zoom effect releases both locks**, declared *before* the scroll effect so
+   it runs first on the same commit — clearing them afterwards would leave them
+   stale for a full render and defeat the fix.
+6. **The `dataDate` default is deleted, not corrected.** The prop is optional and
+   every consumer of it is now guarded; an absent data date renders no marker and
+   no Focus button. A default here cannot be right for an arbitrary project, and
+   a wrong Data Date line is worse than none on a screen whose entire claim is
+   that dates are verified.
+7. **`totalDays` is taken as the max of the date span and the month band**, so
+   the canvas always holds the last header. `maxTimestamp` deleted. The inert
+   `z-10` removed, with a comment recording that painting order here is DOM
+   order and *why* that produces the intended layering.
+8. **`hasFieldProgress()` is now one module-level function** used by both the
+   renderer and the scroll fallback, so they cannot drift. `offsetLeft > 0`
+   relaxed to a plain existence check.
+9. **The Gantt is given a definite height** (`h-[calc(100vh-240px)]
+   min-h-[420px]`) instead of `flex-1`, so its own scroll container engages.
+   This is the fix that makes the live-highlight feature actually work.
+10. **Tick-label density is derived from `pxPerDay`**, not fixed at 7 days. At
+    the compact 6px/day a weekly label had 42px for ~48px of text; labels now
+    fall every 14 days below that threshold. Grid lines stay weekly at every
+    zoom.
+
+### Consequences
+- The live highlight is visible for the first time since `bb048ba`: the row
+  centres in the chart, the bar is emerald, and the pill reads in full.
+- `npx tsc --noEmit` is clean again (was 1 error).
+- Seven regression tests were added, and **all seven were confirmed to fail
+  against the defective code** before being accepted — the class-merge, the
+  critical-vs-highlight precedence, the z-order, the badge clamp, the month-band
+  fit, the page hijack, and the absent data date. The suite that existed before
+  this change could not have caught any of them.
+- No backend, matcher, extractor or threshold code was touched, so no metric can
+  have moved. `python eval.py` was not run, for that reason.
+
+### Verification
+- **`npx tsc --noEmit`** — clean (was 1 error).
+- **`npx vitest run`** — 24 files, **246 passed**, 0 failed (was 239; +7).
+- **Negative control** — the two headline defects were deliberately re-introduced
+  into the fixed file and the suite re-run: **4 failed**, then the file was
+  restored and the suite returned to 246 passing. The new tests are real guards,
+  not assertions that happen to hold.
+- **`npm run build`** — clean, 4.75s.
+- **Live, against the running API on :8000 at 1440x900**, not just in jsdom:
+  - highlighted bar class read from the DOM is
+    `bg-emerald-500/30 border-emerald-400 ring-4 … z-10` — no merged token;
+  - `scrollHeight > clientHeight` is now **true** (603px viewport over 5809px of
+    rows) and the highlighted row lands centred at `rowTop 302`;
+  - with bar and pill scrolled behind the meta pane, `elementFromPoint` returns
+    the pane's description and float cells, not the pill;
+  - Compact → Standard → Detailed: month band end equals timeline width exactly
+    at all three (1104/1104, 2208/2208, 3680/3680), and tick spacing is 84px at
+    compact (was 42px);
+  - switching scale re-centres the selection — `scrollLeft` 1311 → 2411 with the
+    row still in view;
+  - **zero console errors.**
+
+### Affected Areas
+- `frontend/src/components/GanttChart.tsx`
+- `frontend/src/pages/Schedule.tsx` (Gantt container height only)
+- `frontend/src/test/gantt.test.tsx` (+7 regression tests)

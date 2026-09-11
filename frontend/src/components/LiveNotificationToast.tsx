@@ -31,7 +31,7 @@ export function LiveNotificationToast() {
 
   const handleNavigateToGantt = (activityId: string, notifId: string) => {
     dismiss(notifId);
-    navigate(`/schedule?view=gantt&activity=${encodeURIComponent(activityId)}&highlight=true`);
+    navigate(`/schedule?view=gantt&activity=${encodeURIComponent(activityId)}&highlight=${Date.now()}`);
   };
 
   if (notifications.length === 0) return null;

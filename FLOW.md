@@ -82,7 +82,7 @@ autonomous verification.
 | Lovable + Supabase + Edge Functions | replaced by FastAPI + SQLite, local | H-002 |
 | one LLM call picks the task | replaced by hybrid retrieval + feature scoring | H-003 |
 | CPM recalculation + cascade | **never built at all** | H-004 |
-| frappe-gantt chart | **never built** — `Schedule.tsx` is a TanStack table | H-004 |
+| frappe-gantt chart | library never adopted; a hand-rolled Gantt was built later in `GanttChart.tsx`, reached from `Schedule.tsx` via the Gantt Chart toggle. No CPM redraw — it renders baseline vs actual, it does not recalculate. | H-004, D-107 |
 | photo upload + vision caption | **never built** | H-005 |
 | WhatsApp-shaped chat input | replaced by `POST /agent/turn` slot filling | H-001 |
 
@@ -1290,6 +1290,147 @@ python eval.py | head -20             expect the line:
 ---
 
 ## Current Modification Area
+
+**Task:** Gantt rendering sweep — a highlighted bar with no background, a chart whose vertical scroll never engaged, a page-hijacking row click, and tsc broken again.
+**Date:** 2026-09-11 · **Decision:** D-107
+
+```
+LIVE HIGHLIGHT — WHAT ACTUALLY RUNS, END TO END                    (D-107)
+
+  LiveNotificationToast.tsx:34   "View Updated Bar in Gantt"
+      navigate(`/schedule?view=gantt&activity=<ID>&highlight=${Date.now()}`)
+              highlight is a TIMESTAMP, not "true": a second update to the
+              same activity must produce a different key or the one-shot
+              scroll lock below swallows it.
+        |
+        v
+  Schedule.tsx:168    highlightParam = Boolean(searchParams.get('highlight'))
+  Schedule.tsx:254    effect [deepLinked, viewParam, highlightParam]
+                        setLiveHighlightId(deepLinked)
+                        setViewMode('gantt'); setIsDrawerOpen(false)
+                        clears discipline/search/onlyActuals/onlyFlagged/
+                          onlyCritical  - a filter could hide the target row
+                        rAF -> #schedule-workbench.scrollIntoView
+        |
+        v
+  Schedule.tsx:1097   <GanttChart
+                        activities={rows}            <- FILTERED list
+                        selectedId={selectedId}
+                        highlightId={liveHighlightId}
+                        highlightKey={searchParams.get('highlight')
+                                      || liveHighlightId}
+                        dataDate={data?.data_date}   <- undefined until the
+                                                        query resolves
+                      />
+                      wrapper: h-[calc(100vh-240px)] min-h-[420px]   <- D-107
+                        NOT flex-1. The workbench is a flex column of auto
+                        height, so flex:1 1 0% resolved to the Gantt's own
+                        content height (5809px for 120 rows) and
+                        overflow-auto never engaged on the vertical axis:
+                        scrollTop was a silent no-op and the header could
+                        not stick. Measured live before the fix:
+                           clientHeight 5809 == scrollHeight 5809
+        |
+        v
+  GanttChart.tsx
+    useMemo [activities, dataDate, pxPerDay]      timeline geometry
+        minTime/maxTime over planned+actual dates and dataDate
+        pad -7d / +14d, align minTime to its month start
+        monthList built to the END of the month containing maxTime
+        totalDays = max(30, dateSpan, monthSpanDays)      <- D-107
+              sizing from the date span alone clipped the last month header
+        returns { minTimestamp, totalDays, months, dataDateOffsetPx }
+              maxTimestamp deleted - computed, returned, never read
+
+    useEffect [zoom]                              lock release   <- D-107
+        lastScrolledTargetRef = null
+        lastScrolledHighlightRef = null
+        DECLARED BEFORE the scroll effect on purpose: effects run in
+        declaration order, so clearing after would leave the locks stale
+        for a whole render and the zoom would not re-centre.
+
+    useEffect [selectedId, highlightId, highlightKey, activities,
+               minTimestamp, pxPerDay, dataDate]      auto-scroll
+        targetId = highlightId || selectedId
+        currentHighlightKey = (highlightKey || highlightId) ?? null
+              ?? null is what keeps tsc clean: both props are optional, so
+              the || chain is string | null | undefined and the ref is
+              string | null.
+        one-shot lock:  highlightId ? lastScrolledHighlightRef
+                                    : lastScrolledTargetRef
+        attemptScroll() on rAF + 60ms + 180ms + 350ms, each retrying at
+          50ms up to 35 times while the query and DOM settle
+            #gantt-row-<id>     -> vertical centring, minus HEADER_PX
+            #gantt-bar-<id> or
+            #gantt-ghost-<id>   -> horizontal centring
+                 offsetLeft is measured from the row's timeline canvas,
+                 which already starts after the sticky pane, so it takes
+                 no LEFT_PANE_PX term
+            no bar element -> hasFieldProgress(act) picks the date to aim at
+                 ONE module-level helper, shared with the renderer. Two
+                 private copies disagreed on actual_qty and the scroll
+                 aimed at a bar the renderer had not drawn.
+        container.scrollTop / .scrollLeft written directly (no smooth
+          behaviour - it was being cancelled mid-animation)
+        if (highlightId) -> #schedule-workbench.scrollIntoView   <- D-107
+              GATED. A live update from elsewhere in the app may move the
+              viewport; a click inside the Gantt may not. This effect runs
+              for selectedId too, so ungated it fired on every row click.
+
+  PER-ROW RENDER — the layering, which is load-bearing
+
+    z-40  header's sticky left cell
+    z-30  sticky header row  (months + week ticks)
+    z-20  each row's sticky meta pane  (ID / disc / description / float / %)
+    z-10  actual bar, ghost bar, #gantt-badge-<id>            <- D-107
+             all three were z-20 or z-30 and painted OVER the activity-ID
+             column and the month band when scrolled
+    z-0   grid + data-date overlay  (left: LEFT_PANE_PX, top: HEADER_PX)
+    ---   the rows container is STATIC: a z-* on it is inert and was
+          removed. Painting order here is DOM order, which is what puts
+          the z-0 overlay above the rows' own backgrounds (grid lines stay
+          visible across a row) and below the bars and the meta pane.
+
+    colour is resolved in JS, once:                           <- D-107
+        barTone  = highlighted -> critical -> delayed -> normal
+        fillTone = same chain, for the interior progress fill
+        barGlow  = highlight-only ring/shadow, leading space included
+      Emitting a fragment per state and concatenating them produced the
+      single token `bg-emerald-500/30bg-accent/20`, which matches no rule -
+      the highlighted bar lost EVERY background it was meant to have.
+
+    badgeLeft = clamp(bar left, 0, timelineWidth - LIVE_BADGE_PX)
+      the pill is whitespace-nowrap and cannot shrink, so without the clamp
+      it ran off the scroll area and was cut mid-word
+
+    labelEveryDays = pxPerDay * 7 < 48 ? 14 : 7
+      a tick label ("Sep 15") needs ~48px; at compact 6px/day a weekly one
+      got 42px and they collided. Grid lines stay weekly at every zoom.
+
+  DATA DATE — there is no default any more                      <- D-107
+    dataDate?: string, no fallback value. Every read is guarded:
+      geometry memo          if (dataDate)
+      actual bar end         dataDate ? parseISODate(dataDate) : NaN
+                               -> NaN falls through to the one-day stub
+      scroll fallback        `if (dateStr && ...)`
+      header tag / Focus     rendered only when dataDateOffsetPx !== null
+    A hardcoded '2026-04-10' drew a Data Date marker for the whole first
+    paint on a day this project never had (its real one is 2026-09-15).
+
+  REGRESSION GUARDS  src/test/gantt.test.tsx  (+7, 239 -> 246)
+    exactly one bg-* class on the highlighted bar, no merged token
+    highlighted critical stays green, never bg-danger/20
+    bar and badge are z-10, under the meta pane
+    badge left clamped inside the timeline canvas
+    month band end <= timeline width
+    ordinary selection does NOT call scrollIntoView
+    no data date -> no marker, no Focus button, rows still render
+  All seven were confirmed to FAIL against the defective code before being
+  accepted: the defects were re-introduced, the suite ran 4 failed, and the
+  file was restored.
+```
+
+## Previous Modification Area (2026-09-11, D-106) - retained for history
 
 **Task:** Dead-button sweep of all eight Senior Management destinations; fixed three private copies of canonical config lists, a clipboard that reported success it had not achieved, and the sole error breaking tsc.
 **Date:** 2026-09-11 · **Decision:** D-106

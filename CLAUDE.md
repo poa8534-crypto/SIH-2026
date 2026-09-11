@@ -105,8 +105,8 @@ Record the reasoning as it happens, not afterwards from memory.
 Run what is relevant to what you touched.
 
 ```bash
-python -m pytest -q                    # backend + matching + extraction (264 tests)
-cd frontend && npx vitest run          # frontend (55 tests)
+python -m pytest -q                    # backend + matching + extraction (1055 tests)
+cd frontend && npx vitest run          # frontend (246 tests)
 cd frontend && npx tsc --noEmit        # frontend type check
 python eval.py                         # matching quality: precision/coverage/tau sweep
 python scripts/healthcheck.py          # end-to-end server health
