@@ -9,6 +9,7 @@ import {
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
 import { SkeletonRows, ErrorState } from '../../components/ui';
+import { CaptureTimeliness } from '../../components/CaptureTimeliness';
 import type {
   ExecutiveMetricsResponse,
   SourceConflict,
@@ -464,6 +465,12 @@ export default function ExecutiveDataConfidence() {
           </div>
         )}
       </div>
+
+      {/* Reporting timeliness (D-117/D-120). Every forecast and every delay
+          ruling on the other workspaces rests on actuals arriving; this says
+          how late they arrived and whether anything stopped arriving — the
+          one number this page could not previously answer. */}
+      <CaptureTimeliness />
     </div>
   );
 }

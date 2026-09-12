@@ -11679,3 +11679,83 @@ End-to-end against the running application and the live API:
 `frontend/src/components/ManpowerEvidence.tsx` (new) · `frontend/src/pages/Delay.tsx` ·
 `frontend/src/App.tsx` · `frontend/src/lib/role.ts` ·
 `frontend/src/test/workforcePlanner.test.tsx` (new)
+
+---
+
+## 2026-09-12 / D-120 — Senior Management gets aggregate manpower governance, and reporting timeliness lands on Data Confidence
+
+### Status
+
+Active. Completes the three role surfaces over
+[D-117](#2026-09-12--d-117--manpower-becomes-a-first-class-subject-one-crew-model-behind-attendance-capacity-and-allocation),
+after [D-118](#2026-09-12--d-118--the-field-supervisor-gets-one-crew-tab-and-the-offline-toggle-becomes-a-real-offline-system) (field)
+and [D-119](#2026-09-12--d-119--the-project-manager-gets-a-workforce-workspace-and-a-capture-health-screen-and-attendance-becomes-delay-evidence) (planner).
+
+### Decision
+
+**A ninth executive workspace, `/executive/workforce`.** `lib/role.ts` defines
+this role as "trend, exception and forecast — never the review queue, and
+nothing to approve", so the page has **no control that writes**: no muster, no
+commit, no decline. That is asserted in the tests rather than left to
+convention, because it is the role's whole definition and the easiest thing to
+erode by accident.
+
+It answers the four questions this role actually asks:
+
+    Are we fielding the manpower we are paying for?     attendance vs contracted
+    Which contractor is not?                            reliability ranking
+    Is the manpower we have pointed at the right work?  utilisation and headroom
+    Is the data behind all of that trustworthy?         musters and sample size
+
+**The headline names the weakest *measured* contractor.** A contractor with two
+musters may sort worse than everyone, and naming them would be a governance
+accusation built on two data points. Only contractors above the sample floor
+are eligible for that tile; the rest appear in the table as "Not measured".
+
+**Uncommitted capacity is not called waste.** The page says so explicitly:
+uncommitted capacity is capacity that has not been *allocated*, which is a
+planning decision, and it becomes waste only when there is unmet demand
+elsewhere in the same week. Labelling it idleness would push an executive to
+pressure a contractor about a decision their own planner made.
+
+**Reporting timeliness goes on Data Confidence, not on a new page.** Every
+forecast, EVM figure and delay ruling in the executive lane rests on actuals
+arriving. How late they arrived, and whether anything stopped arriving, is
+exactly what a Data Confidence workspace is for — and it was the one question
+that page could not previously answer. `components/CaptureTimeliness.tsx`
+names the disciplines whose forecasts are running on stale data, rather than
+reporting a project-wide median that would hide them.
+
+The per-device queue stays on the planner's `/capture-health`: that is
+operational detail, and this lane does not get transaction detail.
+
+**A governance page loses a panel, never the page.** `CaptureTimeliness`
+renders `null` when its source is down rather than throwing an error state
+across a workspace fed by five other queries.
+
+### Verification
+
+```
+cd frontend && npx tsc --noEmit    clean
+cd frontend && npx vitest run      301 passed (293 + 8 new)
+python -m pytest -q                1119 passed
+```
+
+Against the running application and the live API:
+
+- `/executive/workforce` — 85.0% fielded (2,453 of 2,886 contracted heads over
+  30 days), 433 man-days lost to shortfall, weakest measured contractor 82.6%.
+- `/executive/confidence` — the timeliness panel reports a **249.1 h** median
+  capture lag across 131 linked events, names **7** disciplines that have gone
+  quiet, and shows 0/2 devices currently reaching the server.
+
+That 249.1 h figure is not flattering and is not meant to be: the seeded corpus
+is historical, and a governance screen that hid that would be the exact failure
+this workspace exists to prevent.
+
+### Affected Areas
+
+`frontend/src/pages/executive/Workforce.tsx` (new) ·
+`frontend/src/components/CaptureTimeliness.tsx` (new) ·
+`frontend/src/pages/executive/DataConfidence.tsx` · `frontend/src/App.tsx` ·
+`frontend/src/test/executiveWorkforce.test.tsx` (new)

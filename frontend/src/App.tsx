@@ -54,6 +54,7 @@ import ExecutiveForecasts from './pages/executive/Forecasts';
 import ExecutiveExecutionInsights from './pages/executive/ExecutionInsights';
 import ExecutiveManagementReports from './pages/executive/ManagementReports';
 import ExecutiveDataConfidence from './pages/executive/DataConfidence';
+import ExecutiveWorkforce from './pages/executive/Workforce';
 import { SessionContext } from './hooks/useSession';
 import {
   ROLE_PROFILES,
@@ -418,16 +419,19 @@ const PLANNER_NAV: NavItem[] = [
   { path: '/memory', label: 'Project Knowledge', icon: Database },
 ];
 
-/* Senior Management 8 analytical governance workspaces:
-   Overview, Milestones, Progress, Risks & Delays, Forecasts,
+/* Senior Management 9 analytical governance workspaces:
+   Overview, Milestones, Progress, Risks & Delays, Forecasts, Workforce,
    Execution Insights, Reports, and Data Confidence.
-   Strictly read-only; schedule mutation and review queues remain with the PM. */
+   Strictly read-only; schedule mutation and review queues remain with the PM.
+   Workforce is aggregate manpower governance (D-120) — no muster control and
+   no commit button, both of which belong to the roles below this one. */
 const EXECUTIVE_NAV: NavItem[] = [
   { path: '/executive', label: 'Overview', icon: LayoutDashboard, end: true },
   { path: '/executive/milestones', label: 'Milestones', icon: CalendarDays },
   { path: '/executive/progress', label: 'Progress', icon: LineChart },
   { path: '/executive/risks', label: 'Risks & Delays', icon: ShieldAlert },
   { path: '/executive/forecasts', label: 'Forecasts', icon: TrendingUp },
+  { path: '/executive/workforce', label: 'Workforce', icon: Users },
   { path: '/executive/insights', label: 'Execution Insights', icon: Sparkles },
   { path: '/executive/reports', label: 'Reports', icon: FileText },
   { path: '/executive/confidence', label: 'Data Confidence', icon: FileSearch },
@@ -505,6 +509,7 @@ export default function App() {
             <Route path="/executive/risks" element={<ExecutiveRisksDelays />} />
             <Route path="/executive/exposure" element={<Navigate to="/executive/risks" replace />} />
             <Route path="/executive/forecasts" element={<ExecutiveForecasts />} />
+            <Route path="/executive/workforce" element={<ExecutiveWorkforce />} />
             <Route path="/executive/insights" element={<ExecutiveExecutionInsights />} />
             <Route path="/executive/reports" element={<ExecutiveManagementReports />} />
             <Route path="/executive/confidence" element={<ExecutiveDataConfidence />} />

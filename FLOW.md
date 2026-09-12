@@ -1291,8 +1291,8 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built the FIELD role surface on top of it. Planner and Executive surfaces follow.
-**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field lane), D-119 (planner lane)
+**Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built ALL THREE role surfaces on top of it.
+**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field), D-119 (planner), D-120 (executive)
 
 ```
 THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
@@ -1532,6 +1532,37 @@ THE PLANNER LANE                                              (D-119)
         true  -> supports (warn)   false -> refutes (ok)   null -> no register
     on error renders NOTHING — it must never block an adjudication it
     cannot inform
+```
+
+```
+THE EXECUTIVE LANE                                            (D-120)
+
+  EXECUTIVE_NAV  +/executive/workforce      (9th workspace)
+  role guard is prefix-based on '/executive', so no allows[] change
+
+  pages/executive/Workforce.tsx     READ-ONLY. No control that writes.
+    GET /workforce/attendance/summary?start=-29d&end=today
+    GET /workforce/capacity?start=<monday>&end=+27d
+    GET /workforce/allocation-board?weeks=4
+        headline "weakest contractor" is drawn ONLY from rows with
+        sample_sufficient — two musters must not become an accusation
+        utilisation = committed / supply across the horizon
+        copy states uncommitted capacity is NOT idleness
+        total_demand === 0 -> "not derivable", never a zero
+
+  components/CaptureTimeliness.tsx  mounted at the foot of
+  pages/executive/DataConfidence.tsx
+    GET /connectivity/reporting-lag?days=30
+    GET /connectivity/link-health
+        median lag, disciplines gone quiet BY NAME, devices reaching server
+        on query error renders null — a governance page fed by six queries
+        loses a panel, never the page
+        per-device queue stays on the planner's /capture-health
+
+  WHAT THIS LANE DELIBERATELY CANNOT REACH
+    no muster control, no commit button, no review queue, no crew roster.
+    Asserted in test/executiveWorkforce.test.tsx rather than left to
+    convention: it is the role's definition and the easiest thing to erode.
 ```
 
 ### Database changes
