@@ -11106,3 +11106,119 @@ ReviewQueueItem on `PIP-ERC-1030`, 1 clarification question.
 at **2 failed / 1053 passed** (both green in isolation), vitest at **257** within D-113's
 flaky 253–257 band, and the Reconcile screen still rendering `τ_high = 0.775` against a
 shipped `0.80`.
+
+---
+
+## 2026-09-12 / D-116 — The demo video gets a three-device cut, and two ways to film a broken build are recorded
+
+### Status
+Active. Complements D-115, which stays the master script.
+
+### Context
+D-114 and D-115 produced `DEMO_VIDEO_SCRIPT.md`: a 9:00 full feature
+walkthrough driven from one machine, switching roles in one browser. A second
+brief arrived in parallel — record the video with **one role per device**
+(Field Supervisor on a phone, Project Manager on a laptop, Senior Management on
+a desktop), **main features only**, with the hand-offs between devices as the
+spine.
+
+That is a different shape, not a different opinion: the master script's chapter
+order maximises capability coverage, and a device-staged cut maximises the
+narrative of a single report travelling from a muddy boot to a board pack. Both
+were built from the running application on the same day.
+
+Walking it on three devices surfaced four things the single-machine script does
+not have to care about.
+
+**1 · The cross-device hand-off is real, and it is unattended.** `main.tsx`
+sets `refetchInterval: 3000` on the `reviewQueue` key, so a report submitted on
+the phone appears on the planner's laptop about three seconds later with nobody
+touching the laptop. Measured today: pending **198 → 199**, exactly one row
+with `match_method == "agent_turn"`, `PIP-ERC-1030`, `confidence 0.652`,
+surfaced under the `⚡ Field Reports (1)` chip and badged
+`FIELD REPORT · #FR-2026-09-12-4838`. That makes a single continuous shot
+possible — phone in front of the laptop, press send, watch it land — which is a
+stronger piece of film than a cut.
+
+**2 · Two UI paths return JSON when the API serves the UI.** With
+`SERVE_FRONTEND=1`, `backend/server/main.py:5727` registers the SPA catch-all
+after every API route, and FastAPI resolves in registration order. Measured
+over ten UI paths:
+
+| Path | Content type |
+|---|---|
+| `/schedule` | `application/json` |
+| `/raid` | `application/json` |
+| `/home` `/reconcile` `/ingest` `/delay` `/memory` `/executive` `/executive/*` `/field` `/field/*` | `text/html` |
+
+Exactly two collisions. In-app navigation never issues the request, so only a
+typed URL or a refresh reaches it — but a refresh on the Schedule screen shows
+a judge raw JSON where the Gantt should be.
+
+**3 · The root-relative launchers no longer start the server.**
+`START_DEMO.bat` and `GO_GLOBAL.bat` (both untracked, in the project root) call
+`uvicorn server.main:app` without `--app-dir backend`, which D-112 made
+mandatory. `START_DEMO.bat` additionally never sets `SERVE_FRONTEND`, and there
+is no `@app.get("/")`, so the tab it opens at `localhost:8000` renders
+`{"detail":"Not Found"}`. `run_navis.bat` was updated by D-112; these two were
+not, because they are not in the repository.
+
+**4 · The first match after a server start costs 30–40 seconds.** MiniLM loads
+on that request. The field screen holds *"Checking your report · Reading it
+against the schedule. Nothing is stored yet."* for the duration — correct
+behaviour, terrible opening shot. Verified twice today.
+
+### Decision
+1. **`DEMO_VIDEO_SCRIPT_3DEVICE.md` is the three-device cut**, 5:30 with a 3:00
+   reduction marked per act, ON SCREEN / VOICEOVER in parallel. It defers to
+   `DEMO_VIDEO_SCRIPT.md` for the six on-camera hazards, the sayable numbers
+   and the Never-say list rather than restating them, so the two files cannot
+   drift on a claim.
+2. **The recording setup is uvicorn on `0.0.0.0:8000` plus Vite on `:5173`**,
+   not either `.bat`. This sidesteps both serving defects instead of working
+   around them: Vite serves every UI path, and with no `frontend/.env` pinned,
+   `lib/api.ts` derives the API from the browser's own hostname — the same
+   property that lets the phone reach the laptop over the LAN.
+3. **Voice on the phone is stated, not discovered on camera.** Browser speech
+   needs a secure context, so a phone on `http://<ip>:5173` shows the designed
+   *"Microphone unavailable — Typing works just as well"* state. The script
+   offers two honest ways to film it: type on the phone and say so, or film the
+   field act in Chrome device emulation on `localhost`, where the mic works.
+4. **The serving defects are recorded, not repaired.** Fixing the collision
+   means renaming two API routes — a breaking change to a contract the frontend
+   and `/docs` both depend on — or adding `Accept`-header negotiation to the
+   catch-all. Neither is a change to make against an undemoed build. The two
+   `.bat` files are untracked and belong to the presenter, so they are reported
+   rather than edited here.
+5. **Counts are read off the screen, not quoted from `DEMO.md`.** A clean
+   `python backend/scripts/reset_demo.py` on this tree produces 120 / 266 / 75
+   / **198** / 46 (34 completed) / 141 / 25. `DEMO.md`'s 135 / 67 / 38 / 18 and
+   the master script's pre-flight table predate D-103 and do not reproduce.
+
+### Consequences
+- Two scripts now exist for one video, with one authority for every claim. The
+  three-device file owns staging, transitions and multi-device failure modes;
+  the master file owns coverage, numbers and prohibitions.
+- A presenter who follows either cannot reach the `/schedule` JSON page by
+  accident, and knows what it looks like if they do.
+- The `⚡ Field Reports (n)` chip is load-bearing for the video: the warm-up
+  report must be cleared by a reset or the chip reads (2) or (3) when the
+  laptop enters frame.
+- No application code was touched, so no metric can have moved.
+
+### Verification
+- Full three-lane walk on the merged tree (`20aaf39`), API `:8000` via
+  `--app-dir backend`, UI `:5173`, at 375×812 and 1440×900.
+- End-to-end hand-off measured: report filed on the phone-width client, then
+  `GET /review-queue?status=pending` → 199 rows, one with
+  `match_method == "agent_turn"` / `PIP-ERC-1030` / `0.652`; the same row
+  rendered on the planner client under `⚡ Field Reports (1)`.
+- Route collisions measured with `curl -o /dev/null -w "%{content_type}"` over
+  ten UI paths.
+- `python backend/scripts/reset_demo.py` — counts above, read off its own
+  summary block.
+
+### Affected Areas
+- `DEMO_VIDEO_SCRIPT_3DEVICE.md` (new)
+- `FLOW.md` — Current Modification Area
+- No source file changed.

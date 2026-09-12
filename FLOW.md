@@ -1291,6 +1291,56 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Added `DEMO_VIDEO_SCRIPT_3DEVICE.md` — the phone/laptop/desktop cut of the demo video, one role per device, verified end to end on the merged tree. Documentation only: no source file, schema, threshold, matcher, endpoint or metric changed.
+**Date:** 2026-09-12 · **Decision:** D-116
+
+```
+THE CROSS-DEVICE HAND-OFF THE VIDEO IS BUILT ON              (D-116)
+
+  PHONE (role=field, http://<laptop-ip>:5173)
+    Field.tsx  textarea -> Send Update
+        POST /agent/turn            (session slot-filling)
+          first call after a server start pays the MiniLM load:
+          measured 30-40s, screen holds "Checking your report ...
+          Nothing is stored yet." -> warm it before recording
+        |
+        v
+    ReportStudio  STEP 2 - NAVIS REVIEW
+        65% confidence  PIP-ERC-1030 - Spool Erection - 24"-P-1001-A1A
+        "The project schedule has not been changed yet."     (D-009)
+        |
+    Submit Update -> POST /agent/turn {confirm:true}
+        writes linked_event + review_queue row, NOT the schedule
+        measured: review-queue pending 198 -> 199, one row with
+        match_method == 'agent_turn', reason 'low_confidence'
+        |
+        v
+  LAPTOP (role=planner, same LAN origin)
+    main.tsx QueryClient refetchInterval 3000 on key 'reviewQueue'
+        so the row appears WITHOUT a reload, in shot, ~3s after submit
+        -> Reconcile.tsx  chip "Field Reports (1)", badge
+           "FIELD REPORT - #FR-2026-09-12-4838"
+        |
+    Confirm -> POST /review/{id}/resolve   the ONLY commit path (D-009)
+        |
+        v
+  DESKTOP (role=executive)   read-only; no review queue by design
+
+  WHY :5173 AND NOT :8000
+    server/main.py:5727 registers the SPA catch-all AFTER every API
+    route, and FastAPI resolves in registration order. Serving the UI
+    from the API port therefore loses exactly two UI paths:
+        GET /schedule -> schedule API -> application/json
+        GET /raid     -> RAID API     -> application/json
+    Every other UI path falls through to index.html. In-app <Link>
+    navigation is unaffected; only a typed URL or a refresh hits it.
+    Vite on :5173 has no collision, and lib/api.ts derives the API as
+    http://<hostname>:8000 with no VITE_API_URL pinned - which is the
+    same property that lets the phone reach the laptop.
+```
+
+## Previous Modification Area (2026-09-12, D-115) - retained for history
+
 **Task:** Rewrote `DEMO_VIDEO_SCRIPT.md` as a full feature showcase (10 chapters, 9:00, with 5:00 and 2:30 cuts) after auditing the whole capability surface — 45 endpoints, 19 routes, every tab. Documentation only: no source file, schema, threshold, matcher, endpoint or metric changed, so no execution path moved.
 **Date:** 2026-09-12 · **Decision:** D-115 (supersedes the D-114 artefact)
 
