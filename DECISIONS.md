@@ -10190,3 +10190,112 @@ concurrent rewrite from another session working in the same tree (day-level
 tick rendering, new `PX_PER_DAY_MAP` values, float slack in the timeline
 bounds). It was left uncommitted for its author. The D-107 regression guards
 survive that rewrite and pass against it.
+
+---
+
+## 2026-09-12 / D-109 — The demo video script is written against the running app, and the walkthrough found two ways to film a broken product
+
+### Status
+Active.
+
+### Context
+A three-role demo video was scripted — Field Supervisor on a phone, Project
+Manager on a laptop, Senior Management on a desktop. Rather than script from
+`DEMO.md`, every screen was walked live on 2026-09-12 after
+`python scripts/reset_demo.py`. Three things came out of that walk, and two of
+them would have ended a take.
+
+**1 · The built frontend pointed at a dead tunnel.** `frontend/dist` had been
+built by `GO_GLOBAL.bat`, which sets `VITE_API_URL` to whatever ephemeral
+`*.trycloudflare.com` hostname the tunnel handed it that run. The bundle
+shipped that hostname as a literal:
+
+```
+frontend/dist/assets/index-DVToKHd5.js:https://injuries-rides-bears-peers.trycloudflare.com
+```
+
+That tunnel is long dead, so every screen served from that build rendered
+*"Could not reach the API at https://injuries-rides-bears-peers.trycloudflare.com"*.
+Observed live on the field Home screen before anything else was diagnosed.
+`dist/` is gitignored, so nothing in the repository was wrong — the artifact on
+the presenting machine was. Rebuilt with `VITE_API_URL` unset, which restores
+the `lib/api.ts:73` default of `http://<window.location.hostname>:8000` — the
+only form that works for a phone on the LAN.
+
+**2 · Two UI paths return JSON when the API serves the UI.** With
+`SERVE_FRONTEND=1`, `server/main.py:5709` registers the SPA catch-all **after**
+every API route, and FastAPI resolves in registration order. Measured against
+the running server:
+
+| Path | Content type |
+|---|---|
+| `/schedule` | `application/json` |
+| `/raid` | `application/json` |
+| `/home` `/reconcile` `/ingest` `/delay` `/memory` `/executive` `/executive/*` `/field` `/field/*` | `text/html` |
+
+Exactly two collisions. In-app navigation is unaffected, because react-router
+never issues the request — only a typed URL or a page refresh on those two
+screens does. On camera, a refresh on the Schedule screen shows a judge raw
+JSON where the Gantt should be.
+
+**3 · `START_DEMO.bat` does not set `SERVE_FRONTEND`.** It opens
+`http://localhost:8000` in a browser tab, and there is no `@app.get("/")` in
+`server/main.py`, so that tab renders `{"detail":"Not Found"}`. The launcher
+`JUDGE_ANSWERS.md` tells a presenter to double-click is the one that cannot
+show the application.
+
+### Decision
+1. **`DEMO_VIDEO_SCRIPT.md`** is the script of record for the video: three
+   acts, ON SCREEN / VOICEOVER in parallel, timed to 5:30 with a marked 3:00
+   cut per act. Every label, chip and screen name in it was read off the
+   running application, not off `DEMO.md` — whose lane walkthroughs predate the
+   current Home, Reconcile and executive screens and whose counts predate
+   D-103.
+2. **The recording setup is the two-process one** — uvicorn on `0.0.0.0:8000`
+   and Vite on `0.0.0.0:5173` — not `START_DEMO.bat`. It sidesteps both
+   defects rather than working around them: Vite serves every UI path including
+   `/schedule` and `/raid`, and with no `frontend/.env` the phone derives the
+   API from its own address bar and reaches the laptop.
+3. **The two serving defects are recorded, not repaired.** Fixing the collision
+   means either renaming two API routes (a breaking change to a contract the
+   frontend and `/docs` both depend on) or adding `Accept`-header negotiation
+   to the catch-all. Neither is a change to make against an undemoed build
+   hours before filming. They are documented in `FLOW.md`'s Current
+   Modification Area and in the script's Landmines section.
+4. **The numbers in the script are the post-`reset_demo.py` numbers of
+   2026-09-12** — 120 activities, 266 events, 75 auto-linked, 198 pending
+   review, 46 with actual dates (34 completed), 141 audit records, 25 source
+   conflicts recorded. `DEMO.md`'s 135 / 67 / 38 / 18 no longer reproduce.
+5. **The script carries the SPI discrepancy answer.** The planner Overview tile
+   reads SPI 0.91 (duration-weighted physical progress) while the executive
+   Overview reads 0.35 (earned value, where the 74 unevidenced activities score
+   zero). Both are on screen in the same video. The script gives the presenter
+   the sentence that reconciles them rather than leaving it to Q&A.
+
+### Consequences
+- A presenter following `DEMO_VIDEO_SCRIPT.md` cannot reach either serving
+  defect by accident, and knows what both look like if they do.
+- `frontend/dist` on this machine is now hostname-derived. Anyone who runs
+  `GO_GLOBAL.bat` again re-pins it to that run's tunnel and must rebuild with
+  `VITE_API_URL` unset before demoing locally.
+- Mic behaviour is stated rather than discovered on camera: browser speech
+  needs a secure context, so a phone on `http://<ip>:5173` shows the designed
+  *"Microphone unavailable — Typing works just as well"* state. The script
+  offers two honest ways to film it.
+- No application code was touched, so no metric can have moved.
+
+### Verification
+- Live walk of all three lanes against a running server at 375×812 and
+  1440×900: field Home and the Report Progress stepper, planner Overview,
+  Review & Reconcile, executive Overview.
+- Route collisions measured with `curl -o /dev/null -w "%{content_type}"` over
+  ten UI paths.
+- `frontend/dist` rebuilt; `grep -r trycloudflare frontend/dist/assets` now
+  returns nothing.
+- `python scripts/reset_demo.py` — the counts quoted above, read off its own
+  summary block.
+
+### Affected Areas
+- `DEMO_VIDEO_SCRIPT.md` (new)
+- `FLOW.md` — Current Modification Area
+- No source file changed. `frontend/dist` is a gitignored build artifact.

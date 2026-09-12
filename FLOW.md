@@ -1291,6 +1291,41 @@ python eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Demo-video script for the three roles, written against the running app — and the two serving defects the walkthrough uncovered.
+**Date:** 2026-09-12 · **Decision:** D-109
+
+```
+SERVING THE UI FROM THE API PORT — WHERE A UI PATH BECOMES JSON   (D-109)
+
+  server/main.py:5701   _frontend_dist = frontend/dist
+  server/main.py:5702   if os.getenv("SERVE_FRONTEND") == "1" and dist exists:
+                            mount /assets (StaticFiles)
+  server/main.py:5709       @app.get("/{full_path:path}")  _serve_spa
+                                -> FileResponse(index.html)
+
+  FastAPI resolves in REGISTRATION order, and the catch-all is registered
+  LAST — after every API route in the file. So any UI path that shares a
+  spelling with an API route never reaches _serve_spa:
+
+      GET /schedule   -> the schedule API handler   -> application/json
+      GET /raid       -> the RAID API handler       -> application/json
+      GET /home /reconcile /ingest /delay /memory
+          /executive /executive/* /field /field/*   -> index.html  (OK)
+
+  Measured 2026-09-12 against the running server: exactly two collisions.
+  In-app <Link> navigation is unaffected — react-router never issues the
+  request. Only a typed URL or a refresh on those two screens does.
+
+  START_DEMO.bat does NOT set SERVE_FRONTEND, so on that launcher
+  http://localhost:8000 has no root route at all -> {"detail":"Not Found"}.
+
+  The recording setup avoids both: Vite on :5173 serves every UI path, and
+  lib/api.ts:73 derives the API as http://<hostname>:8000 when no
+  VITE_API_URL is pinned — which is also what lets the phone reach it.
+```
+
+## Previous Modification Area (2026-09-11, D-108) - retained for history
+
 **Task:** The PM decision dock on the schedule inspection panel wrote nothing — eight buttons, one cosmetic handler. Wired to the real resolve and RAID endpoints.
 **Date:** 2026-09-11 · **Decision:** D-108
 
