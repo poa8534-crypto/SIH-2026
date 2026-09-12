@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, MapPin, Moon, Sparkles, Sun, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, MapPin, Moon, Sparkles, Sun } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTheme } from '../../hooks/useTheme';
 import { useSession } from '../../hooks/useSession';
@@ -10,6 +10,7 @@ import { PROJECT } from '../../config';
 import { AskNavisChat } from '../../components/AskNavisChat';
 import { FieldNav } from '../../components/FieldNav';
 import { BrandMark } from '../../components/ui';
+import { LinkStatusPill } from '../../components/LinkStatus';
 
 export function FieldWorkspaceShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
@@ -17,7 +18,6 @@ export function FieldWorkspaceShell({ children }: { children: React.ReactNode })
   const speech = useSpeech();
   const { t, lang, setLang, languages } = useTranslation();
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
   const { data: schedule } = useQuery({
     queryKey: ['schedule', 'header'],
     queryFn: () => api.getSchedule(undefined, false),
@@ -63,15 +63,9 @@ export function FieldWorkspaceShell({ children }: { children: React.ReactNode })
               <MapPin size={14} className="shrink-0 text-blue-300" />
               <span className="truncate">{schedule?.project ?? PROJECT.location}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsOffline((value) => !value)}
-              className={`flex min-h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-label font-semibold lg:order-3 ${isOffline ? 'bg-amber-400/15 text-amber-200' : 'bg-emerald-400/15 text-emerald-200'}`}
-              title={isOffline ? t('offline_desc', 'Offline mode active') : 'Online and connected'}
-            >
-              {isOffline ? <WifiOff size={13} /> : <Wifi size={13} />}
-              {isOffline ? t('offline', 'Offline') : t('online', 'Online')}
-            </button>
+            <span className="lg:order-3">
+              <LinkStatusPill />
+            </span>
           </div>
         </header>
 

@@ -746,6 +746,274 @@ class MemoryCache(Base):
     valid_until = Column(DateTime, nullable=True)
 
 
+# ── Crew (the unit manpower is counted in) ──────────────────────────────────
+
+class Crew(Base):
+    """A gang: the smallest unit a supervisor can actually count heads in.
+
+    NAVIS had no manpower model at all, and that absence showed up in two
+    places that matter. `productivity.py` divides installed quantity by
+    CALENDAR days and says so plainly — "a statement about how often somebody
+    wrote a report, not about the crew" — because there was no man-day
+    denominator to divide by instead. And `delay_taxonomy.py` carries a
+    MANPOWER delay category with nothing behind it: a planner could classify a
+    slip as a labour shortage, but nothing in the database could corroborate
+    that a shortage happened.
+
+    A crew, not a person. There is no user table, no authentication (role.ts
+    says why), and naming individuals would put personal data into an audit
+    trail that is deliberately append-only and permanent. `foreman` is a free
+    text label on the gang, not an identity — the seeded corpus leaves it null.
+    """
+
+    __tablename__ = "crews"
+
+    crew_id = Column(String, primary_key=True)          # e.g. CIV-GANG-01
+    name = Column(String, nullable=False, default="")
+    # Matches Activity.discipline so attendance can be rolled up the same way
+    # progress is. Same vocabulary, same spellings — see matching/terminology.py.
+    discipline = Column(String, nullable=False, default="unknown")
+    contractor = Column(String, nullable=False, default="")
+    trade = Column(String, nullable=True)               # mason, fitter, welder…
+    # The strength the crew is CONTRACTED to field. The planned denominator in
+    # every shortfall figure, and snapshotted onto each attendance row so that
+    # re-sizing a crew later cannot silently rewrite last month's shortfall.
+    planned_strength = Column(Integer, nullable=False, default=0)
+    foreman = Column(String, nullable=True)
+    shift = Column(String, nullable=False, default="day")   # day / night
+    active = Column(Boolean, nullable=False, default=True)
+
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+    attendance = relationship("AttendanceRecord", back_populates="crew")
+    assignments = relationship("ResourceAssignment", back_populates="crew")
+
+
+# ── AttendanceRecord (the muster) ───────────────────────────────────────────
+
+class AttendanceRecord(Base):
+    """One muster reading for one crew, one date, one shift.
+
+    APPEND-ONLY, for the same reason `audit_records` is (D-004). A muster is
+    evidence: it is what a contractor is paid against and what a delay claim
+    argues from. Editing yesterday's headcount in place would destroy the only
+    record that it ever said something different.
+
+    A correction therefore writes a NEW row carrying `supersedes_id`, and
+    nothing about the superseded row changes — not even a flag. "Which reading
+    is current" is derived (`current_attendance`), never stored, so the table
+    cannot drift into a state where two rows both claim to be current.
+    """
+
+    __tablename__ = "attendance_records"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    crew_id = Column(String, ForeignKey("crews.crew_id"), nullable=False, index=True)
+    attendance_date = Column(Date, nullable=False, index=True)
+    shift = Column(String, nullable=False, default="day")
+
+    # Snapshot of Crew.planned_strength when the muster was taken. Copied, not
+    # joined: a crew re-sized in October must not change September's shortfall.
+    planned_strength = Column(Integer, nullable=False, default=0)
+    present = Column(Integer, nullable=False, default=0)
+    absent = Column(Integer, nullable=False, default=0)
+    # JSON object {reason: count} — leave, sick, no_show, redeployed, weather.
+    # A dict rather than a column per reason so a new reason is data, not a
+    # migration.
+    absence_reasons = Column(Text, nullable=False, default="{}")
+    # Hours each present head worked. Null means "not stated"; it is never
+    # defaulted to 8 on write, because an assumed 8 propagates into a man-day
+    # figure that then looks measured. `man_days()` states the assumption at
+    # the point of use instead.
+    hours_worked = Column(Float, nullable=True)
+
+    # Which activities this crew was on that day. JSON list of activity ids.
+    # This is the join that turns a headcount into productivity: without it
+    # attendance is an HR number, with it it is a denominator.
+    activity_ids = Column(Text, nullable=False, default="[]")
+
+    # How this reading was obtained. `dpr_extract` is the interesting one: the
+    # sample DPRs already say things like "Labour kam tha aaj so went slow"
+    # and NAVIS discarded every word of it.
+    source = Column(String, nullable=False, default="field_app")
+    source_file = Column(String, nullable=True)
+    source_line = Column(Integer, nullable=True)
+    # Null for a reading a human typed — a supervisor counting his own gang is
+    # not a probabilistic claim. Populated only for an extracted one.
+    confidence = Column(Float, nullable=True)
+    # The ROLE that reported it. There is no auth, so this is never a person.
+    reported_by = Column(String, nullable=True)
+
+    # The row this one corrects, if any. Chain, never mutation.
+    supersedes_id = Column(
+        String, ForeignKey("attendance_records.id"), nullable=True, index=True
+    )
+    note = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=_now)
+
+    crew = relationship("Crew", back_populates="attendance")
+
+    def reason_map(self) -> dict:
+        """Absence reasons as a dict. Total: a malformed blob reads as {}."""
+        if not self.absence_reasons:
+            return {}
+        try:
+            parsed = json.loads(self.absence_reasons)
+            return parsed if isinstance(parsed, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    def activity_list(self) -> list[str]:
+        """Activity ids this crew worked. Total: a malformed blob reads as []."""
+        if not self.activity_ids:
+            return []
+        try:
+            parsed = json.loads(self.activity_ids)
+            return [str(a) for a in parsed] if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    def man_days(self, assumed_shift_hours: float = 8.0) -> float:
+        """Man-days this muster represents.
+
+        `hours_worked` is per present head and is usually absent, so the
+        fallback is one man-day per present head — the convention a muster
+        sheet already uses. The assumption is a named parameter rather than a
+        literal buried in an expression, so a caller that knows the real shift
+        length can pass it and a reader can see what was assumed.
+        """
+        if self.hours_worked is None:
+            return float(self.present)
+        return float(self.present) * (self.hours_worked / assumed_shift_hours)
+
+    @property
+    def shortfall(self) -> int:
+        """Heads short of contracted strength. Never negative-by-surprise:
+        an over-strength day returns a negative number deliberately, because
+        hiding it would make the weekly total wrong."""
+        return self.planned_strength - self.present
+
+
+# ── ResourceAssignment (who is meant to be where) ───────────────────────────
+
+class ResourceAssignment(Base):
+    """A crew committed — or merely proposed — against an activity for a span.
+
+    The proposal/commit split is D-009's rule applied to manpower: a Field
+    Supervisor can ask for two more fitters, and that ask is a row with
+    `status='proposed'`. Only the Project Manager moves it to `committed`.
+    Nothing a supervisor does changes the plan, here or anywhere else.
+
+    Unlike `attendance_records` this table is NOT append-only. An assignment
+    is an intention, not evidence; it is allowed to change. The audit of the
+    change lives in `decided_by` / `decided_at` plus the AuditRecord the
+    commit path writes.
+    """
+
+    __tablename__ = "resource_assignments"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    crew_id = Column(String, ForeignKey("crews.crew_id"), nullable=False, index=True)
+    activity_id = Column(
+        String, ForeignKey("activities.activity_id"), nullable=False, index=True
+    )
+    from_date = Column(Date, nullable=False)
+    to_date = Column(Date, nullable=False)
+    allocated_strength = Column(Integer, nullable=False, default=0)
+
+    # proposed → committed | withdrawn. A withdrawn row is kept so that the
+    # board can show that manpower WAS asked for and refused, which is exactly
+    # the fact a delay claim turns on.
+    status = Column(String, nullable=False, default="proposed", index=True)
+
+    # Deterministic feature names, never model prose — D-003, the same rule
+    # the matcher's rationale follows. Comma-separated tokens such as
+    # "critical_path,under_resourced,discipline_match".
+    rationale = Column(Text, nullable=False, default="")
+
+    requested_by = Column(String, nullable=True)   # role that proposed
+    decided_by = Column(String, nullable=True)     # role that committed/withdrew
+    decided_at = Column(DateTime, nullable=True)
+    note = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+    crew = relationship("Crew", back_populates="assignments")
+    activity = relationship("Activity")
+
+    def rationale_list(self) -> list[str]:
+        """Rationale tokens. Empty when nothing was recorded."""
+        return [t.strip() for t in (self.rationale or "").split(",") if t.strip()]
+
+    def overlaps(self, other_from: date, other_to: date) -> bool:
+        """True when this assignment's span intersects the given one.
+
+        Half-open would be wrong here: a crew assigned to finish on the 12th
+        and start elsewhere on the 12th IS double-booked that day, because a
+        gang cannot be in two places in one shift.
+        """
+        return self.from_date <= other_to and other_from <= self.to_date
+
+
+# ── DeviceSession (connectivity telemetry) ──────────────────────────────────
+
+class DeviceSession(Base):
+    """What one client's link to the server actually looks like right now.
+
+    NAVIS claims near-real-time schedule updates. At a well-site in Duliajan
+    that claim is only as good as the link, and until now nothing recorded
+    whether the link was there. Without this table a discipline that has not
+    reported for three days is indistinguishable between "no work happened"
+    and "no signal reached us" — and those two facts lead a planner to
+    opposite decisions.
+
+    Latest-write-wins, not an audit table: this is a liveness view, and a
+    permanent history of every ping would be noise. `samples` keeps a short
+    capped window so a trend is still visible.
+    """
+
+    __tablename__ = "device_sessions"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    # Client-generated and stored in localStorage. Not a person and not a
+    # credential — it identifies a browser so queue depth can be attributed.
+    device_id = Column(String, nullable=False, unique=True, index=True)
+    role = Column(String, nullable=False, default="field")
+    # A discipline or work-front label, never a name.
+    label = Column(String, nullable=True)
+
+    first_seen = Column(DateTime, nullable=False, default=_now)
+    last_seen = Column(DateTime, nullable=False, default=_now, index=True)
+
+    # rich (voice + model) / lean (text only) / offline (queued locally).
+    # Declared by the client, because the client is the only thing that knows
+    # what it actually did with the link.
+    mode = Column(String, nullable=False, default="rich")
+    measured_kbps = Column(Float, nullable=True)
+    rtt_ms = Column(Float, nullable=True)
+    queue_depth = Column(Integer, nullable=False, default=0)
+    queue_bytes = Column(Integer, nullable=False, default=0)
+    # JSON list of recent {at, kbps, rtt_ms, mode} samples, newest last,
+    # capped by the write path so one chatty device cannot grow a row forever.
+    samples = Column(Text, nullable=False, default="[]")
+
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+    def sample_list(self) -> list[dict]:
+        """Recent link samples. Total: a malformed blob reads as []."""
+        if not self.samples:
+            return []
+        try:
+            parsed = json.loads(self.samples)
+            return [s for s in parsed if isinstance(s, dict)] if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+
 # ── Engine setup ─────────────────────────────────────────────────────────────
 
 # Anchored to the repo root, not the working directory: the server is
@@ -904,3 +1172,51 @@ def validate_actual_finish(
         )
 
     return []
+
+
+# ── Attendance derivation ───────────────────────────────────────────────────
+#
+# `attendance_records` is append-only, so "the current reading for this crew on
+# this date" is a query, not a column. Keeping it derived is the whole point:
+# a stored `superseded` flag can disagree with the `supersedes_id` chain, and
+# when it does there is no way to tell which one lied.
+
+def superseded_attendance_ids(records: list[AttendanceRecord]) -> set[str]:
+    """Ids that some OTHER row in `records` explicitly corrects.
+
+    Takes an already-fetched list rather than a session, so a caller that has
+    loaded a month of musters for a grid does not issue a second query per row.
+    """
+    return {r.supersedes_id for r in records if r.supersedes_id}
+
+
+def current_attendance(records: list[AttendanceRecord]) -> list[AttendanceRecord]:
+    """Only the live readings: every row nothing else supersedes.
+
+    Two rows for the same crew/date/shift with no `supersedes_id` between them
+    are BOTH returned. That is not a bug to paper over — it means two people
+    mustered the same gang independently, and a caller showing a headcount must
+    show the disagreement rather than silently pick one. `attendance_conflicts`
+    finds them.
+    """
+    dead = superseded_attendance_ids(records)
+    return [r for r in records if r.id not in dead]
+
+
+def attendance_conflicts(
+    records: list[AttendanceRecord],
+) -> dict[tuple[str, date, str], list[AttendanceRecord]]:
+    """Live readings that contradict each other, keyed by (crew, date, shift).
+
+    Only groups with more than one live row and more than one distinct
+    `present` value are returned: two sources agreeing that 14 heads turned up
+    is corroboration, not a conflict.
+    """
+    groups: dict[tuple[str, date, str], list[AttendanceRecord]] = {}
+    for rec in current_attendance(records):
+        groups.setdefault((rec.crew_id, rec.attendance_date, rec.shift), []).append(rec)
+    return {
+        key: rows
+        for key, rows in groups.items()
+        if len(rows) > 1 and len({r.present for r in rows}) > 1
+    }

@@ -1291,6 +1291,258 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
+**Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built the FIELD role surface on top of it. Planner and Executive surfaces follow.
+**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field lane)
+
+```
+THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
+
+  ATTENDANCE — the denominator productivity.py wanted
+  ---------------------------------------------------
+  POST /workforce/attendance              server/main.py::mark_attendance
+      |
+      +-- _crew_or_404                    unknown crew -> 404
+      +-- rest_day?  planned := 0         "nothing due" != "nobody came"
+      +-- present + absent > planned?     -> 422 naming the crew and numbers
+      +-- unknown activity_id?            -> 422 at WRITE time, so an
+      |                                      unattributable id cannot surface
+      |                                      a week later as a silent hole in
+      |                                      the man-day denominator
+      v
+  db.AttendanceRecord  APPEND-ONLY (same rule as audit_records, D-004)
+      a correction sets supersedes_id and writes a NEW row;
+      the corrected row is never touched, not even by a flag
+      |
+      v
+  workforce.musters(db, start, end, crew_ids)
+      1. fetch EVERY row for those crews  (not the window — a correction
+         filed on the 10th for the 3rd would otherwise be filtered out and
+         leave the corrected row looking current)
+      2. db.current_attendance   -> drop anything another row supersedes
+      3. THEN apply the window
+      |
+      +--> workforce.daily_rollup        one row per date, gaps included
+      +--> workforce.discipline_rollup   worst shortfall first
+      +--> workforce.contractor_reliability
+      |        reliable=None below MIN_MUSTERS_FOR_RELIABILITY (5);
+      |        two data points cannot convict a contractor
+      +--> db.attendance_conflicts       two LIVE rows, different headcounts
+               surfaced, never silently resolved
+      |
+      v
+  GET /workforce/attendance/summary       AttendanceSummaryResponse
+      defaults to the trailing 14 days (the window a progress meeting argues
+      over); an unbounded default would scan every muster ever taken
+
+
+  MAN-DAY PRODUCTIVITY — deliberately NOT inside /activity/{id}/productivity
+  --------------------------------------------------------------------------
+  GET /workforce/activity/{id}/man-day-rate
+      |
+      +-- workforce.man_day_rate
+             musters naming this activity
+                |  none        -> rate None, reason 'no_attendance_attributed'
+                |  present 0   -> rate None, reason 'zero_man_days'
+                v
+             quantity_ledger.ledger(db, activity_id).counted_total
+                |  0           -> rate None, reason 'no_measured_quantity'
+                v
+             counted_total / sum(AttendanceRecord.man_days())
+             a muster naming N activities is charged IN FULL to each ->
+             shared_musters set, note calls the rate a lower bound
+
+  productivity.rates() is UNCHANGED. Its three rates exist for every activity;
+  this one only where a register was kept, and merging them would let a caller
+  read a missing rate as zero productivity rather than as an unkept register.
+
+
+  DELAY EVIDENCE — what delay_taxonomy.MANPOWER never had
+  -------------------------------------------------------
+  GET /workforce/activity/{id}/shortfall-evidence
+      workforce.shortfall_evidence   window anchored on actual_start or planned_start
+          no muster in window     -> supports_manpower_cause = None  'no_register'
+          attendance >= 80%       -> False  'strength_fielded'
+          attendance <  80%       -> True   'shortfall_observed' + short_days[]
+      None is NOT a weaker True.
+
+
+  ALLOCATION — D-009 applied to manpower
+  --------------------------------------
+  POST /workforce/assignments             ALWAYS status='proposed'
+      the request model has NO status field, so a supervisor cannot commit
+      even by smuggling one through the body — structural, not a role check
+      |
+      +-- _allocation_rationale -> deterministic tokens only (D-003)
+      |      discipline_match | discipline_mismatch | trade:<t>
+      |      activity_not_started | activity_in_progress | activity_already_complete
+      |      reliability_measured | reliability_unmeasured | exceeds_crew_strength
+      v
+  POST /workforce/assignments/{id}/decide     THE ONLY PATH THAT COMMITS
+      was_status captured BEFORE mutation
+      commit twice -> 409, never a silent no-op
+      PM may commit fewer than were asked for
+      |
+      +--> AuditRecord(field_changed='resource_assignment',
+      |                old_value='proposed:6', new_value='committed:4')
+      |    additive to /audit/recent; disturbs no date-write row
+      v
+  status='withdrawn' rows are KEPT and still listed —
+  "manpower was asked for and refused" is what a delay claim points at
+
+
+  CREW BANDWIDTH (capacity) vs LINK BANDWIDTH — two quantities, never blended
+  ---------------------------------------------------------------------------
+  GET /workforce/capacity          workforce.crew_capacity
+      supply = planned_strength x days x reliability
+          reliability None -> basis 'nominal', NOT 1.0
+      committed = sum(allocated_strength x overlap_days) for status='committed'
+      headroom  = supply - committed
+      |
+      v
+  GET /workforce/allocation-board  workforce.allocation_board
+      demand  <- workforce.weekly_demand
+                   planned_qty prorated across the planned span by calendar
+                   days, the part inside the week / productivity_norms[type]
+                   NO NORM -> contributes ZERO and is named in
+                              demand_not_derivable, never absorbed
+      supply_basis = 'nominal' if ANY crew in the discipline is unmeasured
+                     (the weaker claim wins)
+      + workforce.double_bookings   COMMITTED overlaps only; two competing
+                                    proposals are what proposals are FOR
+      gap and headroom can BOTH be non-zero: the manpower exists and is
+      pointed at the wrong discipline
+
+  GET /connectivity/link-health    connectivity.device_board
+      POST /connectivity/heartbeat -> connectivity.record_heartbeat
+          mode DECLARED by the client (rich|lean|offline); an unknown mode is
+          coerced to lean, never rejected — a heartbeat comes from a client
+          that may be a version behind
+          samples capped at MAX_SAMPLES
+      _session_view: last_seen older than STALE_AFTER (3 min) ->
+          mode reads 'offline' whatever declared_mode says, band 'unknown'
+      worst_band is None when nothing is online (not 'poor', not 'good')
+
+  GET /connectivity/reporting-lag  connectivity.reporting_lag
+      LinkedEvent.created_at - reported_date, per discipline
+      both columns already existed -> works retroactively over the whole corpus
+      negative lag (a report filed for a future date) excluded, not clamped
+
+  GET /connectivity/capture-coverage
+      denominator = disciplines that HAVE CREWS, not ones that reported
+      otherwise a totally silent site scores 100%
+      silent = no progress event AND no muster
+        -> separates "no work happened" from "no signal reached us",
+           which lead a planner to opposite actions
+
+
+  SEEDING — synthetic, but not arbitrary
+  --------------------------------------
+  backend/scripts/seed.py  -> seed_workforce.seed_all (BEFORE ingestion)
+  server/demo.py::reset_demo -> clear_progress then seed_workforce.seed_all
+      clear_progress now drops AttendanceRecord, ResourceAssignment,
+      DeviceSession — but NOT Crew (reference data, like the baseline)
+  anchors, all traceable to a file in dataset/:
+      2026-08-15  dpr_day_10 header "Holiday: Independence Day"    -> 15%
+      2026-09-02  dpr_day_02 header "Rain since morning"           -> 55%
+      2026-09-14  dpr_day_11_messy "Labour kam tha aaj so went slow" -> 45%
+  Sundays: contracted 0, present 0 -> attendance_pct None, out of every
+  reliability figure. Recording them as "18 due, 0 came" made all three
+  contractors read unreliable at ~71%; that was the calendar, not them.
+```
+
+```
+THE FIELD LANE                                                (D-118)
+
+  App.tsx  role==='field'
+    <ConnectivityProvider role="field">        the only shell that mounts one
+      <FieldWorkspaceShell>                    header pill = <LinkStatusPill/>
+        /field/crew -> pages/field/CrewScreen.tsx
+
+  useConnectivity (hooks/useConnectivity.tsx)
+    probe()  timed GET /health, 8s abort
+        rtt MEASURED; throughput NOT probed (saturating the link is the one
+        thing this feature must not do) — navigator.connection.downlink where
+        the browser offers it, else null
+        |
+    mode = !online ? 'offline' : pinned ?? (band==='poor' ? 'lean' : 'rich')
+        a pin can be vetoed DOWNWARD by reality, never upward
+        |
+    heartbeat effect -> POST /connectivity/heartbeat
+        gate 1  signature identical to last  -> skip
+        gate 2  < MIN_HEARTBEAT_GAP_MS ago   -> skip UNLESS mode changed
+        wrapped in try/catch AND ?. — a synchronous throw here unmounts the
+        whole field shell (both defects are recorded in D-118)
+
+  Submitting with no link
+    CrewScreen -> enqueue('attendance' | 'assignment_request', body)
+        lib/outbox.ts, localStorage 'navis.outbox.v1'
+        CREATES ONLY: append-only muster, proposal-shaped request.
+        A resolve or a decide is NEVER queued — replaying one late could
+        overwrite a decision taken in between.
+        |
+    refresh() on reconnect -> flushOutbox(send, isRefusal)
+        oldest first (a request must not land before its muster)
+        network failure -> keep item, STOP the flush
+        4xx            -> move to `rejected`, show it, never retry forever
+
+  The muster write path
+    CrewScreen MusterCard
+        today_present === null  -> "not marked", prefilled at contracted
+                                   strength (one tap for a full turnout)
+        today_present === 0     -> "nobody came"      NEVER conflated
+        unattributed absences   -> folded into reason 'other', never dropped
+        already marked          -> supersedes_id set; card says the first
+                                   reading is never overwritten
+        rest day                -> rest_day:true, present 0, no reasons
+```
+
+### Database changes
+
+```
+FOUR NEW TABLES (created by Base.metadata.create_all; no ALTER needed, so no
+entry in _ADDED_COLUMNS — that tuple is only for columns added to tables that
+already exist in a deployed database file)
+
+  crews                  crew_id PK, discipline, contractor, trade,
+                         planned_strength, foreman, shift, active
+  attendance_records     APPEND-ONLY. crew_id FK, attendance_date, shift,
+                         planned_strength (SNAPSHOT — never joined from crews,
+                         so re-sizing a crew cannot rewrite a past shortfall),
+                         present, absent, absence_reasons JSON, hours_worked,
+                         activity_ids JSON, source, confidence, reported_by,
+                         supersedes_id FK -> self, note
+  resource_assignments   crew_id FK, activity_id FK, from_date, to_date,
+                         allocated_strength, status, rationale (tokens, D-003),
+                         requested_by, decided_by, decided_at
+  device_sessions        device_id UNIQUE, role, label, first_seen, last_seen,
+                         mode, measured_kbps, rtt_ms, queue_depth,
+                         queue_bytes, samples JSON
+
+THREE DERIVATION HELPERS in server/db.py — deliberately not columns:
+  superseded_attendance_ids · current_attendance · attendance_conflicts
+```
+
+### Verification performed
+
+```
+python -m pytest backend/server/test_workforce.py -q     → 59 passed
+python -m pytest backend/server/test_connectivity.py -q  → 19 passed
+python -m pytest -q                                      → 1055 passed, no regressions
+                                                           (run before the new suites
+                                                            were added; re-run after)
+Seeded corpus                                            → 8 crews, 368 musters,
+                                                           6 assignments
+Symbol verification                                      → every file, function and
+                                                           class named above confirmed
+                                                           present by import and by
+                                                           route enumeration off
+                                                           server.main.app.routes
+```
+
+---
+
+## Previous Modification Area (2026-09-12, D-116) - retained for history
+
 **Task:** Added `DEMO_VIDEO_SCRIPT_3DEVICE.md` — the phone/laptop/desktop cut of the demo video, one role per device, verified end to end on the merged tree. Documentation only: no source file, schema, threshold, matcher, endpoint or metric changed.
 **Date:** 2026-09-12 · **Decision:** D-116
 

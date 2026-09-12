@@ -33,6 +33,20 @@ import {
   ScheduleAuditResponse,
   ChatRequest,
   ChatResponse,
+  AllocationBoard,
+  AttendanceMarkBody,
+  AttendanceRecord as AttendanceRow,
+  AttendanceSummary,
+  CaptureCoverage,
+  Crew,
+  CrewCapacity,
+  DeviceView,
+  HeartbeatBody,
+  LinkHealth,
+  ManDayRate,
+  ReportingLag,
+  ResourceAssignment,
+  ShortfallEvidence,
 } from '../types';
 
 export class ApiError extends Error {
@@ -504,4 +518,159 @@ export const api = {
       body: JSON.stringify(body),
     });
   },
+
+  // ── Workforce ───────────────────────────────────────────────────────────
+
+  getCrews: (params?: { discipline?: string; on?: string }): Promise<Crew[]> => {
+    const q = new URLSearchParams();
+    if (params?.discipline) q.set('discipline', params.discipline);
+    if (params?.on) q.set('on', params.on);
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/crews${qs ? `?${qs}` : ''}`);
+  },
+
+  markAttendance: (body: AttendanceMarkBody): Promise<AttendanceRow> => {
+    return fetchWithHandler('/workforce/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  },
+
+  getAttendance: (params?: {
+    start?: string;
+    end?: string;
+    crew_id?: string;
+    include_superseded?: boolean;
+  }): Promise<AttendanceRow[]> => {
+    const q = new URLSearchParams();
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
+    if (params?.crew_id) q.set('crew_id', params.crew_id);
+    if (params?.include_superseded) q.set('include_superseded', 'true');
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/attendance${qs ? `?${qs}` : ''}`);
+  },
+
+  getAttendanceSummary: (params?: {
+    start?: string;
+    end?: string;
+  }): Promise<AttendanceSummary> => {
+    const q = new URLSearchParams();
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/attendance/summary${qs ? `?${qs}` : ''}`);
+  },
+
+  getManDayRate: (activityId: string): Promise<ManDayRate> =>
+    fetchWithHandler(
+      `/workforce/activity/${encodeURIComponent(activityId)}/man-day-rate`
+    ),
+
+  getShortfallEvidence: (
+    activityId: string,
+    windowDays?: number
+  ): Promise<ShortfallEvidence> =>
+    fetchWithHandler(
+      `/workforce/activity/${encodeURIComponent(activityId)}/shortfall-evidence` +
+        (windowDays ? `?window_days=${windowDays}` : '')
+    ),
+
+  getAssignments: (params?: {
+    status?: string;
+    crew_id?: string;
+    activity_id?: string;
+  }): Promise<ResourceAssignment[]> => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.crew_id) q.set('crew_id', params.crew_id);
+    if (params?.activity_id) q.set('activity_id', params.activity_id);
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/assignments${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * Always creates a PROPOSAL. There is no way to ask for a commitment here —
+   * the server's request model has no status field, which is what makes
+   * "a supervisor cannot change the plan" structural rather than a role check.
+   */
+  proposeAssignment: (body: {
+    crew_id: string;
+    activity_id: string;
+    from_date: string;
+    to_date: string;
+    allocated_strength: number;
+    note?: string | null;
+    requested_by?: string | null;
+  }): Promise<ResourceAssignment> => {
+    return fetchWithHandler('/workforce/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** The only path that commits. Project Manager only. */
+  decideAssignment: (
+    assignmentId: string,
+    body: {
+      decision: 'commit' | 'withdraw';
+      note?: string | null;
+      decided_by?: string;
+      allocated_strength?: number | null;
+    }
+  ): Promise<ResourceAssignment> => {
+    return fetchWithHandler(
+      `/workforce/assignments/${encodeURIComponent(assignmentId)}/decide`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+  },
+
+  getCapacity: (params?: {
+    start?: string;
+    end?: string;
+    discipline?: string;
+  }): Promise<CrewCapacity[]> => {
+    const q = new URLSearchParams();
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
+    if (params?.discipline) q.set('discipline', params.discipline);
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/capacity${qs ? `?${qs}` : ''}`);
+  },
+
+  getAllocationBoard: (params?: {
+    week_start?: string;
+    weeks?: number;
+  }): Promise<AllocationBoard> => {
+    const q = new URLSearchParams();
+    if (params?.week_start) q.set('week_start', params.week_start);
+    if (params?.weeks) q.set('weeks', String(params.weeks));
+    const qs = q.toString();
+    return fetchWithHandler(`/workforce/allocation-board${qs ? `?${qs}` : ''}`);
+  },
+
+  // ── Connectivity ────────────────────────────────────────────────────────
+
+  sendHeartbeat: (body: HeartbeatBody): Promise<DeviceView> => {
+    return fetchWithHandler('/connectivity/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  },
+
+  getLinkHealth: (): Promise<LinkHealth> =>
+    fetchWithHandler('/connectivity/link-health'),
+
+  getReportingLag: (days?: number): Promise<ReportingLag> =>
+    fetchWithHandler(`/connectivity/reporting-lag${days ? `?days=${days}` : ''}`),
+
+  getCaptureCoverage: (on?: string): Promise<CaptureCoverage> =>
+    fetchWithHandler(`/connectivity/capture-coverage${on ? `?on=${on}` : ''}`),
 };

@@ -61,6 +61,16 @@ def main() -> int:
             print("ERROR: no activities loaded — is dataset/baseline_schedule.json present?")
             return 1
 
+    # The workforce register. Seeded before ingestion so that the muster days
+    # anchored to the DPR corpus (the 15 Aug holiday, the 2 Sep rain, the
+    # 14 Sep "Labour kam tha aaj") are already in place when the reports those
+    # dates come from are ingested.
+    with Session(engine) as db:
+        from server.seed_workforce import seed_all
+        wf = seed_all(db)
+        print(f"workforce: {wf['crews']} crews, {wf['attendance']} musters, "
+              f"{wf['assignments']} assignments")
+
     files = source_files(args.dpr_only)
     if not files:
         print(f"ERROR: no source files found in {DATASET}")

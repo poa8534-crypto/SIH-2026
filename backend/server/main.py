@@ -59,6 +59,8 @@ from server import schedule_auditor
 from server.knowledge_base import knowledge_base, KnowledgeRuleDef
 from server import productivity
 from server import quantity_ledger
+from server import connectivity
+from server import workforce
 from server.delay_events import (
     adjudicate as adjudicate_delay,
     attribution as delay_attribution,
@@ -151,12 +153,17 @@ from matching.engine import _rationale as _candidate_rationale
 from .db import (
     Activity,
     AliasLexicon,
+    AttendanceRecord,
     AuditRecord,
     Base,
     init_db,
     BaselineVersion,
     ConversationTurn,
+    Crew,
     DelayEvent,
+    DeviceSession,
+    ResourceAssignment,
+    attendance_conflicts as db_attendance_conflicts,
     IntegrityError,
     IntegrityWarning,
     Job,
@@ -172,6 +179,25 @@ from .db import (
     _now,
 )
 from .schemas import (
+    AllocationBoardResponse,
+    AssignmentDecisionRequest,
+    AssignmentRequest,
+    AssignmentResponse,
+    AttendanceConflictRow,
+    AttendanceMarkRequest,
+    AttendanceRecordResponse,
+    AttendanceRollupRow,
+    AttendanceSummaryResponse,
+    CapacityResponse,
+    CaptureCoverageResponse,
+    CrewResponse,
+    CrewUpsertRequest,
+    DeviceView,
+    HeartbeatRequest,
+    LinkHealthResponse,
+    ManDayRateResponse,
+    ReportingLagResponse,
+    ShortfallEvidenceResponse,
     AgentTurnRequest,
     AgentTurnResponse,
     BaselineImportResponse,
@@ -5712,6 +5738,675 @@ def ask_navis(req: ChatRequest, db: Session = Depends(get_db)):
         model_available=qa_res["model_available"],
         suggested_actions=actions,
     )
+
+
+# ── Workforce: attendance, capacity, allocation ─────────────────────────────
+#
+# Three systems the problem statement's "input quality varies with manpower
+# skill, reporting discipline, and format" implies and NAVIS had no model for.
+# They share one subject — the crew — and one arithmetic: strength × days.
+#
+# The permission rule is D-009's, applied to manpower. A Field Supervisor
+# MUSTERS (a fact about today, which is theirs to state) and PROPOSES manpower
+# (a request, which is not). Only the Project Manager commits an allocation.
+# There is no auth, so this is a coherence boundary and not a security one —
+# stated here for the same reason lib/role.ts states it rather than implying it.
+
+def _crew_or_404(db: Session, crew_id: str) -> Crew:
+    crew = db.query(Crew).filter(Crew.crew_id == crew_id).first()
+    if crew is None:
+        raise HTTPException(404, f"Crew {crew_id} not found")
+    return crew
+
+
+def _attendance_view(rec: AttendanceRecord, crew: Optional[Crew]) -> AttendanceRecordResponse:
+    return AttendanceRecordResponse(
+        id=rec.id,
+        crew_id=rec.crew_id,
+        crew_name=(crew.name if crew else ""),
+        discipline=(crew.discipline if crew else "unknown"),
+        contractor=(crew.contractor if crew else ""),
+        attendance_date=rec.attendance_date,
+        shift=rec.shift,
+        planned_strength=rec.planned_strength,
+        present=rec.present,
+        absent=rec.absent,
+        shortfall=rec.shortfall,
+        absence_reasons=rec.reason_map(),
+        hours_worked=rec.hours_worked,
+        man_days=round(rec.man_days(), 2),
+        activity_ids=rec.activity_list(),
+        source=rec.source,
+        source_file=rec.source_file,
+        confidence=rec.confidence,
+        reported_by=rec.reported_by,
+        supersedes_id=rec.supersedes_id,
+        note=rec.note,
+        created_at=rec.created_at or _now(),
+    )
+
+
+@app.get("/workforce/crews", response_model=list[CrewResponse])
+def list_crews(
+    discipline: Optional[str] = Query(None),
+    on: Optional[date] = Query(None, description="Muster date for today_present. Defaults to today."),
+    include_inactive: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """The roster, with each crew's muster state for one date.
+
+    `today_present` is None when no muster exists — which the field app renders
+    as "not marked yet". That is deliberately distinct from a marked attendance
+    of zero: "nobody has counted" and "nobody turned up" are different facts and
+    a nullable integer is the only honest way to carry both.
+    """
+    on = on or date.today()
+    q = db.query(Crew)
+    if discipline:
+        q = q.filter(Crew.discipline == discipline)
+    if not include_inactive:
+        q = q.filter(Crew.active.is_(True))
+    crews = q.order_by(Crew.discipline, Crew.crew_id).all()
+
+    today = {
+        r.crew_id: r
+        for r in workforce.musters(db, on, on, [c.crew_id for c in crews])
+    }
+    return [
+        CrewResponse(
+            crew_id=c.crew_id,
+            name=c.name,
+            discipline=c.discipline,
+            contractor=c.contractor,
+            trade=c.trade,
+            planned_strength=c.planned_strength,
+            foreman=c.foreman,
+            shift=c.shift,
+            active=c.active,
+            today_present=(today[c.crew_id].present if c.crew_id in today else None),
+            today_absent=(today[c.crew_id].absent if c.crew_id in today else None),
+            today_record_id=(today[c.crew_id].id if c.crew_id in today else None),
+            reliability=workforce.crew_reliability(db, c.crew_id, on),
+        )
+        for c in crews
+    ]
+
+
+@app.post("/workforce/crews", response_model=CrewResponse, status_code=201)
+def upsert_crew(payload: CrewUpsertRequest, db: Session = Depends(get_db)):
+    """Create or update a crew. The Project Manager's register.
+
+    Upsert rather than separate create/update: a crew id is a site-assigned
+    code (`CIV-GANG-01`), not a surrogate key, so the caller always knows it and
+    a 409 on re-submit would only make the client do the GET itself.
+
+    Re-sizing a crew does NOT rewrite history: every muster snapshotted the
+    strength it was taken against, which is why `AttendanceRecord` carries its
+    own `planned_strength` column.
+    """
+    crew = db.query(Crew).filter(Crew.crew_id == payload.crew_id).first()
+    if crew is None:
+        crew = Crew(crew_id=payload.crew_id)
+        db.add(crew)
+    crew.name = payload.name or payload.crew_id
+    crew.discipline = payload.discipline
+    crew.contractor = payload.contractor
+    crew.trade = payload.trade
+    crew.planned_strength = payload.planned_strength
+    crew.foreman = payload.foreman
+    crew.shift = payload.shift
+    crew.active = payload.active
+    db.commit()
+    db.refresh(crew)
+    return CrewResponse(
+        crew_id=crew.crew_id,
+        name=crew.name,
+        discipline=crew.discipline,
+        contractor=crew.contractor,
+        trade=crew.trade,
+        planned_strength=crew.planned_strength,
+        foreman=crew.foreman,
+        shift=crew.shift,
+        active=crew.active,
+        reliability=workforce.crew_reliability(db, crew.crew_id),
+    )
+
+
+@app.post("/workforce/attendance", response_model=AttendanceRecordResponse, status_code=201)
+def mark_attendance(payload: AttendanceMarkRequest, db: Session = Depends(get_db)):
+    """Record one muster. Append-only: a correction writes a NEW row.
+
+    `supersedes_id` points at the row being corrected and nothing about that row
+    changes — not even a flag. Which reading is current is derived from the
+    chain (`db.current_attendance`), so the table cannot reach a state where two
+    rows both claim to be live and there is no way to tell which one lied. Same
+    rule as `audit_records`, and for the same reason: a muster is what a
+    contractor is paid against and what a delay claim argues from.
+    """
+    crew = _crew_or_404(db, payload.crew_id)
+    on = payload.attendance_date or date.today()
+
+    reasons = {
+        str(k): int(v)
+        for k, v in (payload.absence_reasons or {}).items()
+        if int(v) > 0
+    }
+    absent = sum(reasons.values())
+
+    # The strength is snapshotted here, and it is what the arithmetic below is
+    # checked against — not the crew row, which may be re-sized tomorrow.
+    #
+    # A rest day contracts nobody, so it snapshots zero. That is what keeps a
+    # Sunday out of every attendance percentage and every reliability figure
+    # without a single special case downstream: `attendance_pct` is already
+    # None against a zero denominator.
+    planned = 0 if payload.rest_day else crew.planned_strength
+    if payload.rest_day and (payload.present or absent):
+        raise HTTPException(
+            422,
+            "A rest day contracts nobody, so it cannot carry a present or "
+            "absent count. Drop rest_day to record an ordinary muster.",
+        )
+    if planned and payload.present + absent > planned:
+        raise HTTPException(
+            422,
+            f"Crew {crew.crew_id} is {planned} strong; {payload.present} present "
+            f"plus {absent} absent accounts for {payload.present + absent}. "
+            "Correct the counts or update the crew's contracted strength.",
+        )
+
+    if payload.supersedes_id:
+        prior = (
+            db.query(AttendanceRecord)
+            .filter(AttendanceRecord.id == payload.supersedes_id)
+            .first()
+        )
+        if prior is None:
+            raise HTTPException(404, f"No muster {payload.supersedes_id} to correct")
+        if prior.crew_id != payload.crew_id:
+            raise HTTPException(
+                422,
+                "A correction must name the same crew as the muster it corrects "
+                f"({prior.crew_id}, not {payload.crew_id}).",
+            )
+
+    # Unknown activity ids are rejected rather than stored: an id that matches
+    # nothing makes the man-day denominator silently unattributable later, and
+    # the failure would surface a week away from its cause.
+    unknown = [
+        a for a in payload.activity_ids
+        if not db.query(Activity).filter(Activity.activity_id == a).first()
+    ]
+    if unknown:
+        raise HTTPException(422, f"Unknown activity id(s): {', '.join(unknown)}")
+
+    rec = AttendanceRecord(
+        crew_id=crew.crew_id,
+        attendance_date=on,
+        shift=payload.shift or crew.shift,
+        planned_strength=planned,
+        present=payload.present,
+        absent=absent,
+        absence_reasons=json.dumps(reasons),
+        hours_worked=payload.hours_worked,
+        activity_ids=json.dumps(list(payload.activity_ids or [])),
+        source=payload.source or "field_app",
+        reported_by=payload.reported_by,
+        supersedes_id=payload.supersedes_id,
+        note=payload.note,
+    )
+    db.add(rec)
+    db.commit()
+    db.refresh(rec)
+    return _attendance_view(rec, crew)
+
+
+@app.get("/workforce/attendance", response_model=list[AttendanceRecordResponse])
+def list_attendance(
+    start: Optional[date] = Query(None),
+    end: Optional[date] = Query(None),
+    crew_id: Optional[str] = Query(None),
+    include_superseded: bool = Query(
+        False, description="Include corrected readings. The audit view."
+    ),
+    db: Session = Depends(get_db),
+):
+    """Musters in a window. Live readings only unless `include_superseded`.
+
+    The superseded view exists because the append-only chain is the evidence: a
+    planner defending a headcount needs to be able to show that it was corrected
+    and from what.
+    """
+    if include_superseded:
+        q = db.query(AttendanceRecord)
+        if crew_id:
+            q = q.filter(AttendanceRecord.crew_id == crew_id)
+        if start:
+            q = q.filter(AttendanceRecord.attendance_date >= start)
+        if end:
+            q = q.filter(AttendanceRecord.attendance_date <= end)
+        records = q.order_by(AttendanceRecord.attendance_date.desc(),
+                             AttendanceRecord.created_at.desc()).all()
+    else:
+        records = workforce.musters(db, start, end, [crew_id] if crew_id else None)
+        records = sorted(
+            records, key=lambda r: (r.attendance_date, r.created_at or _now()), reverse=True
+        )
+
+    crews = {c.crew_id: c for c in db.query(Crew).all()}
+    return [_attendance_view(r, crews.get(r.crew_id)) for r in records]
+
+
+@app.get("/workforce/attendance/summary", response_model=AttendanceSummaryResponse)
+def attendance_summary(
+    start: Optional[date] = Query(None),
+    end: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Attendance rolled up three ways, plus the readings that contradict.
+
+    Defaults to the trailing 14 days because that is the window a weekly
+    progress meeting argues over, and an unbounded default would make the first
+    load of the planner's register scan every muster ever taken.
+    """
+    end = end or date.today()
+    start = start or end - timedelta(days=13)
+
+    records = workforce.musters(db, start, end)
+    crews = {c.crew_id: c for c in db.query(Crew).all()}
+    totals = workforce._attendance_block(records)
+
+    conflicts = []
+    for (crew_id, on, shift), rows in db_attendance_conflicts(
+        workforce.musters(db, start, end)
+    ).items():
+        conflicts.append(
+            AttendanceConflictRow(
+                crew_id=crew_id,
+                crew_name=(crews[crew_id].name if crew_id in crews else ""),
+                attendance_date=on,
+                shift=shift,
+                records=[_attendance_view(r, crews.get(r.crew_id)) for r in rows],
+            )
+        )
+
+    return AttendanceSummaryResponse(
+        window={"from": start, "to": end},
+        daily=[AttendanceRollupRow(**row) for row in workforce.daily_rollup(db, start, end)],
+        by_discipline=[
+            AttendanceRollupRow(**row) for row in workforce.discipline_rollup(db, start, end)
+        ],
+        by_contractor=[
+            AttendanceRollupRow(**row)
+            for row in workforce.contractor_reliability(db, start, end)
+        ],
+        totals=AttendanceRollupRow(**totals),
+        conflicts=conflicts,
+    )
+
+
+@app.get("/workforce/activity/{activity_id}/man-day-rate", response_model=ManDayRateResponse)
+def activity_man_day_rate(activity_id: str, db: Session = Depends(get_db)):
+    """Quantity per man-day for one activity — the rate /productivity cannot give.
+
+    Kept OUT of `GET /activity/{id}/productivity`: the three rates there are
+    available for every activity, this one only where a register was kept, and
+    mixing them in one payload invites a caller to read a missing man-day rate
+    as zero productivity rather than as an unkept register.
+    """
+    result = workforce.man_day_rate(db, activity_id)
+    if result is None:
+        raise HTTPException(404, f"Activity {activity_id} not found")
+    return ManDayRateResponse(**result)
+
+
+@app.get(
+    "/workforce/activity/{activity_id}/shortfall-evidence",
+    response_model=ShortfallEvidenceResponse,
+)
+def activity_shortfall_evidence(
+    activity_id: str,
+    window_days: int = Query(14, ge=1, le=180),
+    db: Session = Depends(get_db),
+):
+    """Does the muster register support calling this slip a MANPOWER delay?
+
+    `delay_taxonomy.MANPOWER` maps to NON_COMPENSABLE liability — the most
+    contractually consequential classification in the taxonomy, and until now
+    the least evidenced. Three-state answer: True, False, or None for "no
+    register was kept", which is not a weaker True.
+    """
+    result = workforce.shortfall_evidence(db, activity_id, window_days)
+    if result is None:
+        raise HTTPException(
+            404,
+            f"Activity {activity_id} not found, or has neither a planned nor an "
+            "actual start to anchor a window on",
+        )
+    return ShortfallEvidenceResponse(**result)
+
+
+# ── Allocation ──────────────────────────────────────────────────────────────
+
+def _assignment_view(
+    row: ResourceAssignment, crew: Optional[Crew], activity: Optional[Activity]
+) -> AssignmentResponse:
+    days = max(0, (row.to_date - row.from_date).days + 1)
+    return AssignmentResponse(
+        id=row.id,
+        crew_id=row.crew_id,
+        crew_name=(crew.name if crew else ""),
+        discipline=(crew.discipline if crew else "unknown"),
+        contractor=(crew.contractor if crew else ""),
+        activity_id=row.activity_id,
+        activity_description=(activity.description if activity else ""),
+        from_date=row.from_date,
+        to_date=row.to_date,
+        days=days,
+        allocated_strength=row.allocated_strength,
+        man_days=row.allocated_strength * days,
+        status=row.status,
+        rationale=row.rationale_list(),
+        requested_by=row.requested_by,
+        decided_by=row.decided_by,
+        decided_at=row.decided_at,
+        note=row.note,
+        created_at=row.created_at or _now(),
+    )
+
+
+def _allocation_rationale(
+    db: Session, crew: Crew, activity: Activity, allocated: int
+) -> list[str]:
+    """Deterministic tokens describing why this pairing makes sense.
+
+    D-003's rule, applied to manpower: feature names, never prose, and never
+    anything a model wrote. Every token below is a fact that can be recomputed
+    from the database, which is what makes the rationale auditable a year later.
+    """
+    tokens: list[str] = []
+    if crew.discipline == activity.discipline:
+        tokens.append("discipline_match")
+    else:
+        tokens.append("discipline_mismatch")
+    if crew.trade:
+        tokens.append(f"trade:{crew.trade}")
+    if activity.actual_finish is not None:
+        tokens.append("activity_already_complete")
+    elif activity.actual_start is not None:
+        tokens.append("activity_in_progress")
+    else:
+        tokens.append("activity_not_started")
+    if allocated > crew.planned_strength:
+        tokens.append("exceeds_crew_strength")
+    rel = workforce.crew_reliability(db, crew.crew_id)
+    tokens.append("reliability_measured" if rel is not None else "reliability_unmeasured")
+    return tokens
+
+
+@app.get("/workforce/assignments", response_model=list[AssignmentResponse])
+def list_assignments(
+    status: Optional[str] = Query(None, description="proposed | committed | withdrawn"),
+    crew_id: Optional[str] = Query(None),
+    activity_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Assignments, newest first. Withdrawn rows are returned.
+
+    A withdrawn proposal is kept and shown because "manpower was asked for and
+    refused" is precisely the fact a delay claim turns on. Dropping it would
+    make the register flattering and useless.
+    """
+    q = db.query(ResourceAssignment)
+    if status:
+        if status not in (workforce.STATUS_PROPOSED, workforce.STATUS_COMMITTED, workforce.STATUS_WITHDRAWN):
+            raise HTTPException(422, f"Unknown status {status!r}")
+        q = q.filter(ResourceAssignment.status == status)
+    if crew_id:
+        q = q.filter(ResourceAssignment.crew_id == crew_id)
+    if activity_id:
+        q = q.filter(ResourceAssignment.activity_id == activity_id)
+    rows = q.order_by(ResourceAssignment.created_at.desc()).all()
+
+    crews = {c.crew_id: c for c in db.query(Crew).all()}
+    acts = {
+        a.activity_id: a
+        for a in db.query(Activity).filter(
+            Activity.activity_id.in_([r.activity_id for r in rows] or [""])
+        ).all()
+    }
+    return [_assignment_view(r, crews.get(r.crew_id), acts.get(r.activity_id)) for r in rows]
+
+
+@app.post("/workforce/assignments", response_model=AssignmentResponse, status_code=201)
+def propose_assignment(payload: AssignmentRequest, db: Session = Depends(get_db)):
+    """Propose a crew against an activity. ALWAYS `proposed`, never committed.
+
+    This is D-009 applied to manpower and it is the whole reason this endpoint
+    cannot take a status. A Field Supervisor asking for two more fitters must
+    not be able to change the plan, and the way to guarantee that is for the
+    creating path to have no way to express "committed" at all — not a role
+    check on a client-declared role, which is no boundary without auth.
+    `POST /workforce/assignments/{id}/decide` is the only path that commits.
+    """
+    crew = _crew_or_404(db, payload.crew_id)
+    activity = (
+        db.query(Activity).filter(Activity.activity_id == payload.activity_id).first()
+    )
+    if activity is None:
+        raise HTTPException(404, f"Activity {payload.activity_id} not found")
+    if payload.to_date < payload.from_date:
+        raise HTTPException(
+            422,
+            f"to_date {payload.to_date} is before from_date {payload.from_date}",
+        )
+
+    row = ResourceAssignment(
+        crew_id=crew.crew_id,
+        activity_id=activity.activity_id,
+        from_date=payload.from_date,
+        to_date=payload.to_date,
+        allocated_strength=payload.allocated_strength,
+        status=workforce.STATUS_PROPOSED,
+        rationale=",".join(
+            _allocation_rationale(db, crew, activity, payload.allocated_strength)
+        ),
+        requested_by=payload.requested_by or "field",
+        note=payload.note,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _assignment_view(row, crew, activity)
+
+
+@app.post("/workforce/assignments/{assignment_id}/decide", response_model=AssignmentResponse)
+def decide_assignment(
+    assignment_id: str,
+    payload: AssignmentDecisionRequest,
+    db: Session = Depends(get_db),
+):
+    """The Project Manager commits or withdraws a proposal.
+
+    The ONLY path that writes `committed`. A commit also writes an AuditRecord,
+    so a manpower commitment leaves the same kind of trail an actual-date write
+    does — `field_changed='resource_assignment'`, which is additive to the audit
+    feed and does not disturb the date-write rows already there.
+
+    `allocated_strength` may be revised downward (or up) at the point of
+    decision, because that is what happens in practice: a supervisor asks for
+    six and the PM can spare four. Committing a different number than was asked
+    for is recorded as the committed number, with the request preserved in the
+    audit row's `old_value`.
+    """
+    row = (
+        db.query(ResourceAssignment)
+        .filter(ResourceAssignment.id == assignment_id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, f"Assignment {assignment_id} not found")
+    if payload.decision not in ("commit", "withdraw"):
+        raise HTTPException(
+            422, f"decision must be 'commit' or 'withdraw', not {payload.decision!r}"
+        )
+    if row.status == workforce.STATUS_COMMITTED and payload.decision == "commit":
+        raise HTTPException(409, f"Assignment {assignment_id} is already committed")
+
+    # Captured BEFORE mutation: the audit row has to say what the state was,
+    # and reading it off the object after the assignment below would record the
+    # new state as the old one.
+    was_status = row.status
+    requested = row.allocated_strength
+    if payload.allocated_strength is not None:
+        row.allocated_strength = payload.allocated_strength
+
+    row.status = (
+        workforce.STATUS_COMMITTED
+        if payload.decision == "commit"
+        else workforce.STATUS_WITHDRAWN
+    )
+    row.decided_by = payload.decided_by or "planner"
+    row.decided_at = _now()
+    if payload.note:
+        row.note = payload.note
+
+    db.add(
+        AuditRecord(
+            activity_id=row.activity_id,
+            field_changed="resource_assignment",
+            old_value=f"{was_status}:{requested}",
+            new_value=f"{row.status}:{row.allocated_strength}",
+            source="planner_review",
+            confidence=None,
+            model_version="workforce-v1",
+            auto_applied=False,
+        )
+    )
+    db.commit()
+    db.refresh(row)
+
+    crew = db.query(Crew).filter(Crew.crew_id == row.crew_id).first()
+    activity = (
+        db.query(Activity).filter(Activity.activity_id == row.activity_id).first()
+    )
+    return _assignment_view(row, crew, activity)
+
+
+@app.get("/workforce/capacity", response_model=list[CapacityResponse])
+def crew_capacity(
+    start: Optional[date] = Query(None),
+    end: Optional[date] = Query(None),
+    discipline: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Crew bandwidth: what each gang can field against what it already owes.
+
+    This is the CREW reading of "bandwidth". The LINK reading lives at
+    `/connectivity/link-health`. They are both real, they are not the same
+    quantity, and a single blended score would be meaningless — so they are two
+    endpoints.
+    """
+    start = start or date.today()
+    end = end or start + timedelta(days=6)
+    if end < start:
+        raise HTTPException(422, f"end {end} is before start {start}")
+
+    q = db.query(Crew).filter(Crew.active.is_(True))
+    if discipline:
+        q = q.filter(Crew.discipline == discipline)
+    rows = [
+        workforce.crew_capacity(db, c.crew_id, start, end)
+        for c in q.order_by(Crew.discipline, Crew.crew_id).all()
+    ]
+    return [CapacityResponse(**r) for r in rows if r]
+
+
+@app.get("/workforce/allocation-board", response_model=AllocationBoardResponse)
+def allocation_board(
+    week_start: Optional[date] = Query(None),
+    weeks: int = Query(4, ge=1, le=26),
+    db: Session = Depends(get_db),
+):
+    """Demand against supply, per discipline, per week.
+
+    Defaults to the Monday of the current week, so two people opening the board
+    on different days of the same week see the same columns.
+
+    `gap` and `headroom` can both be non-zero in one week. That is not a
+    contradiction — it is the most useful thing this board says: the manpower
+    exists and is pointed at the wrong discipline.
+    """
+    today = date.today()
+    week_start = week_start or today - timedelta(days=today.weekday())
+    return AllocationBoardResponse(**workforce.allocation_board(db, week_start, weeks))
+
+
+# ── Connectivity: the LINK reading of bandwidth ─────────────────────────────
+
+@app.post("/connectivity/heartbeat", response_model=DeviceView)
+def connectivity_heartbeat(payload: HeartbeatRequest, db: Session = Depends(get_db)):
+    """Record one client's link quality, declared mode and queue depth.
+
+    The client declares its mode because the client is the only party that knows
+    what it actually did with the link. Inferring `rich`/`lean`/`offline` from
+    measured kbps here would be guessing about a decision already taken on the
+    device — and would be wrong for the commonest case, a supervisor who chose
+    lean mode deliberately on a good link to save data.
+    """
+    session = connectivity.record_heartbeat(
+        db,
+        device_id=payload.device_id,
+        role=payload.role,
+        mode=payload.mode,
+        kbps=payload.measured_kbps,
+        rtt_ms=payload.rtt_ms,
+        queue_depth=payload.queue_depth,
+        queue_bytes=payload.queue_bytes,
+        label=payload.label,
+    )
+    return DeviceView(**connectivity._session_view(session, _now()))
+
+
+@app.get("/connectivity/link-health", response_model=LinkHealthResponse)
+def link_health(db: Session = Depends(get_db)):
+    """Who is reaching this server, and what is queued on the devices that aren't.
+
+    The honesty layer under NAVIS's near-real-time claim. Offline devices sort
+    first: this board exists to answer "who is not reaching us", and that answer
+    should never be below the fold.
+    """
+    return LinkHealthResponse(**connectivity.device_board(db))
+
+
+@app.get("/connectivity/reporting-lag", response_model=ReportingLagResponse)
+def reporting_lag(
+    days: int = Query(14, ge=1, le=180),
+    db: Session = Depends(get_db),
+):
+    """Capture-to-server lag per discipline, and which disciplines went silent.
+
+    Computed from `LinkedEvent.reported_date` against `created_at` — both
+    already stored, so this works retroactively across the whole existing corpus
+    with no new instrumentation. Per discipline because that is the unit that
+    goes quiet: one supervisor losing signal silences one discipline, and a
+    project-wide median would hide it completely.
+    """
+    return ReportingLagResponse(**connectivity.reporting_lag(db, days))
+
+
+@app.get("/connectivity/capture-coverage", response_model=CaptureCoverageResponse)
+def capture_coverage(
+    on: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Which disciplines produced anything at all on one day.
+
+    The denominator is disciplines that HAVE CREWS, not disciplines that
+    happened to send something — otherwise a totally silent site scores 100%
+    coverage, which is the exact failure this endpoint exists to catch.
+    """
+    return CaptureCoverageResponse(**connectivity.capture_coverage(db, on))
 
 
 # ── Static SPA frontend mount (Docker / Production) ─────────────────────────

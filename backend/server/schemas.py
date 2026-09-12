@@ -1409,3 +1409,371 @@ class ChatResponse(BaseModel):
     model_available: bool = False
     suggested_actions: list[ChatAction] = []
 
+
+
+# ── Workforce: attendance, capacity, allocation ─────────────────────────────
+#
+# Three systems, one crew. `crew_id` is the join in every one of them, and none
+# of these models carries a person's name: there is no user table, no auth
+# (lib/role.ts says why), and an append-only muster register is the last place
+# personal data should be written permanently.
+
+class CrewResponse(BaseModel):
+    crew_id: str
+    name: str = ""
+    discipline: str = "unknown"
+    contractor: str = ""
+    trade: Optional[str] = None
+    planned_strength: int = 0
+    foreman: Optional[str] = None
+    shift: str = "day"
+    active: bool = True
+    # Today's muster for this crew, when one has been taken. None is the
+    # signal the field app's roster renders as "not marked yet" — it must not
+    # be confused with a marked attendance of zero.
+    today_present: Optional[int] = None
+    today_absent: Optional[int] = None
+    today_record_id: Optional[str] = None
+    # Historical fraction of contracted strength fielded. None below the
+    # minimum sample; callers must not read that as 1.0.
+    reliability: Optional[float] = None
+
+
+class CrewUpsertRequest(BaseModel):
+    crew_id: str
+    name: str = ""
+    discipline: str = "unknown"
+    contractor: str = ""
+    trade: Optional[str] = None
+    planned_strength: int = Field(0, ge=0, le=10_000)
+    foreman: Optional[str] = None
+    shift: str = "day"
+    active: bool = True
+
+
+class AttendanceMarkRequest(BaseModel):
+    """One muster, as the field app submits it."""
+
+    crew_id: str
+    # Optional so the phone does not have to agree with the server about what
+    # "today" is across a timezone; omitted means the server's date.
+    attendance_date: Optional[date_t] = None
+    shift: str = "day"
+    present: int = Field(0, ge=0, le=10_000)
+    # Counts by reason. Validated against the crew's snapshot strength on the
+    # server, not here, so the error names the crew and the numbers.
+    absence_reasons: dict[str, int] = {}
+    hours_worked: Optional[float] = Field(None, ge=0, le=24)
+    activity_ids: list[str] = []
+    note: Optional[str] = None
+    # A non-working day on the site calendar. Records a CONTRACTED STRENGTH OF
+    # ZERO rather than the crew's strength with nobody present, which is the
+    # difference between "nothing was due" and "the gang did not come". Without
+    # it every Sunday scored as a total no-show and dragged the contractor
+    # reliability ranking into nonsense.
+    rest_day: bool = False
+    # The row this one corrects. Supplying it writes a NEW record that
+    # supersedes the old one; the old row is never touched.
+    supersedes_id: Optional[str] = None
+    # `field_app`, `dpr_extract`, `spreadsheet`, `planner_correction`.
+    source: str = "field_app"
+    reported_by: Optional[str] = None
+
+
+class AttendanceRecordResponse(BaseModel):
+    id: str
+    crew_id: str
+    crew_name: str = ""
+    discipline: str = "unknown"
+    contractor: str = ""
+    attendance_date: date_t
+    shift: str = "day"
+    planned_strength: int = 0
+    present: int = 0
+    absent: int = 0
+    shortfall: int = 0
+    absence_reasons: dict[str, int] = {}
+    hours_worked: Optional[float] = None
+    man_days: float = 0.0
+    activity_ids: list[str] = []
+    source: str = "field_app"
+    source_file: Optional[str] = None
+    confidence: Optional[float] = None
+    reported_by: Optional[str] = None
+    supersedes_id: Optional[str] = None
+    note: Optional[str] = None
+    created_at: datetime
+
+
+class AttendanceRollupRow(BaseModel):
+    """A period or group total. `attendance_pct` is None when nothing was
+    planned — a percentage against a zero denominator is a division, not a
+    fact."""
+
+    date: Optional[date_t] = None
+    discipline: Optional[str] = None
+    contractor: Optional[str] = None
+    crews: Optional[int] = None
+    musters: int = 0
+    planned_strength: int = 0
+    present: int = 0
+    absent: int = 0
+    shortfall: int = 0
+    attendance_pct: Optional[float] = None
+    man_days: float = 0.0
+    absence_reasons: dict[str, int] = {}
+    sample_sufficient: Optional[bool] = None
+    reliable: Optional[bool] = None
+
+
+class AttendanceConflictRow(BaseModel):
+    """Two live musters for one crew/date that disagree on the headcount.
+
+    Surfaced rather than resolved: two people counted the same gang and got
+    different answers, and picking one silently would destroy the only evidence
+    that they disagreed."""
+
+    crew_id: str
+    crew_name: str = ""
+    attendance_date: date_t
+    shift: str = "day"
+    records: list[AttendanceRecordResponse] = []
+
+
+class AttendanceSummaryResponse(BaseModel):
+    window: dict
+    daily: list[AttendanceRollupRow] = []
+    by_discipline: list[AttendanceRollupRow] = []
+    by_contractor: list[AttendanceRollupRow] = []
+    totals: AttendanceRollupRow
+    conflicts: list[AttendanceConflictRow] = []
+
+
+class ManDayRateResponse(BaseModel):
+    """Quantity per man-day for one activity.
+
+    `rate` is None with a populated `reason` whenever it cannot be computed, so
+    a UI can say why there is no figure instead of rendering a blank or a zero.
+    """
+
+    activity_id: str
+    rate: Optional[float] = None
+    uom: str = ""
+    quantity: Optional[float] = None
+    man_days: float = 0.0
+    musters: int = 0
+    crews: list[str] = []
+    shared_musters: Optional[int] = None
+    reason: Optional[str] = None
+    note: str = ""
+
+
+class ShortfallEvidenceResponse(BaseModel):
+    """Whether the register supports a MANPOWER delay classification.
+
+    `supports_manpower_cause` is three-state on purpose: True, False, or None
+    for "no register was kept". The third is not a weaker True."""
+
+    activity_id: str
+    window: dict
+    musters: int = 0
+    planned_strength: int = 0
+    present: int = 0
+    absent: int = 0
+    shortfall: int = 0
+    attendance_pct: Optional[float] = None
+    man_days: float = 0.0
+    absence_reasons: dict[str, int] = {}
+    short_days: list[date_t] = []
+    supports_manpower_cause: Optional[bool] = None
+    reason: str = ""
+    note: str = ""
+
+
+# ── Allocation ──────────────────────────────────────────────────────────────
+
+class AssignmentRequest(BaseModel):
+    """A proposal or a commitment, depending on who is asking.
+
+    The role does not travel in this body as a permission — there is no auth
+    and a client-declared role would be no boundary at all. It is recorded as
+    provenance. The endpoint decides what a caller may write."""
+
+    crew_id: str
+    activity_id: str
+    from_date: date_t
+    to_date: date_t
+    allocated_strength: int = Field(0, ge=0, le=10_000)
+    note: Optional[str] = None
+    requested_by: Optional[str] = None
+
+
+class AssignmentDecisionRequest(BaseModel):
+    """The Project Manager's verdict on a proposal. `commit` or `withdraw`."""
+
+    decision: str
+    note: Optional[str] = None
+    decided_by: str = "planner"
+    # Lets the PM commit a different number from the one asked for, which is
+    # what actually happens: a supervisor asks for six, the PM can spare four.
+    allocated_strength: Optional[int] = Field(None, ge=0, le=10_000)
+
+
+class AssignmentResponse(BaseModel):
+    id: str
+    crew_id: str
+    crew_name: str = ""
+    discipline: str = "unknown"
+    contractor: str = ""
+    activity_id: str
+    activity_description: str = ""
+    from_date: date_t
+    to_date: date_t
+    days: int = 0
+    allocated_strength: int = 0
+    man_days: int = 0
+    status: str = "proposed"
+    rationale: list[str] = []
+    requested_by: Optional[str] = None
+    decided_by: Optional[str] = None
+    decided_at: Optional[datetime] = None
+    note: Optional[str] = None
+    created_at: datetime
+
+
+class CapacityResponse(BaseModel):
+    """One crew's bandwidth over a span.
+
+    `basis` names whether `supply_man_days` was adjusted by measured
+    reliability or is the nominal strength × days — they differ by exactly the
+    amount a planner needs to know about."""
+
+    crew_id: str
+    name: str = ""
+    discipline: str = "unknown"
+    contractor: str = ""
+    planned_strength: int = 0
+    days: int = 0
+    reliability: Optional[float] = None
+    basis: str = "nominal"
+    nominal_man_days: float = 0.0
+    supply_man_days: float = 0.0
+    committed_man_days: float = 0.0
+    headroom_man_days: float = 0.0
+    utilisation_pct: Optional[float] = None
+    overcommitted: bool = False
+
+
+class AllocationBoardRow(BaseModel):
+    discipline: str
+    crews: int = 0
+    demand_man_days: float = 0.0
+    supply_man_days: float = 0.0
+    committed_man_days: float = 0.0
+    headroom_man_days: float = 0.0
+    gap_man_days: float = 0.0
+    utilisation_pct: Optional[float] = None
+    supply_basis: str = "nominal"
+
+
+class AllocationWeek(BaseModel):
+    week_start: date_t
+    week_end: date_t
+    rows: list[AllocationBoardRow] = []
+    total_demand: float = 0.0
+    total_supply: float = 0.0
+    total_committed: float = 0.0
+
+
+class AllocationBoardResponse(BaseModel):
+    week_start: date_t
+    weeks: int = 4
+    # Quantity-per-man-day by activity-type prefix, with the sample each came
+    # from. Published rather than hidden because it is the divisor behind every
+    # demand figure on the board.
+    norms: dict = {}
+    weeks_detail: list[AllocationWeek] = []
+    # Activities excluded from demand because their type has no norm. Named,
+    # never absorbed into zero.
+    demand_not_derivable: list[dict] = []
+    double_bookings: list[dict] = []
+
+
+# ── Connectivity ────────────────────────────────────────────────────────────
+
+class HeartbeatRequest(BaseModel):
+    """Telemetry from one client. `mode` is DECLARED by the client, because the
+    client is the only party that knows what it did with the link."""
+
+    device_id: str
+    role: str = "field"
+    mode: str = "rich"
+    measured_kbps: Optional[float] = Field(None, ge=0)
+    rtt_ms: Optional[float] = Field(None, ge=0)
+    queue_depth: int = Field(0, ge=0)
+    queue_bytes: int = Field(0, ge=0)
+    label: Optional[str] = None
+
+
+class DeviceView(BaseModel):
+    device_id: str
+    role: str = "field"
+    label: Optional[str] = None
+    first_seen: Optional[datetime] = None
+    last_seen: Optional[datetime] = None
+    seconds_since_seen: int = 0
+    online: bool = False
+    # What is true now. `declared_mode` is what the device last claimed; a
+    # device that has gone quiet reads as offline here whatever it said.
+    mode: str = "offline"
+    declared_mode: str = "rich"
+    measured_kbps: Optional[float] = None
+    rtt_ms: Optional[float] = None
+    band: str = "unknown"
+    queue_depth: int = 0
+    queue_bytes: int = 0
+    samples: list[dict] = []
+
+
+class LinkHealthResponse(BaseModel):
+    devices: list[DeviceView] = []
+    total: int = 0
+    online: int = 0
+    offline: int = 0
+    queued_submissions: int = 0
+    queued_bytes: int = 0
+    # None when nothing is online: a worst band over an empty set would read as
+    # either an outage or perfect health, and both would be invented.
+    worst_band: Optional[str] = None
+
+
+class ReportingLagRow(BaseModel):
+    discipline: str
+    events: int = 0
+    median_lag_hours: Optional[float] = None
+    max_lag_hours: Optional[float] = None
+    last_reported_on: Optional[date_t] = None
+    days_since_last_report: Optional[int] = None
+
+
+class ReportingLagResponse(BaseModel):
+    window_days: int = 14
+    rows: list[ReportingLagRow] = []
+    events: int = 0
+    median_lag_hours: Optional[float] = None
+    silent_disciplines: list[str] = []
+
+
+class CaptureCoverageRow(BaseModel):
+    discipline: str
+    progress_events: int = 0
+    attendance_marked: bool = False
+    silent: bool = False
+
+
+class CaptureCoverageResponse(BaseModel):
+    date: date_t
+    rows: list[CaptureCoverageRow] = []
+    expected_disciplines: int = 0
+    reporting: int = 0
+    silent: list[str] = []

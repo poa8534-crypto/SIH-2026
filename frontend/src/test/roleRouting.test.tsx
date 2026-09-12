@@ -33,6 +33,13 @@ vi.mock('../lib/api', async () => {
       getFieldReports: vi.fn(),
       getFieldClarifications: vi.fn(),
       getFieldNotifications: vi.fn(),
+      getClarifications: vi.fn().mockResolvedValue([]),
+      // The field shell mounts ConnectivityProvider, which probes the link and
+      // reports it. Stubbed rather than omitted so this test covers the real
+      // shell rather than a shell with a hole in it.
+      sendHeartbeat: vi.fn().mockResolvedValue({}),
+      getCrews: vi.fn().mockResolvedValue([]),
+      getAssignments: vi.fn().mockResolvedValue([]),
       getMemory: vi.fn(),
       getExecutiveMetrics: vi.fn().mockResolvedValue({
         as_of: '2026-09-15',

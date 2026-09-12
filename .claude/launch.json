@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "navis-api",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": [
         "-m",
         "uvicorn",
@@ -22,13 +22,9 @@
         "--prefix",
         "frontend",
         "run",
-        "dev",
-        "--",
-        "--port",
-        "5199",
-        "--strictPort"
+        "dev"
       ],
-      "port": 5199
+      "autoPort": true
     }
   ]
 }

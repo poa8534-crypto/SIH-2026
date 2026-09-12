@@ -11222,3 +11222,371 @@ behaviour, terrible opening shot. Verified twice today.
 - `DEMO_VIDEO_SCRIPT_3DEVICE.md` (new)
 - `FLOW.md` — Current Modification Area
 - No source file changed.
+
+---
+
+## 2026-09-12 / D-117 — Manpower becomes a first-class subject: one crew model behind attendance, capacity and allocation
+
+### Status
+
+Active. Introduces `backend/server/workforce.py`, `backend/server/connectivity.py`,
+`backend/server/seed_workforce.py`, four tables, and thirteen routes. Superseded by
+nothing.
+
+### Context
+
+A judge reviewing the prototype asked for three systems NAVIS did not have: an
+attendance system, a bandwidth system, and human resource allocation — across all
+three roles.
+
+The request landed on a real hole rather than a cosmetic one, and two places in the
+existing codebase had already documented it in their own comments:
+
+- `server/productivity.py` computes three rates and divides every one of them by
+  **calendar days**, conceding in its docstring that the result "is a statement
+  about how often somebody wrote a report, not about the crew". The honest
+  denominator is man-days, and no man-days existed to divide by.
+- `server/delay_taxonomy.py` carries a `MANPOWER` category mapped to
+  `NON_COMPENSABLE` liability. A planner could classify a slip as a labour
+  shortage; nothing in the database could corroborate that one happened. The most
+  contractually consequential classification in the taxonomy was the least
+  evidenced one.
+
+The corpus was already carrying the evidence and NAVIS was discarding it.
+`dataset/dpr_day_11_messy.txt` says *"Labour kam tha aaj so went slow"* and
+*"Crane w/o came late from the depot, that cost us half a day"*. Every word of
+that reached the extractor and none of it reached a table.
+
+### Decision
+
+**One crew model, three systems, because they share one arithmetic.**
+
+`crews` · `attendance_records` · `resource_assignments` · `device_sessions`.
+
+    attendance   who actually turned up           → the denominator
+    capacity     how much more a gang could take  → the headroom
+    allocation   who is meant to be where         → the intention
+
+Split across three modules each would re-derive the other two badly, so
+attendance, capacity and allocation live together in `workforce.py`. Connectivity
+is genuinely a different subject and lives in `connectivity.py`.
+
+**"Bandwidth" is deliberately two quantities, not one score.**
+
+The word was ambiguous in the request and both readings turned out to be real:
+
+| reading | meaning | where |
+|---|---|---|
+| LINK bandwidth | kbps / RTT between a device and the server | `connectivity.py`, `GET /connectivity/link-health` |
+| CREW bandwidth | how much more work a gang could absorb | `workforce.crew_capacity`, `GET /workforce/capacity` |
+
+They are not blended. A dashboard averaging kbps with crew headroom would be
+meaningless, so they are two endpoints and two screens.
+
+**`attendance_records` is append-only, on the same rule as `audit_records`
+([D-004](#d-004)).** A muster is evidence — it is what a contractor is paid
+against and what a delay claim argues from. A correction writes a **new** row
+carrying `supersedes_id` and the corrected row is not touched, **not even by a
+flag**. "Which reading is current" is derived (`db.current_attendance`), never
+stored, so the table cannot reach a state where two rows both claim to be live and
+nothing can say which one lied.
+
+**Three states the register must keep apart**, and the reason `planned_strength`
+is snapshotted onto every row rather than joined from the crew:
+
+    planned 18, present 0   the gang was due and did not come     → a shortfall
+    planned 0,  present 0   nothing was due (rest day)            → not a shortfall
+    no row at all           nobody counted                        → neither
+
+Recording Sundays as the first shape made every contractor in the seeded corpus
+score ~71% and read as unreliable — an artefact of the site calendar, not a fact
+about the contractor. `AttendanceMarkRequest.rest_day` contracts nobody, and the
+day then drops out of every percentage and every reliability figure on its own,
+because `attendance_pct` is already `None` against a zero denominator. No special
+case exists anywhere downstream.
+
+Snapshotting the strength is what keeps history stable: re-sizing a crew in
+October must not silently rewrite September's shortfall.
+
+**A supervisor proposes manpower; only the Project Manager commits it.**
+[D-009](#d-009) applied to resources. The guarantee is structural rather than a
+role check: `POST /workforce/assignments` has **no way to express `committed`** —
+the request model has no status field — so a supervisor cannot commit even by
+smuggling one through the body. `POST /workforce/assignments/{id}/decide` is the
+only path that writes it, and it writes an `AuditRecord` with
+`field_changed='resource_assignment'`, additive to the audit feed and disturbing
+none of the date-write rows already there. A **withdrawn** proposal is kept and
+still listed, because "manpower was asked for and refused" is precisely the fact a
+delay claim turns on.
+
+**Assignment rationale is deterministic tokens, never prose** —
+[D-003](#d-003)'s rule applied to manpower. `discipline_match`,
+`reliability_unmeasured`, `trade:welder`. Every token is recomputable from the
+database a year later.
+
+**Nothing is invented where a number cannot be derived.**
+
+- Demand in man-days is `quantity ÷ quantity-per-man-day`, and that divisor comes
+  only from work that actually finished. An activity whose type has no norm
+  contributes **zero** to demand and is returned by name in
+  `demand_not_derivable`. The board can then say "demand excludes 14 activities
+  with no norm" instead of quietly under-reporting.
+- `crew_reliability` returns `None` below `MIN_MUSTERS_FOR_RELIABILITY` (5), and
+  callers must not read that as `1.0`. An unmeasured crew silently becoming a
+  perfectly reliable one would inflate every supply figure downstream of it, so
+  `crew_capacity` reports `basis: "nominal"` instead — and **one** unmeasured crew
+  makes its whole discipline's supply nominal, because the weaker claim must win.
+- `shortfall_evidence` answers `supports_manpower_cause` in **three** states:
+  `True`, `False`, and `None` for "no register was kept". The third is not a
+  weaker `True`: "the crews were there and it still slipped" and "nobody wrote
+  down whether the crews were there" are different findings that lead to opposite
+  decisions.
+- A muster naming several activities is charged in full to each, which overstates
+  the denominator and understates the rate. That is the honest direction to err
+  and the payload says so — `shared_musters`, and a note calling the rate a lower
+  bound.
+
+**Man-day productivity is deliberately NOT added to
+`GET /activity/{id}/productivity`.** The three rates there are available for every
+activity; this one only where a register was kept. Mixing an always-present rate
+with a sometimes-present one in a single payload invites a caller to read a
+missing man-day rate as zero productivity rather than as an unkept register. It is
+`GET /workforce/activity/{id}/man-day-rate`.
+
+**Connectivity records what the client declares, and does not second-guess it.**
+The `rich` / `lean` / `offline` ladder is declared by the device, because the
+device is the only party that knows what it actually did with the link. Inferring
+the mode from measured kbps server-side would be wrong for the commonest case: a
+supervisor who chose lean deliberately on a good link to save data. The server
+records the claim and timestamps it — and a device that has gone quiet reads as
+`offline` on the board whatever its last ping said, with `declared_mode` kept
+beside it.
+
+The ladder is about **capture, never correctness**. [D-005](#d-005) already makes
+the LLM optional and off by default, so dropping to lean removes an assist, not a
+guarantee. **Nothing in `connectivity.py` lowers a confidence score because the
+link was bad.**
+
+`reporting_lag` is computed from `LinkedEvent.reported_date` against `created_at`
+— both already stored — so it works retroactively over the entire existing corpus
+with no new instrumentation. It is reported **per discipline** because that is the
+unit that goes quiet: one supervisor losing signal silences one discipline, and a
+project-wide median would hide it completely.
+
+`capture_coverage` takes its denominator from disciplines that **have crews**, not
+from disciplines that happened to send something — otherwise a totally silent site
+scores 100% coverage, which is the exact failure the endpoint exists to catch.
+
+### Alternatives Considered
+
+**Model individual workers rather than crews.** Rejected. There is no user table,
+no authentication (`frontend/src/lib/role.ts` says why), and an append-only
+register that is never deleted is the last place personal data should be written
+permanently. A crew is also the unit a supervisor can actually count in 15 seconds
+at a work front. `foreman` is a free-text label on the gang, not an identity, and
+the seeded corpus leaves it null.
+
+**A stored `superseded` boolean on `attendance_records`.** Rejected. A stored flag
+can disagree with the `supersedes_id` chain, and when it does there is no way to
+tell which one is lying. Deriving it costs one pass over rows already fetched.
+
+**Blend link quality and crew capacity into one "bandwidth score".** Rejected —
+see above. Two real quantities in different units.
+
+**Infer `rich`/`lean`/`offline` from measured throughput.** Rejected. It guesses
+at a decision already taken on the device and gets the deliberate-lean case wrong.
+
+**Estimate a productivity norm from a neighbouring discipline when an activity
+type has none.** Rejected. It would make every demand figure on the allocation
+board partly fictional while looking identical to a derived one. Naming the
+exclusions keeps the board honest and is more useful: the list of activities NAVIS
+cannot yet size is itself a finding.
+
+**Add the man-day rate as a fourth entry in `productivity.rates`.** Rejected on
+the reasoning above, and it would also have changed the shape of a payload 1,055
+existing tests already pin.
+
+### Consequences
+
+- `productivity.py`'s central admission now has an answer beside it, though the
+  module itself is unchanged: `GET /workforce/activity/{id}/man-day-rate` supplies
+  the denominator its docstring wanted.
+- A `MANPOWER` delay classification can now be corroborated, refuted, or declared
+  unevidenced against the register.
+- `clear_progress` gained `AttendanceRecord`, `ResourceAssignment` and
+  `DeviceSession`. **`Crew` is deliberately excluded** — the roster is reference
+  data like the baseline schedule, and re-creating it on every reset would churn
+  rows a planner may be looking at. `reset_demo` re-seeds the register afterwards,
+  because a reset that refilled the schedule lane and left the manpower lane empty
+  would not be the known-clean state it promises.
+- The seeded register is synthetic, as the problem statement requires, but it is
+  **anchored to the corpus rather than random**: the 15 Aug holiday named in
+  `dpr_day_10`'s header, the 2 Sep rain named in `dpr_day_02`'s, and the 14 Sep
+  *"Labour kam tha aaj"* remark in `dpr_day_11_messy`. If the register were random,
+  `shortfall_evidence` would confirm and refute delay causes at random too and the
+  evidence chain would be theatre. Seeded from the constant `26122`, so it is
+  reproducible and a screenshot stays true.
+
+### Verification
+
+```
+python -m pytest backend/server/test_workforce.py -q      59 passed
+python -m pytest backend/server/test_connectivity.py -q   19 passed
+python -m pytest -q                                       full suite, no regressions
+```
+
+Seeded corpus after the rest-day correction — the numbers that show the model is
+discriminating rather than flat:
+
+| | |
+|---|---|
+| crews / musters / assignments | 8 · 368 · 6 |
+| overall attendance, 1–15 Sep | 82.3% |
+| 2026-09-02 (rain, per the DPR header) | 55.9%, all 49 absences `weather` |
+| 2026-09-14 (*"Labour kam tha aaj"*) | 44.1%, 62 absences `no_show` |
+| a Sunday | `attendance_pct: null`, 0 contracted |
+| contractor spread | 79.0% (unreliable) → 84.1% (reliable) |
+| crew reliability spread | 0.782 → 0.917 |
+
+Before the rest-day correction every contractor scored ~71% and all three read as
+unreliable. That was the calendar, not the contractors.
+
+### Affected Areas
+
+`backend/server/db.py` (4 models + 3 derivation helpers) ·
+`backend/server/workforce.py` (new) · `backend/server/connectivity.py` (new) ·
+`backend/server/seed_workforce.py` (new) · `backend/server/schemas.py` ·
+`backend/server/main.py` (13 routes) · `backend/server/demo.py` ·
+`backend/scripts/seed.py` · `backend/server/test_workforce.py` (new) ·
+`backend/server/test_connectivity.py` (new)
+
+---
+
+## 2026-09-12 / D-118 — The Field Supervisor gets one Crew tab, and the offline toggle becomes a real offline system
+
+### Status
+
+Active. Builds the field lane on top of [D-117](#2026-09-12--d-117--manpower-becomes-a-first-class-subject-one-crew-model-behind-attendance-capacity-and-allocation).
+
+### Context
+
+D-117 built the tables and the routes. This is the first of the three role
+surfaces, and the field lane is the one with the hardest constraints: a phone,
+one hand, gloves, sun, and a link that comes and goes between work fronts.
+
+Two things forced design decisions rather than layout decisions.
+
+**The bottom bar had four tabs and room for five.** Attendance, deployment and
+manpower requests are three tables. Given as three tabs they would have pushed
+the bar to seven and made a supervisor navigate to answer a question they are
+already standing in front of.
+
+**`FieldWorkspaceShell` carried `const [isOffline, setIsOffline] = useState(false)`
+and a button that toggled it.** It changed a word in the header and nothing
+else: the app behaved identically in both states, and a submission attempted
+with no link simply failed. The prototype claimed an offline story it did not
+have.
+
+### Decision
+
+**One `Crew` tab, three sections** — `pages/field/CrewScreen.tsx`, route
+`/field/crew`. Muster, "where your crews are working", and "ask for more
+people". They are one conversation at the work front: who turned up, what they
+are on, and whether it is enough.
+
+**The muster is built for fifteen seconds.** The present count is pre-filled
+with the crew's *contracted strength*, because a full turnout is the common
+case and the common case should be one tap. Steppers are 44px. Absence reasons
+are chips, revealed only once somebody is actually missing, never a dropdown.
+
+**Not marked renders differently from zero.** `today_present === null` is "not
+counted yet"; `0` is "nobody came". The card, the header count and the API type
+all keep them apart. Coercing the first into the second would tell a planner a
+crew failed to turn up when in fact nobody had counted.
+
+**Absences that the supervisor does not attribute are recorded as `other`,
+never dropped.** The headcount and the reason map have to reconcile, or the
+discipline rollup silently loses absences and the register stops adding up.
+
+**A correction is presented as one.** A crew already marked shows "Correct
+today's count" and the sentence "the first is never overwritten", and the
+submission carries `supersedes_id`. The supervisor is told the append-only
+behaviour rather than left to assume an edit.
+
+**Asking for manpower says, in the supervisor's own words, that it is a
+request** — "it does not book the crew and it does not change the schedule".
+[D-009](#d-009)'s rule is worth nothing if the person acting on it believes
+they have booked a crew: they will plan tomorrow around people who are not
+coming. The activity picker also offers only activities that are still open.
+
+**The fake offline toggle is replaced by a measured one** — `hooks/useConnectivity.tsx`,
+`lib/outbox.ts`, `components/LinkStatus.tsx`.
+
+- Round-trip time is **measured** (a timed `GET /health`). Throughput is
+  **not**: probing it honestly means pushing enough bytes to saturate the link,
+  which is precisely the wrong thing to do on the link this feature protects.
+  `navigator.connection.downlink` is used where the browser offers it and is
+  `null` otherwise. The panel labels each as "measured" or "browser estimate",
+  so an estimate can never read as a measurement.
+- The outbox queues **creates only** — a muster, a manpower request. Both are
+  append-only or proposal-shaped, so replaying one late can duplicate but can
+  never clobber. Nothing that edits or commits is ever queued: replaying a
+  `resolve` or a `decide` blind, days later, could overwrite a decision made in
+  between.
+- A network failure keeps the item and **stops** the flush — burning the whole
+  queue's retry budget against a link that is plainly down helps nobody. A 4xx
+  is a refusal, moves to `rejected`, and is shown to the supervisor. A poison
+  item never wedges the queue, and nothing is ever silently discarded.
+- Reality can veto a pinned mode **downward but never upward**. A supervisor
+  who pinned "voice + text" on a dead link is still offline, and pretending
+  otherwise would offer a voice capture that cannot be sent.
+
+**Degradation is about capture, never correctness.** Dropping to lean removes
+an assist, not a guarantee — [D-005](#d-005) already makes the LLM optional and
+off by default. The panel says so in as many words: "your update is complete
+either way — NAVIS never scores a typed report lower than a spoken one."
+Nothing in this lane lowers a confidence score because the link was bad.
+
+### Consequences and two defects found while building
+
+- **The heartbeat fired eight times on a single mount.** React StrictMode
+  double-invokes effects, HMR remounts, and each probe writes three pieces of
+  state. Chattering telemetry is a poor bug anywhere and an absurd one in the
+  feature whose purpose is to be careful with a metered link. Fixed with two
+  gates: a signature check that drops a heartbeat identical to the last, and a
+  10s floor that a *mode change* deliberately bypasses. Measured after the fix:
+  **2 heartbeats in 45s** against a 20s probe interval.
+- **A missing `api.sendHeartbeat` unmounted the entire field shell.** It throws
+  *synchronously*, and a synchronous throw inside an effect takes the tree
+  down — surfaced by a test whose `api` mock predated the method. Telemetry is
+  the least important thing on that screen and must never be able to remove it.
+  Now guarded by `?.` and a `try`/`catch`.
+- `.claude/launch.json` now points at `.venv/bin/python`. SETUP.md's documented
+  flow is "activate the venv, then `python -m uvicorn`"; a launcher cannot
+  activate anything, and a bare `python` is not on PATH. The frontend entry
+  gained `autoPort` so a stale registration cannot block a preview. The
+  documented developer path (`npm run dev`) does not read this file and is
+  unchanged.
+
+### Verification
+
+```
+cd frontend && npx tsc --noEmit    clean
+cd frontend && npx vitest run      275 passed (257 existing + 18 new)
+python -m pytest -q                1119 passed
+```
+
+Verified against the running application at `/field/crew` with the live API:
+the roster renders 8 seeded crews with real headcounts and reliability, the
+header pill reports a measured link, and the connection panel shows round trip
+5 ms (measured) beside throughput 10000 kbps (browser estimate).
+
+### Affected Areas
+
+`frontend/src/pages/field/CrewScreen.tsx` (new) ·
+`frontend/src/hooks/useConnectivity.tsx` (new) · `frontend/src/lib/outbox.ts` (new) ·
+`frontend/src/components/LinkStatus.tsx` (new) · `frontend/src/components/FieldNav.tsx` ·
+`frontend/src/pages/field/FieldWorkspaceShell.tsx` · `frontend/src/App.tsx` ·
+`frontend/src/lib/api.ts` · `frontend/src/types.ts` ·
+`frontend/src/test/fieldCrew.test.tsx` (new) · `frontend/src/test/roleRouting.test.tsx` ·
+`.claude/launch.json`

@@ -62,11 +62,14 @@ def clear_progress(db: Session) -> None:
     """
     from server.db import (
         Activity,
+        AttendanceRecord,
         AuditRecord,
         DelayEvent,
+        DeviceSession,
         Job,
         LinkedEvent,
         RaidItem,
+        ResourceAssignment,
         ReviewQueueItem,
     )
 
@@ -84,7 +87,15 @@ def clear_progress(db: Session) -> None:
     # row by id, so a surviving row would cite evidence the database no longer
     # holds. It is cleared before the records it points at, and comes back on
     # the next ingest.
-    for model in (DelayEvent, ReviewQueueItem, AuditRecord, LinkedEvent, Job, RaidItem):
+    # AttendanceRecord and ResourceAssignment are progress data, not reference
+    # data: a muster is a claim about a day that this reset is erasing, and an
+    # assignment cites an activity whose actuals are about to be cleared.
+    # Crew is deliberately NOT here — the roster is reference data like the
+    # baseline schedule, and re-creating it on every reset would churn rows a
+    # planner may be looking at. DeviceSession is liveness with no history
+    # worth keeping across a reset.
+    for model in (DelayEvent, ReviewQueueItem, AuditRecord, LinkedEvent, Job,
+                  RaidItem, AttendanceRecord, ResourceAssignment, DeviceSession):
         db.query(model).delete()
     db.query(Activity).update({
         Activity.actual_start: None,
@@ -166,6 +177,13 @@ def reset_demo(
             raise RuntimeError(
                 "No activities loaded — is dataset/baseline_schedule.json present?"
             )
+        # The muster register is progress data and `clear_progress` erased it,
+        # so a reset that stopped here would leave the manpower lane empty
+        # while the schedule lane refilled — the "known clean state" this
+        # promises has to include all three systems, not just the two the
+        # DPR files rebuild.
+        from server.seed_workforce import seed_all
+        seed_all(db)
 
     files = source_files(dpr_only)
     if not files:

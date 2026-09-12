@@ -37,6 +37,8 @@ import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
 import { FieldWorkspaceShell } from './pages/field/FieldWorkspaceShell';
+import CrewScreen from './pages/field/CrewScreen';
+import { ConnectivityProvider } from './hooks/useConnectivity';
 import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
 import Login from './pages/Login';
@@ -459,17 +461,20 @@ export default function App() {
     return (
       <SessionContext.Provider value={session}>
       <BrowserRouter>
+        <ConnectivityProvider role="field">
         <FieldWorkspaceShell>
           <Routes>
             <Route path="/field" element={<Field />} />
             <Route path="/field/report" element={<Navigate to="/field" replace />} />
             <Route path="/field/reports" element={<FieldReports />} />
+            <Route path="/field/crew" element={<CrewScreen />} />
             <Route path="/field/reports/ledger" element={<Navigate to="/field/reports" replace />} />
             <Route path="/field/clarifications" element={<FieldClarifications />} />
             <Route path="/field/profile" element={<FieldProfile />} />
             <Route path="*" element={<Navigate to="/field" replace />} />
           </Routes>
         </FieldWorkspaceShell>
+        </ConnectivityProvider>
       </BrowserRouter>
       </SessionContext.Provider>
     );

@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, MessageCircleQuestion, User } from 'lucide-react';
+import { Home, FileText, MessageCircleQuestion, User, Users } from 'lucide-react';
 import { api } from '../lib/api';
 
 /**
@@ -13,6 +13,10 @@ import { api } from '../lib/api';
 const TABS = [
   { to: '/field', label: 'Home', end: true, icon: Home },
   { to: '/field/reports', label: 'Updates', end: false, icon: FileText },
+  // Muster, deployment and manpower requests are one tab because they are one
+  // conversation at the work front — and because five tabs fit a 375px phone
+  // and seven do not. See pages/field/CrewScreen.tsx.
+  { to: '/field/crew', label: 'Crew', end: false, icon: Users },
   {
     to: '/field/clarifications',
     label: 'Questions',

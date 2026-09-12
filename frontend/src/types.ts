@@ -1133,3 +1133,313 @@ export interface ChatResponse {
   suggested_actions: ChatAction[];
 }
 
+
+// ── Workforce: attendance, capacity, allocation ────────────────────────────
+//
+// Three systems, one crew. `crew_id` is the join in all three. None of these
+// carries a person's name: there is no user table, no auth, and an
+// append-only muster register is the last place personal data should live.
+
+export interface Crew {
+  crew_id: string;
+  name: string;
+  discipline: string;
+  contractor: string;
+  trade: string | null;
+  planned_strength: number;
+  foreman: string | null;
+  shift: string;
+  active: boolean;
+  /**
+   * `null` means NOT MARKED YET, which is not the same as an attendance of
+   * zero. The roster renders those two differently and must never coerce the
+   * first into the second.
+   */
+  today_present: number | null;
+  today_absent: number | null;
+  today_record_id: string | null;
+  /** `null` below the minimum sample. Never read this as 1.0. */
+  reliability: number | null;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  crew_id: string;
+  crew_name: string;
+  discipline: string;
+  contractor: string;
+  attendance_date: string;
+  shift: string;
+  planned_strength: number;
+  present: number;
+  absent: number;
+  shortfall: number;
+  absence_reasons: Record<string, number>;
+  hours_worked: number | null;
+  man_days: number;
+  activity_ids: string[];
+  source: string;
+  source_file: string | null;
+  confidence: number | null;
+  reported_by: string | null;
+  supersedes_id: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface AttendanceRollupRow {
+  date?: string | null;
+  discipline?: string | null;
+  contractor?: string | null;
+  crews?: number | null;
+  musters: number;
+  planned_strength: number;
+  present: number;
+  absent: number;
+  shortfall: number;
+  /** `null` when nothing was contracted — a rest day, or an empty window. */
+  attendance_pct: number | null;
+  man_days: number;
+  absence_reasons: Record<string, number>;
+  sample_sufficient?: boolean | null;
+  /** `null` = not measured. Not the same as `false` = measured and poor. */
+  reliable?: boolean | null;
+}
+
+export interface AttendanceConflictRow {
+  crew_id: string;
+  crew_name: string;
+  attendance_date: string;
+  shift: string;
+  records: AttendanceRecord[];
+}
+
+export interface AttendanceSummary {
+  window: { from: string; to: string };
+  daily: AttendanceRollupRow[];
+  by_discipline: AttendanceRollupRow[];
+  by_contractor: AttendanceRollupRow[];
+  totals: AttendanceRollupRow;
+  conflicts: AttendanceConflictRow[];
+}
+
+export interface AttendanceMarkBody {
+  crew_id: string;
+  attendance_date?: string;
+  shift?: string;
+  present: number;
+  absence_reasons?: Record<string, number>;
+  hours_worked?: number | null;
+  activity_ids?: string[];
+  note?: string | null;
+  supersedes_id?: string | null;
+  source?: string;
+  reported_by?: string | null;
+  rest_day?: boolean;
+}
+
+export interface ManDayRate {
+  activity_id: string;
+  /** `null` with a populated `reason` — say why, never render a blank. */
+  rate: number | null;
+  uom: string;
+  quantity?: number | null;
+  man_days: number;
+  musters: number;
+  crews: string[];
+  shared_musters?: number | null;
+  reason: string | null;
+  note: string;
+}
+
+export interface ShortfallEvidence {
+  activity_id: string;
+  window: { from: string; to: string };
+  musters: number;
+  planned_strength: number;
+  present: number;
+  absent: number;
+  shortfall: number;
+  attendance_pct: number | null;
+  man_days: number;
+  absence_reasons: Record<string, number>;
+  short_days: string[];
+  /** Three-state. `null` = no register was kept, which is not a weaker `true`. */
+  supports_manpower_cause: boolean | null;
+  reason: string;
+  note: string;
+}
+
+export type AssignmentStatus = 'proposed' | 'committed' | 'withdrawn';
+
+export interface ResourceAssignment {
+  id: string;
+  crew_id: string;
+  crew_name: string;
+  discipline: string;
+  contractor: string;
+  activity_id: string;
+  activity_description: string;
+  from_date: string;
+  to_date: string;
+  days: number;
+  allocated_strength: number;
+  man_days: number;
+  status: AssignmentStatus;
+  /** Deterministic feature tokens, never model prose. */
+  rationale: string[];
+  requested_by: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface CrewCapacity {
+  crew_id: string;
+  name: string;
+  discipline: string;
+  contractor: string;
+  planned_strength: number;
+  days: number;
+  reliability: number | null;
+  /** `nominal` = strength × days unadjusted, because reliability is unmeasured. */
+  basis: 'nominal' | 'reliability_adjusted';
+  nominal_man_days: number;
+  supply_man_days: number;
+  committed_man_days: number;
+  headroom_man_days: number;
+  utilisation_pct: number | null;
+  overcommitted: boolean;
+}
+
+export interface AllocationBoardRow {
+  discipline: string;
+  crews: number;
+  demand_man_days: number;
+  supply_man_days: number;
+  committed_man_days: number;
+  headroom_man_days: number;
+  gap_man_days: number;
+  utilisation_pct: number | null;
+  supply_basis: 'nominal' | 'reliability_adjusted';
+}
+
+export interface AllocationWeek {
+  week_start: string;
+  week_end: string;
+  rows: AllocationBoardRow[];
+  total_demand: number;
+  total_supply: number;
+  total_committed: number;
+}
+
+export interface AllocationBoard {
+  week_start: string;
+  weeks: number;
+  norms: Record<string, { qty_per_man_day: number; sample: number; uom: string }>;
+  weeks_detail: AllocationWeek[];
+  /** Activities excluded from demand because their type has no norm. */
+  demand_not_derivable: Array<{
+    activity_id: string;
+    discipline: string;
+    description: string;
+    planned_qty_in_week: number;
+    uom: string;
+    reason: string;
+  }>;
+  double_bookings: Array<{
+    crew_id: string;
+    assignment_ids: string[];
+    activity_ids: string[];
+    overlap_from: string;
+    overlap_to: string;
+    overlap_days: number;
+    strength: number[];
+  }>;
+}
+
+// ── Connectivity: the LINK reading of bandwidth ────────────────────────────
+
+export type LinkMode = 'rich' | 'lean' | 'offline';
+export type LinkBand = 'good' | 'weak' | 'poor' | 'unknown';
+
+export interface DeviceView {
+  device_id: string;
+  role: string;
+  label: string | null;
+  first_seen: string | null;
+  last_seen: string | null;
+  seconds_since_seen: number;
+  online: boolean;
+  /** What is TRUE now — a quiet device reads offline whatever it claimed. */
+  mode: LinkMode;
+  /** What the device last SAID. */
+  declared_mode: LinkMode;
+  measured_kbps: number | null;
+  rtt_ms: number | null;
+  band: LinkBand;
+  queue_depth: number;
+  queue_bytes: number;
+  samples: Array<{
+    at: string;
+    kbps: number | null;
+    rtt_ms: number | null;
+    mode: LinkMode;
+    band: LinkBand;
+    queue_depth: number;
+  }>;
+}
+
+export interface LinkHealth {
+  devices: DeviceView[];
+  total: number;
+  online: number;
+  offline: number;
+  queued_submissions: number;
+  queued_bytes: number;
+  /** `null` when nothing is online — neither an outage nor perfect health. */
+  worst_band: LinkBand | null;
+}
+
+export interface ReportingLagRow {
+  discipline: string;
+  events: number;
+  median_lag_hours: number | null;
+  max_lag_hours: number | null;
+  last_reported_on: string | null;
+  days_since_last_report: number | null;
+}
+
+export interface ReportingLag {
+  window_days: number;
+  rows: ReportingLagRow[];
+  events: number;
+  median_lag_hours: number | null;
+  silent_disciplines: string[];
+}
+
+export interface CaptureCoverage {
+  date: string;
+  rows: Array<{
+    discipline: string;
+    progress_events: number;
+    attendance_marked: boolean;
+    /** No progress AND no muster: a capture question, not a work question. */
+    silent: boolean;
+  }>;
+  expected_disciplines: number;
+  reporting: number;
+  silent: string[];
+}
+
+export interface HeartbeatBody {
+  device_id: string;
+  role: string;
+  mode: LinkMode;
+  measured_kbps?: number | null;
+  rtt_ms?: number | null;
+  queue_depth?: number;
+  queue_bytes?: number;
+  label?: string | null;
+}
