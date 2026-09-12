@@ -1292,7 +1292,8 @@ python backend/eval.py | head -20             expect the line:
 ## Current Modification Area
 
 **Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built ALL THREE role surfaces on top of it.
-**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field), D-119 (planner), D-120 (executive)
+**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field), D-119 (planner), D-120 (executive),
+D-121 (coverage fix), D-122 (demo scripts + test-suite reliability)
 
 ```
 THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
@@ -1563,6 +1564,36 @@ THE EXECUTIVE LANE                                            (D-120)
     no muster control, no commit button, no review queue, no crew roster.
     Asserted in test/executiveWorkforce.test.tsx rather than left to
     convention: it is the role's definition and the easiest thing to erode.
+```
+
+```
+FOLLOW-UP PASSES                                        (D-121, D-122)
+
+  D-121  connectivity.capture_coverage / reporting_lag
+      `unmatched` is the bucket for events whose activity_id is not in the
+      schedule. It was being counted as a discipline, so the endpoint
+      answered "7 of 6 disciplines reporting" and named a non-existent team
+      as having gone quiet.
+        rows[].in_scope   true only where the discipline has crews
+        reporting         counted inside the in-scope set, so it can never
+                          exceed expected_disciplines
+        silent            can never be true for an out-of-scope bucket —
+                          something that only exists on arrival cannot have
+                          failed to arrive
+        out_of_scope[]    names what was excluded, so it is visible
+      reporting_lag keeps the `unmatched` ROW but drops it from
+      silent_disciplines.
+
+  D-122  no execution path changed. Demo documentation, plus:
+      frontend/src/test/delay.test.tsx now stubs api.getShortfallEvidence.
+        <ManpowerEvidence> (added to Delay.tsx by D-119) was reaching for a
+        real server on every render of that file. No assertion was wrong —
+        the component renders null on failure — but the in-flight request
+        made the file non-hermetic.
+      frontend/vitest.config.ts testTimeout/hookTimeout 5s -> 20s.
+        Mitigation only. The cure is `--no-file-parallelism`: 302/302 green
+        on the machine where four parallel runs each failed a different test
+        at load average ~16. Parallelism stays on by default (12s vs 154s).
 ```
 
 ### Database changes

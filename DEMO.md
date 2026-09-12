@@ -229,6 +229,17 @@ message pointing at the script, so it cannot fire by accident.
 | audit records | 275 | append-only |
 | conflict-flagged audit rows | 68 | row counter |
 | conflicts shown on Home | **18** rows across **17** activities | `GET /schedule/conflicts`, deduplicated: 17 on `actual_start`, 1 on `actual_finish` |
+| crews on the register | **8** | 6 disciplines, 3 contractors — reference data, a reset does **not** recreate them |
+| musters seeded | **368** | 1 Aug – 15 Sep, synthetic but anchored to the DPR corpus |
+| assignments seeded | **6** | 4 committed, 1 proposed, 1 withdrawn — all three states on purpose |
+| attendance, 14-day window | **86.1%** | 1,147 man-days, 185 short, 112 musters |
+| attendance, 30-day window | **85.0%** | 2,453 of 2,886 heads — the executive figure |
+| activities with no man-day norm | **23** | excluded from allocation demand, by name |
+
+The workforce rows were verified 2026-09-12 against the live API. **`Crew` is
+deliberately not cleared by a reset** — the roster is reference data like the
+baseline schedule — while musters and assignments are progress data, cleared and
+re-seeded. So a reset restores the 368/6 state but will not duplicate the crews.
 
 Verified 2026-09-03 by `backend\scripts\demo_reset.ps1` followed by direct counts
 against `dataset/epc_progress.db` and `GET /schedule/conflicts`. If those
@@ -450,6 +461,80 @@ An issue carries no probability and no impact score, and the server refuses
 them rather than dropping them quietly — only a risk is scored, because
 scoring something that has already happened is a category error.
 
+### 4b. Workforce — the muster register and the allocation board
+
+`/workforce`. Two tabs, and they answer two different questions: **Register** is
+what happened, **Allocation** is what is meant to happen.
+
+**Register**, on the 14-day default window: attendance **86.1%**, **1,147**
+man-days fielded, **185** heads short, **0** contested readings, over **112**
+musters. Three tables underneath — by discipline, by contractor, and a day-by-day
+curve with contracted strength in outline and present heads filled.
+
+Three things on this screen are worth naming out loud, because each is a refusal
+rather than a feature:
+
+- **A rest day is drawn as a gap**, not a zero-height bar. Sunday is a
+  non-working day on the 6-day site calendar; it carries no attendance
+  percentage at all. Recording Sundays as total no-shows is exactly what made an
+  earlier build score every contractor at ~71% and read all three as unreliable —
+  that was the calendar, not the contractors.
+- **A contractor with fewer than five musters reads *Not measured***, never
+  *Under strength*. Two data points cannot convict anybody.
+- **Contested readings** counts crew-days where two sources gave different
+  headcounts and neither superseded the other. NAVIS shows the disagreement
+  rather than picking one — the same rule the source-conflict panel on Home
+  follows. It is **0** on a clean seed; if you want to demonstrate it, mark the
+  same crew twice from the field lane with different numbers.
+
+**Allocation.** The waiting decision is deliberately above four weeks of
+arithmetic, because a PM should not scroll past a table to find the thing asking
+for them. One open request from the field: **Civil Gang 2 → CIV-SIT-1002**, six
+people asked for, with the deterministic rationale chips `discipline_match`,
+`trade:steel_fixer`, `activity_not_started`, `reliability_measured` — feature
+names, never model prose, same rule as the matcher's rationale (D-003).
+
+**Change the 6 to a 4 and press Commit.** That is the demo beat: a supervisor
+asks for six, you have four to spare, and the audit row keeps both —
+`resource_assignment · proposed:6 → committed:4 · planner_review`. Show it on
+Home's recent-changes feed or via `GET /audit/recent` if a judge asks.
+
+Below it, the honesty disclosure: **"Demand excludes 23 activities with no
+productivity norm."** Open it. Demand in man-days is planned quantity over a
+quantity-per-man-day norm, and that norm can only come from work that actually
+finished with a muster against it. Twenty-three activities have no such norm, so
+they contribute **zero** and are listed **by name** rather than estimated from a
+neighbouring discipline and made to look complete.
+
+### 4c. Capture Health — the screen that audits our own claim
+
+`/capture-health`. Say the framing before the numbers: *our central claim is that
+progress reaches the schedule in near real time. This is the screen that checks
+the claim rather than assuming it.*
+
+The reading that matters is the separation. Today it shows **6 of 6 disciplines
+reporting** — every discipline produced a muster — while the lag table below shows
+progress last arrived **days** ago for all six. Both are true and they are
+different questions:
+
+| | |
+|---|---|
+| **Crews counted, no progress filed** | a **work** question — chase the contractor |
+| **Nothing arrived at all** | a **capture** question — chase the connectivity |
+| **Events that matched no activity** | a **linking** question — not a discipline, not anyone's fault |
+
+That third row is `unmatched`, and it is labelled *no crews on the books*. It is
+shown but never counted in the coverage fraction, because a bucket that only
+exists when data arrives cannot have failed to send data.
+
+Median capture lag reads **249.1 h** over 131 events. **Say that it is high and
+say why**: the seeded corpus is historical, the DPRs are dated August and early
+September. A governance screen that hid that would be the exact failure it exists
+to prevent. If you would rather demo a live-looking figure, re-date the DPR corpus
+before the run — do not change the metric.
+
+---
+
 ### 5. Memory — the half nobody else builds
 
 Four sections, all computed from captured execution data, with the standing
@@ -493,8 +578,11 @@ taxonomy. `ARCHITECTURE.md` §7 has the full account.
 
 ## Senior Management lane — sign out, sign in as **Senior Management**
 
-Sidebar reads *Senior Management* under the project name. Three destinations:
-**Overview**, **Exposure**, **Data**.
+Sidebar reads *Senior Management* under the project name. Nine workspaces:
+**Overview**, **Milestones**, **Progress**, **Risks & Delays**, **Forecasts**,
+**Workforce**, **Execution Insights**, **Reports**, **Data Confidence**. The
+three this runbook walks are Overview, Exposure and Data, plus **Workforce**
+(step 8a) — the rest are a ten-second sweep.
 
 **Make the absence the argument.** This role has **no review queue**, and that
 is deliberate, not unfinished: an executive who can approve an update bypasses
@@ -583,13 +671,64 @@ cfihos_v2 15, …), and OCR coverage — **73 pages read, 4,315 lines extracted,
 
 ---
 
+### 8a. Workforce & Utilisation — manpower at governance altitude
+
+`/executive/workforce`. **85.0%** of contracted manpower actually fielded over
+30 days — **2,453 of 2,886** heads — **433** man-days short. Contractor league
+table underneath, spreading **82.6% → 86.7%**.
+
+**The absence is again the argument.** There is no muster control on this page,
+no commit button, no queue. An executive who can commit a crew has bypassed the
+planner who owns the plan, exactly as one who can approve a date has. Say it
+once and move on.
+
+Two refusals to name, because a judge who is looking for weaknesses will find
+these and it is much better if you found them first:
+
+- **The weakest contractor tile only names a *measured* one.** A contractor
+  with two musters may sort worse than everybody, and naming them would be a
+  governance accusation built on two data points. Thin samples read *Not
+  measured* in the table and are ineligible for the headline.
+- **Uncommitted capacity is not called waste**, and the page says so in as many
+  words. It is capacity a planner has not allocated — a planning decision — and
+  it becomes waste only when there is unmet demand in the same week. Calling it
+  idleness would have a director on the phone to a contractor about their own
+  planner's decision.
+
+If asked whether the attendance data is real, answer directly: *it is synthetic,
+because the problem statement says live project data will not be shared — but it
+is anchored to the corpus rather than random. The 15th of August is the holiday
+named in that day's report header, the 2nd of September is the rain in that
+header, and the 14th is the line "Labour kam tha aaj so went slow" in the messy
+DPR. If the register were random, the delay evidence on the planner's screen
+would confirm and refute causes at random too, and the whole chain would be
+theatre.*
+
+### 8b. Reporting timeliness — on Data Confidence, where it belongs
+
+Still on `/executive/confidence`, scroll to **Reporting timeliness**. Median
+capture lag **249.1 h** across **131** linked events, **7** disciplines flagged
+as having filed nothing for three days or more, and how many devices are
+currently reaching the server.
+
+It sits on this page rather than its own because every forecast, every EVM
+figure and every delay ruling in this lane rests on actuals arriving — and how
+late they arrived was the one question a Data Confidence workspace could not
+previously answer.
+
+Same honesty as everywhere else on this page: **249.1 h is high, and the reason
+is that the seeded corpus is historical.** Say it before a judge asks.
+
+---
+
 ## Field lane — sign out, sign in as **Field Supervisor**
 
 The field surface is a phone UI. On a desktop it is capped at a phone width and
 centred, so the same markup reads correctly on a handset and on a projector.
 Header shows the project and **Field Supervisor**; the location chip reads
 *Sector A · Digboi Well #4*; language chips offer EN / हि / অস. Bottom nav:
-Home, Reports, Clarifications, Profile.
+Home, Updates, **Crew**, Questions, Settings. The header's signal pill is a
+measured link state, not a manual toggle — see step 9c.
 
 **This is a role choice now, not `?view=field`.** See the routing section above.
 
@@ -649,6 +788,86 @@ screen. The three-turn script above was driven entirely by typing.
 
 ---
 
+### 9a. Crew — the muster, in fifteen seconds
+
+Tap **Crew** in the bottom nav. Eight crews, each showing contracted strength,
+trade and discipline, with the ones already marked badged **Marked**.
+
+The whole design constraint is worth saying: *this happens at the work front,
+one-handed, in the sun, with gloves on.* So the present count opens pre-filled at
+**full contracted strength** — a full turnout is the normal case and the normal
+case should be one tap. Steppers are 44px. Absence reasons only appear once
+somebody is actually missing.
+
+**Do this on camera:** drop Civil Gang 1 by two, expand **2 missing · 2
+unexplained**, tap **No show** twice, press **Correct today's count**.
+
+Two sentences on that screen are the point, not decoration:
+
+- *"Already marked at 16 present. Saving again keeps both readings — the first is
+  never overwritten."* A muster is what a contractor is paid against and what a
+  delay claim argues from, so a correction appends a new row and the original is
+  never touched — not even by a flag. Same rule as `audit_records` (D-004).
+- The **rest day** checkbox: *"Keeps today out of the crew's attendance record
+  instead of counting it as a no-show."* Nothing contracted is not the same as
+  nobody came.
+
+Anything the supervisor does not attribute to a reason is recorded as `other`
+rather than dropped, so the headcount and the reasons always reconcile.
+
+### 9b. Asking for people — and the sentence that makes it honest
+
+Scroll to **Ask for more people**. Pick a crew, an activity — only *open*
+activities are offered — a count, and a reason.
+
+Read the amber notice aloud, because it is the whole governance argument in the
+supervisor's own words:
+
+> *"This sends a **request**. It does not book the crew and it does not change the
+> schedule — your planner decides, and you will see the answer under 'Where your
+> crews are working'."*
+
+D-009's rule is worth nothing if the person acting on it believes they have booked
+a crew: they will plan tomorrow around people who are not coming. And it is
+structural, not a role check — the create endpoint has **no way to express
+`committed`**, so a supervisor cannot commit even by trying.
+
+Above it, **Where your crews are working** shows all three states, including the
+declined one with its reason. A refused request is kept and shown on purpose:
+*"manpower was asked for and refused"* is precisely the fact a delay claim turns
+on.
+
+### 9c. The connection — and the offline beat
+
+Tap the **signal pill** in the header. It is not a decoration and it is not a
+manual toggle: it reports a **measured** round-trip time against `/health`, the
+browser's **reported** throughput estimate where the browser offers one (Chromium
+does, Safari and Firefox do not), and the real depth of the outbox.
+
+Each figure is labelled *measured* or *browser estimate*. Say why: honestly
+probing throughput means pushing enough bytes to saturate the very link this
+feature exists to protect, so NAVIS refuses to and says which number is which.
+
+**The offline beat, if you can rehearse it.** Turn Wi-Fi off, mark a muster, and
+watch the pill flip to **Offline**, the button read **Will send when online**, and
+the panel count what is waiting. Turn Wi-Fi back on — it flushes on its own.
+
+Three things to have ready if asked:
+
+- **Only creates are queued.** A muster and a manpower request, both append-only
+  or proposal-shaped, so replaying one late can duplicate but can never clobber.
+  A planner's `resolve` or `decide` is **never** queued — replaying one blind days
+  later could overwrite a decision taken in between.
+- **A refusal is surfaced, not retried forever.** A network failure keeps the item
+  and stops the flush; a 4xx moves to *refused* and is shown to the supervisor. A
+  poison item never wedges the queue and nothing is silently discarded.
+- **Degrading is about capture, never correctness.** The panel says it: *"your
+  update is complete either way — NAVIS never scores a typed report lower than a
+  spoken one."* The LLM is optional and off by default anyway (D-005), so dropping
+  to text removes an assist, not a guarantee.
+
+---
+
 ## The numbers you may say out loud
 
 Full definitions and provenance: `METRICS.md`, which is the single source of
@@ -663,6 +882,12 @@ here may be quoted without the phrase in its "say it like this" column.
 | **135 review items** | "what this demo run produced — 118 low-confidence, 17 withheld finishes" |
 | **18 source conflicts** | "18 disagreements across 17 activities, spreadsheet against daily report" |
 | **27 activities** | the authentic WSDOT schedule. Never inflate it |
+| **85.0% manpower fielded** | "synthetic register, anchored to the DPR corpus — 2,453 of 2,886 contracted heads over 30 days" |
+| **433 man-days short** | "over the same 30 days, across 8 crews" |
+| **82.6% weakest contractor** | "the weakest contractor we are *willing to name* — thin samples read 'not measured'" |
+| **23 activities with no norm** | "excluded from allocation demand by name, never estimated" |
+| **249.1 h median capture lag** | "on this seeded corpus, **which is historical** — always say the second half" |
+| **1,426 automated tests** | "1,124 pytest and 302 vitest, both green on 2026-09-12" |
 
 ### v1 — what the running server actually does (`python backend/eval.py`)
 

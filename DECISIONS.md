@@ -11853,3 +11853,98 @@ Live, after the fix: `6 of 6 disciplines reporting`, `silent: []`,
 `backend/server/connectivity.py` · `backend/server/schemas.py` ·
 `backend/server/test_connectivity.py` · `frontend/src/types.ts` ·
 `frontend/src/pages/CaptureHealth.tsx` · `frontend/src/test/workforcePlanner.test.tsx`
+
+---
+
+## 2026-09-12 / D-122 — The demo scripts learn the manpower layer, and the frontend suite stops being mistaken for broken
+
+### Status
+
+Active. Documentation for D-117 – D-121, plus one test-infrastructure change.
+
+### Context
+
+D-117 – D-121 shipped three systems across three roles. **None of the four demo
+documents mentioned any of it.** The feature a judge asked for was, on the day,
+absent from the script anyone would have filmed — which is a worse failure than
+not building it, because it looks like it does not exist.
+
+### Decision — the scripts
+
+**`DEMO_VIDEO_SCRIPT.md`** (the master, D-115) gains two chapters and is re-timed
+end to end, 9:00 → 10:55:
+
+- **Chapter 2A · The muster, and what happens when the signal goes** (1:35–2:15).
+  Placed early on purpose: Chapters 7A and 9 both call back to it, and neither
+  lands if the audience has not watched the number being created.
+- **Chapter 7A · Manpower — the evidence under a delay, and who is committed
+  where** (7:20–8:20). Argued as *the single most defensible minute in the
+  video*, because it is the only place NAVIS contradicts the operator: the
+  register refuses to support a MANPOWER cause the planner may want.
+
+Every downstream chapter timing was rewritten rather than left to drift, the
+feature map now reads 5 field tabs / 9 PM screens / 9 SM screens, and a new
+**6:15 [CORE + MANPOWER]** cut is defined for a brief that mentions resourcing.
+
+**`DEMO.md`** (the runbook) gains steps **4b** Workforce, **4c** Capture Health,
+**8a** executive Workforce, **8b** reporting timeliness, and **9a/9b/9c** for the
+field muster, the manpower request and the offline beat. The known-good reset
+table gains six workforce rows, and the "numbers you may say out loud" table
+gains seven.
+
+**`DEMO_VIDEO_SCRIPT_3DEVICE.md`** gains beats 1.4, 2.4 and 3.2b, one per act,
+with act durations re-timed. It also gains the rehearsal trap: **committing the
+seeded proposal in beat 2.4 empties the "Waiting on you" list**, so a second take
+has nothing to click. The `curl` that puts it back is in the file.
+
+**`demo_script.md`** stays retracted, but two rows of its retraction table were
+themselves out of date and are annotated rather than rewritten — a retraction is
+only useful while it is accurate. "No offline queue" is no longer true (D-118
+built one); "no service worker, no IndexedDB" still is, so it is still not a PWA.
+
+**Every figure was verified against the live API before it was written down** —
+14 of 14, including the 94.0%/24-muster quote in the narration, which is
+`CIV-DWG-1015` and is now named in the script so a presenter who lands on a
+different delay reads the panel instead of the script.
+
+### Decision — the test suite
+
+Four consecutive full `vitest run`s failed **1, 7, 4 and 2 different tests**,
+every one a timeout, while each failing file passed in isolation. The machine
+was at **load average 15.97** with 23 node/python processes — which is also
+exactly what a demo laptop looks like with a recorder, the API, Vite and a
+browser running.
+
+Two changes, and the distinction between them matters:
+
+- **`testTimeout`/`hookTimeout` 5s → 20s.** A mitigation. It weakens nothing —
+  a passing test still passes at the same speed, a broken one still fails; only
+  the point at which a slow machine is mistaken for a broken one moves.
+- **`--no-file-parallelism` is documented as the reliable mode**, in the config
+  and in `CLAUDE.md`. This is the actual cure: **302/302 green** on the same
+  loaded machine that had just failed four parallel runs. Vitest spreads files
+  across all cores, and on a saturated box the workers contend rather than
+  parallelise. Parallelism stays ON by default — 12s against 154s is the right
+  trade for a dev loop — but before a demo, use the flag.
+
+**One genuine defect of mine was hiding inside the noise.** `delay.test.tsx` did
+not stub `getShortfallEvidence`, so every render of the adjudication panel
+reached for a real server. The component correctly renders nothing on failure,
+so no assertion was wrong — but the in-flight request made that whole file
+non-hermetic and intermittently slow. Now stubbed; the evidence panel keeps its
+own coverage in `workforcePlanner.test.tsx`.
+
+### Verification
+
+```
+cd frontend && npx vitest run --no-file-parallelism   302 passed, 27 files
+cd frontend && npx tsc --noEmit                       clean
+python -m pytest -q                                   1124 passed
+Demo figures re-verified against the live API         14 of 14 match
+```
+
+### Affected Areas
+
+`DEMO_VIDEO_SCRIPT.md` · `DEMO.md` · `DEMO_VIDEO_SCRIPT_3DEVICE.md` ·
+`demo_script.md` · `frontend/vitest.config.ts` ·
+`frontend/src/test/delay.test.tsx` · `CLAUDE.md`

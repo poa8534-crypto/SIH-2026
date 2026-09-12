@@ -144,6 +144,29 @@ const MATRIX: DelayAttribution = {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(api, 'getDelayAttribution').mockResolvedValue(MATRIX);
+  // The adjudication panel now renders <ManpowerEvidence>, which asks the
+  // muster register whether it supports a MANPOWER cause (D-119). Unmocked it
+  // reaches for a real server, and although the component correctly renders
+  // nothing on failure, the in-flight request made this whole file
+  // non-hermetic and intermittently slow. Stub it so these tests are about
+  // the delay screen and nothing else; the evidence panel has its own
+  // coverage in workforcePlanner.test.tsx.
+  vi.spyOn(api, 'getShortfallEvidence').mockResolvedValue({
+    activity_id: 'CIV-DWG-1015',
+    window: { from: '2026-08-01', to: '2026-08-14' },
+    musters: 24,
+    planned_strength: 300,
+    present: 282,
+    absent: 18,
+    shortfall: 18,
+    attendance_pct: 94.0,
+    man_days: 282,
+    absence_reasons: {},
+    short_days: [],
+    supports_manpower_cause: false,
+    reason: 'strength_fielded',
+    note: 'Crews fielded 94.0% of contracted strength across 24 musters.',
+  } as never);
 });
 
 /** Wait for the matrix to load and the first delay to auto-select. */

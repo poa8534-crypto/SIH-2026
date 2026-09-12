@@ -173,14 +173,16 @@ the coverage checklist when you review the recording.
 read-only grounded assistant (role-aware, cites sources) · light/dark · EN / हिन्दी /
 অসমীয়া · append-only audit trail · runs on-premise, LLM off by default.
 
-**Field Supervisor (4 tabs + Report Studio)** — free-text and voice capture, photo and
+**Field Supervisor (5 tabs + Report Studio)** — free-text and voice capture, photo and
 document attach, quick presets · slot-filling agent that asks only for what's missing ·
 3-step Capture → Review → Submit with a confidence-scored extraction card · submission
 routing and baseline-protection notice · Updates history with status filters and report
-references · Questions (clarifications from Planning) · Settings: theme, language, read-only
-assignment.
+references · **Crew: 15-second muster with absence reasons and rest days, crew deployment,
+and manpower requests that are proposals, never bookings** · Questions (clarifications from
+Planning) · Settings: theme, language, read-only assignment · **measured link quality with a
+Rich / Lean / Offline ladder and an outbox that queues a muster when the signal goes.**
 
-**Project Manager (7 screens)** — Overview (planned vs verified progress, at-risk,
+**Project Manager (9 screens)** — Overview (planned vs verified progress, at-risk,
 needs-attention, recent changes, source conflicts, discipline work packages) · Review &
 Reconcile (worst-first queue, filters, extraction, why-not-auto-linked, three ranked
 candidates with signals, schedule-write preview with float/CPM consequence, Confirm / Mark
@@ -189,11 +191,17 @@ Doctor feasibility audit, Activity Inspection Panel with quantity ledger, produc
 forecast and audit trail, PMXML/XER export) · Field Data (report ingest with a live pipeline
 trace and duplicate guard, **plus Primavera P6 baseline import**) · Risk & Exposure (RAID
 proposals → accept into register) · Delay Analysis (attribution, concurrent-delay overlap,
-FIDIC notice windows, adjudication with mandatory justification) · Project Knowledge
-(historical benchmarks, 7 domain rules, tender estimator).
+FIDIC notice windows, adjudication with mandatory justification, **and attendance evidence
+that corroborates, refutes or declines to judge a MANPOWER cause**) · **Workforce (muster
+register with source-disagreement detection, contractor reliability, and an allocation board
+of demand against supply — the only place manpower is committed)** · **Capture Health (device
+reachability, per-discipline reporting lag, and the "no work" versus "no signal"
+separation)** · Project Knowledge (historical benchmarks, 7 domain rules, tender estimator).
 
-**Senior Management (8 screens)** — Overview · Milestones · Progress · Risks & Delays ·
-Forecasts · Execution Insights · Reports · Data Confidence.
+**Senior Management (9 screens)** — Overview · Milestones · Progress · Risks & Delays ·
+Forecasts · **Workforce & Utilisation** · Execution Insights · Reports · Data Confidence
+(**now including reporting timeliness: median capture lag and the disciplines whose
+forecasts are running on stale data**). Strictly read-only — no muster, no commit, no queue.
 
 ---
 
@@ -280,7 +288,52 @@ and the **BASELINE PROTECTION** note.
 
 ---
 
-### Chapter 3 · Field history and the return channel — 1:35–1:55
+### Chapter 2A · The muster, and what happens when the signal goes — 1:35–2:15
+
+**Screen:** **Field Supervisor** → **Crew** tab.
+
+This is the chapter that answers *"where does the denominator come from?"*, and it is worth
+the forty seconds because two later chapters depend on it: 7A cannot corroborate a labour
+shortage without it, and Chapter 9's contractor ranking is built on it.
+
+**Do:**
+1. Tap **Crew**. Hold on the roster for a beat — eight crews, each showing contracted
+   strength and the count already marked.
+2. On **Civil Gang 1**, tap the **−** stepper twice, expand **missing**, tap **No show**
+   twice, and press **Correct today's count**.
+3. Tap the **signal pill** in the header. Hold on the panel.
+
+**Say:**
+
+> "Progress is only half of what a supervisor knows. The other half is who actually turned
+> up — and that is the number nothing in the industry captures in a form a schedule can use.
+>
+> Eight crews, contracted strength on each. It opens pre-filled at full strength, because a
+> full turnout is the normal case and this has to take fifteen seconds at the work front,
+> one-handed. Two taps and he records that two masons didn't show.
+>
+> Note what it says: *the first is never overwritten*. Correcting a headcount writes a new
+> row — a muster is what a contractor is paid against and what a delay claim argues from, so
+> we never edit yesterday's number in place.
+>
+> And the connection. This is a well-site in Assam. Round-trip time is measured; throughput
+> we take from the browser and label as an estimate, because honestly probing bandwidth
+> means saturating the very link we're trying to protect. If the signal goes, the update is
+> kept on the phone and sent when it returns — and it says *your update is complete either
+> way*, because dropping to text removes an assist, not a guarantee."
+
+**Point at:** the *contracted* figure on a crew card, the sentence *"the first is never
+overwritten"*, and in the panel: **Round trip / measured** beside **Throughput / browser
+estimate**.
+
+> **Optional, and strong if you can spare 10s:** turn the laptop's Wi-Fi off before pressing
+> save. The pill flips to **Offline**, the button reads **Will send when online**, and the
+> panel counts what is waiting. Turn Wi-Fi back on and it flushes on its own. Rehearse it —
+> on a venue network the reconnect can take a few seconds.
+
+---
+
+### Chapter 3 · Field history and the return channel — 2:15–2:35
 
 **Screen:** bottom nav → **Updates**, then **Questions**, then **Settings**.
 
@@ -296,7 +349,7 @@ and the **BASELINE PROTECTION** note.
 
 ---
 
-### Chapter 4 · Reconcile — the core of the product — 1:55–3:10 **[SHORT] [CORE]**
+### Chapter 4 · Reconcile — the core of the product — 2:35–3:50 **[SHORT] [CORE]**
 
 **Screen:** **Switch role** → **Project Manager / Planner** → **Review & Reconcile**.
 
@@ -341,7 +394,7 @@ This is the chapter that earns the product. Do not rush it.
 
 ---
 
-### Chapter 5 · Ingest — documents in, and Primavera in — 3:10–4:10
+### Chapter 5 · Ingest — documents in, and Primavera in — 3:50–4:50
 
 **Screen:** **Field Data** (`/ingest`).
 
@@ -386,7 +439,7 @@ This is the chapter that earns the product. Do not rush it.
 
 ---
 
-### Chapter 6 · Schedule — register, Gantt, Doctor, audit — 4:10–5:40 **[SHORT: audit only] [CORE]**
+### Chapter 6 · Schedule — register, Gantt, Doctor, audit — 4:50–6:20 **[SHORT: audit only] [CORE]**
 
 **Screen:** **Schedule** (`/schedule`).
 
@@ -453,7 +506,7 @@ Flag Conflict / Keep Baseline**.
 
 ---
 
-### Chapter 7 · Risk and delay — 5:40–6:40
+### Chapter 7 · Risk and delay — 6:20–7:20
 
 **Screen:** **Risk & Exposure** (`/raid`), then **Delay Analysis** (`/delay`).
 
@@ -499,7 +552,65 @@ Flag Conflict / Keep Baseline**.
 
 ---
 
-### Chapter 8 · The loop closes — 6:40–7:10 **[CORE]**
+### Chapter 7A · Manpower — the evidence under a delay, and who is committed where — 7:20–8:20
+
+**Screen:** stay on `/delay`, then `/workforce`.
+
+The single most defensible thirty seconds in the video, because it is the one place NAVIS
+argues *against* a conclusion the operator might want.
+
+**Do:**
+1. On `/delay`, with a delay selected, scroll to the **manpower evidence** panel — it sits
+   above the liability controls, under the impact strip.
+2. Then go to **Workforce** → **Register**.
+3. Switch to **Allocation**. Open the request in **Waiting on you**, change **6** to **4**,
+   press **Commit**.
+
+**Say:**
+
+> "Now the part that matters. The delay taxonomy has a MANPOWER category, and it maps to
+> non-compensable — the contractor carries it. That is the most expensive word in the
+> taxonomy, and until now nothing in the system could check it.
+>
+> Here it is checked. *Crews fielded ninety-four percent of contracted strength across
+> twenty-four musters. The register does NOT support a manpower cause — the manpower was
+> there.* The system is telling me my instinct is wrong, before I click, and it is doing it
+> from the attendance register we filled in Chapter 2A.
+>
+> And it gives three answers, not two: supported, refuted, or *no register was kept*. That
+> third one is not a softer no. 'The crews were there and it still slipped' and 'nobody wrote
+> down whether they were there' lead to opposite decisions, so we refuse to collapse them.
+>
+> The register itself: eighty-six percent fielded, and a contractor league table underneath.
+> Anyone with fewer than five musters reads *not measured*, never *unreliable* — two data
+> points cannot convict a contractor.
+>
+> And allocation. My supervisor asked for six more. I have four to spare, so I commit four —
+> and the audit row keeps both numbers. He proposes; I am the only role that commits. Same
+> rule as the schedule."
+
+> **The exact quote above is `CIV-DWG-1015`** — the delay the queue selects first
+> on a clean seed, at **94.0% over 24 musters**. If you land on a different item
+> the wording is the same but the numbers move, so either select that one or read
+> the panel rather than the script. `CIV-FLR-1020` also refutes, at 93.3% over 6.
+
+**Point at:** the green **does not support** panel; **Not measured** in the contractor
+table; the **Demand excludes 23 activities with no productivity norm** disclosure; the
+rationale chips `discipline_match` / `reliability_measured` on the request.
+
+> **The disclosure is worth naming out loud** if a judge is technical: *demand in man-days is
+> quantity over a quantity-per-man-day norm, and that norm only exists where work has
+> actually finished with a muster against it. Twenty-three activities don't have one, so they
+> contribute zero and we list them by name rather than estimate them and look complete.*
+
+**Optional, +0:15 — Capture Health.** `/capture-health`. *"Our claim is near-real-time. This
+is the screen that audits the claim. Six of six disciplines reporting today — but progress
+last arrived days ago, and the difference between 'no work happened' and 'no signal reached
+us' is the whole reason this screen exists."*
+
+---
+
+### Chapter 8 · The loop closes — 8:20–8:50 **[CORE]**
 
 The payoff for Chapters 2 and 4. It only works on the report **you filed in Chapter 2**
 (§1.4).
@@ -528,14 +639,14 @@ The payoff for Chapters 2 and 4. It only works on the report **you filed in Chap
 
 ---
 
-### Chapter 9 · Senior Management — 7:10–8:25
+### Chapter 9 · Senior Management — 8:50–10:20
 
 **Screen:** **Switch role** → **Senior Management**.
 
-**Do:** Move briskly — eight screens, roughly ten seconds each. `/executive` →
+**Do:** Move briskly — nine screens, roughly ten seconds each. `/executive` →
 `/executive/milestones` → `/executive/progress` → `/executive/risks` →
-`/executive/forecasts` → `/executive/insights` → `/executive/reports` →
-`/executive/confidence`.
+`/executive/forecasts` → **`/executive/workforce`** → `/executive/insights` →
+`/executive/reports` → `/executive/confidence`.
 
 **Say (Overview):**
 
@@ -558,7 +669,31 @@ The payoff for Chapters 2 and 4. It only works on the report **you filed in Chap
 >
 > Forecasts, with the modelling notice stated plainly: *deterministic forward-pass CPM, not
 > Monte Carlo, not P80 or P90.* Named scenarios — monsoon hold, vendor disruption, recovery
-> plan — and they cannot mutate the baseline."
+> plan — and they cannot mutate the baseline.
+
+**Say (Workforce — slow down here, it is new and it lands):**
+
+> "Workforce. Eighty-five percent of the manpower we are contracted to have on site actually
+> turned up — four hundred and thirty-three man-days short over thirty days. A contractor
+> league table, and the weakest one we are willing to name is at eighty-two point six.
+>
+> Two things this screen refuses to do. It will not rank a contractor on fewer than five
+> musters — those read *not measured*, because a governance accusation built on two data
+> points is worse than no accusation. And it will not call uncommitted capacity waste: that
+> is capacity a planner hasn't allocated yet, and it only becomes waste if there is unmet
+> demand in the same week. Getting that wrong would have a director shouting at a contractor
+> about their own planner's decision.
+>
+> Nothing on this screen writes. No muster, no commit, no queue. This role governs; it does
+> not operate."
+
+> **If asked "how do you know the attendance data is real?"** — the honest answer, and it is
+> a strong one: *it is synthetic, as the problem statement requires, but it is anchored to
+> the corpus rather than random. The fifteenth of August is a holiday named in that day's
+> report header; the second of September is the rain in that header; the fourteenth is the
+> line "Labour kam tha aaj" in the messy DPR. If the register were random, the delay evidence
+> in Chapter 7A would confirm and refute causes at random too, and the whole chain would be
+> theatre.*"
 
 **Say (Insights → Reports → Data Confidence):**
 
@@ -579,7 +714,7 @@ The payoff for Chapters 2 and 4. It only works on the report **you filed in Chap
 
 ---
 
-### Chapter 10 · Institutional memory, Ask NAVIS, and close — 8:25–9:00 **[SHORT: close only] [CORE]**
+### Chapter 10 · Institutional memory, Ask NAVIS, and close — 10:20–10:55 **[SHORT: close only] [CORE]**
 
 **Screen:** **Switch role** → Planner → **Project Knowledge** (`/memory`).
 
@@ -635,8 +770,15 @@ The payoff for Chapters 2 and 4. It only works on the report **you filed in Chap
 
 ## 5 · The cuts
 
+**Full run** is now ~10:55, up from 9:00 — Chapters 2A and 7A added the manpower layer.
+
 **5:00 [CORE]** — Chapters 1, 2, 4, 6 (audit drawer only), 8, 10 (close only).
 Drop ingest, RAID/delay, the executive lane and memory. Do not compress 4 or 6.
+
+**6:15 [CORE + MANPOWER]** — the 5:00 cut plus Chapter 2A trimmed to the muster alone
+(0:25) and Chapter 7A trimmed to the delay-evidence panel alone (0:30). Use this one if the
+brief mentions manpower, resourcing or attendance: 7A is the strongest single moment in the
+video, because it is the one place the system argues against the operator.
 
 **2:30 [SHORT]**
 
@@ -664,13 +806,25 @@ from source files no threshold was tuned against.
 | Wrong review rows | **28** | "queued for a planner to reject — never written" |
 | NO_MATCH, this split | **0 of 9 refused** | "all nine routed to review; none linked" |
 | Demo schedule | **120 activities** | "the demo project schedule" — not the corpus |
-| Automated tests | **1,312** total, **1,310** passing | see §1.2 before claiming "all passing" |
+| Automated tests | **1,426** total (1,124 pytest + 302 vitest) | re-counted 2026-09-12 — see §1.2 before claiming "all passing" |
+| Crews on the register | **8** | "eight gangs across six disciplines and three contractors" |
+| Musters seeded | **368** | "synthetic, but anchored to the DPR corpus — not random" |
+| Manpower fielded, 30d | **85.0%** | "2,453 of 2,886 contracted heads — 433 man-days short" |
+| Weakest ranked contractor | **82.6%** | "the weakest one we are *willing to name*; thin samples read 'not measured'" |
+| Activities with no man-day norm | **23** | "excluded from demand by name, never estimated" |
+| Median capture lag | **249.1 h** | "on this seeded corpus, which is historical — say so" |
 | Thresholds | **0.80 / 0.40 / margin 0.03** | see §1.1 before saying this on camera |
 
-**Corrections to the printed sheet.** Row 7 says **1,284** (1,055 + 229) "all passing":
-vitest is now **257**, so the total is **1,312**, and `pytest -q` currently reports **2
-failed**. Row 5's Recall@3 of 88.1% is the **v2 research corpus**; the v1 held-out figure
-`eval.py` prints is **97.2%**. Name the corpus whenever you quote either.
+**Corrections to the printed sheet.** Row 7 said **1,284** (1,055 + 229) "all passing".
+The count is now **1,426** — pytest **1,124**, vitest **302**, both green on 2026-09-12.
+Row 5's Recall@3 of 88.1% is the **v2 research corpus**; the v1 held-out figure `eval.py`
+prints is **97.2%**. Name the corpus whenever you quote either.
+
+**On the manpower figures.** Say *synthetic* the first time you quote one, then move on.
+The defensible part is not that the data is real — the problem statement forbids real data —
+it is that the shortfalls are anchored to lines in the shipped DPR corpus, so the attendance
+story and the progress story corroborate each other instead of being two unrelated
+fictions.
 
 ### Never say
 

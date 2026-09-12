@@ -15,6 +15,22 @@
 > | "The system learns from planner corrections" | Corrections are stored; `w_alias = 0.0`, so the matcher never reads them back (D-061) |
 > | "1,250+ automated tests" | **1,284** (1,055 pytest + 229 vitest), re-counted 2026-09-11 (D-104) |
 >
+> ### Two rows above have changed since the review — the retraction stands, the reasons moved
+>
+> A retraction is only useful while it is accurate, so:
+>
+> - **"no offline queue" is no longer true.** D-118 shipped one: `lib/outbox.ts`,
+>   a real queue that holds a muster or a manpower request when the link is down
+>   and flushes it on reconnect, with refusals surfaced rather than retried. The
+>   rest of that row still stands — there is **still no service worker and no
+>   IndexedDB**, so this is *not* a PWA and must not be called one. The claim was
+>   false when it was made; part of it has since been built, and the honest thing
+>   is to say which part.
+> - **The test count is now 1,426** — 1,124 pytest and 302 vitest, both green on
+>   2026-09-12. Do not quote 1,284, and do not quote "1,250+" either.
+>
+> Nothing else in this file has been re-verified. It remains retracted.
+>
 > **What to present instead:** `NUMBERS_SHEET.md` for every figure,
 > `deliverables/NAVIS_SIH2026_NamasteByte_FINAL.pptx` for the deck, and
 > `research/JUDGE_DRILL_02_ANSWERS.md` for the Q&A. See D-102.

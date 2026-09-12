@@ -105,8 +105,12 @@ Record the reasoning as it happens, not afterwards from memory.
 Run what is relevant to what you touched.
 
 ```bash
-python -m pytest -q                    # backend + matching + extraction (1119 tests)
-cd frontend && npx vitest run          # frontend (301 tests)
+python -m pytest -q                    # backend + matching + extraction (1124 tests)
+cd frontend && npx vitest run          # frontend (302 tests)
+cd frontend && npx vitest run --no-file-parallelism   # ^ use this on a loaded
+                                       # machine: the default runs files across
+                                       # all cores and flakes on timing at high
+                                       # load. Sequential is 154s but reliable.
 cd frontend && npx tsc --noEmit        # frontend type check
 python backend/eval.py                 # matching quality: precision/coverage/tau sweep
 python backend/scripts/healthcheck.py  # end-to-end server health

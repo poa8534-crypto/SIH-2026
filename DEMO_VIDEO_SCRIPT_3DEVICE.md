@@ -84,9 +84,24 @@ not an error. Two honest options:
 conflicts recorded. **These are not the counts printed in `DEMO.md` or in the
 master script's pre-flight table** — those predate D-103. Read the screen.
 
+**Workforce, added 2026-09-12 (D-117):** `8` crews · `368` musters · `6`
+assignments (4 committed, 1 proposed, 1 withdrawn). The proposal is the one Act
+2.4 commits, so **if you rehearse 2.4 you must re-seed before the take** — once
+committed it leaves the *Waiting on you* list and the beat has nothing to click.
+Re-seed with a reset, or POST one back:
+
+```bash
+curl -X POST http://localhost:8000/workforce/assignments \
+  -H "Content-Type: application/json" \
+  -d '{"crew_id":"CIV-GANG-02","activity_id":"CIV-SIT-1002","from_date":"2026-09-14","to_date":"2026-09-20","allocated_strength":6,"note":"Backfill at the rack trenches is running slow","requested_by":"field"}'
+```
+
+Note `Crew` survives a reset by design — the roster is reference data — so a
+reset restores the musters and assignments without duplicating the eight crews.
+
 ---
 
-## ACT 1 — FIELD SUPERVISOR · phone · 1:40
+## ACT 1 — FIELD SUPERVISOR · phone · 2:15
 
 Phone fills the frame, app open on **Home**, signed in as Field Supervisor.
 
@@ -157,6 +172,40 @@ Press **Submit Update**. Show the new row in **My Recent Updates** at
 
 ---
 
+### 1.4 · The muster, and the signal — 0:35 · **the manpower thread starts here**
+
+Film this **before** the transition — Acts 2 and 3 both call back to it, and
+neither lands if the audience has not watched the number being created.
+
+**ON SCREEN**
+Tap **Crew**. Eight gangs, contracted strength on each. On **Civil Gang 1**,
+press **−** twice, expand **2 missing · 2 unexplained**, tap **No show** twice,
+press **Correct today's count**. Then tap the **signal pill** in the header and
+hold on the panel for three seconds.
+
+**VOICEOVER**
+> "Progress is half of what he knows. The other half is who actually turned up —
+> and that is the number the whole industry loses.
+>
+> It opens at full strength, because a full turnout is the normal case and this
+> has to take fifteen seconds with gloves on. Two taps: two masons didn't show.
+> And it tells him the first reading is never overwritten — a muster is what a
+> contractor gets paid against.
+>
+> This is a well-site in Assam. The signal is measured, not assumed. If it goes,
+> the muster stays on the phone and sends itself when the signal comes back."
+
+> **The strong optional shot, +0:10.** Turn the phone's Wi-Fi off *before*
+> pressing save. The pill flips to **Offline**, the button reads **Will send
+> when online**. Turn it back on and it flushes on its own. **Rehearse it** — on
+> a venue network the reconnect can take several seconds, and a long silent
+> pause on camera is worse than skipping the shot.
+
+> **Do not say "AI" here.** Nothing on this screen is a model. It is a headcount
+> and a ping.
+
+---
+
 ## TRANSITION 1 → the laptop · 0:10
 
 **Best shot:** one continuous take. Frame the phone in front of the laptop
@@ -172,7 +221,7 @@ laptop. (Verified: pending went 198 → 199, and the new row sorts to the top.)
 
 ---
 
-## ACT 2 — PROJECT MANAGER / PLANNER · laptop · 1:50
+## ACT 2 — PROJECT MANAGER / PLANNER · laptop · 2:25
 
 Laptop signed in as Project Manager, on **Review & Reconcile**, 1280×800 or
 wider.
@@ -242,6 +291,44 @@ the activity's audit drawer and hold on **APPEND-ONLY · NEVER EDITED**.
 
 ---
 
+### 2.4 · The register argues back — 0:35 · **the payoff for 1.4**
+
+**ON SCREEN**
+**Delay Analysis**, a delay selected. Scroll to the green **manpower evidence**
+panel sitting *above* the liability buttons. Hold on it. Then **Workforce** →
+**Allocation**, change the request from **6** to **4**, press **Commit**.
+
+**VOICEOVER**
+> "Now watch the system disagree with me.
+>
+> The delay taxonomy has a manpower category, and it maps to non-compensable —
+> the contractor carries the cost. It is the most expensive word on this screen,
+> and until now no software could check it.
+>
+> It checks it. *Crews fielded ninety-four percent of contracted strength across
+> twenty-four musters. The register does not support a manpower cause — the
+> manpower was there.* Built from the attendance he entered on the phone, and
+> put in front of me **before** I choose, not after.
+>
+> And it gives three answers, not two: supported, refuted, or *no register was
+> kept* — because 'the crews were there' and 'nobody wrote it down' are not the
+> same finding.
+>
+> He asked me for six more people. I have four. I commit four, and the audit row
+> keeps both numbers. He proposes. I commit. Same rule as the schedule."
+
+> **The exact quote above is `CIV-DWG-1015`** — the delay the queue selects first
+> on a clean seed, at **94.0% over 24 musters**. If you land on a different item
+> the wording is the same but the numbers move, so either select that one or read
+> the panel rather than the script. `CIV-FLR-1020` also refutes, at 93.3% over 6.
+
+> **Cut to 3:00** — drop this whole beat before dropping anything in 2.2. But if
+> the brief mentions manpower, resourcing or attendance, drop 2.3 and keep this
+> instead: it is the only moment in the film where the software tells the
+> operator they are wrong.
+
+---
+
 ## TRANSITION 2 → the desktop · 0:10
 
 **ON SCREEN**
@@ -254,7 +341,7 @@ executive **Overview**.
 
 ---
 
-## ACT 3 — SENIOR MANAGEMENT · desktop · 1:20
+## ACT 3 — SENIOR MANAGEMENT · desktop · 1:40
 
 Desktop signed in as Senior Management, on **Overview**.
 
@@ -296,6 +383,31 @@ on one and let it land.
 > gap in evidence, not proof of progress. And every card clicks straight
 > through to the field evidence underneath it. Board pack to the supervisor's
 > own words, in one click."
+
+### 3.2b · Manpower at board altitude — 0:20
+
+**ON SCREEN**
+**Workforce**. Hold on the four tiles, then the contractor table — long enough
+for **Not measured** to be readable on the thin-sample row.
+
+**VOICEOVER**
+> "The same register, at board altitude. Eighty-five percent of the manpower we
+> are contracted to have on site actually turned up. A contractor league table
+> underneath it.
+>
+> And two refusals. It will not rank a contractor on fewer than five musters —
+> those read *not measured*, because an accusation built on two data points is
+> worse than none. And it will not call spare capacity waste, because that is a
+> decision their own planner has not made yet.
+>
+> Nothing on this screen writes anything. This role governs. It does not
+> operate."
+
+> **If a judge asks whether the attendance data is real:** *synthetic, as the
+> problem statement requires — but anchored to the corpus, not random. The
+> shortfalls fall on the holiday, the rain day and the "labour kam tha aaj" line
+> in the shipped daily reports. If it were random, the delay evidence in Act 2
+> would confirm and refute causes at random too.*
 
 ### 3.3 · Close — 0:25
 
