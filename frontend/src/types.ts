@@ -1423,14 +1423,22 @@ export interface CaptureCoverage {
   date: string;
   rows: Array<{
     discipline: string;
+    /**
+     * False for a bucket with no crews on the books — `unmatched`, which
+     * collects events whose activity id is not in the schedule. Shown, but
+     * never counted in the coverage fraction and never `silent`.
+     */
+    in_scope: boolean;
     progress_events: number;
     attendance_marked: boolean;
     /** No progress AND no muster: a capture question, not a work question. */
     silent: boolean;
   }>;
   expected_disciplines: number;
+  /** Counted against `expected_disciplines`, so it can never exceed it. */
   reporting: number;
   silent: string[];
+  out_of_scope: string[];
 }
 
 export interface HeartbeatBody {

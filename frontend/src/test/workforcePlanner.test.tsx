@@ -365,12 +365,16 @@ describe('capture health separates "no work" from "no signal"', () => {
     vi.spyOn(api, 'getCaptureCoverage').mockResolvedValue({
       date: '2026-09-12',
       rows: [
-        { discipline: 'civil', progress_events: 0, attendance_marked: true, silent: false },
-        { discipline: 'piping', progress_events: 0, attendance_marked: false, silent: true },
+        { discipline: 'civil', in_scope: true, progress_events: 0, attendance_marked: true, silent: false },
+        { discipline: 'piping', in_scope: true, progress_events: 0, attendance_marked: false, silent: true },
+        // The bucket for events matching no activity: shown, never counted,
+        // never accused of going silent.
+        { discipline: 'unmatched', in_scope: false, progress_events: 3, attendance_marked: false, silent: false },
       ],
       expected_disciplines: 2,
       reporting: 1,
       silent: ['piping'],
+      out_of_scope: ['unmatched'],
     } as never);
   });
 
@@ -393,6 +397,15 @@ describe('capture health separates "no work" from "no signal"', () => {
     expect(
       await screen.findByText(/Nothing is online, so there is no link to band/i)
     ).toBeInTheDocument();
+  });
+
+  it('never counts more disciplines reporting than it expects', async () => {
+    wrap(<CaptureHealth />);
+    // "7 of 6 disciplines reporting" is not a number.
+    expect(
+      await screen.findByText(/Events that matched no activity — a linking question/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/no crews on the books/i)).toBeInTheDocument();
   });
 
   it('says throughput is reported and round trip is measured', async () => {

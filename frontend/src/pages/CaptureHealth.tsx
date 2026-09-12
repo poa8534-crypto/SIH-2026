@@ -212,6 +212,11 @@ export default function CaptureHealth() {
                   <tr key={r.discipline} className="border-t border-hair">
                     <td className="px-4 py-2.5 font-medium text-heading">
                       {r.discipline.replace('_', ' ')}
+                      {!r.in_scope && (
+                        <span className="ml-2 text-label font-normal text-muted">
+                          no crews on the books
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.progress_events}
@@ -224,12 +229,17 @@ export default function CaptureHealth() {
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-muted">
-                      {/* The three readings a planner acts on differently. */}
-                      {r.silent
-                        ? 'Nothing arrived — treat as a capture question'
-                        : r.progress_events === 0
-                          ? 'Crews counted, no progress filed — a work question'
-                          : 'Reporting'}
+                      {/* The readings a planner acts on differently. The
+                          out-of-scope bucket is named as what it is rather
+                          than judged as a discipline: nobody is accountable
+                          for `unmatched` going quiet. */}
+                      {!r.in_scope
+                        ? 'Events that matched no activity — a linking question'
+                        : r.silent
+                          ? 'Nothing arrived — treat as a capture question'
+                          : r.progress_events === 0
+                            ? 'Crews counted, no progress filed — a work question'
+                            : 'Reporting'}
                     </td>
                   </tr>
                 ))}

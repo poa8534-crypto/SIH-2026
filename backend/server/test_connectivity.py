@@ -291,3 +291,77 @@ def test_no_work_and_no_signal_are_distinguishable(client, db_session):
 
     assert piping["attendance_marked"] is False
     assert piping["silent"] is True, "nothing at all arrived from piping"
+
+
+# ── The coverage fraction must be a fraction ───────────────────────────────
+
+class TestCoverageCountsOnlyWhatItCanBeAccountableFor:
+    """`unmatched` is the bucket for events whose activity id is not in the
+    schedule. It is real and worth showing — but it is not a discipline.
+
+    Counting it made this endpoint answer "7 of 6 disciplines reporting",
+    which is not a number, and list a non-existent team as having gone quiet
+    on a governance screen.
+    """
+
+    def _crews(self, db):
+        db.add(Crew(crew_id="CIV-GANG-01", name="civ", discipline="civil",
+                    planned_strength=10))
+        db.add(Crew(crew_id="PIP-GANG-01", name="pip", discipline="piping",
+                    planned_strength=8))
+        db.commit()
+
+    def test_reporting_never_exceeds_the_denominator_beside_it(
+        self, client, db_session
+    ):
+        self._crews(db_session)
+        # An event against an activity id the schedule does not carry lands in
+        # `unmatched` — a seventh row against six expected disciplines.
+        _event(db_session, "NOT-IN-SCHEDULE", date.today(), datetime.utcnow())
+        result = client.get("/connectivity/capture-coverage").json()
+        assert result["expected_disciplines"] == 2
+        assert result["reporting"] <= result["expected_disciplines"]
+
+    def test_the_unmatched_bucket_is_shown_but_marked_out_of_scope(
+        self, client, db_session
+    ):
+        self._crews(db_session)
+        _event(db_session, "NOT-IN-SCHEDULE", date.today(), datetime.utcnow())
+        result = client.get("/connectivity/capture-coverage").json()
+        unmatched = next(r for r in result["rows"] if r["discipline"] == "unmatched")
+        assert unmatched["in_scope"] is False
+        assert unmatched["progress_events"] == 1
+        assert result["out_of_scope"] == ["unmatched"]
+
+    def test_a_bucket_with_no_crews_can_never_be_silent(self, client, db_session):
+        """It only exists when something arrives, so it cannot have failed to
+        report."""
+        self._crews(db_session)
+        _event(db_session, "NOT-IN-SCHEDULE", date.today(), datetime.utcnow())
+        result = client.get("/connectivity/capture-coverage").json()
+        unmatched = next(r for r in result["rows"] if r["discipline"] == "unmatched")
+        assert unmatched["silent"] is False
+        assert "unmatched" not in result["silent"]
+
+    def test_a_real_discipline_with_crews_and_nothing_filed_is_still_silent(
+        self, client, db_session
+    ):
+        self._crews(db_session)
+        result = client.get("/connectivity/capture-coverage").json()
+        assert sorted(result["silent"]) == ["civil", "piping"]
+        assert result["reporting"] == 0
+
+
+def test_unmatched_is_not_named_as_a_discipline_that_went_quiet(
+    client, db_session
+):
+    """Nobody is accountable for `unmatched` going quiet, so it must not appear
+    on a governance screen as a team that has stopped reporting."""
+    old = date.today() - timedelta(days=9)
+    _event(db_session, "NOT-IN-SCHEDULE", old,
+           datetime.combine(old, datetime.min.time()) + timedelta(hours=2))
+    result = client.get("/connectivity/reporting-lag").json()
+    # The row is still there — it is a real linking problem worth seeing …
+    assert any(r["discipline"] == "unmatched" for r in result["rows"])
+    # … but it is not accused of having gone silent.
+    assert "unmatched" not in result["silent_disciplines"]

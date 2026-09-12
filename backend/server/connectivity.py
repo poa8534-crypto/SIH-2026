@@ -304,6 +304,12 @@ def reporting_lag(db: Session, days: int = 14) -> dict:
     # Silent disciplines are the point of this endpoint, so they sort first.
     rows.sort(key=lambda r: -(r["days_since_last_report"] or 0))
 
+    # `unmatched` is the bucket for events whose activity id is not in the
+    # schedule. It is a real row and worth showing — but it is not a
+    # discipline, nobody is accountable for it going quiet, and naming it in
+    # `silent_disciplines` put a non-existent team on a governance screen.
+    UNMATCHED = "unmatched"
+
     all_lags = [lag for lags in per_discipline.values() for lag in lags]
     return {
         "window_days": days,
@@ -311,7 +317,9 @@ def reporting_lag(db: Session, days: int = 14) -> dict:
         "events": len(all_lags),
         "median_lag_hours": _median(all_lags),
         "silent_disciplines": [
-            r["discipline"] for r in rows if (r["days_since_last_report"] or 0) >= 3
+            r["discipline"] for r in rows
+            if r["discipline"] != UNMATCHED
+            and (r["days_since_last_report"] or 0) >= 3
         ],
     }
 
@@ -352,21 +360,41 @@ def capture_coverage(db: Session, on: Optional[date] = None) -> dict:
         for crew_disc in crew_disc
     }
 
-    rows = [
-        {
+    rows = []
+    for disc in sorted(expected | set(reported)):
+        # A discipline is IN SCOPE only if it has crews on the books. That is
+        # what makes the denominator honest — see the docstring.
+        #
+        # Rows outside the scope are still shown, because they are real and
+        # interesting: `unmatched` collects events whose activity id is not in
+        # the schedule at all, which is a linking problem worth seeing. But
+        # they are NOT part of the coverage fraction, and they cannot be
+        # "silent": a bucket that only exists when something arrives cannot
+        # have failed to report. Counting them made this endpoint answer
+        # "7 of 6 disciplines reporting", which is not a number.
+        in_scope = disc in expected
+        rows.append({
             "discipline": disc,
+            "in_scope": in_scope,
             "progress_events": reported.get(disc, 0),
             "attendance_marked": disc in mustered,
-            # "silent" is the flag a planner acts on: no progress AND no muster
-            # from a discipline that has crews on site.
-            "silent": reported.get(disc, 0) == 0 and disc not in mustered,
-        }
-        for disc in sorted(expected | set(reported))
-    ]
+            # "silent" is the flag a planner acts on: no progress AND no
+            # muster, from a discipline that has crews on site.
+            "silent": (
+                in_scope
+                and reported.get(disc, 0) == 0
+                and disc not in mustered
+            ),
+        })
+
+    in_scope_rows = [r for r in rows if r["in_scope"]]
     return {
         "date": on,
         "rows": rows,
         "expected_disciplines": len(expected),
-        "reporting": len([r for r in rows if not r["silent"]]),
+        # Counted against the expected set only, so this can never exceed the
+        # denominator beside it.
+        "reporting": len([r for r in in_scope_rows if not r["silent"]]),
         "silent": [r["discipline"] for r in rows if r["silent"]],
+        "out_of_scope": [r["discipline"] for r in rows if not r["in_scope"]],
     }

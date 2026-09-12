@@ -11780,3 +11780,76 @@ matching-quality movement to record. Auto-link precision is untouched at
 `frontend/src/pages/executive/DataConfidence.tsx` · `frontend/src/App.tsx` ·
 `frontend/src/test/executiveWorkforce.test.tsx` (new) · `backend/scripts/healthcheck.py` ·
 `CLAUDE.md`
+
+
+---
+
+## 2026-09-12 / D-121 — `unmatched` is a bucket, not a discipline: the coverage fraction stops exceeding its own denominator
+
+### Status
+
+Active. Fixes two defects in [D-117](#2026-09-12--d-117--manpower-becomes-a-first-class-subject-one-crew-model-behind-attendance-capacity-and-allocation)'s
+`connectivity.py`, both found while collecting real figures for the demo
+scripts rather than by a test.
+
+### Context
+
+`GET /connectivity/capture-coverage` answered **"7 of 6 disciplines
+reporting"** on the seeded corpus, and `GET /connectivity/reporting-lag`
+listed **`unmatched`** among the disciplines that had gone quiet.
+
+Both come from the same mistake. `unmatched` is the bucket for linked events
+whose `activity_id` is not in the schedule at all. It is a real and useful row
+— it means the matcher produced a link to a node the baseline does not carry —
+but it is not a discipline. It has no crews, nobody is accountable for it, and
+it only exists *when something arrives*.
+
+Counting it produced a fraction larger than its own denominator, and named a
+non-existent team as having stopped reporting on a screen a director reads.
+
+### Decision
+
+**Scope is defined by crews, and the fraction is counted inside it.** Each
+coverage row now carries `in_scope` — true only where the discipline has
+crews on the books. `reporting` counts in-scope rows only, so it can never
+exceed `expected_disciplines`. A new `out_of_scope` list names what was
+excluded, so the exclusion is visible rather than silent.
+
+**An out-of-scope bucket can never be `silent`.** Something that only exists
+when data arrives cannot have failed to send data. Marking it silent was a
+category error, not an off-by-one.
+
+**The row is still shown, and named for what it is.** The UI reads *"Events
+that matched no activity — a linking question"* with a *"no crews on the
+books"* qualifier beside the name. Hiding the row would have been the wrong
+fix: unmatched events are a real linking problem and the planner should see
+them. They just should not be judged as a team.
+
+**`unmatched` is excluded from `silent_disciplines`** on the lag endpoint for
+the same reason. Its row stays in `rows`.
+
+### A note on what this did NOT change
+
+Coverage now reports 6 of 6 reporting while the lag endpoint reports 6
+disciplines quiet for three days or more. Both are correct and they answer
+different questions: coverage asks *"did anything at all arrive today"* —
+and the musters did — while lag asks *"when did PROGRESS last arrive"*. That
+is precisely the "a work question, not a capture question" distinction the
+screen exists to draw, and the copy already says it.
+
+### Verification
+
+```
+python -m pytest backend/server/test_connectivity.py -q   24 passed (19 + 5 new)
+cd frontend && npx vitest run                            302 passed
+cd frontend && npx tsc --noEmit                          clean
+```
+
+Live, after the fix: `6 of 6 disciplines reporting`, `silent: []`,
+`out_of_scope: ['unmatched']`.
+
+### Affected Areas
+
+`backend/server/connectivity.py` · `backend/server/schemas.py` ·
+`backend/server/test_connectivity.py` · `frontend/src/types.ts` ·
+`frontend/src/pages/CaptureHealth.tsx` · `frontend/src/test/workforcePlanner.test.tsx`

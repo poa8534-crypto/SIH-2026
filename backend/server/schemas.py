@@ -1766,6 +1766,10 @@ class ReportingLagResponse(BaseModel):
 
 class CaptureCoverageRow(BaseModel):
     discipline: str
+    # False for a bucket with no crews on the books — `unmatched`, which
+    # collects events whose activity id is not in the schedule. Shown, but
+    # never counted in the coverage fraction and never "silent".
+    in_scope: bool = True
     progress_events: int = 0
     attendance_marked: bool = False
     silent: bool = False
@@ -1775,5 +1779,7 @@ class CaptureCoverageResponse(BaseModel):
     date: date_t
     rows: list[CaptureCoverageRow] = []
     expected_disciplines: int = 0
+    # Counted against `expected_disciplines` only, so it can never exceed it.
     reporting: int = 0
     silent: list[str] = []
+    out_of_scope: list[str] = []
