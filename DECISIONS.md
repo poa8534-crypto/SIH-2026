@@ -10926,6 +10926,12 @@ anything in the component.
 
 ## 2026-09-12 / D-114 — The demo video gets its own script, written from the running application rather than from `DEMO.md`
 
+> **SUPERSEDED by D-115 (2026-09-12).** The decision to derive the script from the
+> running application stands and is unchanged; the artefact it produced was a 4-minute
+> pitch-shaped walkthrough. D-115 replaces the file's contents with a full feature
+> showcase after a complete capability audit. Every defect recorded below was carried
+> forward, and three more were found.
+
 **Context.** `demo_script.md` has been retracted since 2026-09-10 — an external
 review found six false claims in it. `DEMO.md` is the surviving runbook, but it
 was walked end to end on 2026-09-03 and only partly re-derived on 2026-09-11,
@@ -11009,3 +11015,94 @@ screen rather than trust.
 operational runbook for a live stage run, and `NUMBERS_SHEET.md` stays the
 authority for any spoken figure. `DEMO_VIDEO_SCRIPT.md` is additive and is
 scoped to recording.
+
+---
+
+## 2026-09-12 / D-115 — The demo video script becomes a full feature showcase, after auditing the whole capability surface
+
+**Supersedes the artefact of [D-114](#2026-09-12--d-114--the-demo-video-gets-its-own-script-written-from-the-running-application-rather-than-from-demomd), not its method.**
+
+**Context.** D-114 produced a 4-minute, pitch-shaped script: problem, one field capture,
+one reconcile, one audit trail, close. The brief that followed was different — a video that
+**showcases all the features of the product**. A pitch script and a feature showcase are
+not the same artefact and cannot be edited into one another: the first selects three beats
+and defends them, the second must cover the surface and still be watchable.
+
+**Decision. Re-audit the entire capability surface, then rewrite `DEMO_VIDEO_SCRIPT.md` as a
+10-chapter, 9-minute feature walkthrough with a 5:00 `[CORE]` cut and a 2:30 `[SHORT]` cut
+marked inline.** One canonical recording script; the file is replaced rather than
+supplemented, because competing demo scripts are the failure mode this repository already
+has (`demo_script.md` retracted, `DEMO.md` drifted).
+
+**Why a re-audit rather than an expansion.** D-114 walked the screens needed for its five
+scenes. A feature showcase needs the surface enumerated, so it was: **45 HTTP endpoints**
+from `backend/server/main.py`, all **19 routes** across the three roles, and every tab
+inside them. That surfaced substantial functionality no demo document mentions — the
+Primavera baseline importer, Schedule Doctor, the Knowledge Base, delay adjudication, the
+Ask NAVIS assistant, and the clarification return channel.
+
+**Everything below was exercised, not read.**
+
+- **`POST /schedule/import` works and is demo-safe.** `schedule_export_20260902_133434.xml`
+  dry-runs as `pmxml`: 120 activities, 120 with both planned dates, 120 ids already present,
+  *"Nothing was written"*, active baseline still `baseline_schedule`.
+- **`POST /schedule/export` works.** PMXML, 120 activities, real `<Activity>` elements with
+  planned dates, actual dates and `<Predecessor>` ties.
+- **The clarification loop closes.** Field submit → `POST /review/{id}/clarify` →
+  `GET /field/clarifications` returns the question with the original text, the matched
+  activity and the asking planner → the field **Questions** tab renders it with a Respond
+  action.
+- **A single-sentence field capture beats the documented three-turn script.** *"spool
+  erection on the 24 inch header is done, 6 out of 18 done yesterday"* reaches the review
+  card in one turn at **65%** on **`PIP-ERC-1030 · Spool Erection — 24"-P-1001-A1A`** — the
+  activity `README.md` §1 uses as its worked example. The three-turn script in `DEMO.md`
+  §9 lands on `PIP-INS-1045` (Insulation) at 69%: fewer turns *and* the right activity, so
+  the script uses the one-sentence form and keeps the three-turn form as a note.
+- **`CIV-FNC-1016` still yields eight append-only audit records** across three source files,
+  with `2 SOURCES ASSERTED THIS FIELD`, a `SOURCE CONFLICT` row, and
+  `FINISH WITHHELD · RECORDED, NOT APPLIED`.
+- **Ask NAVIS answers grounded and cites.** `/chat` returns prose plus a source chip list of
+  activity ids and delay causes. `_chat_llm_generate` no-ops while `llm_enabled()` is false,
+  and `.env` ships `EXTRACTION_PROVIDER=rules`, so the demo path is deterministic.
+
+**Three further defects found, none introduced here, none fixed here.**
+
+1. **The P6 dry run cannot run on its own.** The active-baseline guard at
+   `backend/server/main.py:2616` raises 409 **before** `dry_run` is evaluated at
+   `main.py:2666`, so `dry_run=true` alone is refused whenever a baseline exists — which is
+   always, in the demo. `frontend/src/pages/Ingest.tsx:268` sends the two flags
+   independently, so ticking only "Validate only (Dry Run)" is a dead end on screen. A dry
+   run is a read; it should be exempt from a guard that exists to protect writes. Worked
+   around in the script (tick both boxes); the fix belongs with the import path.
+2. **"Ask Supervisor" is offered on queue rows that have no supervisor.**
+   `GET /field/clarifications` reads `_field_events`, which filters to
+   `match_method == "agent_turn"` (`main.py:3396`). A question asked on a DPR- or
+   spreadsheet-sourced row is persisted and never reachable by anyone. Correct that a
+   document has no supervisor; wrong that the affordance is offered anyway.
+3. **Three screens label deterministic rule output "AI."** Schedule Doctor's column header
+   (`AI CRITIQUE & PRESCRIPTION`), the Knowledge Base (`ENFORCED AI PRESCRIPTION`) and the
+   delay adjudication badge (`AI · ADVISORY`) all describe rule engines carrying rule IDs
+   (`CONTR-PROD-01`, `ENV-MONSOON-01`, `DCMA-OPEN-ENDS-01`). This directly undercuts the
+   project's load-bearing claim that no model sits in the decision path (D-003, D-005), and
+   it invites the one question the team least wants. Not renamed here because it is a
+   user-facing copy change across three screens with tests attached; the script instead
+   requires the presenter to say "rule IDs, not a model" whenever one is on screen.
+
+**Also corrected in the script.** `DEMO.md`'s "never say" list contains **"We import
+Primavera files — PMXML/XER import is declared and not implemented."** That is false on this
+build: the endpoint parses, validates and imports all three formats, with `dry_run` and an
+explicit `replace` consent. `NUMBERS_SHEET.md` Q6 is the correct account. Import is a
+strength and the script treats it as one.
+
+**Deliberately not done.** The demo database was still not reset —
+`backend/scripts/reset_demo.py` remains blocked by this environment's permission classifier.
+Verifying the clarification loop required a real field-origin review item, so one field
+report was submitted and one clarification asked against it; both are cleared by the reset
+that opens the script's pre-flight. State added: 1 `agent_turn` LinkedEvent, 1
+ReviewQueueItem on `PIP-ERC-1030`, 1 clarification question.
+
+**Unchanged from D-114 and re-confirmed:** auto-link precision **100.0%** (67/67), coverage
+**43.5%**, top-1 **86.9%** (126/145), Recall@3 **97.2%** on the v1 held-out split, `pytest -q`
+at **2 failed / 1053 passed** (both green in isolation), vitest at **257** within D-113's
+flaky 253–257 band, and the Reconcile screen still rendering `τ_high = 0.775` against a
+shipped `0.80`.

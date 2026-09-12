@@ -1291,42 +1291,64 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Wrote `DEMO_VIDEO_SCRIPT.md` — a recording script for the demo video, derived by walking the running application (API :8000, UI :5173) rather than from `DEMO.md`, which has drifted from the build. Documentation only: no source file, schema, threshold, matcher, endpoint or metric was changed, so no execution path moved.
-**Date:** 2026-09-12 · **Decision:** D-114
+**Task:** Rewrote `DEMO_VIDEO_SCRIPT.md` as a full feature showcase (10 chapters, 9:00, with 5:00 and 2:30 cuts) after auditing the whole capability surface — 45 endpoints, 19 routes, every tab. Documentation only: no source file, schema, threshold, matcher, endpoint or metric changed, so no execution path moved.
+**Date:** 2026-09-12 · **Decision:** D-115 (supersedes the D-114 artefact)
 
 ```
-HOW THE SCRIPT WAS DERIVED — READ PATHS ONLY                     (D-114)
+CAPABILITY SURFACE AUDITED — READ PATHS, PLUS TWO WRITES TO PROVE A LOOP   (D-115)
 
-  every route walked in the browser, signed in per role via
-  localStorage 'navis.role'  (frontend/src/lib/role.ts)
+  role -> workspace, selected by localStorage 'navis.role'
+                                      (frontend/src/lib/role.ts, App.tsx)
 
+    field      /field  /field/reports  /field/clarifications  /field/profile
     planner    /home /reconcile /schedule /ingest /raid /delay /memory
     executive  /executive + /milestones /progress /risks /forecasts
                /insights /reports /confidence
-    field      /field /field/reports /field/clarifications /field/profile
 
-  two beats exercised end to end, both unchanged by this task:
+  FEATURES EXERCISED END TO END (all previously undocumented in DEMO.md)
 
-    field three-turn capture
-      Field.tsx -> ReportStudio.tsx -> POST /agent/turn
-        -> QAAgent slot-filling (backend/server/agent_llm.py, LLM OFF:
-           .env EXTRACTION_PROVIDER=rules)
-        -> matcher -> review card  PIP-INS-1045 @ 69%  -> NOT applied (D-009)
+    P6 baseline import
+      Ingest.tsx "Schedule baseline import"
+        -> POST /schedule/import  (main.py:2565)
+        -> matching/primavera.py  pure-Python PMXML / XER parsers
+        -> dry_run branch (main.py:2666) writes nothing
+        !! active-baseline guard (main.py:2616) fires FIRST, so dry_run
+           alone -> 409; the UI sends the flags independently
+           (Ingest.tsx:268) and must have BOTH ticked
 
-    audit drawer
-      Schedule.tsx row click -> Activity Inspection Panel
-        -> GET /audit/{activity_id}
-        -> 8 append-only records for CIV-FNC-1016 across 3 source files,
-           incl. SOURCE CONFLICT and FINISH WITHHELD (D-004, D-015)
+    schedule export
+      Schedule.tsx Export -> POST /schedule/export -> /uploads/<file>.xml
+        -> PMXML, 120 activities, planned + actual dates + predecessors
+
+    clarification return channel  (the loop the video closes on)
+      field submit      POST /agent/turn -> LinkedEvent(match_method='agent_turn')
+                                         -> ReviewQueueItem  PIP-ERC-1030
+      planner asks      POST /review/{id}/clarify
+      supervisor sees   GET  /field/clarifications
+                          -> _field_events(db) filters match_method=='agent_turn'
+                             (main.py:3396) -- so a question on a DOCUMENT-sourced
+                             row is stored and never reachable
+      supervisor answers POST /field/clarifications/{id}/respond
+
+    Ask NAVIS            POST /chat | /qa/ask -> QAAgent grounded over schedule,
+                         EVM, memory, delay and review records; cites source ids.
+                         _chat_llm_generate() no-ops while llm_enabled() is false
+                         (.env EXTRACTION_PROVIDER=rules)
+
+    Schedule Doctor      POST/GET /schedule/audit  -> rule ids CONTR-PROD-01,
+    Knowledge Base       GET /knowledge/rules (7)     ENV-MONSOON-01, DCMA-OPEN-ENDS-01
+    delay adjudication   POST /delay/{id}/classify, POST /delay/{id}/notice
+    RAID adjudication    GET /raid/candidates -> POST /raid  (proposal -> register)
+    tender estimator     POST /memory/estimate -> refuses below n=3
 
   metrics re-run, not modified:
-    backend/eval.py   -> 100.0% auto-link precision, 43.5% coverage,
-                         86.9% top-1, R@3 97.2%  (held-out, 154 mentions)
-    pytest -q         -> 2 failed, 1053 passed   (leakage, green in isolation)
-    npx vitest run    -> 257 passed              (flaky band 253-257, D-113)
+    backend/eval.py  -> 100.0% auto-link precision, 43.5% coverage, 86.9% top-1,
+                        R@3 97.2%   (held-out, 154 mentions)
+    pytest -q        -> 2 failed, 1053 passed  (leakage; both green in isolation)
+    npx vitest run   -> 257 passed             (flaky band 253-257, D-113)
 
-  NOT reset: dataset/epc_progress.db is dirty from rehearsals; the script's
-  pre-flight makes backend/scripts/reset_demo.py the presenter's first step.
+  state written to prove the loop, cleared by the script's pre-flight reset:
+    1 agent_turn LinkedEvent, 1 ReviewQueueItem (PIP-ERC-1030), 1 clarification
 ```
 
 ---
