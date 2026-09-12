@@ -11753,9 +11753,30 @@ That 249.1 h figure is not flattering and is not meant to be: the seeded corpus
 is historical, and a governance screen that hid that would be the exact failure
 this workspace exists to prevent.
 
+### Also in this change
+
+`backend/scripts/healthcheck.py` pins the exposed endpoint count exactly, on
+the reasoning already written into it: "an operation appearing or disappearing
+without anyone noticing is exactly what this check is for". The workforce and
+connectivity surfaces add 13 paths carrying 16 operations, so it moves 46 → 62.
+
+Worth recording: 46 was still exactly correct immediately before this work.
+Every previous entry in that comment describes finding the pin stale — 8 while
+the surface was 30, 36 while it was 44, 46 while pinned at 44. This is the
+first time it has been re-pinned in the same commit as the change that moved
+it, which is what the comment asks for.
+
+`python backend/scripts/healthcheck.py` → **31 passed, 0 failed**.
+
+`backend/eval.py` was deliberately NOT run: nothing under `backend/matching/`
+or `backend/extraction/` was touched, and no threshold changed, so there is no
+matching-quality movement to record. Auto-link precision is untouched at
+100.0%.
+
 ### Affected Areas
 
 `frontend/src/pages/executive/Workforce.tsx` (new) ·
 `frontend/src/components/CaptureTimeliness.tsx` (new) ·
 `frontend/src/pages/executive/DataConfidence.tsx` · `frontend/src/App.tsx` ·
-`frontend/src/test/executiveWorkforce.test.tsx` (new)
+`frontend/src/test/executiveWorkforce.test.tsx` (new) · `backend/scripts/healthcheck.py` ·
+`CLAUDE.md`

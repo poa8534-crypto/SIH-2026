@@ -144,7 +144,13 @@ def check_endpoints(base: str) -> None:
     # that adds or removes an operation, not later. It then read 46 while
     # pinned at 44, because the Schedule Doctor operations were added without
     # re-pinning it. Re-pinned to 46 on 2026-09-11 (D-103).
-    expected_endpoints = 46
+    #
+    # Re-pinned to 62 on 2026-09-12 (D-117): the workforce and connectivity
+    # surfaces added 13 paths carrying 16 operations. 46 was still exactly
+    # right immediately before that change, which is the first time this pin
+    # has been correct on arrival rather than found stale - so it is being
+    # re-pinned in the same commit as the change, as the paragraph above asks.
+    expected_endpoints = 62
     record("GET  /openapi.json (/docs)", status == 200 and n_endpoints == expected_endpoints,
            f"{n_endpoints} endpoints exposed, expected {expected_endpoints}")
 
