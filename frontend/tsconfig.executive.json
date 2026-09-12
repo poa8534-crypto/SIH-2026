@@ -1,0 +1,20 @@
+{
+  // Stricter type check, scoped to the Senior Management lane.
+  //
+  // The repo-wide `tsc --noEmit` deliberately leaves `noUnusedLocals` off:
+  // switching it on globally reports 99 findings across the planner, field and
+  // test files, and a sweep that size is not something to land beside a
+  // behaviour change. But "declared and never read" is exactly the shape of two
+  // defects this lane actually shipped — a RAID row whose click handler set
+  // state nothing rendered, and a /evm request whose answer was never used —
+  // so the rule earns its place here.
+  //
+  // Run it with: npm --prefix frontend run typecheck:executive
+  // See D-111.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["src/pages/executive/**/*", "src/lib/units.ts", "src/vite-env.d.ts"]
+}

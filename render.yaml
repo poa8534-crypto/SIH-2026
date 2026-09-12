@@ -1,0 +1,73 @@
+# Render Blueprint — NAVIS deployed as two connected services (D-113).
+#
+#   navis-api   a Python web service running FastAPI (backend/server/main.py)
+#               live: https://navis-api-0t15.onrender.com
+#   navis-web   a static site serving the built React SPA (frontend/dist)
+#               live: https://navis-yuvf.onrender.com  (service name "NAVIS")
+#
+# They are connected by exactly one value: navis-web is built with
+# VITE_API_URL pointing at navis-api's URL. Vite inlines that at BUILD time,
+# so changing it requires redeploying the static site, not restarting it.
+#
+# This file is the record of the deployment. The live services were created
+# through the API and are kept in step with it by hand; `render.yaml` becomes
+# authoritative only if the services are re-adopted as a Blueprint in the
+# dashboard.
+
+services:
+  # ── API ────────────────────────────────────────────────────────────────────
+  - type: web
+    name: navis-api
+    runtime: python
+    region: singapore
+    plan: free
+    branch: main
+    healthCheckPath: /health
+    buildCommand: bash render-build.sh
+    # --app-dir puts backend/ on sys.path instead of the project root, which is
+    # what D-112 split apart. Without it uvicorn raises
+    # `ModuleNotFoundError: No module named 'server'` at boot, every time.
+    startCommand: python -m uvicorn server.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        # requirements.txt is pinned against 3.12 (numpy 1.26.4 has no 3.13
+        # wheel, and torch 2.2.2 stops at cp312).
+        value: 3.12.10
+      - key: HF_HOME
+        # Default is $HOME/.cache, which does NOT survive from the build into
+        # the running instance. Pointing it inside the project directory is
+        # what lets render-build.sh download MiniLM once, at build time,
+        # instead of on a user's first request.
+        value: /opt/render/project/src/.hfcache
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      # Frontend origins beyond Render's own *.onrender.com, which
+      # server/main.py already allows by regex. Set this for a custom domain.
+      - key: NAVIS_ALLOWED_ORIGINS
+        value: ""
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  - type: web
+    name: navis-web
+    runtime: static
+    rootDir: frontend
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    # react-router owns every path below /. Without this rewrite a deep link
+    # or a refresh on /schedule asks Render for a file that was never built
+    # and gets a 404 instead of the app.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: navis-api
+          type: web
+          # `host` is the only property available here and it carries NO
+          # scheme — this resolves to `navis-api-xxxx.onrender.com`.
+          # getBaseUrl() in frontend/src/lib/api.ts assumes https:// for a
+          # bare hostname precisely so this works.
+          property: host

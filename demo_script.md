@@ -88,7 +88,7 @@
 ---
 
 ## Presenter Checklist Before Taking the Stage
-1. Ensure backend is running (`uvicorn server.main:app --port 8000`) or Docker container is active.
+1. Ensure backend is running (`uvicorn server.main:app --app-dir backend --port 8000`) or Docker container is active.
 2. Open `http://localhost:8000/schedule` in Chrome and verify the Gantt chart renders cleanly.
 3. Keep the `/memory` tab ready to switch to Tender Estimator with one click.
 4. Have the sample PDF/CSV file ready in a folder for instant drag-and-drop into `/ingest`.

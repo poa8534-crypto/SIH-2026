@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 import { errorDetail } from '../../lib/api';
 import { Button } from './Button';
 
@@ -97,6 +97,120 @@ export function Panel({
       {children}
     </section>
   );
+}
+
+// ── Command-centre building blocks ─────────────────────────────────────────
+
+export function PageIntro({
+  eyebrow,
+  title,
+  description,
+  actions,
+}: {
+  eyebrow?: React.ReactNode;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0 max-w-3xl">
+        {eyebrow && (
+          <div className="mb-2 text-label font-semibold uppercase tracking-[0.08em] text-accent">
+            {eyebrow}
+          </div>
+        )}
+        <h1 className="text-h2 font-semibold tracking-[-0.025em] text-heading leading-tight">{title}</h1>
+        {description && <p className="mt-2 text-body leading-6 text-muted">{description}</p>}
+      </div>
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+    </header>
+  );
+}
+
+export function MetricCard({
+  label,
+  value,
+  detail,
+  tone = 'default',
+  icon,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  detail?: React.ReactNode;
+  tone?: 'default' | 'accent' | 'ok' | 'warn' | 'danger';
+  icon?: React.ReactNode;
+}) {
+  const toneClass = {
+    default: 'text-heading',
+    accent: 'text-accent',
+    ok: 'text-ok',
+    warn: 'text-warn',
+    danger: 'text-danger',
+  }[tone];
+
+  return (
+    <section className="rounded-xl bg-raised p-4 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-hair/80">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-label font-medium text-muted">{label}</span>
+        {icon && <span className="text-muted">{icon}</span>}
+      </div>
+      <div className={`mt-2 text-h2 font-semibold tracking-[-0.03em] tabular-nums ${toneClass}`}>{value}</div>
+      {detail && <div className="mt-1 text-label leading-5 text-muted">{detail}</div>}
+    </section>
+  );
+}
+
+export function Toolbar({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-2 rounded-xl bg-raised p-2 ring-1 ring-hair/80 ${className}`.trim()}>
+      {children}
+    </div>
+  );
+}
+
+export function StatusBadge({
+  children,
+  tone = 'neutral',
+}: {
+  children: React.ReactNode;
+  tone?: 'neutral' | 'accent' | 'ok' | 'warn' | 'danger';
+}) {
+  const styles = {
+    neutral: 'bg-secondary text-muted',
+    accent: 'bg-selected text-accent',
+    ok: 'bg-ok/10 text-ok',
+    warn: 'bg-warn/10 text-warn',
+    danger: 'bg-danger-bg text-danger',
+  }[tone];
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-label font-semibold ${styles}`}>{children}</span>;
+}
+
+export function DisclosureNotice({
+  summary,
+  children,
+}: {
+  summary: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="group rounded-xl bg-secondary/70 px-4 py-3 text-body text-muted ring-1 ring-hair/70">
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-fg">
+        <Info size={16} className="text-accent" />
+        <span>{summary}</span>
+        <span className="ml-auto text-muted transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <div className="mt-3 border-t border-hair pt-3 leading-6">{children}</div>
+    </details>
+  );
+}
+
+export function DataTableShell({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <div className={`overflow-auto rounded-xl bg-raised ring-1 ring-hair/80 ${className}`.trim()}>{children}</div>;
+}
+
+export function ChartContainer({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <section className={`rounded-xl bg-raised p-4 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-hair/80 ${className}`.trim()}>{children}</section>;
 }
 
 // ── Skeleton ────────────────────────────────────────────────────────────────

@@ -499,6 +499,23 @@ beforeEach(() => {
   vi.spyOn(api, 'getEvidenceCorpus').mockResolvedValue(BASE_CORPUS as never);
   vi.spyOn(api, 'getEvm').mockResolvedValue(BASE_EVM as never);
   vi.spyOn(api, 'queryMemory').mockResolvedValue(BASE_MEMORY as never);
+  vi.spyOn(api, 'getRecentAudit').mockResolvedValue([
+    {
+      id: 'aud-1',
+      activity_id: 'PIP-SPL-1027',
+      field_changed: 'actual_start',
+      old_value: null,
+      new_value: '2026-08-06',
+      source: 'daily_report',
+      source_file: 'dpr_day_09.txt',
+      source_line: 12,
+      source_row: null,
+      confidence: 0.91,
+      auto_applied: true,
+      conflict: false,
+      timestamp: '2026-09-15T07:15:00',
+    },
+  ] as never);
 });
 
 describe('ExecutiveMilestones destination', () => {
@@ -544,7 +561,7 @@ describe('ExecutiveRisksDelays destination', () => {
     wrap(<ExecutiveRisksDelays />);
 
     expect(await screen.findByText(/Risks & Delay Exposure/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Monsoon Flooding Risk on Access Road/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Monsoon Flooding Risk on Access Road/i)).length).toBeGreaterThan(0);
 
     // Switch to delay attribution tab
     const delayTab = screen.getByRole('button', { name: /Delay Attribution Matrix/i });
@@ -635,8 +652,21 @@ describe('ExecutiveDataConfidence destination', () => {
 
     expect(await screen.findByText(/Data Confidence & Lineage Audit/i)).toBeInTheDocument();
 
-    // Explicit denominator 77 evidenced ÷ 120 total = 64.2%
-    expect(screen.getByText(/77 evidenced ÷ 120 total = 64.2%/)).toBeInTheDocument();
+    // The denominator line is DERIVED from the payload, not asserted. It used
+    // to be the literal string "Formula: 77 evidenced ÷ 120 total = 64.2%",
+    // which is why this assertion passed even before the metrics query
+    // resolved — and why the line kept claiming 77 while the tile beside it
+    // showed the real 67. Awaiting it is the point of the test. See D-111.
+    expect(
+      await screen.findByText(/77 evidenced ÷ 120 total = 64.2%/)
+    ).toBeInTheDocument();
+
+    // The grade letter is a banding of that same figure, with the scale shown.
+    expect(await screen.findByText(/Audit Grade: C \(64\.2% Verified\)/)).toBeInTheDocument();
+
+    // And the ingest tile reads the audit trail rather than a fixed string.
+    expect(await screen.findByText(/2026-09-15 07:15:00/)).toBeInTheDocument();
+    expect(await screen.findByText(/dpr_day_09\.txt/)).toBeInTheDocument();
 
     // Primary Field Evidence vs Secondary Research Corpus
     expect(screen.getByText(/Active Project Reporting Coverage/i)).toBeInTheDocument();

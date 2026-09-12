@@ -10193,109 +10193,916 @@ survive that rewrite and pass against it.
 
 ---
 
-## 2026-09-12 / D-109 — The demo video script is written against the running app, and the walkthrough found two ways to film a broken product
+## 2026-09-11 / D-109 — A write you cannot go and look at is not visibly different from one that never happened
+
+### Status
+Active. Extends D-108.
+
+### Context
+D-108 made the PM decision dock write for real. The next report from the screen
+was, verbatim: *"it's not re-directing me to wherever the hell that data is being
+stored so I can see the damn changes."*
+
+That is the correct complaint, and it is the same complaint as D-108. From the
+planner's seat, a button that writes silently and a button that writes nothing
+look **identical**: a banner appears, four seconds pass, the panel sits there
+unchanged. D-108 fixed the write. It did not fix the thing that made the
+original defect invisible for as long as it survived — that nobody could see
+whether anything had happened.
+
+Two separate problems were reported together, and only one was a defect.
+
+**1 · A stale bundle, not a bug.** The screenshot showed `Accept Field Actual`
+with no count, looking enabled. Checked live against the same dev server:
+`CIV-APN-1022` carries **6** pending items and the running code renders
+**`Accept Field Actual (6)`**, enabled, tooltip *"Confirm 6 pending review
+item(s) and write the field actuals"*. The browser was holding pre-D-108 assets.
+Nothing to fix; recorded because the same screenshot will be taken again.
+
+**2 · No destination. A real gap.** A confirm writes to two places — audit rows
+for the activity, and the activity's own actual dates — and the panel pointed at
+neither.
+
+### Decision
+**Every successful write now names where its data landed, and takes you there.**
+`actionFeedback` stopped being a `string` and became `{ text, cta?, to? }`.
+
+| Action | What it writes | Where the banner sends you |
+|---|---|---|
+| Accept | audit rows + the activity's actual dates | switches to the **Audit Trail tab** itself, and offers *"See the bar move on the Gantt"* → `/schedule?view=gantt&activity=…&highlight=<ts>` |
+| Keep Baseline | closes the review items, no date | *"Open the review queue"* → `/reconcile` |
+| Flag Conflict | a RAID issue | *"Open Risk & Exposure"* → `/raid` |
+
+Three things worth stating about that table:
+
+- **Accept shows one destination and offers the other.** The audit rows are one
+  tab away inside the panel, so the panel goes there on its own rather than
+  asking. The bar that moved is on another screen, so it is offered as a link
+  instead of a forced navigation — the planner may want to keep adjudicating.
+- **The Gantt link is the `highlight=<ts>` deep link**, so it lands on the D-107
+  path: the row centres in the chart and the bar glows. That path only works
+  because of the timestamp key and the container-height fix; a `highlight=true`
+  link would be swallowed by the one-shot scroll lock on a second visit.
+- **Keep Baseline is deliberately not offered the Gantt.** Nothing moved on the
+  schedule. Sending a planner to look at an unchanged bar and calling it the
+  result of their decision would be a smaller version of the original lie. What
+  changed is the queue, so that is where it points.
+
+Following the link closes the drawer before navigating: leaving an inspection
+panel for one activity floating over a different screen is not a state worth
+preserving.
+
+### Consequences
+- The three decisions are now observable from the seat that takes them. This is
+  what makes D-108 checkable by the person using it rather than only by reading
+  the network tab.
+- No new endpoint, no new query, no new route — `/reconcile`, `/schedule` and
+  `/raid` all already existed, and the Gantt deep link is the one Reconcile has
+  used since D-107.
+
+### Verification
+- **`npx tsc --noEmit`** — clean. **`npm run build`** — clean, 5.55s.
+- **`npx vitest run`** — 24 files, **257 passed**, 0 failed.
+  `scheduleInspectionPanel.test.tsx` 12 → 15: accept switches the panel to the
+  audit trail *and* offers the Gantt link; Keep Baseline offers the review queue
+  and **asserts the Gantt link is absent**; flag offers Risk & Exposure.
+- **Live** — `CIV-APN-1022` renders `Accept Field Actual (6)` against a real
+  queue of 6, confirming finding 1 was a stale bundle.
+- **The real Accept was not fired.** A scripted click on it was refused by the
+  sandbox as an irreversible write, which is the correct outcome: it commits
+  actual dates into an append-only ledger (D-004) on the demo dataset. Its
+  payloads and its destinations are pinned by the tests above; the endpoint is
+  covered by the backend suite; and the sibling write path *was* proven live in
+  D-108 (RAID row `bd8bc7ed`, register 9 → 10, rejected afterwards). Recovery if
+  it is fired in anger: `python scripts/reset_demo.py`.
+
+### Affected Areas
+- `frontend/src/components/ActivityInspectionPanel.tsx`
+- `frontend/src/test/scheduleInspectionPanel.test.tsx`
+
+---
+
+## 2026-09-11 / D-110 — Gantt calendar header: day-level ticks, pinned month labels, weekend shading
 
 ### Status
 Active.
 
+### Provenance — read this before trusting the reasoning below
+**This change was authored in a different Claude Code session working in the
+same worktree, and was found uncommitted.** It was committed on the user's
+instruction ("commit and push all of my current changes"). Everything in the
+Decision section is **read off the diff**, not stated by its author: the *what*
+is verified against the code, the *why* is inference. Where a choice looks
+deliberate but its rationale was not recorded, that is said plainly rather than
+invented. A later session that knows the intent should correct this entry rather
+than treat it as settled.
+
 ### Context
-A three-role demo video was scripted — Field Supervisor on a phone, Project
-Manager on a laptop, Senior Management on a desktop. Rather than script from
-`DEMO.md`, every screen was walked live on 2026-09-12 after
-`python scripts/reset_demo.py`. Three things came out of that walk, and two of
-them would have ended a take.
-
-**1 · The built frontend pointed at a dead tunnel.** `frontend/dist` had been
-built by `GO_GLOBAL.bat`, which sets `VITE_API_URL` to whatever ephemeral
-`*.trycloudflare.com` hostname the tunnel handed it that run. The bundle
-shipped that hostname as a literal:
-
-```
-frontend/dist/assets/index-DVToKHd5.js:https://injuries-rides-bears-peers.trycloudflare.com
-```
-
-That tunnel is long dead, so every screen served from that build rendered
-*"Could not reach the API at https://injuries-rides-bears-peers.trycloudflare.com"*.
-Observed live on the field Home screen before anything else was diagnosed.
-`dist/` is gitignored, so nothing in the repository was wrong — the artifact on
-the presenting machine was. Rebuilt with `VITE_API_URL` unset, which restores
-the `lib/api.ts:73` default of `http://<window.location.hostname>:8000` — the
-only form that works for a phone on the LAN.
-
-**2 · Two UI paths return JSON when the API serves the UI.** With
-`SERVE_FRONTEND=1`, `server/main.py:5709` registers the SPA catch-all **after**
-every API route, and FastAPI resolves in registration order. Measured against
-the running server:
-
-| Path | Content type |
-|---|---|
-| `/schedule` | `application/json` |
-| `/raid` | `application/json` |
-| `/home` `/reconcile` `/ingest` `/delay` `/memory` `/executive` `/executive/*` `/field` `/field/*` | `text/html` |
-
-Exactly two collisions. In-app navigation is unaffected, because react-router
-never issues the request — only a typed URL or a page refresh on those two
-screens does. On camera, a refresh on the Schedule screen shows a judge raw
-JSON where the Gantt should be.
-
-**3 · `START_DEMO.bat` does not set `SERVE_FRONTEND`.** It opens
-`http://localhost:8000` in a browser tab, and there is no `@app.get("/")` in
-`server/main.py`, so that tab renders `{"detail":"Not Found"}`. The launcher
-`JUDGE_ANSWERS.md` tells a presenter to double-click is the one that cannot
-show the application.
+D-107 left the Gantt's timeline header at week granularity: a month band on top,
+a date label every 7 days below (14 at compact, where 42px could not hold "Sep
+15"), and grid lines at month and week boundaries. That is legible but coarse
+for a schedule whose unit of decision is a single day — the data date, an actual
+start, a finish variance are all day-precision, and the header could not show
+which day a bar landed on.
 
 ### Decision
-1. **`DEMO_VIDEO_SCRIPT.md`** is the script of record for the video: three
-   acts, ON SCREEN / VOICEOVER in parallel, timed to 5:30 with a marked 3:00
-   cut per act. Every label, chip and screen name in it was read off the
-   running application, not off `DEMO.md` — whose lane walkthroughs predate the
-   current Home, Reconcile and executive screens and whose counts predate
-   D-103.
-2. **The recording setup is the two-process one** — uvicorn on `0.0.0.0:8000`
-   and Vite on `0.0.0.0:5173` — not `START_DEMO.bat`. It sidesteps both
-   defects rather than working around them: Vite serves every UI path including
-   `/schedule` and `/raid`, and with no `frontend/.env` the phone derives the
-   API from its own address bar and reaches the laptop.
-3. **The two serving defects are recorded, not repaired.** Fixing the collision
-   means either renaming two API routes (a breaking change to a contract the
-   frontend and `/docs` both depend on) or adding `Accept`-header negotiation
-   to the catch-all. Neither is a change to make against an undemoed build
-   hours before filming. They are documented in `FLOW.md`'s Current
-   Modification Area and in the script's Landmines section.
-4. **The numbers in the script are the post-`reset_demo.py` numbers of
-   2026-09-12** — 120 activities, 266 events, 75 auto-linked, 198 pending
-   review, 46 with actual dates (34 completed), 141 audit records, 25 source
-   conflicts recorded. `DEMO.md`'s 135 / 67 / 38 / 18 no longer reproduce.
-5. **The script carries the SPI discrepancy answer.** The planner Overview tile
-   reads SPI 0.91 (duration-weighted physical progress) while the executive
-   Overview reads 0.35 (earned value, where the 74 unevidenced activities score
-   zero). Both are on screen in the same video. The script gives the presenter
-   the sentence that reconciles them rather than leaving it to Q&A.
+1. **A `days: GanttDay[]` array is built once in the geometry memo**, one entry
+   per timeline day, carrying `dayOfMonth`, `dayOfWeek`, `isWeekend`,
+   `isMonday`, `isFirstOfMonth`, `shortDate`, `weekdayLabel` and `isoDate`.
+   Every tick, grid line and shading column now reads from that one list instead
+   of recomputing dates inline. `GanttMonth` is the same treatment for the month
+   band.
+
+2. **Tick density is chosen by zoom, replacing D-107's `labelEveryDays`.**
+   - compact — Mondays and the 1st only, 1st in accent;
+   - standard — every day, day number only;
+   - detailed — every day, weekday initial above the day number.
+
+   This supersedes the `pxPerDay * 7 < 48 ? 14 : 7` heuristic, which is removed.
+   `PX_PER_DAY_MAP` moved 6/12/20 → **7/14/24**, which is what makes a per-day
+   column wide enough to hold a number at standard zoom.
+
+3. **Month labels are pinned to the visible edge.** The container's horizontal
+   scroll is tracked in state (`scrollLeft`, updated from `onScroll` through a
+   `requestAnimationFrame` so it does not fire per scroll event, with the frame
+   cancelled on unmount), and each month label is translated by
+   `clamp(scrollLeft - left + 8, 0, width - 110)`. A month wider than the
+   viewport keeps its name visible instead of letting it scroll away under the
+   sticky pane; when the remaining box is under 65px the label falls back to
+   `shortLabel` ("Sep 2026").
+
+4. **`maxTime` is aligned to the end of its month** (`alignedMaxTime`, the 1st
+   of the following month) and the month loop became `while (cur < end)`. This
+   reaches the same guarantee as D-107's `monthSpanDays` term — the canvas
+   always holds the whole month band — from the other direction. Both are
+   present; `diffDays` still takes the max of the three, so the two agree rather
+   than compete.
+
+5. **Float slack is folded into the timeline bounds**, capped at 120 days per
+   activity, and the float connector's own width is clamped to
+   `timelineWidth - (pLeft + pWidth) - 4`. Previously a long float tail drew
+   past the end of the canvas.
+
+6. **`parseISODate` was hardened** to match `^(\d{4})-(\d{2})-(\d{2})` out of
+   any ISO string and return `NaN` for anything else, including empty input.
+   The old `split('-').map(Number)` produced `Date.UTC(2026, 8, NaN)` for a full
+   timestamp like `2026-09-15T00:00:00`.
+
+7. **Weekend columns are shaded and the data-date column is highlighted** in the
+   header and the grid; the data-date line gained a glow. Grid lines are now
+   per-day, weighted: 1st of month heaviest, Monday medium, other days lightest.
+
+8. **The toolbar and legend were made non-wrapping** — `whitespace-nowrap` and
+   `shrink-0` on every chip, `flex-wrap sm:flex-nowrap overflow-x-auto` on the
+   bar. This is presented as a fix for "multiline glitches"; the failure it
+   prevents is the legend reflowing onto a second line and pushing the chart
+   down at narrow widths.
+
+9. **"Focus Data Date" now centres** the data date in the visible timeline
+   rather than offsetting it by a fixed 300px, which was wrong at any container
+   width but 740px.
 
 ### Consequences
-- A presenter following `DEMO_VIDEO_SCRIPT.md` cannot reach either serving
-  defect by accident, and knows what both look like if they do.
-- `frontend/dist` on this machine is now hostname-derived. Anyone who runs
-  `GO_GLOBAL.bat` again re-pins it to that run's tunnel and must rebuild with
-  `VITE_API_URL` unset before demoing locally.
-- Mic behaviour is stated rather than discovered on camera: browser speech
-  needs a secure context, so a phone on `http://<ip>:5173` shows the designed
-  *"Microphone unavailable — Typing works just as well"* state. The script
-  offers two honest ways to film it.
-- No application code was touched, so no metric can have moved.
+- The header answers "which day is this bar on" at standard and detailed zoom,
+  which it could not before.
+- **Cost, recorded because it was not:** standard and detailed zoom now render
+  one tick div, one grid line and possibly one shading div *per day* across the
+  full timeline. For the 120-activity baseline that is roughly 260 days — order
+  700 extra nodes in the header and grid, independent of activity count. No
+  virtualisation. It was not measured; it did not show up as jank in the suite
+  or in manual use, but it is the obvious thing to look at first if the Gantt
+  starts feeling heavy on a longer schedule.
+- D-107's `labelEveryDays` is gone. Nothing depended on it and no guard covered
+  it, so its removal is silent — noted here so it is not later read as a
+  regression.
+- **Every D-107 regression guard still passes against this rewrite**: the
+  single-background-class assertion, highlight-beats-critical, the z-10
+  layering, the badge clamp, the month-band fit, the no-page-hijack check and
+  the absent-data-date case. That is what those guards were for, and they held
+  through a rewrite by a different session that had not read them.
 
 ### Verification
-- Live walk of all three lanes against a running server at 375×812 and
-  1440×900: field Home and the Report Progress stepper, planner Overview,
-  Review & Reconcile, executive Overview.
-- Route collisions measured with `curl -o /dev/null -w "%{content_type}"` over
-  ten UI paths.
-- `frontend/dist` rebuilt; `grep -r trycloudflare frontend/dist/assets` now
-  returns nothing.
-- `python scripts/reset_demo.py` — the counts quoted above, read off its own
-  summary block.
+- `npx tsc --noEmit` — clean.
+- `npx vitest run` — 24 files, **257 passed**, 0 failed.
+- `npm run build` — clean, 7.01s.
+- `gantt.test.tsx` 15 → 18, added by the same session: detailed zoom renders
+  weekday+day cells titled `Su, 2026-03-01` with the 1st carrying
+  `border-l-accent`; month headers render full names unclipped; the critical
+  legend chip and the Focus Data Date button both carry `whitespace-nowrap`.
+- Not re-verified in the browser by this session. The change was found complete
+  and idle for over an hour; it was committed as-is, not extended.
 
 ### Affected Areas
-- `DEMO_VIDEO_SCRIPT.md` (new)
-- `FLOW.md` — Current Modification Area
-- No source file changed. `frontend/dist` is a gitignored build artifact.
+- `frontend/src/components/GanttChart.tsx`
+- `frontend/src/test/gantt.test.tsx`
+
+---
+
+## 2026-09-11 / D-111 — The Senior Management lane stopped asserting numbers it did not have
+
+### Status
+Active. Supersedes nothing; it completes the sweep D-106 began.
+
+### Context
+D-106 swept this lane for dead buttons and concluded, in its own words, that
+*"No ungrounded number was found."* A second pass, run the same way — live app,
+every destination, every control, console and network read after each — found
+that conclusion was wrong, and wrong in the one place it costs most.
+
+**Data Confidence contradicted itself on screen.** Three figures were literals:
+
+| Site | Rendered | Live truth |
+|---|---|---|
+| `DataConfidence.tsx:112` | `Audit Grade: C (64.2% Verified)` | 55.8% |
+| `DataConfidence.tsx:208` | `Formula: 77 evidenced ÷ 120 total = 64.2%` | 67 ÷ 120 = 55.8% |
+| `DataConfidence.tsx:76` | `'2026-09-15 07:15:00 IST (Daily Voice & PDF Logs)'` | whatever the audit trail last recorded |
+
+The "77" sat three centimetres below a tile reading **67**, on the page whose
+subject is whether the numbers can be trusted, beneath a badge reading *Zero
+Synthetic Data*. The ingest timestamp was worse than stale: it is the tile a
+judge watches while a report is ingested live, and it could not move.
+
+Two related shapes ran through the lane:
+
+1. **`?` where `??` was meant.** `kpis?.evidence_coverage_pct ? … : '64.2%'`
+   falls back on a *falsy* value, so a genuine 0% — coverage collapsing, SPI at
+   zero, no drift — printed last quarter's literal at precisely the moment the
+   real figure mattered most. The same shape appeared eight times across
+   `DataConfidence.tsx` and `ManagementReports.tsx`, including `?? 31` critical
+   activities against a live 12.
+2. **Captions describing a different quantity than the number above them.**
+   Notice compliance read `0 served · 2 lapsed` under **50%** — arithmetic no
+   reader can reproduce, because the two OPEN windows forming the numerator
+   were not shown. The Milestones tile captioned a count of CRITICAL/AT_RISK
+   rows as "Positive variance days", a different set. An Overview row labelled
+   "Contractor LD Risk" and printed a count of delay days, while the panel
+   below it correctly said no liquidated damages were computed.
+
+**A fabricated tag was shipping in the board pack.** `ManagementReports.tsx:83`
+recommended *"Verify unevidenced piping spools on **Skid B-4**"*. No such tag
+exists in the dataset — the skids are CS-01 and HS-01. It reached the exported
+`.md` and the printed PDF.
+
+**Two controls did nothing.** `reportPeriod` and `reportScope` were read only by
+their own `<select value=>`. Choosing "Critical Path & Milestones Only" produced
+a byte-identical pack, export and print. `Current Week (W13)` was a literal too.
+
+**Two more clicks led nowhere.** A RAID row carried `cursor-pointer`, a hover
+highlight and `setSelectedRaidItem(item)` — and `selectedRaidItem` was never
+read. Invisible at 0 accepted items, which is exactly the state D-106 told the
+presenter to change. Report §4 rendered a heading over an empty bordered box.
+
+**A panel measured the wrong thing.** "Missing or Stale Field Reporting (> 7
+Days Without Update)" filtered `finish_variance_days > 5`. Variance is not
+recency and 5 is not 7, and it then asserted *"All in-progress activities carry
+current telemetry."*
+
+### Decision
+1. **Every figure on Data Confidence is derived.** The grade is a banding of the
+   coverage figure with its scale printed beside it, because a grade whose
+   boundaries are invisible is an opinion wearing a number's clothes. The
+   ingest tile reads `GET /audit/recent` — timestamp and source file — so it
+   moves when an ingest happens. The engine-run tile shows the metrics `as_of`
+   date and no invented clock time.
+2. **`??` everywhere a real zero is possible**, and `!= null` for the nullable
+   `spi`. New `dashNum()` renders an em dash rather than a fossil.
+3. **New `lib/units.ts`** — `pluralise`, `days`, `signedDays`, `qty`. It exists
+   because "1 Days" was live on three screens at once (contractor delay is
+   exactly 1 day), and because `toLocaleString()` with no rounding printed
+   "1,446.94 / 1,693 nos" — 0.94 of a flange. Rounding is per UOM: discrete
+   units go whole, continuous units keep one decimal.
+4. **The narrative is read from the payload.** The driving activity, its
+   recorded delay cause and the unevidenced count replace the invented skid.
+   Fixing this exposed a second bug the literals had been hiding: the narrative
+   was seeded on first render, before the metrics query resolved, and the sync
+   effect's guard (`!aiNarrative`) could never fire because the box is never
+   empty. With the fallbacks gone the pack opened with *"an SPI of —"*. The
+   guard is now a `useRef` that yields ownership the moment the supervisor
+   types or asks for a regeneration.
+5. **Both report selectors filter**, the rule is stated on screen and carried
+   into the markdown as a `**Review Scope:**` line, and the window defaults to
+   the whole project — a board pack should be complete unless someone narrows
+   it deliberately.
+6. **The RAID row opens the rest of its record** (description, dates, category,
+   linked activities, origin). **Risks & Delays opens on the first tab that has
+   content**, resolved once and never re-resolved, so a refetch cannot pull a
+   reader off the tab they chose.
+7. **The stale panel says what it measures**: "Overrunning In-Progress
+   Activities (> 5 Days Past Planned Finish)", with an explicit sentence that
+   per-activity evidence recency is *not* carried on `GET /schedule` and no
+   claim about it is being made.
+8. **`Exposure.tsx` (528 lines) and `Provenance.tsx` deleted.** Neither was
+   imported; both routes already redirected elsewhere.
+9. **`tsconfig.executive.json`** turns `noUnusedLocals` / `noUnusedParameters`
+   on for this lane only, run by `npm --prefix frontend run typecheck:executive`.
+   Scoped deliberately: globally the rule reports **99** findings across the
+   planner, field and test files, and a sweep that size does not belong beside
+   a behaviour change the night before a demo. It is the rule that catches the
+   dead RAID state and the `/evm` request `ManagementReports.tsx` fired on every
+   visit and never read — both of which this entry removes.
+
+### Alternatives Considered
+- **Infer report recency from the audit feed** for finding 7. Rejected: the feed
+  is truncated, so absence from it is not evidence of absence. Renaming the
+  panel to its real computation is honest; inferring would repeat the mistake.
+- **Enable `noUnusedLocals` repo-wide.** Rejected for tonight, on scope. The 99
+  remaining findings are recorded here as known work, not as a clean bill.
+- **Delete the two report selectors** rather than wire them. Rejected: a review
+  window is a real need for this reader; the defect was that it lied, not that
+  it existed.
+
+### Affected Areas
+- `frontend/src/lib/units.ts` (new), `frontend/tsconfig.executive.json` (new)
+- `frontend/src/pages/executive/` — `DataConfidence.tsx`, `ManagementReports.tsx`,
+  `RisksDelays.tsx`, `Overview.tsx`, `Progress.tsx`, `Milestones.tsx`,
+  `Forecasts.tsx`, `ExecutionInsights.tsx`; `Exposure.tsx` and `Provenance.tsx`
+  deleted
+- `frontend/src/test/executiveWorkspaces.test.tsx`,
+  `frontend/src/test/executiveOverview.test.tsx`
+- `frontend/package.json` (one script)
+
+### Trade-offs / Consequences
+- **Two tests were pinning the defects.** `executiveOverview` asserted
+  `'1 Days'`; `executiveWorkspaces` asserted `/77 evidenced ÷ 120 total = 64.2%/`
+  — and passed *synchronously*, before the mocked metrics query resolved, which
+  is the clearest possible proof the literal was doing the work. Both now await
+  the derived value, so they fail if a fallback is ever reintroduced.
+- Data Confidence reads **Grade D (55.8%)** where it read **C (64.2%)**. That is
+  a worse-looking screen and a true one.
+- No backend, matcher, extractor or threshold code was touched, so **no metric
+  can have moved** and `eval.py` was not re-run.
+
+### Verification
+- **`npx tsc --noEmit`** — clean. **`npm --prefix frontend run typecheck:executive`**
+  — clean. **`npm run build`** — clean, 3.31s.
+- **`npx vitest run`** — 24 files, **254 passed**, 0 failed.
+- **`python -m pytest -q`** — unchanged; no backend code touched.
+- **Live, against the running API**, in a fresh tab with an empty console:
+  Data Confidence reads `Grade D (55.8%)`, `Formula: 67 evidenced ÷ 120 total =
+  55.8%`, and `LATEST FIELD REPORT INGEST 2026-09-11 17:38:28 · Newest audit
+  write · dpr_day_10.txt`. Risks & Delays reads `1 Day` and `0 served · 2 open ·
+  2 lapsed`; a RAID row expands to its record (`Tank TK-1 Hydrotest … ORIGIN
+  schedule_inspection`). Progress reads `1,447 / 1,693 nos` and keeps
+  `5,969.7 / 8,097 m`. Execution Insights reads `LARGEST DELAY CAUSE … (1
+  event)`. Forecasts reads `1 Driving Activity`. Reports reads `Showing 7 of 7
+  milestones — all dates, all disciplines and statuses` and a narrative naming
+  the real driver: *"Primary schedule pressure is on Bored Piling — Pipe Rack
+  P1–P12 (CIV-PLY-1004), +1d against plan … the recorded delay cause 'piling rig
+  breakdown'"*. No "Skid B-4" anywhere.
+
+### Future Notes
+The two tests that pinned the fossils are the lesson worth keeping: a test that
+asserts a rendered literal will pass whether or not the query behind it ever
+resolves. When an executive screen shows a figure, assert it with `findByText`
+against the mocked payload, never with `getByText` against a string that could
+also be a fallback.
+
+**Still open, and deliberately not done here:** `noUnusedLocals` reports 99
+findings outside this lane, and the login role cards logged by D-106 item 5 are
+still not keyboard reachable.
+
+---
+
+## 2026-09-12 / D-112 — All Python moved under `backend/`; the project root is no longer the import root
+
+### Status
+Active. Supersedes nothing architectural. It relocates files and changes how the
+process is launched; it changes no behaviour, no schema, no threshold and no
+metric.
+
+### Context
+The repository root had accumulated 61 tracked entries, and the backend was
+scattered across four top-level packages (`server/`, `matching/`, `extraction/`,
+`scripts/`) plus ten loose `.py` files (`eval.py`, `eval_real.py`, `evalstats.py`,
+`evalduration.py`, the three `generate_*.py`, `verify_duliajan_schedule.py`, and
+two root-level `test_*.py`). Nothing distinguished the backend from the 40 markdown
+documents, the PDFs and the deck build directories sitting beside it.
+
+The obstacle to moving them was never the imports. It was that **66 call sites
+computed the project root as `Path(__file__).resolve().parent.parent`** (or
+`parents[1]`), and used the result for two different things:
+
+| Use | What it must point at |
+|---|---|
+| `sys.path.insert(...)` so `from server.db import ...` resolves | the **import root** |
+| `/ "dataset"`, `/ "datasets"`, `/ ".env"`, `/ "frontend" / "dist"` | the **project root** |
+
+Before the move those were the same directory, so one expression served both and
+the ambiguity was invisible. Moving the packages one level down separates them
+permanently: the import root becomes `backend/`, the project root stays where it
+was.
+
+### Decision
+
+**1. `backend/` holds Python and nothing else.** `server/`, `matching/`,
+`extraction/` and `scripts/` moved wholesale; so did the ten root `.py` files.
+`dataset/`, `datasets/`, `frontend/`, `research/`, `requirements.txt`, the
+`Dockerfile` and every document stayed at the root. Data is shared between the
+backend, the research harnesses and the docs, so burying it under `backend/`
+would have bought tidiness with 900 file renames and a changed `DB_PATH`.
+
+**2. No import statement changed.** Every `from server.x import y` and
+`from matching.x import y` in the tree is untouched. `backend/` is put on
+`sys.path` instead of the project root, so the package names resolve exactly as
+before. The alternative — `backend.server.main:app` — would have required
+rewriting imports across ~100 files for no gain.
+
+**3. The launch command carries the anchor: `--app-dir backend`.**
+
+```
+python -m uvicorn server.main:app --app-dir backend --port 8000
+```
+
+Updated in `Dockerfile`, `run_navis.bat`, `run_navis_fast.bat`,
+`.claude/launch.json`, `frontend/.env.example` and every doc that prints the
+command. `pytest` needs no equivalent flag: with no `__init__.py` in `backend/`,
+pytest's rootdir insertion puts `backend/` on `sys.path` on its own, so
+`python -m pytest -q` still runs from the project root unchanged.
+
+**4. The two uses of "root" are now named separately.** Where one expression was
+serving both purposes, it was split rather than renumbered:
+
+```python
+BACKEND_ROOT = Path(__file__).resolve().parent.parent   # import root
+PROJECT_ROOT = BACKEND_ROOT.parent                      # dataset/, .env, frontend/
+sys.path.insert(0, str(BACKEND_ROOT))
+```
+
+Applied in `backend/eval.py`, `backend/eval_real.py`,
+`backend/generate_v2_dataset.py`, `backend/scripts/healthcheck.py`,
+`backend/scripts/seed.py`, `backend/extraction/test_extractor.py`,
+`backend/matching/test_matching.py` and `backend/matching/test_providers.py`.
+Sites that only ever reached the project root gained one `.parent`
+(`backend/server/db.py`, `backend/server/demo.py`, `backend/matching/vocabulary.py`,
+`backend/matching/embedcache.py`, `backend/extraction/llm_backend.py`,
+`backend/server/evidence.py`). Sites that only ever anchored an import were left
+alone — `parent.parent` now names `backend/`, which is what they always wanted.
+
+**5. `research/bench/` keeps its project-root `ROOT`** — it reads `dataset/` —
+and now inserts `ROOT / "backend"` on `sys.path`. `research/data/*.py` was left
+untouched: those files hardcode `C:/Users/tcgxu/OneDrive/Desktop/SIH 2026` and
+have been unrunnable on any other machine since long before this change.
+
+**6. `DECISIONS.md` was not rewritten.** Entries D-001…D-111 name `server/main.py`
+and `matching/config.py` because that is where those files were when the decision
+was taken. This file is an architectural history, and back-dating 475 paths in it
+would make every entry describe a repository that did not exist on its date.
+**Paths in entries before D-112 are pre-move paths; prefix them with `backend/`.**
+`FLOW.md` is the opposite case — it describes code that is running now, so all 353
+of its references were prefixed.
+
+### Trade-offs / Consequences
+- **`--app-dir backend` is a new way to get it wrong.** Omit it and uvicorn fails
+  with `ModuleNotFoundError: No module named 'server'` — the same error as the
+  old "don't `cd server`" mistake, from a new cause. `SETUP.md` §4 now names the
+  flag as the thing that puts the package on `sys.path`.
+- **`git log --follow` is needed** to trace any backend file across this commit.
+  All 98 files moved as renames, so history is preserved but not flat.
+- **`git blame` line attribution is unaffected**; the content edits are confined to
+  the ~30 path-anchor lines listed above.
+- The root drops from 61 tracked entries to 51, and all ten root-level `.py`
+  files are gone — no Python remains at the top level.
+
+### Verification
+- **`python -m pytest -q` — 1055 passed**, identical to the pre-move baseline
+  captured before the first `git mv`. An intermediate run caught the second path
+  idiom (`parents[1]`, used in `matching/test_terminology.py`,
+  `test_learned.py`, `test_equivalence.py` and `matching/embedcache.py`) that the
+  first sweep missed: 23 failures, all `FileNotFoundError` on
+  `backend/dataset/...`. Fixed and re-run clean.
+- **`cd frontend && npx vitest run` — 24 files, 257 passed.** No frontend source
+  was touched; run to confirm the boundary held.
+- **Server booted the real way**: `python -m uvicorn server.main:app --app-dir
+  backend --port 8077`. `GET /health` → `{"status":"ok"}`. `GET /schedule` → **120
+  activities**. `GET /executive/metrics` → **67 evidenced ÷ 120 total = 55.8%**,
+  the exact figures D-111 recorded, which proves `PROJECT_ROOT` still resolves to
+  the root `dataset/epc_progress.db` and not to a second, empty database under
+  `backend/`.
+- **`python backend/scripts/healthcheck.py` — 31 passed, 0 failed**, including
+  every `import matching.*` / `import server.*` probe, all five `dataset/` file
+  checks, `dense retrieval: MiniLM (offline)` (so `.cache/embeddings` resolves to
+  the root) and all 46 exposed endpoints.
+- **`python backend/eval.py`** — auto-link precision **100.0%**, coverage
+  **43.5%** (67 of 154), suggestion precision **81.8%**, recall **86.9%**,
+  auto-link recall **46.2%**. Every figure matches `METRICS.md` §-published values
+  to the decimal. Run because `matching/` files were edited; the edits were path
+  anchors only, and the numbers confirm it.
+
+### Future Notes
+The bug this move exposes is worth stating plainly: **`parent.parent` meant two
+incompatible things and nothing in the code said which.** It survived because the
+two meanings coincided. Any future relocation will break the same 66 sites again
+unless they go on using the split names. If a third root is ever needed, add a
+named constant next to `BACKEND_ROOT`/`PROJECT_ROOT` rather than another
+`.parent`.
+
+The remaining root clutter is documents, not code: 40 markdown files, four PDFs
+and `-.json` (an 85 KB stray). Consolidating those under `docs/` is the obvious
+next pass and was deliberately not bundled here, because a documentation move and
+a code move failing together would be indistinguishable.
+
+---
+
+## 2026-09-12 / D-113 — NAVIS deployed as two connected Render services; the browser no longer guesses where the API lives
+
+### Status
+Active. Adds a deployment target. Changes no schema, no threshold, no matching
+behaviour and no metric. The one code path it changes for existing users is the
+frontend's API-base fallback, which was unreachable in every supported local
+setup and wrong in every hosted one.
+
+### Context
+The project ran only on a laptop. `run_navis.bat` starts uvicorn on `:8000` and
+Vite on `:5173`, and the two-device demo works because a phone on the same LAN
+loads the page from the laptop's IP and derives the API from it. Nothing about
+that survives being put on the public internet.
+
+Two Render services already existed and neither worked:
+
+| Service | Symptom |
+|---|---|
+| `navis-backend` (web service) | Every deploy failed: `ModuleNotFoundError: No module named 'server'` |
+| `NAVIS` (static site) | Built and served, but every API call failed |
+
+Both failures were real bugs, not configuration slips, and the first one was
+caused by the commit immediately before this: **D-112 moved all Python under
+`backend/`**, so `uvicorn server.main:app` with the project root on `sys.path`
+can no longer find the package. The start command still said `PYTHONPATH=.`.
+
+### Decision
+
+**1. Two services, connected by one build-time value.**
+A static site for the SPA and a Python web service for the API, rather than the
+unified `SERVE_FRONTEND=1` container the `Dockerfile` builds. The SPA is then
+served from a CDN and costs nothing, and the API can be restarted, scaled or
+rebuilt without taking the UI offline. They are joined by exactly one value:
+the static site is built with `VITE_API_URL` set to the API's origin. Vite
+inlines it at build time, so **changing it requires rebuilding the static site,
+not restarting it** — the single most common way to get this wrong.
+
+`render.yaml` records both services. The live services were created through the
+API and are kept in step with it by hand; the Blueprint becomes authoritative
+only if they are re-adopted in the dashboard.
+
+**2. `--app-dir backend` in the start command, not a shim at the root.**
+The alternative — putting a `server/` package back at the project root that
+re-exports from `backend/server` — would have un-done D-112 the week it landed,
+and a `sitecustomize.py` doing the same thing implicitly would be worse, because
+nothing at the call site would say why it works. The launch command carries the
+anchor, exactly as `run_navis.bat` and the `Dockerfile` already do.
+
+**3. The frontend stopped guessing.** `getBaseUrl()` was:
+
+```ts
+import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`
+```
+
+On any hosted origin that fallback produces a cross-origin **plaintext** request
+to a port nothing listens on — which a browser on an HTTPS page refuses as mixed
+content before it is even refused as a connection. It is now three explicit
+cases: configured URL, then a *recognised development host* (loopback, `.local`,
+the three private IPv4 ranges), then **same origin**. The third case is the
+unified Docker deployment, which had no correct answer before.
+
+The development-host test is deliberately the same set the backend's CORS regex
+allows. These two have to agree or the browser blocks a request whose URL was
+right.
+
+**4. CORS gained an HTTPS arm, scoped to Render.** The existing regex is
+`http://`-only — correct for a LAN demo, useless for a hosted one. Added
+`https://[a-z0-9-]+\.onrender\.com`, plus a `NAVIS_ALLOWED_ORIGINS` env var for
+a custom domain. Scoped rather than `*` so this stays a deployment allowance and
+not an open API. Verified that `https://evil.com` and the suffix attack
+`http://evil.onrender.com.attacker.net` are both still refused — Starlette
+matches `allow_origin_regex` with `fullmatch`, which is what makes the second
+one fail.
+
+**5. The database is seeded at build time, and is deliberately ephemeral.**
+`dataset/epc_progress.db` is gitignored, so a fresh instance has no data.
+`startup()` seeds the 120-activity baseline but **not** the ingested DPRs, so
+without this the deployed app is an empty shell: a schedule with no progress, no
+audit trail and no review queue. `render-build.sh` runs `backend/scripts/seed.py`
+during the build, whose output persists into the running instance because Render
+builds and runs a native service in the same directory.
+
+Every deploy therefore resets to the seeded state. For a demo that is the
+desirable behaviour, not a limitation to apologise for — but it means **anything
+a judge enters on the hosted app is lost on the next deploy**, and that is only
+acceptable because it is stated here and in `SETUP.md`. Persisting it needs a
+Render Disk (paid) or Postgres, which is a schema migration, not a config change.
+
+**6. CPU-only torch, pinned, from PyTorch's own index.** `pip install
+sentence-transformers` on Linux pulls the CUDA build: ~2.5 GB of `nvidia-*`
+wheels this service can never use. `render-build.sh` installs `torch==2.2.2`
+from `download.pytorch.org/whl/cpu` first, so the requirements resolve against
+it instead of dragging CUDA back in.
+
+**7. `HF_HOME` points inside the project directory.** Its default, `$HOME/.cache`,
+does *not* survive from the build into the running instance, so the MiniLM
+weights would be re-downloaded on the first real request — on a cold free
+instance, on top of a 50-second spin-up. Pointing it at
+`/opt/render/project/src/.hfcache` is what makes the build-time download count.
+
+**8. A `404.html` fallback is emitted by `npm run build`.** The SPA uses
+`BrowserRouter` with real paths (`/executive/milestones`), so a refresh or a
+shared deep link asks Render for a file that was never built. The correct fix is
+a rewrite rule (`/*` to `/index.html`), which `render.yaml` declares but which
+**cannot be set through Render's API** — only the dashboard or a Blueprint.
+Copying `index.html` to `404.html` at build time makes deep links work with no
+dashboard access at all; the rewrite rule upgrades them from a 404 status to a
+200.
+
+### Alternatives Considered
+
+**Drop `sentence-transformers` to fit Render's 512 MB free tier.** Measured
+rather than assumed, by blocking the import and re-running `backend/eval.py`:
+
+| | With MiniLM | Hashed-ngram fallback |
+|---|---|---|
+| Auto-link precision | **100.0%** | **95.1%** |
+| Coverage (auto-linked) | 43.5% | 26.6% |
+| Top-1 accuracy | 86.9% | 72.4% |
+| Suggestion precision | 81.8% | 67.8% |
+
+**Rejected.** `CLAUDE.md` states that moving auto-link precision off 100% is a
+correctness regression, and it is right: at 95.1% the deployed demo writes wrong
+activity links into the schedule *with no planner review*, which is the exact
+guarantee the product is built to make. A cheaper deployment that silently
+breaks the central claim is not a cheaper deployment.
+
+The cost of keeping it is memory. Measured locally, RSS is **132 MB** for
+FastAPI and its dependencies and **579 MB** once MiniLM is loaded and encoding —
+over the 512 MB that both Render's `free` and `starter` plans provide. The
+service is deployed on `free` anyway, because the pinned Linux `torch==2.2.2+cpu`
+is leaner than the Windows `torch 2.14` build that number came from, and the real
+figure is close enough to the limit that measuring beats guessing. **If it OOMs,
+the fix is the 2 GB `standard` plan, not a quality downgrade.**
+
+**A `_redirects` file** for the SPA rewrite: not supported by Render (that is
+Netlify), which is why the `404.html` copy is there instead.
+
+### Consequences
+- **`VITE_API_URL` belongs on the static site, never on the API service.** It is
+  a build-time constant. Setting it on the API does nothing at all.
+- **A free API instance spins down after ~15 minutes idle**, and the next request
+  pays ~50 s of cold start. Before a demo, open the API's `/health` once.
+- `eval.py`, `pytest` and local development are untouched: `requirements.txt` is
+  unchanged and the full-quality path is still the default everywhere.
+- The stale `python -m uvicorn server.main:app --reload` left in
+  `backend/scripts/seed.py` and `backend/scripts/healthcheck.py` by D-112 is
+  fixed here; both now print the `--app-dir backend` form.
+
+### Verification
+
+**Local, before deploying**
+- `python -m pytest -q` — **1055 passed**.
+- `npx tsc --noEmit` — clean. `npm run build` — clean, and `dist/404.html` is
+  emitted as a byte-identical copy of `dist/index.html`.
+- `python backend/eval.py` — auto-link precision **100.0%**, coverage **43.5%**
+  (67 of 154), top-1 **86.9%**, suggestion precision **81.8%**. Every figure
+  matches `METRICS.md`. Run because the slim-build question turns on it; no
+  matcher code was touched.
+- CORS matched against six origins in-process, using Starlette's own `fullmatch`
+  semantics: `http://localhost:5173`, `http://192.168.1.9:5173`,
+  `https://navis-yuvf.onrender.com` and `https://navis-api-abc.onrender.com`
+  allowed; `https://evil.com` and `http://evil.onrender.com.attacker.net`
+  refused.
+
+**On Render, against the live services**
+- Build: **85 seconds**, and the CPU index held — the install log lists
+  `mpmath, typing-extensions, sympy, networkx, MarkupSafe, fsspec, filelock,
+  jinja2, torch` and **no `nvidia-*` package at all**.
+- The build-time seed reported **120 activities, 266 events, 75 auto-linked, 198
+  review items, 141 audit records, 25 source conflicts** — identical, to the
+  row, to the same seed run locally. That is the proof the deployed matcher is
+  running **MiniLM and not the hashing fallback**: the fallback produces 39
+  auto-links, not 75. The logs contain no `falling back to hashing embedder`,
+  no `unimportable` and no OOM.
+- `GET /health` → `200 {"status":"ok"}`.
+- **`python backend/scripts/healthcheck.py --base-url https://navis-api-0t15.onrender.com`
+  — 31 passed, 0 failed**, including `GET /schedule` (120 activities, 46 with
+  actuals), `GET /review-queue` (198 pending), `POST /ingest`,
+  `POST /schedule/export`, `GET /memory/query` and `POST /agent/turn`.
+- **Memory held on the free 512 MB instance.** `POST /ingest` and `POST
+  /agent/turn` both exercise the matcher, so MiniLM was resident when they
+  answered. The 579 MB local measurement did not reproduce on Linux with the
+  CPU-only wheel.
+- **Cross-origin, executed in a browser on `https://navis-yuvf.onrender.com`:**
+  `GET /schedule` → 200, 120 activities, 46 with actuals; `GET /review-queue` →
+  200, 198 pending; and a genuinely **preflighted** `POST /agent/turn` (JSON
+  content-type) → **200**. The preflight is the case the old http-only regex
+  would have failed.
+- The built bundle contains the API origin (`VITE_API_URL` really is inlined)
+  and **no longer contains the `:8000` guess**.
+- Deep links: `/executive/milestones`, `/field/reports` and an unknown path all
+  return the full app shell and boot react-router. Status is **404 until the
+  dashboard rewrite rule is added** — expected, and the reason the rule is
+  documented in `SETUP.md` as a manual step.
+
+### Two pre-existing defects found while verifying — neither introduced here, neither fixed here
+
+**1. `GET /executive/metrics` returns 46 evidenced / 38.3%, not the 67 / 55.8%
+that D-111 and D-112 both record as verified.** The deployed instance and the
+local development database agree with each other exactly (46, 38.3%), and a
+clean `seed.py` database agrees too — so this is not a deployment artefact. The
+figure quoted in those two entries does not reproduce against the current code
+and dataset. Not corrected here: the number is load-bearing for the Senior
+Management lane, and changing either the metric or the record of it belongs in a
+task that is about that lane, not about deployment. **`NUMBERS_SHEET.md` and any
+rehearsed script quoting 55.8% should be re-checked before it is said aloud.**
+
+**2. `frontend/src/test/scheduleInspectionPanel.test.tsx` is flaky.** It passes
+15/15 in isolation and intermittently fails inside the full suite, which
+therefore lands anywhere between **253 and 257 of 257**. Established as
+pre-existing by checking out `frontend/src/lib/api.ts` and
+`frontend/package.json` at `5d3da5c` — the commit before any of this work — and
+re-running: 1 failure, then 4. The "257 passed" recorded in D-111 and D-112 was
+a lucky run, not a stable baseline. The failing assertion looks for
+`Accept Field Actual (2)`, a count that depends on query state resolving before
+the assertion, so the likely cause is a missing `await`/`findBy` rather than
+anything in the component.
+
+---
+
+## 2026-09-12 / D-114 — The demo video gets its own script, written from the running application rather than from `DEMO.md`
+
+> **SUPERSEDED by D-115 (2026-09-12).** The decision to derive the script from the
+> running application stands and is unchanged; the artefact it produced was a 4-minute
+> pitch-shaped walkthrough. D-115 replaces the file's contents with a full feature
+> showcase after a complete capability audit. Every defect recorded below was carried
+> forward, and three more were found.
+
+**Context.** `demo_script.md` has been retracted since 2026-09-10 — an external
+review found six false claims in it. `DEMO.md` is the surviving runbook, but it
+was walked end to end on 2026-09-03 and only partly re-derived on 2026-09-11,
+and a large uncommitted UI redesign has landed since. `RUN_SHEET_SEP11.md`
+Appendix A carries a shot list, but it is scoped to a 3-minute **fail-safe**
+video played when the laptop dies, not to a demo video as a deliverable.
+
+Asked to prepare a script for recording a demo video, the choice was whether to
+assemble it from the existing documents or from the application.
+
+**Decision. The script is derived from the running application, and every
+screen, label and quoted sentence in it was read off `localhost:5173` on
+2026-09-12.** Metrics were re-run the same day (`backend/eval.py`,
+`pytest -q`, `npx vitest run`). The result is `DEMO_VIDEO_SCRIPT.md`.
+
+**Why.** The documents and the build have diverged, and the divergence is
+exactly the class of error that got `demo_script.md` retracted — a presenter
+saying a sentence the screen no longer prints. Seven concrete drifts were found
+and are tabulated in §0 of the new file:
+
+- planner Home no longer shows the `120 / 67 / 135 / 38` tiles;
+- Senior Management has eight destinations, not three;
+- the executive "Data" screen is now **Data Confidence** and no longer shows the
+  corpus-provenance tiles `DEMO.md` §8 describes;
+- **the role picker no longer prints the "there is no authentication here"
+  paragraph** — it is absent from `HEAD` as well as from the working tree, so
+  `DEMO.md`'s instruction to point at it, and its argument that "we chose to say
+  that on the screen", no longer hold;
+- the field bottom nav reads Home / Updates / Questions / Settings;
+- the field agent asks for a missing slot with a free-text box, not Today /
+  Yesterday chips;
+- Reconcile is a Queue/Detail two-tab layout, not three columns.
+
+**What still reproduces, and is therefore what the script is built on.** The
+`CIV-FNC-1016` worked example still yields eight append-only audit records
+across three source files, with `2 SOURCES ASSERTED THIS FIELD`, a
+`SOURCE CONFLICT` row and a `FINISH WITHHELD · RECORDED, NOT APPLIED` row. The
+three-turn field script still produces `PIP-INS-1045 · Insulation —
+24"-P-1001-A1A` at **69% confidence** and still refuses to auto-apply. Both are
+scripted as the two load-bearing beats.
+
+**Three defects found while verifying, none introduced here, none fixed here.**
+
+1. **The Reconcile screen contradicts the numbers sheet.** It renders
+   `AUTO-LINK THRESHOLD 77.5% · calibrated τ_high` and `τ_high=0.775`, from a
+   hardcoded `autoLinkThreshold={0.775}` at `frontend/src/pages/Reconcile.tsx:1096`
+   and the same default at `frontend/src/components/MatchReasoning.tsx:155`. The
+   shipped matcher runs `tau_high=0.80` (`backend/matching/config.py:163`,
+   `SHIPPED_THRESHOLDS`), which is what `backend/eval.py` measures and what
+   `NUMBERS_SHEET.md` row 9 instructs the team to say. Not fixed here because
+   changing a displayed threshold is a matching-lane change and belongs with a
+   re-run of `backend/eval.py`; the script instead forces an explicit choice
+   before recording.
+2. **`pytest -q` reports `2 failed, 1053 passed`** —
+   `test_learned.py::TestAliasChannel::test_key_matches_what_the_server_writes`
+   and
+   `test_delay_evidence.py::TestKeywordListStaysShared::test_memory_uses_the_raid_keyword_list`.
+   Both files are green in isolation (20 passed, 8 passed), so this is
+   cross-test state leakage rather than a product fault — the same shape as the
+   vitest flakiness recorded in D-113. It matters for the demo because
+   `NUMBERS_SHEET.md` row 7 says "all passing" and invites a live run.
+3. **The test total has moved.** `pytest` collects **1,055** and vitest now runs
+   **257** (D-113 records this suite as landing between 253 and 257), so the
+   total is **1,312**, not the **1,284** on the printed sheet.
+
+**Numbers re-run 2026-09-12 and unchanged**, held-out test split, 154 mentions:
+auto-link precision **100.0%** (67/67), coverage **43.5%**, top-1 **86.9%**
+(126/145, 95% CI 81.4–92.4), wrong review rows **28**, NO_MATCH refused **0 of
+9** on this split. `eval.py` prints Recall@3 = **97.2%** (141/145) on the v1
+held-out split; `NUMBERS_SHEET.md` row 5's 88.1% is the **v2 research corpus**.
+The script names the corpus on both.
+
+**Deliberately not done.** The demo database was not reset — it is dirty from
+rehearsals (review queue 120 rather than 135, RAID register holding 53 accepted
+items) and `backend/scripts/reset_demo.py` was blocked by this environment's
+permission classifier. The reset is therefore the first item of the script's
+pre-flight, with a table of expected counts for the presenter to confirm on
+screen rather than trust.
+
+**Supersedes nothing.** `demo_script.md` stays retracted, `DEMO.md` stays the
+operational runbook for a live stage run, and `NUMBERS_SHEET.md` stays the
+authority for any spoken figure. `DEMO_VIDEO_SCRIPT.md` is additive and is
+scoped to recording.
+
+---
+
+## 2026-09-12 / D-115 — The demo video script becomes a full feature showcase, after auditing the whole capability surface
+
+**Supersedes the artefact of [D-114](#2026-09-12--d-114--the-demo-video-gets-its-own-script-written-from-the-running-application-rather-than-from-demomd), not its method.**
+
+**Context.** D-114 produced a 4-minute, pitch-shaped script: problem, one field capture,
+one reconcile, one audit trail, close. The brief that followed was different — a video that
+**showcases all the features of the product**. A pitch script and a feature showcase are
+not the same artefact and cannot be edited into one another: the first selects three beats
+and defends them, the second must cover the surface and still be watchable.
+
+**Decision. Re-audit the entire capability surface, then rewrite `DEMO_VIDEO_SCRIPT.md` as a
+10-chapter, 9-minute feature walkthrough with a 5:00 `[CORE]` cut and a 2:30 `[SHORT]` cut
+marked inline.** One canonical recording script; the file is replaced rather than
+supplemented, because competing demo scripts are the failure mode this repository already
+has (`demo_script.md` retracted, `DEMO.md` drifted).
+
+**Why a re-audit rather than an expansion.** D-114 walked the screens needed for its five
+scenes. A feature showcase needs the surface enumerated, so it was: **45 HTTP endpoints**
+from `backend/server/main.py`, all **19 routes** across the three roles, and every tab
+inside them. That surfaced substantial functionality no demo document mentions — the
+Primavera baseline importer, Schedule Doctor, the Knowledge Base, delay adjudication, the
+Ask NAVIS assistant, and the clarification return channel.
+
+**Everything below was exercised, not read.**
+
+- **`POST /schedule/import` works and is demo-safe.** `schedule_export_20260902_133434.xml`
+  dry-runs as `pmxml`: 120 activities, 120 with both planned dates, 120 ids already present,
+  *"Nothing was written"*, active baseline still `baseline_schedule`.
+- **`POST /schedule/export` works.** PMXML, 120 activities, real `<Activity>` elements with
+  planned dates, actual dates and `<Predecessor>` ties.
+- **The clarification loop closes.** Field submit → `POST /review/{id}/clarify` →
+  `GET /field/clarifications` returns the question with the original text, the matched
+  activity and the asking planner → the field **Questions** tab renders it with a Respond
+  action.
+- **A single-sentence field capture beats the documented three-turn script.** *"spool
+  erection on the 24 inch header is done, 6 out of 18 done yesterday"* reaches the review
+  card in one turn at **65%** on **`PIP-ERC-1030 · Spool Erection — 24"-P-1001-A1A`** — the
+  activity `README.md` §1 uses as its worked example. The three-turn script in `DEMO.md`
+  §9 lands on `PIP-INS-1045` (Insulation) at 69%: fewer turns *and* the right activity, so
+  the script uses the one-sentence form and keeps the three-turn form as a note.
+- **`CIV-FNC-1016` still yields eight append-only audit records** across three source files,
+  with `2 SOURCES ASSERTED THIS FIELD`, a `SOURCE CONFLICT` row, and
+  `FINISH WITHHELD · RECORDED, NOT APPLIED`.
+- **Ask NAVIS answers grounded and cites.** `/chat` returns prose plus a source chip list of
+  activity ids and delay causes. `_chat_llm_generate` no-ops while `llm_enabled()` is false,
+  and `.env` ships `EXTRACTION_PROVIDER=rules`, so the demo path is deterministic.
+
+**Three further defects found, none introduced here, none fixed here.**
+
+1. **The P6 dry run cannot run on its own.** The active-baseline guard at
+   `backend/server/main.py:2616` raises 409 **before** `dry_run` is evaluated at
+   `main.py:2666`, so `dry_run=true` alone is refused whenever a baseline exists — which is
+   always, in the demo. `frontend/src/pages/Ingest.tsx:268` sends the two flags
+   independently, so ticking only "Validate only (Dry Run)" is a dead end on screen. A dry
+   run is a read; it should be exempt from a guard that exists to protect writes. Worked
+   around in the script (tick both boxes); the fix belongs with the import path.
+2. **"Ask Supervisor" is offered on queue rows that have no supervisor.**
+   `GET /field/clarifications` reads `_field_events`, which filters to
+   `match_method == "agent_turn"` (`main.py:3396`). A question asked on a DPR- or
+   spreadsheet-sourced row is persisted and never reachable by anyone. Correct that a
+   document has no supervisor; wrong that the affordance is offered anyway.
+3. **Three screens label deterministic rule output "AI."** Schedule Doctor's column header
+   (`AI CRITIQUE & PRESCRIPTION`), the Knowledge Base (`ENFORCED AI PRESCRIPTION`) and the
+   delay adjudication badge (`AI · ADVISORY`) all describe rule engines carrying rule IDs
+   (`CONTR-PROD-01`, `ENV-MONSOON-01`, `DCMA-OPEN-ENDS-01`). This directly undercuts the
+   project's load-bearing claim that no model sits in the decision path (D-003, D-005), and
+   it invites the one question the team least wants. Not renamed here because it is a
+   user-facing copy change across three screens with tests attached; the script instead
+   requires the presenter to say "rule IDs, not a model" whenever one is on screen.
+
+**Also corrected in the script.** `DEMO.md`'s "never say" list contains **"We import
+Primavera files — PMXML/XER import is declared and not implemented."** That is false on this
+build: the endpoint parses, validates and imports all three formats, with `dry_run` and an
+explicit `replace` consent. `NUMBERS_SHEET.md` Q6 is the correct account. Import is a
+strength and the script treats it as one.
+
+**Deliberately not done.** The demo database was still not reset —
+`backend/scripts/reset_demo.py` remains blocked by this environment's permission classifier.
+Verifying the clarification loop required a real field-origin review item, so one field
+report was submitted and one clarification asked against it; both are cleared by the reset
+that opens the script's pre-flight. State added: 1 `agent_turn` LinkedEvent, 1
+ReviewQueueItem on `PIP-ERC-1030`, 1 clarification question.
+
+**Unchanged from D-114 and re-confirmed:** auto-link precision **100.0%** (67/67), coverage
+**43.5%**, top-1 **86.9%** (126/145), Recall@3 **97.2%** on the v1 held-out split, `pytest -q`
+at **2 failed / 1053 passed** (both green in isolation), vitest at **257** within D-113's
+flaky 253–257 band, and the Reconcile screen still rendering `τ_high = 0.775` against a
+shipped `0.80`.

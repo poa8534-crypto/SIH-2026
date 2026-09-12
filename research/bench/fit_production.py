@@ -32,7 +32,7 @@ import harness as H  # noqa: E402
 from matching.config import EngineConfig  # noqa: E402
 from matching.learned import fit_calibrator, fit_ranker  # noqa: E402
 
-ART = Path(__file__).resolve().parents[2] / "matching" / "artifacts"
+ART = Path(__file__).resolve().parents[2] / "backend" / "matching" / "artifacts"
 
 
 def main():

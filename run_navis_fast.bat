@@ -15,7 +15,7 @@ call npm run build
 echo.
 echo 2. Starting FastAPI Backend on 0.0.0.0:8000...
 cd /d "%~dp0"
-start "NAVIS Backend" cmd /k "python -m uvicorn server.main:app --host 0.0.0.0 --port 8000 --reload"
+start "NAVIS Backend" cmd /k "python -m uvicorn server.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload"
 
 echo.
 echo 3. Starting Optimized Frontend Server on 0.0.0.0:5173...

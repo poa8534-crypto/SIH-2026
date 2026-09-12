@@ -36,8 +36,6 @@ import Home from './pages/Home';
 import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
-import ReportStudio from './pages/field/ReportStudio';
-import UpdatesLedger from './pages/field/UpdatesLedger';
 import { FieldWorkspaceShell } from './pages/field/FieldWorkspaceShell';
 import { FieldNav } from './components/FieldNav';
 import { FIELD_ROLE, PLANNER_ROLE } from './config';
@@ -58,7 +56,7 @@ import {
   writeRole,
   type Role,
 } from './lib/role';
-import { Button, ErrorState } from './components/ui';
+import { BrandMark, Button, ErrorState } from './components/ui';
 
 // Placeholder route components
 
@@ -135,10 +133,10 @@ function DesktopShell({
             key={item.path}
             to={item.path}
             onClick={onItemClick}
-            className={`flex items-center justify-between rounded-md px-3 py-2 text-body font-medium transition-colors ${
+            className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-body font-medium transition-colors ${
               active
-                ? 'bg-selected text-accent font-semibold border border-hair shadow-xs'
-                : 'text-muted hover:bg-selected hover:text-heading'
+                ? 'bg-white/12 text-white font-semibold ring-1 ring-white/10'
+                : 'text-slate-300 hover:bg-white/8 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
@@ -146,7 +144,7 @@ function DesktopShell({
               <span className="truncate">{item.label}</span>
             </div>
             {item.path === '/reconcile' && pendingFieldCount > 0 && (
-              <span className="font-mono text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full shrink-0">
+              <span className="font-mono text-label font-bold bg-amber-400/15 text-amber-200 px-2 py-0.5 rounded-full shrink-0">
                 {pendingFieldCount}
               </span>
             )}
@@ -157,11 +155,11 @@ function DesktopShell({
   );
 
   const renderFooter = () => (
-    <div className="p-4 border-t border-hair bg-sidebar/80 flex flex-col gap-2">
-      <div className="flex items-center justify-between text-label text-muted">
+    <div className="p-4 border-t border-white/10 bg-black/10 flex flex-col gap-2">
+      <div className="flex items-center justify-between text-label text-slate-400">
         <span>Data Date</span>
         <span
-          className={`font-mono font-medium ${headerError ? 'text-danger' : 'text-fg'}`}
+          className={`font-mono font-medium ${headerError ? 'text-red-300' : 'text-white'}`}
           title={headerError ? errorDetail(headerError) : undefined}
         >
           {headerError ? 'unavailable' : headerLoading ? '…' : scheduleData?.data_date}
@@ -171,7 +169,7 @@ function DesktopShell({
       <div className="pt-2 border-t border-hair/50 flex flex-col gap-1">
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors cursor-pointer"
+          className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-label text-slate-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
         >
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
           <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
@@ -179,7 +177,7 @@ function DesktopShell({
 
         <button
           onClick={onSignOut}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-label text-muted hover:text-heading hover:bg-selected transition-colors cursor-pointer"
+          className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-label text-slate-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
         >
           <LogOut size={14} />
           <span>Switch role</span>
@@ -191,26 +189,19 @@ function DesktopShell({
   return (
     <div className="flex h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg overflow-hidden font-sans">
       {/* Persistent Left Navigation Sidebar for Desktop/Tablet */}
-      <aside className="hidden md:flex w-[240px] flex-shrink-0 bg-sidebar border-r border-hair flex-col z-10">
+      <aside className="hidden md:flex w-[248px] flex-shrink-0 bg-sidebar border-r border-white/10 flex-col z-10 shadow-[8px_0_30px_rgba(2,8,23,0.08)]">
         {/* Project & Engine Identity */}
-        <div className="px-5 pt-5 pb-4 border-b border-hair/60">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label">
-              N
-            </span>
-            <span className="font-semibold text-heading text-body tracking-tight">
-              NAVIS
-            </span>
-          </div>
+        <div className="px-5 pt-5 pb-4 border-b border-white/10">
+          <BrandMark inverse />
           <h1
-            className={`mt-2 text-label font-medium leading-tight truncate ${
-              headerError ? 'text-danger' : 'text-heading'
+            className={`mt-4 text-body font-semibold leading-tight truncate ${
+              headerError ? 'text-red-300' : 'text-white'
             }`}
             title={headerError ? errorDetail(headerError) : projectName}
           >
             {headerError ? 'Project unavailable' : projectName}
           </h1>
-          <p className="text-label text-muted truncate">
+          <p className="mt-1 text-label text-slate-400 truncate">
             {roleLabel}
           </p>
         </div>
@@ -227,33 +218,26 @@ function DesktopShell({
             onClick={() => setIsMobileNavOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative w-72 max-w-[85vw] bg-sidebar border-r border-hair flex flex-col justify-between shadow-2xl z-50 animate-in slide-in-from-left duration-200">
-            <div className="px-5 pt-5 pb-4 border-b border-hair/60 flex items-start justify-between gap-2">
+          <aside className="relative w-72 max-w-[85vw] bg-sidebar border-r border-white/10 flex flex-col justify-between shadow-2xl z-50 animate-in slide-in-from-left duration-200">
+            <div className="px-5 pt-5 pb-4 border-b border-white/10 flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label">
-                    N
-                  </span>
-                  <span className="font-semibold text-heading text-body tracking-tight">
-                    NAVIS
-                  </span>
-                </div>
+                <BrandMark inverse />
                 <h1
-                  className={`mt-2 text-label font-medium leading-tight truncate ${
-                    headerError ? 'text-danger' : 'text-heading'
+                  className={`mt-4 text-body font-semibold leading-tight truncate ${
+                    headerError ? 'text-red-300' : 'text-white'
                   }`}
                   title={headerError ? errorDetail(headerError) : projectName}
                 >
                   {headerError ? 'Project unavailable' : projectName}
                 </h1>
-                <p className="text-label text-muted truncate">
+                <p className="mt-1 text-label text-slate-400 truncate">
                   {roleLabel}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="p-1 rounded-md text-muted hover:text-heading hover:bg-selected transition-colors cursor-pointer"
+                className="p-2 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Close navigation"
               >
                 <X size={18} />
@@ -269,7 +253,7 @@ function DesktopShell({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full overflow-hidden bg-surface">
         {/* Compact Contextual Header */}
-        <header className="h-14 shrink-0 border-b border-hair flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 bg-surface max-w-full">
+        <header className="h-16 shrink-0 border-b border-hair flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 bg-raised max-w-full">
           <div className="min-w-0 flex items-center gap-2 sm:gap-3">
             <button
               type="button"
@@ -279,12 +263,13 @@ function DesktopShell({
             >
               <Menu size={18} />
             </button>
-            <div className="min-w-0 flex items-baseline gap-2">
-              <h2 className="text-body font-semibold text-heading truncate">
+            <div className="min-w-0 flex items-center gap-2">
+              <span className="hidden md:inline-flex h-2 w-2 rounded-full bg-ok" aria-hidden="true" />
+              <h2 className="text-body font-medium text-heading truncate md:text-muted">
                 {title}
               </h2>
               {subtitle && (
-                <span className="text-label text-muted truncate hidden sm:inline">
+                <span className="text-label text-muted truncate hidden sm:inline md:hidden">
                   · {subtitle}
                 </span>
               )}
@@ -298,22 +283,22 @@ function DesktopShell({
             <button
               type="button"
               onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-md border border-hair bg-raised hover:bg-selected text-xs text-heading font-medium transition-colors cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-selected hover:bg-secondary text-body text-accent font-semibold transition-colors cursor-pointer"
               title="Ask NAVIS Assistant"
               aria-label="Ask NAVIS"
             >
               <Sparkles size={13} className="text-accent" />
               <span className="hidden sm:inline">Ask NAVIS</span>
             </button>
-            <span className="hidden md:inline-flex items-center gap-1.5 text-label font-mono text-muted bg-raised px-2.5 py-1 rounded-md border border-hair">
-              <span>P6 Baseline</span>
-              <span className="text-heading font-semibold">Rev-08</span>
+            <span className="hidden md:inline-flex items-center gap-1.5 text-label font-mono text-muted bg-secondary px-3 py-2 rounded-lg">
+              <span>Baseline</span>
+              <span className="text-heading font-semibold">{scheduleData?.baseline?.name ?? 'Not supplied'}</span>
             </span>
           </div>
         </header>
 
         <PageHeaderContext.Provider value={setPageHeader}>
-          <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-3 sm:p-4 md:p-6 w-full max-w-full min-w-0">{children}</main>
+          <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-4 md:p-6 lg:p-8 w-full max-w-full min-w-0">{children}</main>
         </PageHeaderContext.Provider>
       </div>
 
@@ -477,9 +462,9 @@ export default function App() {
         <FieldWorkspaceShell>
           <Routes>
             <Route path="/field" element={<Field />} />
-            <Route path="/field/report" element={<ReportStudio />} />
+            <Route path="/field/report" element={<Navigate to="/field" replace />} />
             <Route path="/field/reports" element={<FieldReports />} />
-            <Route path="/field/reports/ledger" element={<UpdatesLedger />} />
+            <Route path="/field/reports/ledger" element={<Navigate to="/field/reports" replace />} />
             <Route path="/field/clarifications" element={<FieldClarifications />} />
             <Route path="/field/profile" element={<FieldProfile />} />
             <Route path="*" element={<Navigate to="/field" replace />} />

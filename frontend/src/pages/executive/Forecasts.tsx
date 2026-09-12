@@ -1,21 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  TrendingUp,
   Sliders,
-  Calendar,
-  AlertTriangle,
   RotateCcw,
-  Clock,
-  ArrowRight,
   Info,
-  ShieldAlert,
-  CheckCircle2,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
+import { pluralise } from '../../lib/units';
+import { PROJECT } from '../../config';
 import { SkeletonRows, ErrorState } from '../../components/ui';
-import type { ExecutiveMetricsResponse, ExecutiveCriticalDriver } from '../../types';
+import type { ExecutiveMetricsResponse } from '../../types';
 
 export default function ExecutiveForecasts() {
   usePageHeader(
@@ -35,14 +30,14 @@ export default function ExecutiveForecasts() {
     queryFn: api.getExecutiveMetrics,
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery({
+  const { data: scheduleData, error: scheduleError } = useQuery({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
   });
 
   const forecast = metrics?.completion_forecast;
   const criticalDrivers = metrics?.critical_drivers ?? [];
-  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? '2026-09-15';
+  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? PROJECT.dataDate;
 
   // Total net simulated slip
   // Productivity shift: -20% productivity adds days; +20% reduces days
@@ -71,6 +66,22 @@ export default function ExecutiveForecasts() {
 
   const isScenarioActive = weatherDelayDays !== 0 || vendorLeadDays !== 0 || productivityShiftPct !== 0;
 
+  const applyScenario = (weather: number, vendor: number, productivity: number) => {
+    setWeatherDelayDays(weather);
+    setVendorLeadDays(vendor);
+    setProductivityShiftPct(productivity);
+  };
+
+  const scenarioName = !isScenarioActive
+    ? 'Current logic'
+    : weatherDelayDays === 10 && vendorLeadDays === 0 && productivityShiftPct === 0
+    ? 'Monsoon hold'
+    : weatherDelayDays === 0 && vendorLeadDays === 20 && productivityShiftPct === 0
+    ? 'Vendor disruption'
+    : weatherDelayDays === 0 && vendorLeadDays === 0 && productivityShiftPct === 15
+    ? 'Recovery plan'
+    : 'Custom scenario';
+
   if (metricsError || scheduleError) {
     return <ErrorState error={metricsError || scheduleError} />;
   }
@@ -82,7 +93,7 @@ export default function ExecutiveForecasts() {
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-muted mb-1">
             <span className="font-semibold text-fg">
-              {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
+              {scheduleData?.project ?? 'Active project'}
             </span>
             <span>·</span>
             <span>DATA CUTOFF: {dataDate}</span>
@@ -127,7 +138,7 @@ export default function ExecutiveForecasts() {
             <div className="text-2xl font-extrabold text-fg font-mono">
               {forecast?.baseline_finish ?? '—'}
             </div>
-            <span className="text-xs text-muted mt-1 block">Primavera P6 Rev-08 authored</span>
+            <span className="text-xs text-muted mt-1 block">{scheduleData?.baseline?.name ?? 'Active baseline'} authored</span>
           </div>
 
           {/* Current Logic Finish */}
@@ -196,6 +207,32 @@ export default function ExecutiveForecasts() {
               <span>Reset to Baseline</span>
             </button>
           )}
+        </div>
+
+        <div>
+          <div className="mb-2 text-label font-semibold uppercase tracking-wide text-muted">Named scenarios</div>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {[
+              { name: 'Current logic', detail: 'No added impact', values: [0, 0, 0] },
+              { name: 'Monsoon hold', detail: '+10 weather days', values: [10, 0, 0] },
+              { name: 'Vendor disruption', detail: '+20 vendor days', values: [0, 20, 0] },
+              { name: 'Recovery plan', detail: '+15% productivity', values: [0, 0, 15] },
+            ].map((scenario) => (
+              <button
+                key={scenario.name}
+                type="button"
+                onClick={() => applyScenario(...(scenario.values as [number, number, number]))}
+                className={`min-h-14 rounded-xl px-3 py-2 text-left ring-1 ring-inset transition-colors ${
+                  scenarioName === scenario.name
+                    ? 'bg-selected text-fg ring-focus'
+                    : 'bg-surface text-muted ring-hair hover:bg-selected/50 hover:text-fg'
+                }`}
+              >
+                <span className="block text-sm font-semibold">{scenario.name}</span>
+                <span className="block text-label">{scenario.detail}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Sliders Grid */}
@@ -310,7 +347,7 @@ export default function ExecutiveForecasts() {
             </span>
           </div>
           <span className="text-xs font-mono text-muted">
-            {criticalDrivers.length} Driving Activities
+            {pluralise(criticalDrivers.length, 'Driving Activity', 'Driving Activities')}
           </span>
         </div>
 

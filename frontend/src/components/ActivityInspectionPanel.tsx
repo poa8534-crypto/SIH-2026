@@ -26,7 +26,9 @@ import {
   Eye,
   Flag,
   MoreHorizontal,
+  ArrowUpRight,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api, errorDetail } from '../lib/api';
 import { notifyScheduleUpdate } from '../lib/liveSync';
 import {
@@ -432,9 +434,19 @@ export function ActivityInspectionPanel({
   const [isQuantityOpen, setIsQuantityOpen] = useState(true);
   const [isForecastOpen, setIsForecastOpen] = useState(true);
   const [isAuditOpen, setIsAuditOpen] = useState(true);
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  /**
+   * A completed write and the place its data landed.
+   *
+   * `cta`/`to` are not decoration: a write the planner cannot go and see is
+   * indistinguishable from the cosmetic handler this replaced (D-108). Every
+   * success names a destination.
+   */
+  const [actionFeedback, setActionFeedback] = useState<
+    { text: string; cta?: string; to?: string } | null
+  >(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // Fetch audit records to ground the supervisor statements and sources
@@ -593,13 +605,22 @@ export function ActivityInspectionPanel({
       );
 
       const verb = vars.action === 'confirm' ? 'confirmed' : 'left unwritten';
-      setActionFeedback(
+      const summary =
         `${res.resolved} of ${res.attempted} review item(s) ${verb} · ` +
-          `${res.auditRecords} audit record(s) written`
-      );
+        `${res.auditRecords} audit record(s) written`;
 
-      // Only a confirm moves the schedule, so only a confirm announces it.
       if (vars.action === 'confirm') {
+        // The write lands in two places. Show one without leaving — the audit
+        // rows are a tab away — and offer the other, where the bar moves.
+        setDrawerTab('audit');
+        setActionFeedback({
+          text: `${summary}. Audit trail below.`,
+          cta: 'See the bar move on the Gantt',
+          to: `/schedule?view=gantt&activity=${encodeURIComponent(
+            activity.activity_id
+          )}&highlight=${Date.now()}`,
+        });
+
         notifyScheduleUpdate({
           activityId: activity.activity_id,
           activityDescription: activity.description,
@@ -607,6 +628,14 @@ export function ActivityInspectionPanel({
           source: 'Schedule inspection',
           percentComplete: activity.percent_complete ?? undefined,
           varianceDays: activity.finish_variance_days ?? undefined,
+        });
+      } else {
+        // Nothing moved on the schedule, so there is no bar to go and look at.
+        // What changed is the queue: those items are no longer pending.
+        setActionFeedback({
+          text: `${summary}. The baseline stands.`,
+          cta: 'Open the review queue',
+          to: '/reconcile',
         });
       }
     },
@@ -641,9 +670,11 @@ export function ActivityInspectionPanel({
     onSuccess: (item) => {
       refreshAfterWrite();
       setActionError(null);
-      setActionFeedback(
-        `Raised as issue ${item.id.slice(0, 8)} in the RAID register — see Risk & Exposure.`
-      );
+      setActionFeedback({
+        text: `Raised as issue ${item.id.slice(0, 8)} in the RAID register.`,
+        cta: 'Open Risk & Exposure',
+        to: '/raid',
+      });
     },
     onError: (e) => {
       setActionFeedback(null);
@@ -779,14 +810,35 @@ export function ActivityInspectionPanel({
 
       {/* ── Action Feedback Toast Banner ─────────────────────────────────── */}
       {actionFeedback && (
-        <div className="bg-primary text-on-primary px-4 py-2 font-mono text-label flex items-center justify-between animate-in fade-in slide-in-from-top duration-150">
-          <span className="flex items-center gap-1.5">
-            <Check size={14} />
-            {actionFeedback}
+        <div className="bg-primary text-on-primary px-4 py-2 font-mono text-label flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top duration-150">
+          <span className="flex items-start gap-1.5 min-w-0">
+            <Check size={14} className="shrink-0 mt-0.5" />
+            <span>{actionFeedback.text}</span>
           </span>
-          <button onClick={() => setActionFeedback(null)} className="opacity-80 hover:opacity-100">
-            <X size={12} />
-          </button>
+          <span className="flex items-center gap-2 shrink-0">
+            {actionFeedback.to && (
+              <button
+                type="button"
+                onClick={() => {
+                  const to = actionFeedback.to!;
+                  setActionFeedback(null);
+                  onClose();
+                  navigate(to);
+                }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-on-primary/15 hover:bg-on-primary/25 font-semibold underline underline-offset-2 transition-colors"
+              >
+                {actionFeedback.cta}
+                <ArrowUpRight size={12} />
+              </button>
+            )}
+            <button
+              onClick={() => setActionFeedback(null)}
+              className="opacity-80 hover:opacity-100"
+              aria-label="Dismiss"
+            >
+              <X size={12} />
+            </button>
+          </span>
         </div>
       )}
 

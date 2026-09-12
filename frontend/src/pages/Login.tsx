@@ -1,278 +1,158 @@
 import React, { useState } from 'react';
-import { HardHat, ClipboardCheck, LineChart, ArrowRight, ShieldCheck, Database, FileSpreadsheet, Check, Sun, Moon } from 'lucide-react';
-import { ROLE_PROFILES, type Role } from '../lib/role';
-import { Button } from '../components/ui';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowRight, Check, ClipboardCheck, HardHat, LineChart, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { api } from '../lib/api';
+import { type Role } from '../lib/role';
+import { BrandMark, Button } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 
-interface LoginProps {
-  onPick: (role: Role) => void;
-}
+interface LoginProps { onPick: (role: Role) => void }
 
-interface RoleCardData {
-  id: Role;
-  category: string;
-  title: string;
-  description: string;
-  responsibility: string;
-  icon: typeof HardHat;
-}
-
-const ROLES_DATA: RoleCardData[] = [
+const ROLES = [
   {
-    id: 'planner',
-    category: 'Controls & Scheduling',
-    title: 'Project Manager / Planner',
-    description: 'Reviews evidence matches and commits verified actual dates to the P6 baseline schedule.',
-    responsibility: 'Sole role accountable for schedule commits · 120 baseline activities',
-    icon: ClipboardCheck,
-  },
-  {
-    id: 'field',
-    category: 'Site Progress Capture',
-    title: 'Field Supervisor',
-    description: 'Reports daily site execution via voice or text, provides photo proof, and answers planner queries.',
-    responsibility: 'Site front reporting · Cannot alter planned dates or commit to schedule',
+    id: 'field' as const,
+    label: 'Field Supervisor',
+    meta: 'Capture verified site progress',
+    description: 'Report work by voice, text, or photo and answer planning questions.',
     icon: HardHat,
   },
   {
-    id: 'executive',
-    category: 'Governance & Oversight',
-    title: 'Senior Management',
-    description: 'Monitors overall schedule exposure, EVM trends, critical path health, and data provenance.',
-    responsibility: 'Read-only analytics and forecasts · No review queue access',
+    id: 'planner' as const,
+    label: 'Project Manager / Planner',
+    meta: 'Review evidence and control the plan',
+    description: 'Resolve field updates, protect the baseline, and manage schedule exposure.',
+    icon: ClipboardCheck,
+  },
+  {
+    id: 'executive' as const,
+    label: 'Senior Management',
+    meta: 'See project risk at decision speed',
+    description: 'Monitor progress, milestones, forecasts, and data confidence.',
     icon: LineChart,
   },
 ];
 
 export default function Login({ onPick }: LoginProps) {
-  const [selected, setSelected] = useState<Role>('planner');
+  const [selected, setSelected] = useState<Role>('field');
   const { theme, setTheme } = useTheme();
+  const { data: schedule } = useQuery({
+    queryKey: ['schedule', 'entry'],
+    queryFn: () => api.getSchedule(undefined, false),
+    retry: false,
+  });
+  const activities = schedule?.activities?.length ?? 120;
 
   return (
-    <div className="h-full h-[100dvh] max-h-[100dvh] w-full bg-surface text-fg font-sans flex flex-col justify-between p-3 sm:p-6 lg:p-8 pb-12 overflow-y-auto overscroll-y-contain touch-pan-y">
-      {/* Top Header Bar with NAVIS Brand & Theme Selector */}
-      <div className="w-full max-w-[1180px] mx-auto mb-3 sm:mb-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-md bg-accent text-accent-fg flex items-center justify-center font-bold text-label shadow-xs">
-            N
-          </span>
-          <span className="font-semibold text-heading text-body tracking-tight">
-            NAVIS
-          </span>
-          <span className="text-label text-muted font-mono hidden sm:inline-block">
-            // Project Controls &amp; Site Capture
-          </span>
-        </div>
-
-        {/* Theme Selector Toggle */}
-        <div className="flex items-center p-0.5 rounded-lg border border-hair bg-raised shadow-xs" role="radiogroup" aria-label="Theme selector">
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            className={`px-3 py-1.5 rounded-md text-label font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
-              theme === 'light'
-                ? 'bg-accent text-accent-fg shadow-xs'
-                : 'text-muted hover:text-heading'
-            }`}
-            title="Switch to Light Theme"
-            aria-checked={theme === 'light'}
-            role="radio"
-          >
-            <Sun size={13} />
-            <span>Light</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            className={`px-3 py-1.5 rounded-md text-label font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
-              theme === 'dark'
-                ? 'bg-accent text-accent-fg shadow-xs'
-                : 'text-muted hover:text-heading'
-            }`}
-            title="Switch to Dark Theme"
-            aria-checked={theme === 'dark'}
-            role="radio"
-          >
-            <Moon size={13} />
-            <span>Dark</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 shrink-0 py-2 sm:py-4 flex items-center justify-center">
-        <div className="w-full max-w-[1180px] bg-raised border border-hair rounded-lg shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-          
-          {/* Left Column: Product Context & Core Purpose */}
-          <div className="lg:col-span-7 p-4 sm:p-6 lg:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-hair bg-surface/30">
-            <div>
-              {/* Product Badge */}
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-accent text-accent-fg text-label font-medium">
-                <span>SIH26122 · Oil India Limited</span>
-              </div>
-
-              {/* Title & Subtitle */}
-              <h1 className="mt-4 sm:mt-5 text-h2 sm:text-h1 font-semibold tracking-tight text-heading leading-tight">
-                Field reality. Verified against the plan.
-              </h1>
-              <p className="mt-2.5 text-body text-muted leading-relaxed max-w-xl">
-                NAVIS connects heterogeneous field progress reports to L5/L6 schedule activities, supports human review of uncertain matches, records verified actual progress, and builds institutional memory.
-              </p>
-
-              {/* Authentic Schedule Baseline Context Card */}
-              <div className="mt-5 sm:mt-6 border border-hair bg-raised rounded-lg p-4 sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-label font-medium text-muted pb-2.5 border-b border-hair">
-                  <span className="font-semibold text-heading">Active Project Baseline</span>
-                  <span className="font-mono text-xs text-muted">Data date: 2026-03-01</span>
-                </div>
-
-                <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div className="p-2.5 sm:p-3 rounded-md bg-surface/60 border border-hair">
-                    <div className="text-label text-muted">Project</div>
-                    <div className="mt-1 font-semibold text-heading text-body truncate">
-                      OIL Well Pad 04
-                    </div>
-                    <div className="mt-1 text-label text-muted">EPC Construction</div>
-                  </div>
-
-                  <div className="p-3 rounded-md bg-surface/60 border border-hair">
-                    <div className="text-label text-muted">Baseline Scale</div>
-                    <div className="mt-1 font-mono font-semibold text-heading text-body">
-                      120 Activities
-                    </div>
-                    <div className="mt-1 text-label text-muted">L5/L6 Work packages</div>
-                  </div>
-
-                  <div className="p-3 rounded-md bg-surface/60 border border-hair">
-                    <div className="text-label text-muted">Disciplines</div>
-                    <div className="mt-1 font-semibold text-heading text-body">
-                      6 Disciplines
-                    </div>
-                    <div className="mt-1 text-label text-muted">Civil, Piping, HSE, ...</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-hair flex flex-col gap-2 text-label text-muted">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet size={14} className="text-muted shrink-0" />
-                    <span>Heterogeneous Ingest: Daily reports (.txt), discipline spreadsheets (.xlsx), and site voice</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={14} className="text-ok shrink-0" />
-                    <span>Explainable Matching: Exact tag search, BM25 keyword matching, and semantic embeddings</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Database size={14} className="text-muted shrink-0" />
-                    <span>Institutional Memory: Queryable historical execution benchmarks to prevent recurring slips</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Context Notice */}
-            <div className="mt-5 sm:mt-6 pt-3 border-t border-hair flex items-center justify-between text-label text-muted">
-              <span>Zero-Math-Hallucination Policy</span>
-              <span>Append-only Audit Log</span>
-            </div>
-          </div>
-
-          {/* Right Column: Role Selector */}
-          <div className="lg:col-span-5 p-4 sm:p-6 lg:p-8 flex flex-col justify-between bg-raised">
-            <div>
-              <h2 className="text-h2 font-semibold tracking-tight text-heading">
-                Select your role
-              </h2>
-              <p className="mt-1 text-body text-muted leading-relaxed">
-                Choose the role you want to see. Each role has distinct workflows, access levels, and responsibilities.
-              </p>
-
-              {/* Role Cards */}
-              <div className="mt-4 sm:mt-5 flex flex-col gap-2.5">
-                {ROLES_DATA.map((item) => {
-                  const isSelected = selected === item.id;
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => setSelected(item.id)}
-                      onDoubleClick={() => onPick(item.id)}
-                      className={`cursor-pointer rounded-lg p-3 sm:p-3.5 transition-colors border text-left ${
-                        isSelected
-                          ? 'border-strong bg-selected'
-                          : 'border-hair bg-raised hover:bg-selected/60'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="min-w-0 flex-1">
-                          <span className="block text-label font-medium text-muted mb-0.5">
-                            {item.category}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Icon
-                              size={15}
-                              className={`shrink-0 ${
-                                isSelected ? 'text-heading' : 'text-muted'
-                              }`}
-                            />
-                            <span className="text-body font-semibold text-heading leading-tight">
-                              {item.title}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-label text-muted leading-relaxed">
-                            {item.description}
-                          </p>
-                          <div className="mt-1.5 text-label text-muted/80 font-mono">
-                            {item.responsibility}
-                          </div>
-                        </div>
-
-                        {/* Custom Radio Button */}
-                        <div
-                          className={`h-4 w-4 shrink-0 rounded-full border flex items-center justify-center mt-0.5 transition-colors ${
-                            isSelected
-                              ? 'border-accent bg-accent text-accent-fg'
-                              : 'border-strong bg-surface'
-                          }`}
-                        >
-                          {isSelected && <Check size={10} strokeWidth={3} />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Enter Workspace Button */}
-              <Button
-                variant="primary"
-                size="md"
-                block
-                className="mt-4 sm:mt-5"
-                onClick={() => onPick(selected)}
+    <div className="min-h-[100dvh] overflow-y-auto bg-surface px-4 py-4 text-fg sm:px-6 sm:py-6 lg:p-8">
+      <header className="mx-auto flex w-full max-w-[1160px] items-center justify-between">
+        <BrandMark />
+        <div className="flex items-center rounded-lg bg-raised p-1 ring-1 ring-hair" role="radiogroup" aria-label="Theme">
+          {(['light', 'dark'] as const).map((item) => {
+            const active = theme === item;
+            const Icon = item === 'light' ? Sun : Moon;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setTheme(item)}
+                className={`flex min-h-9 items-center gap-1.5 rounded-md px-3 text-label font-semibold transition-colors ${active ? 'bg-selected text-accent' : 'text-muted hover:text-heading'}`}
               >
-                <span>Enter workspace</span>
-                <ArrowRight size={16} />
-              </Button>
-            </div>
+                <Icon size={15} />
+                <span className="hidden sm:inline">{item === 'light' ? 'Light' : 'Dark'}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
 
-            {/* Footnote */}
-            <div className="mt-5 sm:mt-6 pt-3 border-t border-hair text-center">
-              <div className="text-label text-muted font-medium">
-                Prototype Demonstration
-              </div>
-              <p className="mt-0.5 text-label text-muted leading-relaxed">
-                Role-specific navigation is for workflow evaluation. All endpoints run against the local pilot database.
-              </p>
+      <main className="mx-auto mt-5 grid w-full max-w-[1160px] overflow-hidden rounded-2xl bg-raised shadow-[0_24px_70px_rgba(4,15,35,0.14)] ring-1 ring-hair lg:mt-8 lg:min-h-[620px] lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="order-2 flex flex-col justify-between bg-sidebar p-6 text-white lg:order-1 lg:p-10">
+          <div>
+            <div className="inline-flex items-center rounded-full bg-white/10 px-3 py-1.5 text-label font-semibold text-blue-100">
+              SIH26122 · Oil India Limited
             </div>
+            <h1 className="mt-6 max-w-xl text-[36px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[44px]">
+              Field reality, converted into decisions.
+            </h1>
+            <p className="mt-4 max-w-lg text-lead leading-7 text-slate-300">
+              NAVIS connects site evidence to schedule impact, with a human in control of every committed change.
+            </p>
           </div>
 
-        </div>
-      </div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {[
+              ['01', 'Capture', 'Voice, text and photo evidence from site'],
+              ['02', 'Verify', 'Explainable matching with planner review'],
+              ['03', 'Decide', 'Schedule impact and executive visibility'],
+            ].map(([step, title, copy]) => (
+              <div key={step} className="flex gap-3 border-t border-white/10 pt-3">
+                <span className="font-mono text-label text-blue-300">{step}</span>
+                <div>
+                  <div className="text-body font-semibold text-white">{title}</div>
+                  <div className="mt-0.5 text-label leading-5 text-slate-400">{copy}</div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {/* Bottom Bar Indicator */}
-      <div className="max-w-[1180px] w-full mx-auto mt-3 sm:mt-4 px-2 flex items-center justify-between text-label text-muted font-mono shrink-0">
-        <span>NAVIS PILOT ENGINE // OIL INDIA LIMITED</span>
-        <span>SIH 2026</span>
-      </div>
+          <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/10 pt-4 text-label text-slate-400">
+            <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-blue-300" /> Append-only audit trail</span>
+            <span>{activities} baseline activities</span>
+            <span>{schedule?.data_date ? `Data date ${schedule.data_date}` : 'Live project context'}</span>
+          </div>
+        </section>
+
+        <section className="order-1 flex flex-col p-5 sm:p-7 lg:order-2 lg:p-10">
+          <div>
+            <div className="text-label font-semibold uppercase tracking-[0.08em] text-accent">Choose workspace</div>
+            <h2 className="mt-2 text-h2 font-semibold tracking-[-0.03em] text-heading">How are you working today?</h2>
+            <p className="mt-2 text-body leading-6 text-muted">Each role opens a focused workflow with the right permissions.</p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3" role="radiogroup" aria-label="Workspace role">
+            {ROLES.map((role) => {
+              const active = selected === role.id;
+              const Icon = role.icon;
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setSelected(role.id)}
+                  onDoubleClick={() => onPick(role.id)}
+                  className={`group flex min-h-[92px] w-full items-start gap-4 rounded-xl p-4 text-left transition-all ${active ? 'bg-selected ring-2 ring-accent' : 'bg-secondary/55 ring-1 ring-hair hover:bg-secondary'}`}
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-accent text-white' : 'bg-raised text-muted ring-1 ring-hair'}`}>
+                    <Icon size={20} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-lead font-semibold text-heading">{role.label}</span>
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${active ? 'bg-accent text-white' : 'ring-1 ring-strong'}`}>
+                        {active && <Check size={13} strokeWidth={3} />}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block text-label font-semibold text-accent">{role.meta}</span>
+                    <span className="mt-1 block text-label leading-5 text-muted">{role.description}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <Button variant="primary" size="md" block className="mt-5 min-h-12 rounded-lg" onClick={() => onPick(selected)}>
+            Enter {ROLES.find((role) => role.id === selected)?.label}
+            <ArrowRight size={17} />
+          </Button>
+
+          <p className="mt-4 text-center text-label text-muted">
+            {schedule?.project ?? 'Active project'} · Local pilot environment
+          </p>
+        </section>
+      </main>
     </div>
   );
 }

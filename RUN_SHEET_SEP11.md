@@ -80,7 +80,7 @@ Everything downstream blocks on two decisions only you can make.
       - **Presenter** — speaks the pitch, narrates the demo
       - **Driver** — operates the laptop. **Never the same person as the presenter**
       - **Q&A lead** — fields judges, owns `METRICS.md`
-      - **Reset operator** — runs `scripts/reset_demo.py`, watches the clock
+      - **Reset operator** — runs `backend/scripts/reset_demo.py`, watches the clock
       The other two are backup presenter and backup driver, able to take over cold.
 - [ ] **Every machine `git pull`** — confirm `bee2694` on all six, out loud, one by one.
 - [ ] Charge everything. Print `NUMBERS_SHEET.md`, one copy per person.
@@ -96,7 +96,7 @@ Not "a machine." **The** laptop that goes on stage.
 ```bash
 git pull
 python -m pytest -q                 # expect: 1055 passed
-python scripts/healthcheck.py       # expect: 31 passed, 0 failed
+python backend/scripts/healthcheck.py       # expect: 31 passed, 0 failed
 ```
 
 - [ ] The healthcheck output must contain **`dense retrieval   MiniLM (offline)`**.
@@ -119,7 +119,7 @@ python scripts/healthcheck.py       # expect: 31 passed, 0 failed
       > `rm frontend/.env`, restart `npm run dev`, and relaunch the API with
       > `--host 0.0.0.0`. All three modes are written out in
       > `frontend/.env.example`.
-- [ ] `python scripts/reset_demo.py` three times; identical counts each time.
+- [ ] `python backend/scripts/reset_demo.py` three times; identical counts each time.
       Do **not** restart the server between runs — the script is designed to run
       while it is up.
 - [ ] **Airplane test, 3 minutes.** Wi-Fi off, click through all three roles.
@@ -157,7 +157,7 @@ goes on the list.
 
 **Fixing rules — non-negotiable:**
 1. Fix **only** what this sweep finds.
-2. **Do not touch `matching/`, `extraction/`, or any threshold.** The 100% auto-link
+2. **Do not touch `backend/matching/`, `backend/extraction/`, or any threshold.** The 100% auto-link
    precision claim is the entire pitch and there is no time to re-verify it.
 3. After every change: `npx tsc --noEmit && npx vitest run`.
 4. **Ten-minute rule** — not obviously fixable in ten minutes, `git checkout -- <file>`
@@ -211,12 +211,12 @@ was on the backup machine · every presenter has delivered the six core answers 
 ## P5 · PRE-FLIGHT — 14:45 → 15:00 · all
 
 ```bash
-python scripts/reset_demo.py                      # 1. clean baseline
-python -m uvicorn server.main:app --port 8000     # 2. API, from the PROJECT ROOT
+python backend/scripts/reset_demo.py                      # 1. clean baseline
+python -m uvicorn server.main:app --app-dir backend --port 8000     # 2. API, from the PROJECT ROOT
 cd frontend && npm run dev                        # 3. UI, second terminal
 ```
 
-- [ ] `python scripts/healthcheck.py` green, and it says `MiniLM (offline)`
+- [ ] `python backend/scripts/healthcheck.py` green, and it says `MiniLM (offline)`
 - [ ] Browser at `http://localhost:5173`, 1280×800, **single tab**
 - [ ] All three roles reachable from the picker
 - [ ] Funnel B on the printed sheet matches the Schedule screen
@@ -250,10 +250,10 @@ with it.
 
 ### Before you record
 
-- [ ] `python scripts/reset_demo.py` — record against the clean baseline, so what is on
+- [ ] `python backend/scripts/reset_demo.py` — record against the clean baseline, so what is on
       the video matches Funnel B on the printed sheet. A video showing different counts
       from the sheet is worse than no video.
-- [ ] `python scripts/healthcheck.py` green, and it says `MiniLM (offline)`.
+- [ ] `python backend/scripts/healthcheck.py` green, and it says `MiniLM (offline)`.
 - [ ] Browser at **1280×800, single tab**, no bookmarks bar, no other windows.
 - [ ] Notifications silenced. A Slack toast mid-frame is permanent.
 - [ ] Sign out to the role picker first — `localStorage.removeItem('navis.role')` in the

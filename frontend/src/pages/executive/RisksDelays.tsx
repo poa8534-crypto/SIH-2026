@@ -2,29 +2,32 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ShieldAlert,
-  AlertTriangle,
   Scale,
   FileSearch,
   Filter,
-  Layers,
-  ChevronRight,
-  Clock,
   CheckCircle2,
-  FileCheck2,
-  Info,
-  User,
-  Calendar,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
+import { days } from '../../lib/units';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import type {
-  Discipline,
   ExecutiveMetricsResponse,
   RaidItem,
   DelayAttribution,
   SourceConflict,
 } from '../../types';
+
+/** One label/value pair in the expanded RAID record. Renders an em dash
+ *  rather than hiding an absent field: "not recorded" is information. */
+function RaidDetailField({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <span className="font-mono text-label text-muted uppercase block mb-0.5">{label}</span>
+      <span className="font-mono text-fg">{value ?? '—'}</span>
+    </div>
+  );
+}
 
 export default function ExecutiveRisksDelays() {
   usePageHeader(
@@ -33,13 +36,18 @@ export default function ExecutiveRisksDelays() {
     '/executive/risks'
   );
 
-  const [activeTab, setActiveTab] = useState<'raid' | 'delays' | 'conflicts'>('raid');
+  // Opening tab. The register is empty until a Project Manager accepts an
+  // item, so defaulting to 'raid' opened this screen on an empty state while
+  // the two tabs beside it held real rows. The opening tab is now the first
+  // one that actually has content, and falls back to the register when
+  // nothing does. See D-111.
+  const [activeTab, setActiveTab] = useState<'raid' | 'delays' | 'conflicts' | null>(null);
   const [riskLevelFilter, setRiskLevelFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRaidItem, setSelectedRaidItem] = useState<RaidItem | null>(null);
 
   // Queries
-  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery<ExecutiveMetricsResponse>({
+  const { data: metrics, error: metricsError } = useQuery<ExecutiveMetricsResponse>({
     queryKey: ['executiveMetrics'],
     queryFn: api.getExecutiveMetrics,
   });
@@ -62,6 +70,16 @@ export default function ExecutiveRisksDelays() {
   const dispute = metrics?.dispute_shield;
   const financial = metrics?.financial;
 
+  const raidCount = raidItems?.length ?? 0;
+  const delayCount = delayAttribution?.events?.length ?? 0;
+  const conflictCount = conflicts?.length ?? 0;
+
+  // Resolve the opening tab once the counts are known, then leave it alone —
+  // `activeTab` is null only before the first render with data, so a later
+  // refetch can never yank the reader off the tab they chose.
+  const resolvedTab: 'raid' | 'delays' | 'conflicts' =
+    activeTab ?? (raidCount > 0 ? 'raid' : delayCount > 0 ? 'delays' : conflictCount > 0 ? 'conflicts' : 'raid');
+
   // Filtered RAID items
   const filteredRaid = useMemo(() => {
     if (!raidItems) return [];
@@ -78,6 +96,34 @@ export default function ExecutiveRisksDelays() {
       return true;
     });
   }, [raidItems, statusFilter, riskLevelFilter]);
+
+  const topExposures = useMemo(() => {
+    const groups = new Map<string, RaidItem[]>();
+    (raidItems ?? [])
+      .filter((item) => item.status.toLowerCase() !== 'closed')
+      .forEach((item) => {
+        const title = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const activities = [...item.linked_activity_ids].sort().join('|') || 'unlinked';
+        const key = `${activities}:${title}`;
+        groups.set(key, [...(groups.get(key) ?? []), item]);
+      });
+
+    return [...groups.values()]
+      .map((group) => ({
+        item: [...group].sort((a, b) => {
+          const aExposure = a.exposure ?? ((a.probability || 0) * (a.impact_days || 0));
+          const bExposure = b.exposure ?? ((b.probability || 0) * (b.impact_days || 0));
+          return bExposure - aExposure;
+        })[0],
+        sourceCount: group.length,
+      }))
+      .sort((a, b) => {
+        const aExposure = a.item.exposure ?? ((a.item.probability || 0) * (a.item.impact_days || 0));
+        const bExposure = b.item.exposure ?? ((b.item.probability || 0) * (b.item.impact_days || 0));
+        return bExposure - aExposure;
+      })
+      .slice(0, 3);
+  }, [raidItems]);
 
   if (metricsError || raidError || delayError || conflictsError) {
     return <ErrorState error={metricsError || raidError || delayError || conflictsError} />;
@@ -112,6 +158,42 @@ export default function ExecutiveRisksDelays() {
         </div>
       </div>
 
+      {topExposures.length > 0 && (
+        <section className="rounded-xl bg-raised p-5 ring-1 ring-inset ring-hair">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-heading">Top unresolved exposure</h2>
+              <p className="mt-0.5 text-sm text-muted">Highest quantified open items, with accountable owner shown first.</p>
+            </div>
+            <span className="font-mono text-label text-muted">Top {topExposures.length}</span>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {topExposures.map(({ item, sourceCount }, index) => {
+              const exposure = item.exposure ?? ((item.probability || 0) * (item.impact_days || 0));
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('raid');
+                    setSelectedRaidItem(item);
+                  }}
+                  className="rounded-xl bg-surface p-4 text-left ring-1 ring-inset ring-hair transition-colors hover:bg-selected/50 hover:ring-focus"
+                >
+                  <span className="font-mono text-label text-danger">#{index + 1} · {exposure ? `${exposure.toFixed(1)}d exposure` : 'Exposure unquantified'}</span>
+                  <strong className="mt-1 block line-clamp-2 text-sm text-heading">{item.title}</strong>
+                  <span className="mt-1 block font-mono text-label text-muted">
+                    {sourceCount} preserved {sourceCount === 1 ? 'record' : 'records'}
+                  </span>
+                  <span className="mt-3 block text-label text-muted">Owner</span>
+                  <span className="block text-sm font-semibold text-fg">{item.owner ?? 'Unassigned'}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ── Strategic Dispute Shield Exposure Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Employer Delay Days */}
@@ -121,7 +203,7 @@ export default function ExecutiveRisksDelays() {
               Employer Delay (EOT Claimable)
             </span>
             <div className="text-3xl font-extrabold text-fg font-mono">
-              {dispute ? `${dispute.employer_delay_days} Days` : '—'}
+              {days(dispute?.employer_delay_days)}
             </div>
           </div>
           <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
@@ -138,7 +220,7 @@ export default function ExecutiveRisksDelays() {
               Contractor Delay (Culpable)
             </span>
             <div className="text-3xl font-extrabold text-danger font-mono">
-              {dispute ? `${dispute.contractor_delay_days} Days` : '—'}
+              {days(dispute?.contractor_delay_days)}
             </div>
           </div>
           <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
@@ -155,7 +237,7 @@ export default function ExecutiveRisksDelays() {
               Contested / Unadjudicated
             </span>
             <div className="text-3xl font-extrabold text-warn font-mono">
-              {dispute ? `${dispute.contested_delay_days} Days` : '—'}
+              {days(dispute?.contested_delay_days)}
             </div>
           </div>
           <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
@@ -176,7 +258,13 @@ export default function ExecutiveRisksDelays() {
             </div>
           </div>
           <div className="mt-3 text-xs text-muted pt-3 border-t border-hair font-mono">
-            {dispute?.notice_served_count ?? 0} served · {dispute?.notice_lapsed_count ?? 0} lapsed
+            {/* The OPEN count belongs here: compliance is
+                (served + open) / (served + open + lapsed), so a caption
+                listing only served and lapsed made the percentage above it
+                look like arithmetic nobody could reproduce — 0 served and
+                2 lapsed reading as 50%. See D-111. */}
+            {dispute?.notice_served_count ?? 0} served · {dispute?.notice_open_count ?? 0} open ·{' '}
+            {dispute?.notice_lapsed_count ?? 0} lapsed
           </div>
         </div>
       </div>
@@ -187,44 +275,44 @@ export default function ExecutiveRisksDelays() {
           type="button"
           onClick={() => setActiveTab('raid')}
           className={`px-4 py-2 rounded-t-md font-mono text-xs transition-colors flex items-center gap-2 ${
-            activeTab === 'raid'
+            resolvedTab === 'raid'
               ? 'bg-raised text-heading border-t border-x border-hair font-semibold'
               : 'text-muted hover:text-fg'
           }`}
         >
           <ShieldAlert size={14} />
-          Accepted RAID Register ({raidItems?.length ?? 0})
+          Accepted RAID Register ({raidCount})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('delays')}
           className={`px-4 py-2 rounded-t-md font-mono text-xs transition-colors flex items-center gap-2 ${
-            activeTab === 'delays'
+            resolvedTab === 'delays'
               ? 'bg-raised text-heading border-t border-x border-hair font-semibold'
               : 'text-muted hover:text-fg'
           }`}
         >
           <Scale size={14} />
-          Delay Attribution Matrix ({delayAttribution?.events?.length ?? 0})
+          Delay Attribution Matrix ({delayCount})
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('conflicts')}
           className={`px-4 py-2 rounded-t-md font-mono text-xs transition-colors flex items-center gap-2 ${
-            activeTab === 'conflicts'
+            resolvedTab === 'conflicts'
               ? 'bg-raised text-heading border-t border-x border-hair font-semibold'
               : 'text-muted hover:text-fg'
           }`}
         >
           <FileSearch size={14} />
-          Source Disagreements ({conflicts?.length ?? 0})
+          Source Disagreements ({conflictCount})
         </button>
       </div>
 
       {/* ── Tab 1: Accepted RAID Register ── */}
-      {activeTab === 'raid' && (
+      {resolvedTab === 'raid' && (
         <div className="flex flex-col gap-4">
           {/* Filters Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-hair bg-raised">
@@ -292,9 +380,11 @@ export default function ExecutiveRisksDelays() {
                       const prob = item.probability !== null && item.probability !== undefined ? `${(item.probability * 100).toFixed(0)}%` : '—';
                       const exp = item.exposure ?? ((item.probability || 0) * (item.impact_days || 0));
                       return (
+                        <React.Fragment key={item.id}>
                         <tr
-                          key={item.id}
-                          onClick={() => setSelectedRaidItem(item)}
+                          onClick={() =>
+                            setSelectedRaidItem(selectedRaidItem?.id === item.id ? null : item)
+                          }
                           className="hover:bg-selected/50 transition-colors cursor-pointer"
                         >
                           <td className="py-3 px-4">
@@ -345,6 +435,44 @@ export default function ExecutiveRisksDelays() {
                             </span>
                           </td>
                         </tr>
+
+                        {/* The click used to call setSelectedRaidItem and
+                            nothing read it back — a row with a pointer cursor
+                            and a hover highlight that did nothing at all. It
+                            now opens the rest of the record. See D-111. */}
+                        {selectedRaidItem?.id === item.id && (
+                          <tr className="bg-surface/60">
+                            <td colSpan={7} className="px-4 py-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs">
+                                <div className="md:col-span-2">
+                                  <span className="font-mono text-label text-muted uppercase block mb-0.5">
+                                    Description
+                                  </span>
+                                  <span className="text-fg leading-relaxed">
+                                    {item.description ?? 'No description recorded.'}
+                                  </span>
+                                </div>
+                                <RaidDetailField label="Raised" value={item.date_raised} />
+                                <RaidDetailField label="Due" value={item.due_date} />
+                                <RaidDetailField label="Closed" value={item.date_closed} />
+                                <RaidDetailField label="Category" value={item.category} />
+                                <RaidDetailField
+                                  label="Linked activities"
+                                  value={
+                                    item.linked_activity_ids.length > 0
+                                      ? item.linked_activity_ids.join(', ')
+                                      : null
+                                  }
+                                />
+                                <RaidDetailField
+                                  label="Origin"
+                                  value={item.source_note ?? item.source_kind ?? null}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </React.Fragment>
                       );
                     })}
                   </tbody>
@@ -356,7 +484,7 @@ export default function ExecutiveRisksDelays() {
       )}
 
       {/* ── Tab 2: Delay Attribution Matrix ── */}
-      {activeTab === 'delays' && (
+      {resolvedTab === 'delays' && (
         <div className="flex flex-col gap-4">
           <div className="p-3 rounded-lg border border-hair bg-raised text-xs text-muted leading-relaxed font-mono flex items-center justify-between">
             <span>
@@ -449,7 +577,7 @@ export default function ExecutiveRisksDelays() {
       )}
 
       {/* ── Tab 3: Source Conflicts (Information Confidence) ── */}
-      {activeTab === 'conflicts' && (
+      {resolvedTab === 'conflicts' && (
         <div className="flex flex-col gap-4">
           <div className="p-3 rounded-lg border border-hair bg-raised text-xs text-muted leading-relaxed font-mono">
             <strong>Information Integrity Notice:</strong> These items represent conflicting telemetry or progress reports across data sources (e.g. drone scan vs supervisor daily log). They reflect information confidence and measurement uncertainty, not approved contractual delays.

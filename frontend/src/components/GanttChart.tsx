@@ -37,23 +37,38 @@ const ROW_PX = 48;
 const LIVE_BADGE_PX = 280;
 
 function parseISODate(d: string): number {
-  const parts = d.split('-').map(Number);
-  return Date.UTC(parts[0], parts[1] - 1, parts[2]);
+  if (!d) return NaN;
+  // Safely match YYYY-MM-DD from any ISO timestamp or date string
+  const match = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return NaN;
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const MONTH_SHORT_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+const WEEKDAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 function formatShortDate(timestamp: number): string {
   const d = new Date(timestamp);
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${monthNames[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return `${MONTH_SHORT_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 function formatMonthHeader(timestamp: number): string {
   const d = new Date(timestamp);
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  return `${monthNames[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+function formatShortMonthHeader(timestamp: number): string {
+  const d = new Date(timestamp);
+  return `${MONTH_SHORT_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 /** An activity counts as started when any field signal says so — an actual
@@ -73,10 +88,31 @@ function hasFieldProgress(act: ScheduleActivity | undefined): boolean {
 type ZoomLevel = 'compact' | 'normal' | 'detailed';
 
 const PX_PER_DAY_MAP: Record<ZoomLevel, number> = {
-  compact: 6,
-  normal: 12,
-  detailed: 20,
+  compact: 7,
+  normal: 14,
+  detailed: 24,
 };
+
+interface GanttDay {
+  dayIndex: number;
+  timestamp: number;
+  dayOfMonth: number;
+  dayOfWeek: number; // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  isWeekend: boolean;
+  isMonday: boolean;
+  isFirstOfMonth: boolean;
+  monthIndex: number;
+  shortDate: string; // e.g. "Sep 15"
+  weekdayLabel: string; // "Mo", "Tu", etc.
+  isoDate: string; // "2026-09-15"
+}
+
+interface GanttMonth {
+  label: string;
+  shortLabel: string;
+  offsetDays: number;
+  durationDays: number;
+}
 
 export function GanttChart({
   activities,
@@ -92,13 +128,8 @@ export function GanttChart({
 
   const pxPerDay = PX_PER_DAY_MAP[zoom];
 
-  // A tick label ("Sep 15") needs roughly 48px. At the compact 6px/day a weekly
-  // label gets 42px and the labels collide, so compact halves their density.
-  // The grid lines below stay weekly at every zoom.
-  const labelEveryDays = pxPerDay * 7 < 48 ? 14 : 7;
-
-  // Compute timeline boundaries across all activities and dataDate
-  const { minTimestamp, totalDays, months, dataDateOffsetPx } = useMemo(() => {
+  // Compute timeline boundaries across all activities, float slacks, and dataDate
+  const { minTimestamp, totalDays, months, days, dataDateOffsetPx } = useMemo(() => {
     let minTime = Infinity;
     let maxTime = -Infinity;
 
@@ -117,7 +148,14 @@ export function GanttChart({
       }
       if (act.planned_finish) {
         const t = parseISODate(act.planned_finish);
-        if (!isNaN(t)) maxTime = Math.max(maxTime, t);
+        if (!isNaN(t)) {
+          maxTime = Math.max(maxTime, t);
+          // Account for float slack buffer so the timeline does not clip the float line
+          if (act.total_float && act.total_float > 0) {
+            const floatDays = Math.min(120, act.total_float);
+            maxTime = Math.max(maxTime, t + floatDays * MS_PER_DAY);
+          }
+        }
       }
       if (act.actual_start) {
         const t = parseISODate(act.actual_start);
@@ -139,16 +177,20 @@ export function GanttChart({
     minTime -= 7 * MS_PER_DAY;
     maxTime += 14 * MS_PER_DAY;
 
-    // Align minTime to the start of its month
+    // Align minTime to the 1st of its month in UTC
     const minD = new Date(minTime);
     minTime = Date.UTC(minD.getUTCFullYear(), minD.getUTCMonth(), 1);
 
-    // Generate month headers
-    const monthList: { label: string; offsetDays: number; durationDays: number }[] = [];
-    const cur = new Date(minTime);
-    const end = new Date(maxTime);
+    // Align maxTime to the end of its month in UTC (1st of next month)
+    const maxD = new Date(maxTime);
+    const alignedMaxTime = Date.UTC(maxD.getUTCFullYear(), maxD.getUTCMonth() + 1, 1);
 
-    while (cur <= end) {
+    // Generate month headers
+    const monthList: GanttMonth[] = [];
+    const cur = new Date(minTime);
+    const end = new Date(alignedMaxTime);
+
+    while (cur < end) {
       const year = cur.getUTCFullYear();
       const month = cur.getUTCMonth();
       const monthStart = Date.UTC(year, month, 1);
@@ -158,6 +200,7 @@ export function GanttChart({
 
       monthList.push({
         label: formatMonthHeader(monthStart),
+        shortLabel: formatShortMonthHeader(monthStart),
         offsetDays,
         durationDays: monthDays,
       });
@@ -166,15 +209,40 @@ export function GanttChart({
     }
 
     // The month band always runs to the end of the month containing maxTime, so
-    // the timeline has to be at least that wide. Sizing it from maxTime alone
-    // clipped the final month header by up to a month's worth of pixels.
+    // the timeline has to be at least that wide.
     const lastMonth = monthList[monthList.length - 1];
     const monthSpanDays = lastMonth ? lastMonth.offsetDays + lastMonth.durationDays : 0;
     const diffDays = Math.max(
       30,
-      Math.ceil((maxTime - minTime) / MS_PER_DAY),
+      Math.ceil((alignedMaxTime - minTime) / MS_PER_DAY),
       monthSpanDays
     );
+
+    // Generate day list for high-precision day-by-day calendar header and grid
+    const dayList: GanttDay[] = [];
+    for (let i = 0; i < diffDays; i++) {
+      const time = minTime + i * MS_PER_DAY;
+      const d = new Date(time);
+      const dayOfMonth = d.getUTCDate();
+      const dayOfWeek = d.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+      const monthIdx = d.getUTCMonth();
+      const year = d.getUTCFullYear();
+      const isoDate = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(dayOfMonth).padStart(2, '0')}`;
+
+      dayList.push({
+        dayIndex: i,
+        timestamp: time,
+        dayOfMonth,
+        dayOfWeek,
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+        isMonday: dayOfWeek === 1,
+        isFirstOfMonth: dayOfMonth === 1,
+        monthIndex: monthIdx,
+        shortDate: `${MONTH_SHORT_NAMES[monthIdx]} ${dayOfMonth}`,
+        weekdayLabel: WEEKDAY_SHORT[dayOfWeek],
+        isoDate,
+      });
+    }
 
     const ddTime = dataDate ? parseISODate(dataDate) : null;
     const ddOffset = ddTime && ddTime >= minTime
@@ -185,6 +253,7 @@ export function GanttChart({
       minTimestamp: minTime,
       totalDays: diffDays,
       months: monthList,
+      days: dayList,
       dataDateOffsetPx: ddOffset,
     };
   }, [activities, dataDate, pxPerDay]);
@@ -247,7 +316,7 @@ export function GanttChart({
 
       // 2. Center the bar horizontally in the visible timeline portion
       const containerWidth = container.clientWidth || 1000;
-      const visibleTimelineWidth = Math.max(200, containerWidth - LEFT_PANE_PX);
+      const visibleTimelineWidth = Math.max(40, containerWidth - LEFT_PANE_PX);
       let targetLeft = container.scrollLeft;
 
       if (barEl) {
@@ -275,6 +344,7 @@ export function GanttChart({
       // Execute immediate scroll so there is no animation cancellation or freezing
       container.scrollTop = targetTop;
       container.scrollLeft = targetLeft;
+      setScrollLeft(targetLeft);
 
       // Only a live highlight arriving from elsewhere in the app may move the
       // outer page. An ordinary click inside the Gantt must not yank the
@@ -310,30 +380,81 @@ export function GanttChart({
     };
   }, [selectedId, highlightId, highlightKey, activities, minTimestamp, pxPerDay, dataDate]);
 
+  // Track horizontal scroll offset to keep month headers and date markers cleanly in view without clipping
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const scrollRafRef = useRef<number | null>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const newLeft = e.currentTarget.scrollLeft;
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+    }
+    scrollRafRef.current = requestAnimationFrame(() => {
+      setScrollLeft(newLeft);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current !== null) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
+
   const scrollToDataDate = () => {
     if (scrollContainerRef.current && dataDateOffsetPx !== null) {
-      const targetLeft = Math.max(0, dataDateOffsetPx - 300);
-      if (typeof scrollContainerRef.current.scrollTo === 'function') {
-        scrollContainerRef.current.scrollTo({
+      const container = scrollContainerRef.current;
+      const containerWidth = container.clientWidth || 1000;
+      const visibleTimelineWidth = Math.max(40, containerWidth - LEFT_PANE_PX);
+      // Center data date in visible timeline portion
+      const targetLeft = Math.max(0, dataDateOffsetPx - (visibleTimelineWidth / 2));
+      if (typeof container.scrollTo === 'function') {
+        container.scrollTo({
           left: targetLeft,
           behavior: 'smooth',
         });
       } else {
-        scrollContainerRef.current.scrollLeft = targetLeft;
+        container.scrollLeft = targetLeft;
       }
+      setScrollLeft(targetLeft);
     }
   };
 
+  // A Gantt that opens months away from the project's data date looks empty.
+  // On the first mount, centre the live decision horizon unless another screen
+  // explicitly asked us to reveal a selected/highlighted activity.
+  const didFocusDataDateRef = useRef(false);
+  useEffect(() => {
+    if (
+      didFocusDataDateRef.current ||
+      selectedId ||
+      highlightId ||
+      dataDateOffsetPx === null ||
+      !scrollContainerRef.current
+    ) return;
+
+    const frame = requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const visibleTimelineWidth = Math.max(40, (container.clientWidth || 1000) - LEFT_PANE_PX);
+      const targetLeft = Math.max(0, dataDateOffsetPx - visibleTimelineWidth / 2);
+      container.scrollLeft = targetLeft;
+      setScrollLeft(targetLeft);
+      didFocusDataDateRef.current = true;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [dataDateOffsetPx, highlightId, selectedId]);
+
   return (
-    <div className="flex flex-col h-full w-full bg-raised border border-hair rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-raised overflow-hidden">
       {/* TOOLBAR CONTROLS */}
-      <div className="shrink-0 h-10 px-4 border-b border-hair flex items-center justify-between gap-3 bg-surface">
-        <div className="flex items-center gap-3 font-mono text-label">
-          <span className="text-muted">Scale:</span>
-          <div className="flex items-center rounded border border-hair overflow-hidden">
+      <div className="shrink-0 min-h-10 px-4 py-1.5 border-b border-hair flex items-center justify-between gap-4 bg-surface flex-wrap sm:flex-nowrap overflow-x-auto">
+        <div className="flex items-center gap-3 font-mono text-label shrink-0">
+          <span className="text-muted font-medium">Scale:</span>
+          <div className="flex items-center rounded border border-hair overflow-hidden shrink-0 shadow-xs">
             <button
               onClick={() => setZoom('compact')}
-              className={`px-2.5 py-1 text-label font-mono transition-colors ${
+              className={`px-2.5 py-1 text-label font-mono transition-colors whitespace-nowrap ${
                 zoom === 'compact'
                   ? 'bg-selected text-accent font-semibold'
                   : 'text-muted hover:text-fg'
@@ -343,7 +464,7 @@ export function GanttChart({
             </button>
             <button
               onClick={() => setZoom('normal')}
-              className={`px-2.5 py-1 text-label font-mono border-l border-r border-hair transition-colors ${
+              className={`px-2.5 py-1 text-label font-mono border-l border-r border-hair transition-colors whitespace-nowrap ${
                 zoom === 'normal'
                   ? 'bg-selected text-accent font-semibold'
                   : 'text-muted hover:text-fg'
@@ -353,7 +474,7 @@ export function GanttChart({
             </button>
             <button
               onClick={() => setZoom('detailed')}
-              className={`px-2.5 py-1 text-label font-mono transition-colors ${
+              className={`px-2.5 py-1 text-label font-mono transition-colors whitespace-nowrap ${
                 zoom === 'detailed'
                   ? 'bg-selected text-accent font-semibold'
                   : 'text-muted hover:text-fg'
@@ -368,35 +489,36 @@ export function GanttChart({
               variant="secondary"
               size="xs"
               onClick={scrollToDataDate}
-              title={`Scroll timeline to project data date (${dataDate})`}
+              title={`Center timeline on project data date (${dataDate})`}
+              className="whitespace-nowrap shrink-0 flex items-center gap-1.5"
             >
               <Calendar size={12} className="text-accent" />
-              Focus Data Date ({dataDate})
+              <span>Focus Data Date ({dataDate})</span>
             </Button>
           )}
         </div>
 
         {/* COMPACT LEGEND */}
-        <div className="flex items-center gap-4 font-mono text-label text-muted">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3 sm:gap-4 font-mono text-label text-muted shrink-0 whitespace-nowrap">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <span className="inline-block w-4 h-2 bg-hair border border-strong/40 rounded-xs" />
             <span>Planned</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <span className="inline-block w-4 h-2.5 bg-accent/30 border border-accent rounded-xs" />
             <span>Actual / Progress</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <span className="inline-block w-4 h-2.5 bg-danger/25 border border-danger rounded-xs" />
-            <span className="text-danger font-medium flex items-center gap-1">
+            <span className="text-danger font-medium flex items-center gap-1 whitespace-nowrap">
               <Flame size={11} /> Critical (Float ≤ 0)
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <span className="inline-block w-4 h-0 border-t border-dashed border-warn" />
             <span>Slack / Float</span>
           </div>
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-semibold tracking-wide animate-pulse">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-semibold tracking-wide animate-pulse shrink-0 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
             LIVE SYNC
           </div>
@@ -406,6 +528,7 @@ export function GanttChart({
       {/* GANTT BODY (SINGLE SYNCHRONIZED SCROLL CONTAINER) */}
       <div
         ref={scrollContainerRef}
+        onScroll={handleScroll}
         className="flex-1 min-h-0 overflow-auto relative bg-raised select-none"
       >
         <div
@@ -415,7 +538,7 @@ export function GanttChart({
           {/* HEADER ROW */}
           <div className="sticky top-0 z-30 flex border-b border-hair bg-surface font-mono text-label">
             {/* Left Header: Activity Info (Sticky both vertically and horizontally) */}
-            <div className="sticky left-0 z-40 w-[440px] shrink-0 border-r border-hair bg-surface flex items-center px-4 py-2 font-medium uppercase tracking-wider text-heading">
+            <div className="sticky left-0 z-40 w-[440px] shrink-0 border-r border-hair bg-surface flex items-center px-4 py-2 font-medium uppercase tracking-wider text-heading shadow-sm">
               <span className="w-28">Activity ID</span>
               <span className="w-14 text-center">Disc</span>
               <span className="flex-1 px-2">Description</span>
@@ -426,54 +549,124 @@ export function GanttChart({
             {/* Right Header: Months & Days Timeline */}
             <div
               style={{ width: timelineWidth }}
-              className="relative h-12 flex flex-col"
+              className="relative h-12 flex flex-col overflow-hidden"
             >
-              {/* Top tier: Months */}
-              <div className="h-6 flex relative border-b border-hair">
+              {/* Top tier: Months with dynamic label pinning to prevent left-side clipping */}
+              <div className="h-6 flex relative border-b border-hair bg-surface">
                 {months.map((m, idx) => {
                   const left = m.offsetDays * pxPerDay;
                   const width = m.durationDays * pxPerDay;
+                  // Dynamic shift: pins month label at the visible edge when the month box slides under sticky pane
+                  const shift = Math.max(0, Math.min(scrollLeft - left + 8, width - 110));
+                  const isNarrow = width - shift < 65;
+
                   return (
                     <div
                       key={idx}
                       style={{ left, width }}
-                      className="absolute top-0 bottom-0 border-r border-hair/70 px-2 flex items-center font-semibold text-fg tracking-wide truncate bg-surface/80"
+                      className="absolute top-0 bottom-0 border-r border-hair/70 px-2 flex items-center font-semibold text-fg tracking-wide truncate bg-surface/90 overflow-hidden select-none"
                     >
-                      {m.label}
+                      <span
+                        style={{
+                          transform: `translateX(${shift}px)`,
+                        }}
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-heading font-bold uppercase tracking-wider transition-transform duration-75"
+                      >
+                        <Calendar size={12} className="text-accent shrink-0" />
+                        <span>{isNarrow ? m.shortLabel : m.label}</span>
+                      </span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Bottom tier: Weeks / Day markers */}
-              <div className="h-6 relative">
-                {Array.from({ length: Math.ceil(totalDays / labelEveryDays) }).map((_, wIdx) => {
-                  const dayOffset = wIdx * labelEveryDays;
-                  const time = minTimestamp + dayOffset * MS_PER_DAY;
-                  const left = dayOffset * pxPerDay;
-                  return (
-                    <div
-                      key={wIdx}
-                      style={{ left }}
-                      className="absolute top-0 bottom-0 border-r border-hair/40 px-1 flex items-center text-muted text-[11px] tabular-nums"
-                    >
-                      {formatShortDate(time)}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Bottom tier: Detailed Day markers / Calendar ticks */}
+              <div className="h-6 relative bg-surface/60 overflow-hidden">
+                {zoom === 'compact' ? (
+                  // COMPACT ZOOM: Weekly markers on Mondays + 1st of month
+                  days
+                    .filter((d) => d.isMonday || d.isFirstOfMonth)
+                    .map((d) => {
+                      const left = d.dayIndex * pxPerDay;
+                      return (
+                        <div
+                          key={`compact-tick-${d.dayIndex}`}
+                          style={{ left }}
+                          className={`absolute top-0 bottom-0 border-r border-hair/40 px-1.5 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap select-none ${
+                            d.isFirstOfMonth ? 'font-bold text-accent' : 'text-muted'
+                          }`}
+                          title={d.isoDate}
+                        >
+                          {d.shortDate}
+                        </div>
+                      );
+                    })
+                ) : (
+                  // STANDARD & DETAILED ZOOM: Day-by-day ticks with numbers & weekdays
+                  days.map((d) => {
+                    const left = d.dayIndex * pxPerDay;
+                    const isToday = Boolean(dataDate && d.isoDate === dataDate);
 
-              {/* Data Date Tag in Header */}
-              {dataDateOffsetPx !== null && (
-                <div
-                  style={{ left: dataDateOffsetPx }}
-                  className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
-                >
-                  <div className="bg-accent text-surface px-1.5 py-0.5 rounded-xs text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-sm">
-                    Data Date
+                    return (
+                      <div
+                        key={`day-tick-${d.dayIndex}`}
+                        style={{ left, width: pxPerDay }}
+                        className={`absolute top-0 bottom-0 border-r flex flex-col items-center justify-center select-none ${
+                          d.isFirstOfMonth
+                            ? 'border-r-hair/70 border-l-2 border-l-accent/70 bg-accent/10'
+                            : 'border-r-hair/30'
+                        } ${
+                          isToday
+                            ? 'bg-accent/20 text-accent font-bold ring-1 ring-accent ring-inset'
+                            : d.isWeekend
+                            ? 'bg-black/[0.03] dark:bg-white/[0.02] text-muted/60'
+                            : 'text-fg'
+                        }`}
+                        title={`${d.weekdayLabel}, ${d.isoDate}${isToday ? ' (Project Data Date)' : ''}`}
+                      >
+                        {zoom === 'detailed' ? (
+                          <>
+                            <span className={`text-[9px] font-mono leading-none ${d.isWeekend ? 'text-muted/60' : 'text-muted'}`}>
+                              {d.weekdayLabel}
+                            </span>
+                            <span className={`text-[10px] font-mono leading-none font-bold mt-0.5 tabular-nums ${
+                              isToday ? 'text-accent' : d.isFirstOfMonth ? 'text-accent' : ''
+                            }`}>
+                              {d.dayOfMonth}
+                            </span>
+                          </>
+                        ) : (
+                          <span
+                            className={`text-[9px] font-mono leading-none tabular-nums ${
+                              isToday
+                                ? 'text-accent font-bold'
+                                : d.isFirstOfMonth
+                                ? 'text-accent font-bold'
+                                : d.isMonday
+                                ? 'text-fg font-semibold'
+                                : 'text-muted'
+                            }`}
+                          >
+                            {d.dayOfMonth}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Data Date Tag in Header */}
+                {dataDateOffsetPx !== null && (
+                  <div
+                    style={{ left: dataDateOffsetPx }}
+                    className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
+                  >
+                    <div className="bg-accent text-surface px-1.5 py-0.5 rounded-xs text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-sm">
+                      Data Date
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
@@ -482,29 +675,55 @@ export function GanttChart({
             style={{ left: LEFT_PANE_PX, top: HEADER_PX, width: timelineWidth }}
             className="absolute bottom-0 pointer-events-none z-0 overflow-hidden"
           >
-            {/* Monthly grid lines */}
-            {months.map((m, idx) => (
-              <div
-                key={idx}
-                style={{ left: m.offsetDays * pxPerDay }}
-                className="absolute top-0 bottom-0 border-l border-hair/80"
-              />
-            ))}
+            {/* Weekend shading columns for standard and detailed zoom */}
+            {(zoom === 'detailed' || zoom === 'normal') &&
+              days
+                .filter((d) => d.isWeekend)
+                .map((d) => (
+                  <div
+                    key={`we-${d.dayIndex}`}
+                    style={{ left: d.dayIndex * pxPerDay, width: pxPerDay }}
+                    className="absolute top-0 bottom-0 bg-black/[0.02] dark:bg-white/[0.015]"
+                  />
+                ))}
 
-            {/* Weekly subtle grid lines */}
-            {Array.from({ length: Math.ceil(totalDays / 7) }).map((_, wIdx) => (
-              <div
-                key={wIdx}
-                style={{ left: wIdx * 7 * pxPerDay }}
-                className="absolute top-0 bottom-0 border-l border-hair/30"
-              />
-            ))}
+            {/* Daily subtle grid lines */}
+            {(zoom === 'detailed' || zoom === 'normal') &&
+              days.map((d) => (
+                <div
+                  key={`day-line-${d.dayIndex}`}
+                  style={{ left: d.dayIndex * pxPerDay }}
+                  className={`absolute top-0 bottom-0 ${
+                    d.isFirstOfMonth
+                      ? 'border-l border-hair/90 dark:border-hair'
+                      : d.isMonday
+                      ? 'border-l border-hair/40'
+                      : 'border-l border-hair/20'
+                  }`}
+                />
+              ))}
+
+            {/* Compact zoom: Weekly Monday grid lines and Month dividers */}
+            {zoom === 'compact' &&
+              days
+                .filter((d) => d.isMonday || d.isFirstOfMonth)
+                .map((d) => (
+                  <div
+                    key={`compact-line-${d.dayIndex}`}
+                    style={{ left: d.dayIndex * pxPerDay }}
+                    className={`absolute top-0 bottom-0 ${
+                      d.isFirstOfMonth
+                        ? 'border-l border-hair/90 dark:border-hair'
+                        : 'border-l border-hair/30'
+                    }`}
+                  />
+                ))}
 
             {/* Continuous Data Date vertical marker */}
             {dataDateOffsetPx !== null && (
               <div
                 style={{ left: dataDateOffsetPx }}
-                className="absolute top-0 bottom-0 w-0.5 bg-accent opacity-75 z-10"
+                className="absolute top-0 bottom-0 w-0.5 bg-accent opacity-85 z-10 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
               />
             )}
           </div>
@@ -722,12 +941,12 @@ export function GanttChart({
                       <div
                         style={{
                           left: pLeft + pWidth,
-                          width: floatSlackPx,
+                          width: Math.min(floatSlackPx, Math.max(0, timelineWidth - (pLeft + pWidth) - 4)),
                         }}
                         className="absolute top-3 h-0 border-t border-dashed border-warn/70 flex items-center justify-end"
                         title={`Float Slack Buffer: ${act.total_float} days before impacting project milestone`}
                       >
-                        <span className="text-[9px] font-mono text-warn bg-surface/90 px-0.5 rounded-xs -translate-y-2 border border-hair">
+                        <span className="text-[9px] font-mono text-warn bg-surface/90 px-0.5 rounded-xs -translate-y-2 border border-hair whitespace-nowrap">
                           +{act.total_float}d
                         </span>
                       </div>

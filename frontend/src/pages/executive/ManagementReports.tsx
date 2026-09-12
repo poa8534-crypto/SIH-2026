@@ -1,28 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
-  FileText,
   Printer,
   Copy,
   Download,
   Sparkles,
   Check,
-  Calendar,
   Layers,
-  AlertTriangle,
-  Info,
   Clock,
-  ShieldAlert,
-  ArrowRight,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { copyText } from '../../lib/clipboard';
+import { pluralise, signedDays } from '../../lib/units';
 import { usePageHeader } from '../../hooks/usePageHeader';
-import { SkeletonRows, ErrorState } from '../../components/ui';
+import { ErrorState } from '../../components/ui';
 import type {
   ExecutiveMetricsResponse,
   ScheduleResponse,
-  EvmResponse,
   RaidItem,
 } from '../../types';
 
@@ -34,25 +29,24 @@ export default function ExecutiveManagementReports() {
   );
 
   // Builder Controls
-  const [reportPeriod, setReportPeriod] = useState<'current_week' | 'month' | 'pdt'>('current_week');
+  // Defaults to the whole project. A board pack should be complete unless
+  // someone narrows it on purpose — defaulting to ±7 days hid six of seven
+  // milestones on first load.
+  const [reportPeriod, setReportPeriod] = useState<'current_week' | 'month' | 'pdt'>('pdt');
   const [reportScope, setReportScope] = useState<'full' | 'critical_only' | 'discipline_focus'>('full');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [narrativeEdited, setNarrativeEdited] = useState(false);
 
   // Queries
-  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery<ExecutiveMetricsResponse>({
+  const { data: metrics, error: metricsError } = useQuery<ExecutiveMetricsResponse>({
     queryKey: ['executiveMetrics'],
     queryFn: api.getExecutiveMetrics,
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery<ScheduleResponse>({
+  const { data: scheduleData, error: scheduleError } = useQuery<ScheduleResponse>({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
-  });
-
-  const { data: evmData } = useQuery<EvmResponse>({
-    queryKey: ['evm'],
-    queryFn: api.getEvm,
   });
 
   const { data: raidItems } = useQuery<RaidItem[]>({
@@ -60,36 +54,165 @@ export default function ExecutiveManagementReports() {
     queryFn: () => api.getRaid(),
   });
 
-  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? '2026-09-15';
+  const dataDate = scheduleData?.data_date ?? metrics?.as_of ?? null;
+  const projectName = scheduleData?.project ?? 'Active project';
   const generatedAt = useMemo(() => new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC', []);
+
+  const reportRiskGroups = useMemo(() => {
+    const groups = new Map<string, RaidItem[]>();
+    (raidItems ?? [])
+      .filter((item) => item.status.toLowerCase() !== 'closed')
+      .forEach((item) => {
+        const title = item.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const activities = [...item.linked_activity_ids].sort().join('|') || 'unlinked';
+        const key = `${activities}:${title}`;
+        groups.set(key, [...(groups.get(key) ?? []), item]);
+      });
+
+    return [...groups.values()]
+      .map((group) => ({
+        item: [...group].sort(
+          (a, b) => (b.exposure ?? b.impact_days ?? 0) - (a.exposure ?? a.impact_days ?? 0)
+        )[0],
+        sourceCount: group.length,
+      }))
+      .sort(
+        (a, b) =>
+          (b.item.exposure ?? b.item.impact_days ?? 0) -
+          (a.item.exposure ?? a.item.impact_days ?? 0)
+      );
+  }, [raidItems]);
+
+  // ── The two builder controls, which now actually build ──────────────────
+  //
+  // Both of these used to be decorative: `reportPeriod` and `reportScope` were
+  // read only by their own `<select value=>`, so changing either produced a
+  // byte-identical pack, export and print. A control that cannot change its
+  // output is worse than no control, because the reader assumes it did
+  // something. The window rule and the scope rule are both stated on screen
+  // beside the selectors so the filtered pack can be checked. See D-111.
+
+  /** Half-width of the review window in days; null means no date filter. */
+  const periodWindowDays: number | null =
+    reportPeriod === 'current_week' ? 7 : reportPeriod === 'month' ? 30 : null;
+
+  const scopeDisciplines = ['CIV', 'PIP'];
+
+  const allMilestones = metrics?.milestones ?? [];
+
+  const reportMilestones = useMemo(() => {
+    let rows = allMilestones;
+
+    if (periodWindowDays !== null && dataDate) {
+      const cutoff = new Date(dataDate).getTime();
+      const span = periodWindowDays * 86_400_000;
+      rows = rows.filter((m) => {
+        const d = m.forecast_date ?? m.baseline_date;
+        if (!d) return false;
+        return Math.abs(new Date(d).getTime() - cutoff) <= span;
+      });
+    }
+
+    if (reportScope === 'critical_only') {
+      rows = rows.filter((m) => m.status === 'CRITICAL' || m.status === 'AT_RISK');
+    } else if (reportScope === 'discipline_focus') {
+      rows = rows.filter((m) => {
+        const prefix = (m.activity_id ?? '').slice(0, 3).toUpperCase();
+        if (scopeDisciplines.includes(prefix)) return true;
+        return /civil|piping/i.test(m.name);
+      });
+    }
+
+    return rows;
+  }, [allMilestones, periodWindowDays, dataDate, reportScope]);
+
+  /** Plain-English statement of what the two selectors currently exclude. */
+  const scopeStatement = useMemo(() => {
+    const parts: string[] = [];
+    parts.push(
+      periodWindowDays === null
+        ? 'all dates'
+        : `dates within ±${periodWindowDays} days of ${dataDate ?? 'the data date'}`
+    );
+    parts.push(
+      reportScope === 'critical_only'
+        ? 'critical and at-risk milestones only'
+        : reportScope === 'discipline_focus'
+        ? 'civil and piping only'
+        : 'all disciplines and statuses'
+    );
+    return `Showing ${reportMilestones.length} of ${allMilestones.length} milestones — ${parts.join(', ')}.`;
+  }, [periodWindowDays, dataDate, reportScope, reportMilestones.length, allMilestones.length]);
 
   // Default AI / Synthesis Narrative
   const defaultNarrative = useMemo(() => {
-    const spi = metrics?.kpis.spi ? metrics.kpis.spi.toFixed(2) : '0.50';
-    const drift = metrics?.kpis.float_drift_days ? `+${metrics.kpis.float_drift_days} days` : '+14 days';
+    // Every figure here is `??`, never `?`. Under a truthiness test a real
+    // zero — an SPI of 0, no drift, no coverage — printed the literal that
+    // stood behind it, so the pack asserted last quarter's numbers precisely
+    // when this quarter's were most alarming. See D-111.
+    const spi = metrics?.kpis.spi != null ? metrics.kpis.spi.toFixed(2) : '—';
+    const drift =
+      metrics?.kpis.float_drift_days !== undefined
+        ? pluralise(metrics.kpis.float_drift_days, 'day')
+        : '—';
     const disputeDays = metrics?.dispute_shield.employer_delay_days !== undefined
-      ? `${metrics.dispute_shield.employer_delay_days} days employer delay`
+      ? `${pluralise(metrics.dispute_shield.employer_delay_days, 'day')} employer delay`
       : 'contested delay records';
-    const cov = metrics?.kpis.evidence_coverage_pct ? `${metrics.kpis.evidence_coverage_pct.toFixed(1)}%` : '64.2%';
+    const cov =
+      metrics?.kpis.evidence_coverage_pct !== undefined
+        ? `${metrics.kpis.evidence_coverage_pct.toFixed(1)}%`
+        : '—';
+
+    // The driving activity and the worst delay cause are READ from the
+    // payload. This paragraph used to name "Skid B-4" — a tag that exists
+    // nowhere in the dataset (the skids are CS-01 and HS-01) — and it shipped
+    // in the exported markdown and the printed board pack. A fabricated tag in
+    // a governance document is the one thing this lane cannot afford. D-111.
+    const driver = metrics?.critical_drivers?.[0] ?? null;
+    const pressure = driver
+      ? `Primary schedule pressure is on ${driver.description} (${driver.activity_id}), ` +
+        `${signedDays(driver.finish_variance_days)} against plan.`
+      : `No single activity is currently driving the critical path finish.`;
+    const noticeAction = driver?.driving_delay
+      ? `1. Review the recorded delay cause "${driver.driving_delay}" on ${driver.activity_id} ` +
+        `before the statutory 28-day notice window lapses.\n`
+      : `1. Review open FIDIC Clause 20.1 notice windows before they lapse.\n`;
+    const unevidenced = metrics?.kpis.unevidenced_activities;
+    const evidenceAction =
+      unevidenced !== undefined
+        ? `2. Close the evidence gap on ${pluralise(unevidenced, 'activity', 'activities')} still relying on planned duration.\n`
+        : `2. Close the outstanding evidence gap with field engineering.\n`;
 
     return (
       `EXECUTIVE BRIEFING SUMMARY:\n` +
-      `The Well Pad 04 project is currently operating at an SPI of ${spi} with a cumulative critical path float drift of ${drift}. ` +
-      `Primary schedule pressure is localized in Civil Piling and Early Piping spool erection. ` +
+      `${projectName} is currently operating at an SPI of ${spi} with a cumulative critical path float drift of ${drift}. ` +
+      `${pressure} ` +
       `FIDIC contractual dispute exposure stands at ${disputeDays}, with 28-day notice deadlines actively monitored. ` +
       `Reporting evidence integrity covers ${cov} of active work nodes.\n\n` +
       `RECOMMENDED MANAGEMENT ACTIONS:\n` +
-      `1. Review contractor delay notice regarding piling rig equipment breakdown before statutory 28-day window lapse.\n` +
-      `2. Verify unevidenced piping spools on Skid B-4 with field engineering.\n` +
+      noticeAction +
+      evidenceAction +
       `3. Align next executive review on logic finish milestone movement.`
     );
-  }, [metrics]);
+  }, [metrics, projectName]);
 
   const [aiNarrative, setAiNarrative] = useState(defaultNarrative);
 
-  // Sync default if modified by query later
+  // True once the supervisor has typed into the box or asked for a regeneration.
+  // After that the text is theirs and nothing overwrites it.
+  const narrativeIsUserOwned = React.useRef(false);
+
+  // Keep the narrative in step with the figures until someone takes it over.
+  //
+  // The old guard was `if (defaultNarrative && !aiNarrative)`: it fired only
+  // while the box was EMPTY, and the box is never empty — it is seeded on the
+  // first render, when the metrics query has not resolved. That was invisible
+  // while every figure had a hardcoded fallback ("0.50", "+14 days", "64.2%"),
+  // because the seeded text happened to read correctly. Grounding those
+  // figures exposed it: the pack opened with "an SPI of — ... drift of —".
+  // See D-111.
   React.useEffect(() => {
-    if (defaultNarrative && !aiNarrative) {
+    if (!narrativeIsUserOwned.current) {
       setAiNarrative(defaultNarrative);
     }
   }, [defaultNarrative]);
@@ -98,11 +221,13 @@ export default function ExecutiveManagementReports() {
     setIsGeneratingAi(true);
     try {
       const resp = await api.askChat({
-        question: `Draft a concise 3-paragraph executive board briefing for project ${scheduleData?.project ?? 'Well Pad 04'} as of ${dataDate}. Include schedule performance, top milestone movements, and critical delay risks.`,
+        question: `Draft a concise 3-paragraph executive board briefing for project ${projectName} as of ${dataDate}. Include schedule performance, top milestone movements, and critical delay risks.`,
         role: 'executive',
       });
       if (resp.answer) {
+        narrativeIsUserOwned.current = true;
         setAiNarrative(resp.answer);
+        setNarrativeEdited(false);
       }
     } catch {
       // Fallback stays in place
@@ -113,28 +238,32 @@ export default function ExecutiveManagementReports() {
 
   // Compile full Markdown for export
   const fullReportMarkdown = useMemo(() => {
-    const proj = scheduleData?.project ?? 'Oil India Limited — Well Pad 04';
+    const proj = projectName;
     const kpis = metrics?.kpis;
     const forecast = metrics?.completion_forecast;
-    const milestones = metrics?.milestones ?? [];
-    const openRisks = (raidItems ?? []).slice(0, 4);
+    const milestones = reportMilestones;
+    const openRisks = reportRiskGroups.slice(0, 4);
 
     let md = `# NAVIS Executive Management Review Pack\n`;
     md += `**Project:** ${proj}\n`;
     md += `**Data Cutoff Date:** ${dataDate}\n`;
     md += `**Generated At:** ${generatedAt}\n`;
-    md += `**Author:** Senior Management Project Governance\n\n`;
+    md += `**Author:** Senior Management Project Governance\n`;
+    md += `**Review Scope:** ${scopeStatement}\n\n`;
 
     md += `## 1. Executive Summary & Narrative\n`;
     md += `${aiNarrative}\n\n`;
 
     md += `## 2. Key Performance Indicators\n`;
-    md += `- **Schedule Performance Index (SPI):** ${kpis?.spi ? kpis.spi.toFixed(2) : '—'} (${kpis?.spi_band ?? '—'})\n`;
-    md += `- **Critical Path Drift:** ${kpis?.float_drift_days !== undefined ? `+${kpis.float_drift_days}d` : '—'}\n`;
+    md += `- **Schedule Performance Index (SPI):** ${kpis?.spi != null ? kpis.spi.toFixed(2) : '—'} (${kpis?.spi_band ?? '—'})\n`;
+    md += `- **Critical Path Drift:** ${signedDays(kpis?.float_drift_days)}\n`;
     md += `- **Logic-Driven Finish:** ${forecast?.logic_finish ?? '—'} (Baseline: ${forecast?.baseline_finish ?? '—'})\n`;
-    md += `- **Evidence Integrity:** ${kpis?.evidence_coverage_pct ? `${kpis.evidence_coverage_pct.toFixed(1)}%` : '—'} (${kpis?.evidenced_activities} of ${kpis?.total_activities} activities)\n\n`;
+    md += `- **Evidence Integrity:** ${kpis?.evidence_coverage_pct != null ? `${kpis.evidence_coverage_pct.toFixed(1)}%` : '—'} (${kpis?.evidenced_activities ?? '—'} of ${kpis?.total_activities ?? '—'} activities)\n\n`;
 
     md += `## 3. Milestone Movements\n`;
+    if (milestones.length === 0) {
+      md += `No milestone falls inside the selected review window and scope.\n\n`;
+    }
     md += `| Milestone | Baseline | Forecast | Variance | Status |\n`;
     md += `| :--- | :--- | :--- | :--- | :--- |\n`;
     milestones.forEach((m) => {
@@ -146,8 +275,8 @@ export default function ExecutiveManagementReports() {
     if (openRisks.length === 0) {
       md += `No high-severity open RAID items recorded.\n\n`;
     } else {
-      openRisks.forEach((r) => {
-        md += `- **${r.id} (${r.kind.toUpperCase()}):** ${r.title} | Impact: ${r.impact_days ?? 0}d | Owner: ${r.owner ?? 'Unassigned'}\n`;
+      openRisks.forEach(({ item: r, sourceCount }) => {
+        md += `- **${r.id} (${r.kind.toUpperCase()}):** ${r.title} | Impact: ${r.impact_days ?? 0}d | Owner: ${r.owner ?? 'Unassigned'} | ${sourceCount} preserved source record${sourceCount === 1 ? '' : 's'}\n`;
       });
       md += `\n`;
     }
@@ -158,7 +287,7 @@ export default function ExecutiveManagementReports() {
     md += `- *All figures reflect data received up to cutoff date ${dataDate}. Unadjudicated field submissions are excluded from committed baseline schedule metrics.*\n`;
 
     return md;
-  }, [scheduleData, metrics, raidItems, dataDate, generatedAt, aiNarrative]);
+  }, [projectName, metrics, reportRiskGroups, dataDate, generatedAt, aiNarrative, reportMilestones, scopeStatement]);
 
   const handleCopy = async () => {
     // Only claim "Copied" if the write actually succeeded (D-106).
@@ -248,9 +377,9 @@ export default function ExecutiveManagementReports() {
               onChange={(e) => setReportPeriod(e.target.value as typeof reportPeriod)}
               className="bg-surface text-fg border border-hair rounded px-2.5 py-1 text-xs focus:outline-none"
             >
-              <option value="current_week">Current Week (W13)</option>
-              <option value="month">Last 30 Days</option>
-              <option value="pdt">Project to Date</option>
+              <option value="current_week">Around Data Date (± 7 days)</option>
+              <option value="month">Around Data Date (± 30 days)</option>
+              <option value="pdt">Project to Date (all)</option>
             </select>
           </div>
 
@@ -277,7 +406,7 @@ export default function ExecutiveManagementReports() {
           className="flex items-center gap-1.5 px-3 py-1 rounded border border-hair bg-surface hover:bg-selected text-xs font-mono text-fg transition-colors disabled:opacity-50"
         >
           <Sparkles size={13} className="text-accent" />
-          <span>{isGeneratingAi ? 'Synthesizing…' : 'Refresh AI Narrative'}</span>
+          <span>{isGeneratingAi ? 'Regenerating…' : 'Regenerate evidence-based summary'}</span>
         </button>
       </div>
 
@@ -290,14 +419,14 @@ export default function ExecutiveManagementReports() {
             <span>DATA CUTOFF: {dataDate}</span>
           </div>
           <h2 className="text-h1 font-bold tracking-tight text-heading">
-            {scheduleData?.project ?? 'Oil India Limited — Well Pad 04'}
+            {projectName}
           </h2>
           <div className="flex items-center gap-4 mt-2 text-xs text-muted font-mono">
             <span>Assembled: {generatedAt}</span>
             <span>·</span>
             <span>Report Authority: Senior Management (Read-Only)</span>
             <span>·</span>
-            <span>Baseline: Primavera P6 Rev-08</span>
+            <span>Baseline: {scheduleData?.baseline?.name ?? 'Not supplied'}</span>
           </div>
         </div>
 
@@ -309,12 +438,16 @@ export default function ExecutiveManagementReports() {
               1. Executive Narrative Summary (Reviewable before sharing)
             </span>
             <span className="text-[10px] bg-raised px-2 py-0.5 rounded border border-hair">
-              AI-Assisted Synthesis
+              {narrativeEdited ? 'Edited · unsaved in this session' : 'Generated · ready to review'}
             </span>
           </div>
           <textarea
             value={aiNarrative}
-            onChange={(e) => setAiNarrative(e.target.value)}
+            onChange={(e) => {
+              narrativeIsUserOwned.current = true;
+              setNarrativeEdited(true);
+              setAiNarrative(e.target.value);
+            }}
             rows={5}
             className="w-full p-3.5 rounded-md border border-hair bg-raised text-body text-heading font-sans leading-relaxed focus:outline-none focus:border-fg print:border-none print:bg-transparent print:p-0"
           />
@@ -329,40 +462,40 @@ export default function ExecutiveManagementReports() {
             <div className="p-3.5 rounded border border-hair bg-raised">
               <span className="text-[10px] font-mono text-muted block uppercase">Schedule Performance</span>
               <span className="text-2xl font-bold font-mono text-heading">
-                {metrics?.kpis.spi ? metrics.kpis.spi.toFixed(2) : '0.50'}
+                {metrics?.kpis.spi != null ? metrics.kpis.spi.toFixed(2) : '—'}
               </span>
               <span className="text-[11px] text-danger block mt-0.5 font-mono">
-                {metrics?.kpis.spi_band ?? 'Behind'}
+                {metrics?.kpis.spi_band ?? '—'}
               </span>
             </div>
 
             <div className="p-3.5 rounded border border-hair bg-raised">
               <span className="text-[10px] font-mono text-muted block uppercase">Critical Path Drift</span>
               <span className="text-2xl font-bold font-mono text-danger">
-                {metrics?.kpis.float_drift_days ? `+${metrics.kpis.float_drift_days}d` : '+14d'}
+                {signedDays(metrics?.kpis.float_drift_days)}
               </span>
               <span className="text-[11px] text-muted block mt-0.5 font-mono">
-                {metrics?.kpis.critical_activities_count ?? 31} critical acts
+                {metrics?.kpis.critical_activities_count ?? '—'} critical acts
               </span>
             </div>
 
             <div className="p-3.5 rounded border border-hair bg-raised">
               <span className="text-[10px] font-mono text-muted block uppercase">Logic Forecast Finish</span>
               <span className="text-xl font-bold font-mono text-heading">
-                {metrics?.completion_forecast.logic_finish ?? '2026-10-12'}
+                {metrics?.completion_forecast.logic_finish ?? '—'}
               </span>
               <span className="text-[11px] text-muted block mt-0.5 font-mono">
-                Baseline: {metrics?.completion_forecast.baseline_finish ?? '2026-09-28'}
+                Baseline: {metrics?.completion_forecast.baseline_finish ?? '—'}
               </span>
             </div>
 
             <div className="p-3.5 rounded border border-hair bg-raised">
               <span className="text-[10px] font-mono text-muted block uppercase">Evidence Integrity</span>
               <span className="text-2xl font-bold font-mono text-ok">
-                {metrics?.kpis.evidence_coverage_pct ? `${metrics.kpis.evidence_coverage_pct.toFixed(1)}%` : '64.2%'}
+                {metrics?.kpis.evidence_coverage_pct != null ? `${metrics.kpis.evidence_coverage_pct.toFixed(1)}%` : '—'}
               </span>
               <span className="text-[11px] text-muted block mt-0.5 font-mono">
-                {metrics?.kpis.evidenced_activities ?? 77} / {metrics?.kpis.total_activities ?? 120} acts
+                {metrics?.kpis.evidenced_activities ?? '—'} / {metrics?.kpis.total_activities ?? '—'} acts
               </span>
             </div>
           </div>
@@ -373,6 +506,12 @@ export default function ExecutiveManagementReports() {
           <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
             3. Key Commitment &amp; Milestone Movement Summary
           </h3>
+          <p className="text-[11px] font-mono text-muted -mt-1">{scopeStatement}</p>
+          {reportMilestones.length === 0 ? (
+            <div className="p-4 rounded border border-hair bg-raised text-center text-xs text-muted font-mono">
+              No milestone falls inside the selected review window and scope.
+            </div>
+          ) : (
           <div className="overflow-x-auto border border-hair rounded-md">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -385,7 +524,7 @@ export default function ExecutiveManagementReports() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-hair">
-                {(metrics?.milestones ?? []).map((m, i) => (
+                {reportMilestones.map((m, i) => (
                   <tr key={i}>
                     <td className="py-2.5 px-3 font-semibold text-fg">
                       {m.name}
@@ -413,6 +552,7 @@ export default function ExecutiveManagementReports() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
         {/* 4. Top RAID Risks & Delays */}
@@ -420,13 +560,24 @@ export default function ExecutiveManagementReports() {
           <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
             4. Critical Project Risks &amp; Delay Notices
           </h3>
+          {reportRiskGroups.length === 0 ? (
+            <div className="p-4 rounded border border-hair bg-raised text-xs text-muted font-mono leading-relaxed">
+              No RAID item has been accepted by the Project Manager, so this section is empty by
+              construction rather than for want of data. Delay events and source disagreements are
+              held separately and are reviewable on{' '}
+              <Link to="/executive/risks" className="text-accent hover:underline">
+                Risks &amp; Delays
+              </Link>
+              .
+            </div>
+          ) : (
           <div className="divide-y divide-hair border border-hair rounded-md bg-raised text-xs">
-            {(raidItems ?? []).slice(0, 3).map((r) => (
+            {reportRiskGroups.slice(0, 3).map(({ item: r, sourceCount }) => (
               <div key={r.id} className="p-3 flex items-center justify-between gap-3">
                 <div>
                   <span className="font-semibold text-heading block">{r.title}</span>
                   <span className="text-[11px] text-muted font-mono block mt-0.5">
-                    {r.id} · Kind: {r.kind.toUpperCase()} · Owner: {r.owner ?? 'Unassigned'}
+                    {r.id} · Kind: {r.kind.toUpperCase()} · Owner: {r.owner ?? 'Unassigned'} · {sourceCount} preserved {sourceCount === 1 ? 'record' : 'records'}
                   </span>
                 </div>
                 <div className="text-right font-mono shrink-0">
@@ -436,6 +587,7 @@ export default function ExecutiveManagementReports() {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* 5. Data-Confidence Caveats & Limitations */}

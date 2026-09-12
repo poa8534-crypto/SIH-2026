@@ -475,6 +475,49 @@ describe('Schedule Activity Inspection Panel & Evidence Dossier Integration', ()
     expect(document.getElementById('panel-accept-actual')).toHaveFocus();
   });
 
+  // ── Every write names where its data landed (D-109) ──────────────────────
+  //
+  // A write the planner cannot go and look at is indistinguishable from the
+  // cosmetic handler D-108 replaced. Each success carries a destination.
+
+  it('sends you to the audit trail and offers the Gantt after accepting', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+    fireEvent.click(await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i }));
+
+    await screen.findByText(/2 of 2 review item\(s\) confirmed/i);
+    // The audit rows are one tab away, so the panel goes there itself.
+    expect(await screen.findByText(/Immutable Audit Trail/i)).toBeVisible();
+    // And the bar that moved is somewhere else, so it is offered as a link.
+    expect(
+      screen.getByRole('button', { name: /See the bar move on the Gantt/i })
+    ).toBeInTheDocument();
+  });
+
+  it('offers the review queue after Keep Baseline, not the Gantt', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+    await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
+    fireEvent.click(screen.getByRole('button', { name: /Keep Baseline/i }));
+
+    await screen.findByText(/left unwritten/i);
+    expect(screen.getByRole('button', { name: /Open the review queue/i })).toBeInTheDocument();
+    // Nothing moved on the schedule, so there is no bar to go and look at.
+    expect(
+      screen.queryByRole('button', { name: /See the bar move on the Gantt/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('offers the RAID register after flagging', async () => {
+    wrap(<Schedule />);
+    fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));
+    await screen.findByRole('button', { name: /Accept Field Actual \(2\)/i });
+    fireEvent.click(screen.getByRole('button', { name: /Flag Conflict/i }));
+
+    await screen.findByText(/Raised as issue raid-abc/i);
+    expect(screen.getByRole('button', { name: /Open Risk & Exposure/i })).toBeInTheDocument();
+  });
+
   it('supports closing the panel via Escape key and Close button', async () => {
     wrap(<Schedule />);
     fireEvent.click(await screen.findByText('Pipe Support Installation — Tier 1'));

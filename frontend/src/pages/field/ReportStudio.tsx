@@ -601,13 +601,13 @@ export function ReportSubmissionFlow({
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 w-full max-w-sm">
+          <div className="flex flex-col items-center justify-center gap-3 pt-3 w-full max-w-sm">
             <button
               onClick={() => {
                 if (isModalOrOverlay) onClose?.();
                 navigate('/field/reports');
               }}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent hover:opacity-90 active:opacity-95 text-accent-fg text-xs font-bold shadow-xs transition-all cursor-pointer"
+              className="w-full min-h-12 px-6 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-fg text-body font-semibold transition-all cursor-pointer"
             >
               {renderWithSrOnly(t('view_in_my_updates'), 'View in My Updates')}
             </button>
@@ -619,7 +619,7 @@ export function ReportSubmissionFlow({
                   startOver();
                 }
               }}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-hair bg-surface hover:bg-selected text-xs font-semibold text-heading transition-colors cursor-pointer"
+              className="w-full min-h-12 px-6 py-2.5 rounded-xl bg-secondary hover:bg-selected text-body font-semibold text-heading transition-colors cursor-pointer"
             >
               {isModalOrOverlay
                 ? renderWithSrOnly(t('return_to_home'), 'Return to Home')
@@ -632,8 +632,8 @@ export function ReportSubmissionFlow({
 
     if (isModalOrOverlay) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-3 sm:p-6 max-h-[96vh] sm:max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-950/70 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-[430px] my-auto bg-surface rounded-2xl shadow-2xl p-4 max-h-[96vh] overflow-y-auto ring-1 ring-hair">
             {receiptContent}
           </div>
         </div>
@@ -644,10 +644,10 @@ export function ReportSubmissionFlow({
 
   // ── MAIN VIEW: STEP 1 (CAPTURE) & STEP 2 (REVIEW) ───────────────────────────
   const mainContent = (
-    <div className={`w-full max-w-[1240px] mx-auto ${isModalOrOverlay ? 'p-2 sm:p-4' : 'px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-8'} flex flex-col gap-6 font-sans`}>
+    <div className={`w-full max-w-[430px] mx-auto ${isModalOrOverlay ? 'p-1' : 'px-4 py-5 pb-8'} flex flex-col gap-5 font-sans`}>
       {/* Top Header: Clean typography, no redundant heavy badges */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
-        <div className="w-full sm:w-auto flex items-start justify-between sm:block">
+      <div className="flex flex-col justify-between gap-4 pb-1">
+        <div className="w-full flex items-start justify-between">
           <div>
             {isModalOrOverlay ? (
               <button
@@ -667,10 +667,10 @@ export function ReportSubmissionFlow({
                 <span>{renderWithSrOnly(t('report_progress'), 'Report Progress')}</span>
               </Link>
             )}
-            <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight">
+            <h1 className="text-h2 font-semibold text-heading tracking-[-0.03em]">
               {renderWithSrOnly(t('report_progress'), 'Report Progress')}
             </h1>
-            <p className="text-xs sm:text-sm text-muted mt-1">
+            <p className="text-label text-muted mt-1">
               {workFront} · {disciplineLabel} · {SUPERVISOR.shift}
             </p>
           </div>
@@ -690,7 +690,7 @@ export function ReportSubmissionFlow({
 
         {/* Lightweight Modern Stepper + Close Button */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 text-xs self-start sm:self-auto py-1">
+          <div className="flex items-center gap-2 text-label self-start py-1">
             <div className="flex items-center gap-2">
               <span
                 className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
@@ -706,7 +706,7 @@ export function ReportSubmissionFlow({
               </span>
             </div>
 
-            <div className={`w-8 sm:w-16 h-0.5 ${step > 1 ? 'bg-emerald-500' : 'bg-hair'}`} />
+            <div className={`w-4 h-0.5 ${step > 1 ? 'bg-emerald-500' : 'bg-hair'}`} />
 
             <div className="flex items-center gap-2">
               <span
@@ -725,7 +725,7 @@ export function ReportSubmissionFlow({
               </span>
             </div>
 
-            <div className={`w-8 sm:w-16 h-0.5 ${step > 2 ? 'bg-emerald-500' : 'bg-hair'}`} />
+            <div className={`w-4 h-0.5 ${step > 2 ? 'bg-emerald-500' : 'bg-hair'}`} />
 
             <div className="flex items-center gap-2">
               <span
@@ -770,10 +770,10 @@ export function ReportSubmissionFlow({
 
       {/* ── STEP 1: CAPTURE WORKSPACE (65 / 35 LAYOUT) ────────────────────────── */}
       {step === 1 && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 gap-5 items-start">
           
           {/* LEFT / MAIN WORKSPACE (~67% of desktop grid) */}
-          <div className="lg:col-span-8 bg-raised border border-hair rounded-2xl p-5 sm:p-7 shadow-xs flex flex-col gap-6">
+          <div className="bg-raised rounded-2xl p-4 ring-1 ring-hair flex flex-col gap-5">
             
             {/* 1. What Happened? (Visual Center of the Page) */}
             <div className="flex flex-col gap-3">
@@ -900,7 +900,7 @@ export function ReportSubmissionFlow({
               </div>
 
               {/* Clean 3-field row: Quantity | Unit | Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="input-qty" className="text-xs font-medium text-muted">
                     {renderWithSrOnly(t('quantity'), 'Quantity')}
@@ -1104,7 +1104,7 @@ export function ReportSubmissionFlow({
             )}
 
             {/* Direct Bottom CTA (Integrated directly in workspace, NO giant card container) */}
-            <div className="pt-4 border-t border-hair/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="pt-4 border-t border-hair/70 flex flex-col justify-between gap-3">
               <div className="text-xs text-muted leading-relaxed">
                 {!turn && !edited && phase === 'draft' && (
                   <span>{renderWithSrOnly(t('report_check_notice'), 'Report will be checked against the project schedule before submission.')}</span>
@@ -1156,7 +1156,7 @@ export function ReportSubmissionFlow({
           </div>
 
           {/* RIGHT / COMPACT CONTEXT SIDEBAR (~33% of desktop grid) */}
-          <div className="lg:col-span-4 bg-raised border border-hair rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col gap-5">
+          <div className="bg-secondary/60 rounded-2xl p-4 ring-1 ring-hair flex flex-col gap-5">
             <div className="pb-3 border-b border-hair/70">
               <h2 className="text-base font-bold text-heading">
                 {renderWithSrOnly(t('context'), 'Context')}
@@ -1304,7 +1304,7 @@ export function ReportSubmissionFlow({
 
               <div className="text-[11px] text-muted leading-relaxed">
                 <span className="block font-medium text-heading">{renderWithSrOnly(t('schedule_verification'), 'Schedule verification')}</span>
-                {renderWithSrOnly(t('schedule_verification_sub'), 'Matched against OIL Well Pad 04 baseline (120 activities).')}
+                {renderWithSrOnly(t('schedule_verification_sub'), 'Matched against the active schedule baseline.')}
               </div>
             </div>
 
@@ -1315,9 +1315,9 @@ export function ReportSubmissionFlow({
 
       {/* ── STEP 2: NAVIS REVIEW WORKSPACE (65 / 35 Desktop Split) ───────────── */}
       {step === 2 && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 gap-5 items-start">
           {/* Main Review Surface (approx 67%) */}
-          <div className="lg:col-span-8 border border-hair rounded-2xl bg-raised p-6 sm:p-7 flex flex-col gap-6 shadow-xs">
+          <div className="rounded-2xl bg-raised p-4 flex flex-col gap-5 ring-1 ring-hair">
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-hair">
               <div>
@@ -1358,9 +1358,9 @@ export function ReportSubmissionFlow({
               </div>
 
               <div className="border border-hair rounded-xl bg-surface divide-y divide-hair overflow-hidden text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('discipline'), 'Discipline')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-heading">
                       {turn?.discipline_label ?? (discipline ? DISCIPLINES.find((d) => d.value === discipline)?.label : 'Piping')}
                     </span>
@@ -1372,9 +1372,9 @@ export function ReportSubmissionFlow({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('activity_label'), 'Activity')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="font-bold text-heading">
                       {slots?.activity_id ? (
                         <span>{slots.activity_id} — {turn?.activity_description ?? slots.description ?? 'Matched Activity'}</span>
@@ -1386,9 +1386,9 @@ export function ReportSubmissionFlow({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('quantity'), 'Quantity')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-heading">
                       {slots?.quantity !== null && slots?.quantity !== undefined
                         ? `${slots.quantity} ${slots.uom ?? (unitInput || 'nos')}`
@@ -1398,9 +1398,9 @@ export function ReportSubmissionFlow({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('equipment_tag_label'), 'Equipment / Tag')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="font-mono font-bold text-heading">
                       {slots?.tags && slots.tags.length > 0 ? slots.tags.join(', ') : tagInput || '—'}
                     </span>
@@ -1408,9 +1408,9 @@ export function ReportSubmissionFlow({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('status'), 'Status')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-heading">
                       {turn?.status_label ?? slots?.status ?? (statusInput === 'complete' ? 'Completed' : 'In Progress')}
                     </span>
@@ -1418,9 +1418,9 @@ export function ReportSubmissionFlow({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 items-center gap-1 sm:gap-0">
+                <div className="grid grid-cols-1 p-3.5 gap-1">
                   <span className="font-semibold text-muted">{renderWithSrOnly(t('workfront'), 'Workfront')}</span>
-                  <div className="sm:col-span-2 flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-heading">
                       {slots?.location ?? workFront}
                     </span>
@@ -1593,7 +1593,7 @@ export function ReportSubmissionFlow({
           </div>
 
           {/* Right Column: Submission Target & Baseline Protection (~33%) */}
-          <div className="lg:col-span-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <div className="border border-hair rounded-2xl bg-raised p-5 flex flex-col gap-4 shadow-xs">
               <div className="flex items-center justify-between pb-3 border-b border-hair">
                 <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
@@ -1616,7 +1616,7 @@ export function ReportSubmissionFlow({
                 </div>
                 <div>
                   <span className="text-[11px] text-muted block">{renderWithSrOnly(t('target_schedule_baseline'), 'Target Schedule Baseline')}</span>
-                  <span className="text-xs font-bold text-heading">OIL Well Pad 04 (120 activities)</span>
+                  <span className="text-xs font-bold text-heading">Active schedule · {PROJECT.code}</span>
                 </div>
               </div>
             </div>
@@ -1660,8 +1660,8 @@ export function ReportSubmissionFlow({
 
   if (isModalOrOverlay) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-        <div className="relative w-full max-w-[1240px] my-auto bg-surface border border-hair rounded-2xl shadow-2xl p-3 sm:p-6 max-h-[96vh] sm:max-h-[94vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-950/70 overflow-y-auto animate-in fade-in duration-200">
+        <div className="relative w-full max-w-[430px] my-auto bg-surface rounded-2xl shadow-2xl p-4 max-h-[96vh] overflow-y-auto ring-1 ring-hair">
           {mainContent}
         </div>
       </div>

@@ -19,14 +19,10 @@ import {
   Target,
   BarChart3,
   TrendingDown,
-  Clock,
   Link2,
   SlidersHorizontal,
   ChevronDown,
-  ArrowRight,
   ShieldCheck,
-  AlertTriangle,
-  Info,
   Filter,
   CheckCircle2,
   Eye,
@@ -39,7 +35,7 @@ import {
   IntegrityWarning,
   ScheduleActivity,
 } from '../types';
-import { DISCIPLINES } from '../config';
+import { DISCIPLINES, PROJECT } from '../config';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { DisciplineTag } from '../components/DisciplineTag';
 import { GanttChart } from '../components/GanttChart';
@@ -47,7 +43,7 @@ import { ScheduleDoctor } from '../components/ScheduleDoctor';
 import { ActivityInspectionPanel } from '../components/ActivityInspectionPanel';
 import { subscribeToScheduleUpdates } from '../lib/liveSync';
 import { usePageHeader } from '../hooks/usePageHeader';
-import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { Button, EmptyState, ErrorState, MetricCard, PageIntro, Skeleton } from '../components/ui';
 
 /**
  * QUESTION:  What does the schedule actually say now, and where did each
@@ -108,9 +104,10 @@ function VarianceCell({ value }: { value: number | null }) {
   );
 }
 
-function getTimelinePos(startDate?: string | null, finishDate?: string | null) {
-  const baseStart = new Date('2026-08-15').getTime();
-  const baseEnd = new Date('2026-10-31').getTime();
+function getTimelinePos(startDate: string | null | undefined, finishDate: string | null | undefined, dataDate: string) {
+  const center = new Date(`${dataDate}T00:00:00`).getTime();
+  const baseStart = center - 31 * 86400000;
+  const baseEnd = center + 46 * 86400000;
   const totalDuration = baseEnd - baseStart;
 
   if (!startDate && !finishDate) return null;
@@ -156,7 +153,7 @@ function getRowStatus(a: ScheduleActivity): { label: string; cls: string } {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
-  usePageHeader('Schedule', 'The 120-activity baseline with every confirmed actual date.', '/schedule');
+  usePageHeader('Schedule', 'The active baseline with every confirmed actual date.', '/schedule');
   const [discipline, setDiscipline] = useState<string>('');
   const [search, setSearch] = useState('');
   const [onlyActuals, setOnlyActuals] = useState(false);
@@ -317,6 +314,13 @@ export default function Schedule() {
     setSelectedId(activityId);
     setLiveHighlightId(null);
     setIsDrawerOpen(false);
+  };
+
+  const timelineDataDate = data?.data_date ?? PROJECT.dataDate;
+  const timelineMonth = (offsetDays: number) => {
+    const date = new Date(`${timelineDataDate}T00:00:00`);
+    date.setDate(date.getDate() + offsetDays);
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
   };
 
   const columns = useMemo(() => {
@@ -495,32 +499,25 @@ export default function Schedule() {
       header: () => (
         <div className="w-[340px] min-w-[340px] select-none">
           <div className="grid grid-cols-3 border-b border-hair/50 pb-0.5 text-[10px] text-muted font-mono font-medium">
-            <span className="text-center">Aug 2026</span>
-            <span className="text-center text-accent font-semibold">Sep 2026 (DD)</span>
-            <span className="text-center">Oct 2026</span>
+            <span className="text-center">{timelineMonth(-31)}</span>
+            <span className="text-center text-accent font-semibold">{timelineMonth(0)} (DD)</span>
+            <span className="text-center">{timelineMonth(46)}</span>
           </div>
-          <div className="flex justify-between text-[9px] font-mono text-muted/70 pt-0.5 px-1">
-            <span>18</span>
-            <span>25</span>
-            <span>1</span>
-            <span>8</span>
-            <span className="text-danger font-bold">15</span>
-            <span>22</span>
-            <span>29</span>
-            <span>5</span>
-            <span>12</span>
-            <span>19</span>
-            <span>26</span>
+          <div className="grid grid-cols-3 text-[9px] font-mono text-muted/70 pt-0.5 px-1">
+            <span>{timelineMonth(-31)}</span>
+            <span className="text-center text-danger font-bold">{timelineDataDate}</span>
+            <span className="text-right">{timelineMonth(46)}</span>
           </div>
         </div>
       ),
       size: 340,
       cell: ({ row }) => {
         const a = row.original;
-        const planPos = getTimelinePos(a.planned_start, a.planned_finish);
+        const planPos = getTimelinePos(a.planned_start, a.planned_finish, timelineDataDate);
         const actPos = getTimelinePos(
           a.actual_start,
-          a.actual_finish || (a.actual_start ? '2026-09-15' : null)
+          a.actual_finish || (a.actual_start ? timelineDataDate : null),
+          timelineDataDate
         );
         const isLate = (a.finish_variance_days ?? 0) > 0;
         const isCrit = a.critical;
@@ -531,7 +528,7 @@ export default function Schedule() {
             <div
               className="absolute top-0 bottom-0 w-px border-r border-dashed border-danger/60 z-10 pointer-events-none"
               style={{ left: '40%' }}
-              title="Data Date: 2026-09-15"
+              title={`Data Date: ${timelineDataDate}`}
             />
 
             {/* Baseline / Planned Bar */}
@@ -569,7 +566,7 @@ export default function Schedule() {
     });
 
     return defs;
-  }, [visibleColumns]);
+  }, [visibleColumns, timelineDataDate]);
 
   const table = useReactTable<ScheduleActivity>({
     data: rows,
@@ -638,140 +635,39 @@ export default function Schedule() {
     );
   }
 
-  const plannedProgress = 67;
-  const actualProgress = useMemo(() => {
-    if (!data?.activities || data.activities.length === 0) return 61;
-    const sumPct = data.activities.reduce((acc, a) => acc + (a.percent_complete ?? 0), 0);
-    const avg = Math.round(sumPct / data.activities.length);
-    return avg > 0 ? avg : 61;
-  }, [data]);
+  const scheduleActivities = data?.activities ?? [];
+  const activityCount = scheduleActivities.length;
+  const plannedDueCount = data?.data_date
+    ? scheduleActivities.filter(
+        (activity) => activity.planned_finish && activity.planned_finish <= data.data_date
+      ).length
+    : 0;
+  const completedCount = scheduleActivities.filter((activity) => activity.actual_finish).length;
+  const plannedProgress = activityCount > 0
+    ? Math.round((plannedDueCount / activityCount) * 100)
+    : 0;
+  const actualProgress = activityCount > 0
+    ? Math.round((completedCount / activityCount) * 100)
+    : 0;
   const progressVariance = actualProgress - plannedProgress;
-  const daysBehind = Math.abs(
-    data?.average_finish_variance ? Math.round(data.average_finish_variance * 4) : 42
-  );
 
   return (
     <div className="flex flex-col gap-5 w-full pb-8">
-      {/* ── TOP KPI SUMMARY STRIP (6 EPC Core Cards) ────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Card 1: Planned Progress */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Planned Progress</span>
-            <Target size={13} className="text-slate-400" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-heading tabular-nums">
-              {plannedProgress}%
-            </div>
-            <div className="w-full h-1.5 bg-surface rounded-full overflow-hidden border border-hair mt-2">
-              <div className="h-full bg-slate-400 dark:bg-slate-500 rounded-full" style={{ width: `${plannedProgress}%` }} />
-            </div>
-            <span className="text-[10px] font-mono text-muted block mt-1.5 truncate">
-              Rev-08 Baseline Target
-            </span>
-          </div>
-        </div>
+      <PageIntro
+        eyebrow="Schedule control"
+        title="Live project schedule"
+        description="See the current baseline, verified field progress, and the activities that need intervention."
+      />
 
-        {/* Card 2: Actual Progress */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Actual Progress</span>
-            <BarChart3 size={13} className="text-accent" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-heading tabular-nums">
-              {actualProgress}%
-            </div>
-            <div className="w-full h-1.5 bg-surface rounded-full overflow-hidden border border-hair mt-2">
-              <div className="h-full bg-accent rounded-full" style={{ width: `${actualProgress}%` }} />
-            </div>
-            <span className="text-[10px] font-mono text-muted block mt-1.5 truncate">
-              As of {data?.data_date || '2026-09-15'}
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Schedule Variance */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Schedule Variance</span>
-            <TrendingDown size={13} className="text-danger" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-danger tabular-nums">
-              {progressVariance > 0 ? `+${progressVariance}%` : `${progressVariance}%`}
-            </div>
-            <span className="text-[11px] font-mono text-danger font-medium block mt-1 truncate">
-              {daysBehind} days behind
-            </span>
-            <span className="text-[10px] font-mono text-muted block mt-1 truncate">
-              Finish variance gap
-            </span>
-          </div>
-        </div>
-
-        {/* Card 4: Critical Activities */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Critical Activities</span>
-            <Flame size={13} className="text-danger shrink-0 animate-pulse" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-heading tabular-nums flex items-baseline gap-1">
-              <span className="text-danger">{data?.critical_activities ?? 12}</span>
-              <span className="text-xs font-normal text-muted">/ {data?.total_activities ?? 120}</span>
-            </div>
-            <span className="text-[11px] font-mono text-muted block mt-1 truncate">
-              Float ≤ 0 days
-            </span>
-            <span className="text-[10px] font-mono text-muted block mt-1 truncate">
-              Direct CPM path
-            </span>
-          </div>
-        </div>
-
-        {/* Card 5: Pending Reviews */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Pending Reviews</span>
-            <Clock size={13} className="text-amber-500" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-amber-500 tabular-nums">
-              91
-            </div>
-            <span className="text-[11px] font-mono text-fg font-medium block mt-1 truncate">
-              new field reports
-            </span>
-            <span className="text-[10px] font-mono text-muted block mt-1 truncate">
-              Awaiting PM review
-            </span>
-          </div>
-        </div>
-
-        {/* Card 6: Source Conflicts */}
-        <div className="bg-raised border border-hair rounded-lg p-3 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-muted">
-            <span className="text-label font-mono uppercase tracking-wider text-[11px]">Source Conflicts</span>
-            <Link2 size={13} className="text-danger" />
-          </div>
-          <div className="mt-2">
-            <div className="text-xl font-bold font-mono text-danger tabular-nums">
-              {warningBreakdown.conflict > 0 ? warningBreakdown.conflict : 68}
-            </div>
-            <span className="text-[11px] font-mono text-muted block mt-1 truncate">
-              across {flaggedIds.size > 0 ? flaggedIds.size : 41} activities
-            </span>
-            <span className="text-[10px] font-mono text-muted block mt-1 truncate">
-              Voice vs DPR discrepancies
-            </span>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <MetricCard label="Planned progress" value={`${plannedProgress}%`} detail={`${plannedDueCount} of ${activityCount} activities due`} icon={<Target size={17} />} />
+        <MetricCard label="Verified progress" value={`${actualProgress}%`} detail={`${completedCount} of ${activityCount} activities complete`} tone="accent" icon={<BarChart3 size={17} />} />
+        <MetricCard label="Progress variance" value={`${progressVariance > 0 ? '+' : ''}${progressVariance}%`} detail="Activity-count basis" tone={progressVariance < 0 ? 'danger' : 'ok'} icon={<TrendingDown size={17} />} />
+        <MetricCard label="Critical activities" value={data?.critical_activities ?? 0} detail={`${warningBreakdown.conflict} source conflicts`} tone="danger" icon={<Flame size={17} />} />
       </div>
 
       {/* ── MAIN WORKBENCH: SCHEDULE TABLE / GANTT / DOCTOR ────────────────── */}
-      <div id="schedule-workbench" className="flex flex-col w-full bg-raised border border-hair rounded-lg relative overflow-hidden min-h-[580px] shadow-xs">
+      <div id="schedule-workbench" className="flex flex-col w-full bg-raised rounded-xl relative overflow-hidden min-h-[580px] ring-1 ring-hair shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
         {/* INTEGRITY BANNER */}
         {warnings.length > 0 && (
           <button
@@ -802,13 +698,13 @@ export default function Schedule() {
         {/* FILTER BAR */}
         <div className="shrink-0 min-h-[44px] py-2 px-3 sm:px-4 border-b border-hair flex items-center gap-2.5 sm:gap-3 flex-wrap bg-raised">
           {/* View Mode Switcher */}
-          <div className="flex items-center rounded-md border border-hair overflow-x-auto max-w-full mr-1 bg-surface/50 shrink-0">
+          <div className="flex items-center rounded-lg overflow-x-auto max-w-full mr-1 bg-secondary p-1 shrink-0">
             <button
               onClick={() => setViewMode('table')}
               aria-label="Table"
               className={`px-2.5 sm:px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'table'
-                  ? 'bg-raised text-heading font-semibold shadow-xs'
+                  ? 'bg-raised text-accent font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
               }`}
               title="Activity Register Grid"
@@ -818,9 +714,9 @@ export default function Schedule() {
             </button>
             <button
               onClick={() => setViewMode('gantt')}
-              className={`px-2.5 sm:px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'gantt'
-                  ? 'bg-raised text-heading font-semibold shadow-xs'
+                  ? 'bg-raised text-accent font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
               }`}
               title="Interactive Dual-Bar CPM Gantt Chart"
@@ -830,9 +726,9 @@ export default function Schedule() {
             </button>
             <button
               onClick={() => setViewMode('doctor')}
-              className={`px-2.5 sm:px-3 py-1 text-label font-medium border-l border-hair flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1 text-label font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 viewMode === 'doctor'
-                  ? 'bg-raised text-heading font-semibold shadow-xs'
+                  ? 'bg-raised text-accent font-semibold shadow-xs'
                   : 'text-muted hover:text-heading'
               }`}
               title="AI Schedule Feasibility & Knowledge Auditor"
@@ -842,15 +738,15 @@ export default function Schedule() {
             </button>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded text-label font-mono font-semibold tracking-wide animate-pulse shrink-0">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-ok/10 text-ok rounded-full text-label font-semibold shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-            LIVE SYNC
+            Live
           </div>
 
           <select
             value={discipline}
             onChange={(e) => setDiscipline(e.target.value)}
-            className="rounded-sm h-7 bg-raised border border-hair text-fg font-mono text-label px-2 transition-colors focus:outline-none focus:border-accent shrink-0"
+            className="rounded-lg h-9 bg-raised border border-hair text-fg text-label px-2 transition-colors shrink-0"
             aria-label="Filter by discipline"
           >
             <option value="">All disciplines</option>
@@ -866,7 +762,7 @@ export default function Schedule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search descriptions"
-            className="rounded-sm h-7 w-full xs:w-44 sm:w-56 flex-1 sm:flex-none bg-raised border border-hair px-2 font-mono text-label text-fg transition-colors focus:outline-none focus:border-accent min-w-[140px]"
+            className="rounded-lg h-9 w-full xs:w-44 sm:w-56 flex-1 sm:flex-none bg-raised border border-hair px-3 text-label text-fg transition-colors min-w-[160px]"
           />
 
           <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-muted hover:text-fg shrink-0">
@@ -1019,7 +915,7 @@ export default function Schedule() {
         {/* MAIN VIEW: TABLE OR GANTT CHART OR DOCTOR */}
         {viewMode === 'table' ? (
           <div className="flex-1 min-h-0 overflow-auto">
-            <table className="w-full border-collapse">
+            <table className="w-max min-w-full border-collapse">
               <thead className="sticky top-0 z-10 bg-raised">
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id} className="border-b border-hair">
@@ -1177,120 +1073,6 @@ export default function Schedule() {
         )}
       </div>
 
-      {/* ── BOTTOM SECTION: SCHEDULE INSIGHTS (AI) & DISCIPLINE PROGRESS ────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* SCHEDULE INSIGHTS (AI) */}
-        <div className="bg-raised border border-hair rounded-lg p-4 flex flex-col gap-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-amber-500" />
-              <span className="font-semibold text-heading text-body">Schedule Insights (AI)</span>
-            </div>
-            <button
-              onClick={() => setViewMode('doctor')}
-              className="text-[11px] font-mono text-accent hover:underline flex items-center gap-1 font-medium cursor-pointer"
-              type="button"
-            >
-              <span>Doctor Analysis</span>
-              <ArrowRight size={11} />
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2 font-mono text-label">
-            <div className="p-2.5 rounded bg-surface/80 border border-hair flex items-start gap-2.5">
-              <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold text-fg block">12 critical activities at risk</span>
-                <span className="text-muted text-[11px]">
-                  Mostly concentrated in Piping spool fabrication and Electrical cable pulling.
-                </span>
-              </div>
-            </div>
-
-            <div className="p-2.5 rounded bg-surface/80 border border-hair flex items-start gap-2.5">
-              <Clock size={14} className="text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold text-fg block">5 activities likely to slip</span>
-                <span className="text-muted text-[11px]">
-                  Historical run-rate of 22.2 m/day indicates 19 days remaining vs 7 days planned.
-                </span>
-              </div>
-            </div>
-
-            <div className="p-2.5 rounded bg-surface/80 border border-hair flex items-start gap-2.5">
-              <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold text-fg block">Weather buffer may be insufficient</span>
-                <span className="text-muted text-[11px]">
-                  Monsoon impact window detected in Upper Assam region for late September.
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* DISCIPLINE PROGRESS */}
-        <div className="bg-raised border border-hair rounded-lg p-4 flex flex-col gap-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-heading text-body">Discipline Progress</span>
-            <span className="text-[11px] font-mono text-muted bg-surface px-2 py-0.5 rounded border border-hair">
-              View by: Activity Completion ▾
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-2.5 text-label font-mono">
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-fg">Civil</span>
-                <span className="text-muted">95% · 21 / 22 done</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-hair">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '95%' }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-fg">Piping</span>
-                <span className="text-muted">67% · 20 / 30 done</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-hair">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: '67%' }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-fg">Electrical</span>
-                <span className="text-muted">25% · 5 / 20 done</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-hair">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: '25%' }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-fg">Instrumentation</span>
-                <span className="text-muted">0% · 0 / 16 done</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-hair">
-                <div className="h-full bg-muted/40 rounded-full" style={{ width: '0%' }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-fg">HSE &amp; Pre-comm</span>
-                <span className="text-muted">0% · 0 / 10 done</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-hair">
-                <div className="h-full bg-muted/40 rounded-full" style={{ width: '0%' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

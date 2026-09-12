@@ -37,11 +37,8 @@ import { DISCIPLINE_ORDER, DISCIPLINE_LABEL } from '../config';
  * Schedule Data Date: 2026-09-15
  * Baseline: Primavera P6 Baseline Rev-08 (120 activities across 6 disciplines)
  *
- * Answers four fundamental Project Control questions:
- * 1. Where should the project be? (Planned: 67%)
- * 2. Where is the project actually? (Actual: 61%)
- * 3. What is going wrong? (Variance: -6% Behind, 8 At-Risk Activities, M-04 6d Slip)
- * 4. What needs my attention right now? (Compact review queue & source conflict alerts)
+ * Answers four fundamental project-control questions using the active schedule,
+ * verified actual finishes, review queue, and source-conflict records.
  */
 
 const FIELD_LABEL: Record<string, string> = {
@@ -307,11 +304,11 @@ function PlanVsActualVisual({
           <div className="flex items-center gap-2">
             <Layers size={15} className="text-accent" />
             <span className="text-label font-bold uppercase tracking-wider text-heading font-mono">
-              Project Progress (Plan vs Actual)
+              Activity completion (plan vs verified)
             </span>
           </div>
           <span className="font-mono text-label text-muted">
-            Rev-08 · Duration-Weighted
+            Activity-count basis
           </span>
         </div>
 
@@ -320,7 +317,7 @@ function PlanVsActualVisual({
           {/* Baseline Planned */}
           <div className="flex flex-col gap-1">
             <div className="flex justify-between font-mono text-label">
-              <span className="text-muted">Baseline Target (Planned)</span>
+              <span className="text-muted">Activities due by the data date</span>
               <span className="font-bold text-fg">{plannedPct}%</span>
             </div>
             <div className="h-4 w-full bg-surface border border-hair rounded overflow-hidden relative">
@@ -339,7 +336,7 @@ function PlanVsActualVisual({
           {/* Actual Physical Progress */}
           <div className="flex flex-col gap-1">
             <div className="flex justify-between font-mono text-label">
-              <span className="text-fg font-semibold">Actual Physical Progress</span>
+              <span className="text-fg font-semibold">Activities verified complete</span>
               <span className="font-bold text-ok">{actualPct}%</span>
             </div>
             <div className="h-4 w-full bg-surface border border-hair rounded overflow-hidden relative">
@@ -361,21 +358,17 @@ function PlanVsActualVisual({
                   : 'bg-ok/10 text-ok border border-ok/30'
               }`}
             >
-              <TrendingDown size={12} />
-              {Math.abs(variance)}% BEHIND PLAN
+              {isBehind ? <TrendingDown size={12} /> : <CheckCircle2 size={12} />}
+              {isBehind ? `${Math.abs(variance)}% BEHIND PLAN` : `${variance}% AHEAD OF PLAN`}
             </span>
-            <span className="text-muted">Schedule Performance Index:</span>
-            <span className="font-bold text-fg">SPI 0.91</span>
           </div>
-          <span className="text-muted hidden sm:inline">14d Critical Float Drift</span>
+          <span className="text-muted hidden sm:inline">Verified schedule records only</span>
         </div>
       </div>
 
       {/* Mini Monthly Trajectory Insight */}
       <div className="mt-3 pt-3 border-t border-hair text-label text-muted leading-relaxed font-sans">
-        <span className="font-semibold text-fg">Variance Driver:</span> Project tracked on-plan
-        through July. Divergence initiated in August due to torrential monsoon rainfall (12 days lost)
-        and Tier-1 pipe rack fabrication lag.
+        <span className="font-semibold text-fg">Reading this chart:</span> planned is the share of activities whose planned finish is on or before the current data date; actual is the share carrying a verified actual finish. It is not a financial earned-value measure.
       </div>
     </div>
   );
@@ -942,9 +935,9 @@ function DisciplineWorkPackages({
         </tbody>
       </table>
       <div className="p-3 border-t border-hair bg-surface/40 text-label text-muted leading-relaxed font-mono text-[11px]">
-        <span className="font-bold text-fg">Calculation Basis:</span> Activity completion measures
-        the proportion of schedule task items completed. Duration-weighted physical progress (61%)
-        and earned value are tracked separately in the project overview.
+        <span className="font-bold text-fg">Calculation basis:</span> Activity completion is the
+        share of schedule activities carrying a verified actual finish. It is not a
+        duration-weighted physical-progress or earned-value measure.
       </div>
     </div>
   );
@@ -1012,9 +1005,9 @@ export default function Home() {
   }, [schedule.data]);
 
   // Derived counts
-  const pendingReviewsCount = queue.data?.length ?? 236;
+  const pendingReviewsCount = queue.data?.length ?? 0;
   const lowConfidenceCount = useMemo(() => {
-    if (!queue.data) return 131;
+    if (!queue.data) return 0;
     return queue.data.filter(
       (item) => item.confidence < 0.65 || !item.suggested_activity_id
     ).length;
@@ -1023,40 +1016,46 @@ export default function Home() {
     if (!queue.data) return 0;
     return queue.data.filter((item) => item.match_method === 'agent_turn').length;
   }, [queue.data]);
-  const unresolvedConflictsCount = conflicts.data?.length ?? 18;
+  const unresolvedConflictsCount = conflicts.data?.length ?? 0;
   const failedJobsCount = useMemo(() => {
     if (!jobs.data) return 0;
     return jobs.data.filter((j) => j.status === 'failed').length;
   }, [jobs.data]);
 
-  const activeProjectName = schedule.data?.project ?? 'Oil India Limited — Well Pad 04';
-  const dataDate = schedule.data?.data_date ?? '2026-09-15';
-
-  // Grounded EPC Progress figures
-  const plannedProgress = 67;
-  const actualProgress = 61;
-  const varianceProgress = actualProgress - plannedProgress; // -6%
-  const atRiskActivitiesCount = schedule.data?.critical_activities ?? 8;
+  const activeProjectName = schedule.data?.project ?? 'Active project';
+  const dataDate = schedule.data?.data_date ?? '—';
+  const scheduleActivities = schedule.data?.activities ?? [];
+  const activityCount = schedule.data?.total_activities ?? scheduleActivities.length;
+  const progressActivityCount = scheduleActivities.length;
+  const disciplineCount = new Set(scheduleActivities.map((activity) => activity.discipline)).size;
+  const plannedDueCount = dataDate === '—'
+    ? 0
+    : scheduleActivities.filter((activity) => activity.planned_finish && activity.planned_finish <= dataDate).length;
+  const completedCount = scheduleActivities.filter((activity) => activity.actual_finish).length;
+  const plannedProgress = progressActivityCount > 0 ? Math.round((plannedDueCount / progressActivityCount) * 100) : 0;
+  const actualProgress = progressActivityCount > 0 ? Math.round((completedCount / progressActivityCount) * 100) : 0;
+  const varianceProgress = actualProgress - plannedProgress;
+  const atRiskActivitiesCount = schedule.data?.critical_activities ?? 0;
 
   return (
     <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
       {/* Context Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-raised border border-hair rounded-lg shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-ok animate-pulse" />
+          <div className={`w-2.5 h-2.5 rounded-full ${schedule.data ? 'bg-ok' : 'bg-muted'}`} />
           <div>
             <span className="font-semibold text-heading text-body block">
               {activeProjectName}
             </span>
             <span className="text-label text-muted">
-              EPC Well Pad Facility (120 Schedule Activities · 6 Disciplines)
+              {activityCount} schedule activities · {disciplineCount} disciplines
             </span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 text-label font-mono">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded font-semibold text-[11px] tracking-wide animate-pulse shadow-xs">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-ok/10 border border-ok/30 text-ok rounded font-semibold text-[11px] tracking-wide shadow-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-            LIVE UPDATING
+            CONNECTED
           </div>
           <div className="px-2.5 py-1 bg-surface border border-hair rounded">
             <span className="text-muted">Data Date: </span>
@@ -1064,7 +1063,7 @@ export default function Home() {
           </div>
           <div className="px-2.5 py-1 bg-surface border border-hair rounded">
             <span className="text-muted">Baseline: </span>
-            <span className="text-fg font-semibold">P6 Rev-08</span>
+            <span className="text-fg font-semibold">{schedule.data?.baseline?.name ?? 'Not supplied'}</span>
           </div>
         </div>
       </div>
@@ -1074,7 +1073,7 @@ export default function Home() {
         <ProjectControlTile
           label="Planned progress"
           value={`${plannedProgress}%`}
-          subtext="baseline target"
+          subtext="activities due"
           to="/schedule"
           loading={scheduleView.kind === 'pending'}
           error={scheduleView.kind === 'error'}
@@ -1083,7 +1082,7 @@ export default function Home() {
         <ProjectControlTile
           label="Actual progress"
           value={`${actualProgress}%`}
-          subtext="verified actuals"
+          subtext="verified complete"
           to="/schedule"
           loading={scheduleView.kind === 'pending'}
           error={scheduleView.kind === 'error'}
@@ -1094,10 +1093,10 @@ export default function Home() {
           value={`${varianceProgress}%`}
           badge={
             <span className="text-[10px] font-mono font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded border border-danger/30">
-              ▼ 6% BEHIND
+              {varianceProgress < 0 ? `▼ ${Math.abs(varianceProgress)}% BEHIND` : `${varianceProgress}% VARIANCE`}
             </span>
           }
-          subtext="SPI 0.91"
+          subtext="activity-count basis"
           to="/delay"
           loading={scheduleView.kind === 'pending'}
           error={scheduleView.kind === 'error'}
@@ -1113,49 +1112,6 @@ export default function Home() {
           status="warn"
         />
       </section>
-
-      {/* Secondary System Health Sub-Strip */}
-      <div className="px-4 py-2 rounded-md bg-surface/70 border border-hair font-mono text-label text-muted flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          {pendingFieldUpdatesCount > 0 && (
-            <>
-              <Link
-                to="/reconcile?filter=field"
-                className="text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1"
-              >
-                <Zap size={12} className="fill-current" />
-                <span>{pendingFieldUpdatesCount} field submission{pendingFieldUpdatesCount > 1 ? 's' : ''} awaiting approval</span>
-              </Link>
-              <span>•</span>
-            </>
-          )}
-          <Link to="/reconcile" className="hover:text-fg transition-colors">
-            <span className="font-bold text-fg">{pendingReviewsCount}</span> pending reviews
-          </Link>
-          <span>•</span>
-          <Link to="/reconcile?filter=needs_review" className="hover:text-fg transition-colors">
-            <span className="font-bold text-fg">{lowConfidenceCount}</span> require manual decision
-          </Link>
-          <span>•</span>
-          <Link to="/reconcile" className="hover:text-fg transition-colors">
-            <span className="font-bold text-amber-600 dark:text-amber-400">{unresolvedConflictsCount}</span> source conflicts
-          </Link>
-          <span>•</span>
-          <Link to="/ingest" className="hover:text-fg transition-colors">
-            <span className="font-bold text-fg">{failedJobsCount}</span> failed imports
-          </Link>
-        </div>
-        <span className="text-[11px] text-muted">Auto-refreshed via P6 CPM engine</span>
-      </div>
-
-      {/* ── 2. The Core Visual & The "NAVIS Did Something" Moment ──────────── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PlanVsActualVisual plannedPct={plannedProgress} actualPct={actualProgress} />
-        <LiveFieldUpdateCard />
-      </section>
-
-      {/* ── 3. Streamlined Horizontal Milestone Timeline Track ─────────────── */}
-      <HorizontalMilestonesTrack dataDate={dataDate} />
 
       {/* ── 4. Compact Needs Attention & Clean Recent Activity ─────────────── */}
       <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -1186,6 +1142,8 @@ export default function Home() {
           )}
         </Panel>
       </section>
+
+      <PlanVsActualVisual plannedPct={plannedProgress} actualPct={actualProgress} />
 
       {/* ── 5. Compact Source Conflicts Alert (Removes Cluttered Raw Table) ── */}
       <SourceConflictsAlertCard count={unresolvedConflictsCount} />

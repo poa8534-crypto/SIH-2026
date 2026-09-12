@@ -7,8 +7,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "typecheck:executive": "tsc -p tsconfig.executive.json --noEmit",
     "dev": "vite --port=5173 --host=0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && npm run postbuild:spa-fallback",
+    "postbuild:spa-fallback": "node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "preview": "vite preview",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "lint": "tsc --noEmit",

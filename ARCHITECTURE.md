@@ -479,7 +479,7 @@ A. Contracts ──┬── B. Synthetic data ──┬── D. Extraction ─
 | C | PMXML → `ScheduleActivity` | 3–5 | 120 activities loaded, WBS tree intact, tags parsed from descriptions | “This is a real Primavera export” |
 | D | Extraction | 5–10 | `ExtractedEvent` list from both formats; every event has a character span | Highlighted source text |
 | E | Retrieval + ranking + decision | 9–17 | Hybrid recall@20 ≥ 0.95; thresholds wired but uncalibrated | — |
-| F | `eval.py` + calibration | 15–19 | Precision/recall/coverage table + PR-at-coverage curve | The number on your slide |
+| F | `backend/eval.py` + calibration | 15–19 | Precision/recall/coverage table + PR-at-coverage curve | The number on your slide |
 | G | Persistence, write-back, integrity rules | 17–22 | Audit record per mutation; all 3 integrity rules enforced and tested | Audit drawer |
 | H | API surface | 19–23 | All endpoints green in `/docs` | — |
 | I | Frontend: Ingest, Reconciliation, Schedule | 21–29 | Keyboard-driven reconciliation; live pipeline trace on ingest | The hero 20 seconds |
@@ -499,7 +499,7 @@ Line and equipment tags are near-decisive evidence. If synthetic DPRs mention a 
 
 ### Cheapest test
 
-Run `eval.py` twice:
+Run `backend/eval.py` twice:
 
 1. normal dataset
 2. with tags stripped from event text
@@ -567,7 +567,7 @@ Even under severe time pressure, keep:
 
 - reconciliation screen
 - review queue
-- `eval.py` output
+- `backend/eval.py` output
 - provenance character spans
 - at least one institutional-memory query
 
@@ -584,10 +584,10 @@ Verified 2026-09-01 against the code, not against this document's §1.
 ```
 field input (.txt DPR | .xlsx | voice transcript)
    |
-   v  extraction/  — deterministic regex pre-pass; LLM optional and OFF
+   v  backend/extraction/  — deterministic regex pre-pass; LLM optional and OFF
 ExtractedEvent          tags, quantity, uom, dates + basis, discipline,
    |                    status, percentage, provenance (file, line/row, span)
-   v  matching/retrieval.py — CANDIDATE RETRIEVAL, recall-oriented, top-20
+   v  backend/matching/retrieval.py — CANDIDATE RETRIEVAL, recall-oriented, top-20
    |     ACTIVE   TAG    exact/near-exact tag, O(1) dict lookup   weight 1.0
    |     ACTIVE   BM25   precomputed term x doc matrix            weight 0.7
    |     ACTIVE   DENSE  all-MiniLM-L6-v2, batched per file       weight 0.7
@@ -595,21 +595,21 @@ ExtractedEvent          tags, quantity, uom, dates + basis, discipline,
    |     off      ALIAS  planner corrections                      weight 0.0
    |     -> reciprocal rank fusion (k=60) -> 20 candidates
    |        recall@20 = 100% on the held-out test split
-   v  matching/features.py — RANKING, precision-oriented, scored as a matrix
+   v  backend/matching/features.py — RANKING, precision-oriented, scored as a matrix
    |     tag_overlap · fuzzy_similarity · embedding_cosine ·
    |     date_proximity · discipline_agreement · predecessor_plausibility
    |     (+5 extra features, built, OFF in production)
    |     -> weighted blend, renormalised over present features
    |     -> line-lock floor where a tag identifies a unique activity
-   v  matching/engine.py :: decide_outcome — CALIBRATED DECISION
+   v  backend/matching/engine.py :: decide_outcome — CALIBRATED DECISION
    |     score < tau_low                          -> NEW_ACTIVITY
    |     score >= tau_high AND margin >= margin_min
    |                        AND no discipline conflict -> AUTO_LINK
    |     otherwise                                 -> REVIEW
-   v  matching/engine.py :: RollupAccumulator — many-to-one, quantity-based %
+   v  backend/matching/engine.py :: RollupAccumulator — many-to-one, quantity-based %
    |     Actual Finish written ONLY at 100% complete AND only when a source
    |     named the date. Otherwise withheld and routed to the planner.
-   v  server/main.py -> SQLite (dataset/epc_progress.db)
+   v  backend/server/main.py -> SQLite (dataset/epc_progress.db)
          activities (actuals only; baseline read-only)
          linked_events · review_queue · audit_records (APPEND-ONLY)
          alias_lexicon  <- written here, NOT read back (see below)
@@ -617,7 +617,7 @@ ExtractedEvent          tags, quantity, uom, dates + basis, discipline,
 
 ## Active vs built-but-disabled
 
-`matching/config.py` holds every switch, so a disabled component is a config
+`backend/matching/config.py` holds every switch, so a disabled component is a config
 default rather than deleted code — the negative results stay reproducible.
 
 | Component | State | Why |
@@ -634,7 +634,7 @@ default rather than deleted code — the negative results stay reproducible.
 
 ## The alias lexicon is written and not read
 
-`server/main.py:_upsert_alias` inserts an `AliasLexicon` row on every planner
+`backend/server/main.py:_upsert_alias` inserts an `AliasLexicon` row on every planner
 confirm, reassign and new-activity resolve. `HybridRetriever.alias_channel()`
 exists to read them and is unit-tested.
 
@@ -653,7 +653,7 @@ not be made. `METRICS.md` §5 carries the safe wording.
 `AuditRecord` carries a real foreign key, `linked_event_id`, to the
 `LinkedEvent` that produced the write, plus a denormalised snapshot of
 `source_file`, `source_line` and `source_row`. `DateAssertion` in
-`matching/models.py` carries the line and row through the roll-up, so the
+`backend/matching/models.py` carries the line and row through the roll-up, so the
 server reads the position straight off the winning assertion rather than
 matching on text. Two identical lines in one file are distinct entries.
 
@@ -663,7 +663,7 @@ row is later reinterpreted. On the seeded corpus every audit row agrees with
 its foreign key on all three fields, and no key dangles.
 
 The seeded corpus now holds **275** audit rows (verified 2026-09-01 by
-`python scripts/reset_demo.py`). Earlier revisions of this section quoted 259
+`python backend/scripts/reset_demo.py`). Earlier revisions of this section quoted 259
 and `DEMO.md` quoted 274; both were captured from older runs. The *proportions*
 below were measured at 259 rows and have not been recomputed — treat them as
 indicative of the shape, not as current exact counts.
@@ -676,7 +676,7 @@ What is genuinely absent, and why:
 - **A date taken from the report's own date rather than a line.** When no
   event asserts a start or finish, `RollupAccumulator` falls back to
   `min`/`max` of the events' `reported_date`
-  (`matching/engine.py`, `results()`). The value is real and the file is
+  (`backend/matching/engine.py`, `results()`). The value is real and the file is
   named, but no single line asserted it, so `source_line` stays null rather
   than pointing at an arbitrary one.
 - **Aggregate writes.** A rolled-up `actual_qty` is the sum of several
@@ -708,7 +708,7 @@ The problem statement asks for "an LLM-based conversational or voice
 interface". `POST /agent/turn` is conversational and it is stateful
 slot-filling, but the slot extraction in `_fill_slots_from_message` is regex
 and keyword matching — there is no model in that path. The LLM is used in
-`extraction/`, on ingested documents, not in the agent. Worth saying plainly
+`backend/extraction/`, on ingested documents, not in the agent. Worth saying plainly
 if a judge asks, because the conversation is convincing enough to be mistaken
 for a model.
 
@@ -801,7 +801,7 @@ result was that 24 genuine disagreements existed in the data while
 `integrity_warnings` reported zero of them, and the 35 entries it did flag were
 partial-scope notes with a single contributing source, not two-sided conflicts.
 
-Two changes fixed it, both in `server/main.py` rather than in `matching/`:
+Two changes fixed it, both in `backend/server/main.py` rather than in `backend/matching/`:
 
 - Before writing `actual_start` or `actual_finish`, the roll-up now reads the
   most recent audit row for that field (`_prior_write`). If the incoming value
@@ -838,7 +838,7 @@ writes across all activities without fetching all 120 audit trails.
 ## Source files were decoded lossily, and the damage was permanent
 
 Every supplied DPR is cp1252, not UTF-8: an em-dash is the single byte `0x97`,
-which is not valid UTF-8 at all. `extraction/extractor.py` read them with
+which is not valid UTF-8 at all. `backend/extraction/extractor.py` read them with
 `errors="replace"`, so each one became U+FFFD at ingest — and because the
 replacement happened on the way in, it was written to `LinkedEvent.raw_text`,
 to `source_span`, into the audit trail, and onto the screen as
@@ -847,7 +847,7 @@ of the 274 audit rows *present at the time* carried it (the seeded corpus now
 holds 275 — see the note earlier in this section). Re-ingesting could not fix it; the original
 character was gone.
 
-`extraction/textio.py` now decodes by trying `utf-8-sig`, then `cp1252`, then
+`backend/extraction/textio.py` now decodes by trying `utf-8-sig`, then `cp1252`, then
 `latin-1`, and only falls back to lossy decoding if all three fail. cp1252
 comes before latin-1 deliberately: it maps `0x80`-`0x9f` to real punctuation
 where latin-1 maps them to control characters, and latin-1 accepts any byte so
@@ -866,7 +866,7 @@ clean. Only text read from the report files was affected.
 
 `/agent/turn` proactively fills five slots — discipline, location, status, date
 and, when the update is about something the project counts, a completed and
-planned quantity. Parsing lives in `server/agent_slots.py` as pure functions so
+planned quantity. Parsing lives in `backend/server/agent_slots.py` as pure functions so
 each format is table-tested rather than discovered on stage.
 
 Three fixes worth naming, because each was a loop or a lie:
@@ -889,7 +889,7 @@ Three fixes worth naming, because each was a loop or a lie:
 
 **The LLM is off by default and cannot break the demo.** The repository already
 had a flag — `EXTRACTION_PROVIDER`, defaulting to `rules` — so none was added.
-When it is off, `server/agent_llm.py` builds no client, opens no socket and
+When it is off, `backend/server/agent_llm.py` builds no client, opens no socket and
 waits for nothing. When it is on, extraction is bounded by
 `NAVIS_LLM_TIMEOUT_SECONDS` (default 5, far tighter than the batch path's 120),
 tried once with no retry, and every value it returns is re-validated by the
@@ -906,7 +906,7 @@ given up waiting. It now shuts down without waiting.
 
 ## Resetting has to survive a schema change
 
-`scripts/reset_demo.py` clears rows rather than dropping the database, which is
+`backend/scripts/reset_demo.py` clears rows rather than dropping the database, which is
 what lets it run while the server is up. That is not enough on its own:
 SQLAlchemy's `create_all` adds missing tables but never missing columns, so a
 database built before a model gained a field kept working right until the first

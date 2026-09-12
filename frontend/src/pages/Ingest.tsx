@@ -222,7 +222,7 @@ export default function Ingest() {
       if (!(FIELD_ACCEPTED_EXTENSIONS as readonly string[]).includes(ext as any)) {
         setStatus({
           kind: 'rejected',
-          message: `${file.name} is not an accepted file type. This channel accepts ${FIELD_ACCEPTED_LABEL} only.`,
+          message: `${file.name} is not an accepted file type. Field report import accepts ${FIELD_ACCEPTED_LABEL} only.`,
         });
         return;
       }
@@ -361,8 +361,7 @@ export default function Ingest() {
 
   return (
     <div className="max-w-[1280px] w-full mx-auto flex flex-col gap-5 pb-8">
-      {/* CHANNEL SELECTOR TABS */}
-      <div className="border border-hair bg-raised rounded-lg p-1.5 flex flex-col sm:flex-row gap-2">
+      <div className="rounded-xl bg-raised p-1.5 ring-1 ring-inset ring-hair flex flex-col sm:flex-row gap-2" aria-label="Data import type">
         <button
           type="button"
           onClick={() => setChannel('field')}
@@ -373,7 +372,7 @@ export default function Ingest() {
           }`}
         >
           <FileSpreadsheet size={15} />
-          <span>Channel 1: Field Progress Reports</span>
+          <span>Field report import</span>
         </button>
         <button
           type="button"
@@ -385,9 +384,20 @@ export default function Ingest() {
           }`}
         >
           <Database size={15} />
-          <span>Channel 2: Baseline Schedule Import (P6 XML / XER)</span>
+          <span>Schedule baseline import</span>
         </button>
       </div>
+
+      <ol className="grid grid-cols-3 overflow-hidden rounded-xl bg-raised ring-1 ring-inset ring-hair" aria-label="Import process">
+        {['Upload source', 'Validate data', 'Commit revision'].map((step, index) => (
+          <li key={step} className="flex items-center gap-2 border-r border-hair px-3 py-3 last:border-r-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-selected font-mono text-xs font-bold text-accent">
+              {index + 1}
+            </span>
+            <span className="text-sm font-medium text-fg">{step}</span>
+          </li>
+        ))}
+      </ol>
 
       {channel === 'field' ? (
         <>
@@ -673,17 +683,6 @@ export default function Ingest() {
                   <span>Validate only (Dry Run — writes nothing)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-mono text-label text-fg">
-                  <input
-                    type="checkbox"
-                    checked={baselineReplace}
-                    onChange={(e) => setBaselineReplace(e.target.checked)}
-                    className="rounded-sm accent-danger"
-                  />
-                  <span className={baselineReplace ? 'text-danger font-semibold' : ''}>
-                    Allow replacing active baseline (Explicit consent)
-                  </span>
-                </label>
               </div>
 
               <div className="flex items-center gap-2">
@@ -697,6 +696,23 @@ export default function Ingest() {
                 />
               </div>
             </div>
+
+            <label className={`flex cursor-pointer items-start gap-3 rounded-xl p-4 ring-1 ring-inset transition-colors ${
+              baselineReplace ? 'bg-danger/10 text-danger ring-danger/40' : 'bg-surface text-muted ring-hair'
+            }`}>
+              <input
+                type="checkbox"
+                checked={baselineReplace}
+                onChange={(e) => setBaselineReplace(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded-sm accent-danger"
+              />
+              <span>
+                <strong className="block text-sm text-current">Replace the active baseline</strong>
+                <span className="mt-0.5 block text-label leading-relaxed">
+                  Destructive project operation. Existing baseline activities may be superseded; the audit record is preserved.
+                </span>
+              </span>
+            </label>
 
             {/* Baseline Drop Zone */}
             <div

@@ -56,7 +56,7 @@ export default function Field() {
   const [reference, setReference] = useState<string | null>(null);
   const [workFront, setWorkFront] = useState<string>(WORK_FRONTS[0]);
   const [discipline, setDiscipline] = useState<Discipline>(SUPERVISOR.discipline);
-  const [shift, setShift] = useState<string>('Day Shift (06:00 - 18:00)');
+  const [shift, setShift] = useState<string>(SUPERVISOR.shift);
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
@@ -309,11 +309,11 @@ export default function Field() {
 
   return (
     <div className="w-full bg-surface">
-      <div className="w-full max-w-[780px] mx-auto px-2 sm:px-4 py-2 sm:py-3 pb-28 flex flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 pb-8 sm:px-6 lg:gap-6 lg:px-8 lg:py-8">
         {stage === 'idle' && (
           <>
             {successToast && (
-              <div className="w-full max-w-[780px] mx-auto px-1 mb-1">
+              <div className="w-full mb-1">
                 <div className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between shadow-xs transition-all animate-in fade-in">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-emerald-700 dark:text-emerald-300">✓ {successToast.message}</span>

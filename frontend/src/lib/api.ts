@@ -65,12 +65,59 @@ export function errorDetail(error: unknown): string {
 }
 
 /**
+ * True for the hosts a developer machine actually answers on: loopback, an
+ * mDNS `.local` name, and the three private IPv4 ranges that a LAN or a phone
+ * hotspot hands out. Deliberately the same set the backend's CORS regex
+ * allows (`server/main.py`), because these two have to agree or the browser
+ * blocks a request the URL got right.
+ */
+function isDevelopmentHost(hostname: string): boolean {
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
+  if (hostname.endsWith('.local')) return true;
+  return (
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
+  );
+}
+
+/**
  * Where the API lives. Exported because a download has to be an ABSOLUTE URL:
  * `ExportResponse.download_url` is a server-relative `/uploads/{file}`, and the
  * frontend is served from a different origin in development.
+ *
+ * Three cases, in order:
+ *
+ *   1. `VITE_API_URL` set — the deployed split, where the UI is a static site
+ *      on one origin and the API is a web service on another. Baked in at
+ *      build time by Vite, so it must be set on the *static site*, not on the
+ *      API service.
+ *   2. A development host — the API is a separate uvicorn on :8000 of the same
+ *      machine. This is what makes the two-device LAN demo work with no
+ *      rebuild: the phone derives the laptop's IP from the page it loaded.
+ *   3. Anything else — same origin. This is the unified Docker/`SERVE_FRONTEND=1`
+ *      deployment, where one FastAPI process serves both the SPA and the API.
+ *
+ * Case 3 used to be case 2: the old fallback was an unconditional
+ * `http://{hostname}:8000`, which on any hosted origin produced a cross-origin
+ * plaintext request to a port nothing listens on — blocked as mixed content
+ * before it was even refused. See D-113.
  */
 export const getBaseUrl = () => {
-  return import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`;
+  const configured = import.meta.env.VITE_API_URL;
+  if (configured) {
+    const trimmed = configured.trim().replace(/\/+$/, '');
+    // A bare hostname is accepted and assumed HTTPS. Render's Blueprint can
+    // only interpolate another service's `host`, which has no scheme, so
+    // `VITE_API_URL=navis-api.onrender.com` is what render.yaml actually
+    // produces. Without this it would be read as a relative path and every
+    // request would go to the static site instead of the API.
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
+  if (isDevelopmentHost(window.location.hostname)) {
+    return `http://${window.location.hostname}:8000`;
+  }
+  return window.location.origin;
 };
 
 async function fetchWithHandler(endpoint: string, options?: RequestInit) {

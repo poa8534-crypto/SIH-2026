@@ -177,8 +177,8 @@ export default function FieldClarifications() {
   );
 
   return (
-    <div className="w-full bg-surface text-fg font-sans pb-28">
-      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+    <div className="w-full bg-surface text-fg font-sans">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 pb-8 sm:px-6 lg:px-8 lg:py-8">
         {/* Toast feedback banner */}
         {toastMessage && (
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-sm font-medium flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
@@ -197,11 +197,11 @@ export default function FieldClarifications() {
         )}
 
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-hair pb-5">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-heading">
-                {t('nav_clarifications', 'Clarifications')}
+              <h1 className="text-h2 font-semibold tracking-[-0.03em] text-heading">
+                {t('nav_clarifications', 'Questions')}
               </h1>
               {counts.needsResponse > 0 ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25">
@@ -215,23 +215,22 @@ export default function FieldClarifications() {
                 </span>
               ) : null}
             </div>
-            <p className="text-sm text-muted mt-1">
+            <p className="text-body leading-6 text-muted mt-1">
               Questions from Planning about your submitted field updates.
             </p>
           </div>
 
           {/* Compact summary indicator */}
-          <div className="text-xs text-muted font-medium flex items-center gap-2">
+          <div className="text-label text-muted font-medium flex flex-col items-end shrink-0">
             <span>{counts.needsResponse} {t('needs_response', 'need response')}</span>
-            <span className="text-hair">·</span>
             <span>{counts.answered} {t('answered', 'answered')}</span>
           </div>
         </div>
 
         {/* Controls: Segmented Filter Chips + Compact Search */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {items.length > 0 && <div className="flex flex-col items-stretch gap-3">
           {/* Segmented Filter Chips */}
-          <div className="inline-flex items-center p-1 rounded-xl bg-surface border border-hair gap-1 shrink-0 overflow-x-auto">
+          <div className="grid grid-cols-3 items-center p-1 rounded-xl bg-secondary gap-1">
             {FILTERS.map((f) => {
               const isActive = filter === f;
               const count =
@@ -253,15 +252,15 @@ export default function FieldClarifications() {
                   key={f}
                   type="button"
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer shrink-0 ${
+                  className={`min-h-10 px-2 rounded-lg text-label font-medium transition-colors flex items-center justify-center gap-1 cursor-pointer ${
                     isActive
-                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200/80 dark:border-blue-800/80 shadow-xs'
-                      : 'text-muted hover:text-heading hover:bg-selected border border-transparent'
+                      ? 'bg-raised text-accent font-semibold shadow-xs'
+                      : 'text-muted hover:text-heading'
                   }`}
                 >
                   <span>{label}</span>
                   <span
-                    className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
+                    className={`px-1.5 py-0.5 rounded-full font-mono text-label ${
                       isActive
                         ? 'bg-blue-200/60 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200'
                         : 'bg-raised text-muted border border-hair/80'
@@ -275,7 +274,7 @@ export default function FieldClarifications() {
           </div>
 
           {/* Compact Search Field */}
-          <div className="relative flex-1 sm:max-w-xs">
+          <div className="relative flex-1">
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
@@ -286,7 +285,7 @@ export default function FieldClarifications() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('search_clarifications', 'Search clarifications...')}
               aria-label={t('search_clarifications', 'Search clarifications...')}
-              className="w-full pl-9 pr-8 py-1.5 rounded-xl border border-hair bg-raised text-xs text-heading placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+              className="w-full min-h-11 pl-9 pr-8 rounded-xl border border-hair bg-raised text-body text-heading placeholder:text-muted transition-colors"
             />
             {search && (
               <button
@@ -299,7 +298,7 @@ export default function FieldClarifications() {
               </button>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* Content Section */}
         {error ? (
@@ -308,14 +307,14 @@ export default function FieldClarifications() {
           <SkeletonRows rows={3} height="h-32" padded={false} />
         ) : items.length === 0 ? (
           /* Natural Centered Empty State when zero total items exist */
-          <div className="py-20 sm:py-28 text-center max-w-md mx-auto flex flex-col items-center">
+          <div className="py-14 text-center mx-auto flex flex-col items-center">
             <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-xs">
               <CheckCircle2 size={24} />
             </div>
-            <h3 className="text-base font-bold text-heading mb-1.5">
-              No clarifications needed
+            <h3 className="text-h3 font-semibold text-heading mb-1.5">
+              You&apos;re all caught up
             </h3>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-body text-muted leading-6">
               Planning hasn&apos;t requested any additional information from your submitted updates.
             </p>
           </div>

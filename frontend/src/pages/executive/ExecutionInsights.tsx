@@ -1,27 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Sparkles,
   Search,
-  AlertTriangle,
-  Clock,
   Layers,
-  ArrowUpRight,
-  TrendingDown,
-  FileText,
   Info,
-  CheckCircle2,
-  Database,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePageHeader } from '../../hooks/usePageHeader';
+import { pluralise } from '../../lib/units';
 import { SkeletonRows, ErrorState, EmptyState } from '../../components/ui';
 import { DISCIPLINES } from '../../config';
 import type {
   MemoryQueryResponse,
-  DurationDistribution,
-  ProductivityMetric,
-  DelayReasonRow,
   ScheduleResponse,
 } from '../../types';
 
@@ -41,7 +31,10 @@ export default function ExecutiveExecutionInsights() {
     queryFn: () => api.queryMemory({ query_type: 'all' }),
   });
 
-  const { data: scheduleData, isLoading: scheduleLoading, error: scheduleError } = useQuery<ScheduleResponse>({
+  // The schedule is fetched for its error state only: this page reads its
+  // figures from the memory query, and the shared ['schedule'] cache entry
+  // means the request is not an extra round trip.
+  const { error: scheduleError } = useQuery<ScheduleResponse>({
     queryKey: ['schedule'],
     queryFn: () => api.getSchedule(),
   });
@@ -61,7 +54,24 @@ export default function ExecutiveExecutionInsights() {
         const q = searchQuery.toLowerCase();
         return d.activity_type.toLowerCase().includes(q);
       }
-      return true;
+      return d.actuals_count > 0;
+    })
+      .sort((a, b) => {
+        const aImpact = a.actual_mean_days === null ? 0 : Math.abs(a.actual_mean_days - a.planned_mean_days);
+        const bImpact = b.actual_mean_days === null ? 0 : Math.abs(b.actual_mean_days - b.planned_mean_days);
+        return bImpact - aImpact;
+      })
+      .slice(0, 5);
+  }, [durationDists, selectedDiscipline, searchQuery]);
+
+  const noActualsDistributions = useMemo(() => {
+    return durationDists.filter((d) => {
+      if (d.actuals_count !== 0) return false;
+      if (selectedDiscipline !== 'all') {
+        const prefix = selectedDiscipline.slice(0, 3).toUpperCase();
+        if (!d.activity_type.startsWith(prefix)) return false;
+      }
+      return !searchQuery || d.activity_type.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [durationDists, selectedDiscipline, searchQuery]);
 
@@ -135,13 +145,18 @@ export default function ExecutiveExecutionInsights() {
         {/* Top Delay Reason */}
         <div className="border border-hair rounded-lg p-5 bg-raised shadow-xs">
           <span className="text-label font-mono text-muted uppercase tracking-wider block mb-1">
-            Top Recurring Delay Cause
+            {/* "Recurring" is a claim about frequency, so it is only made
+                when the frequency supports it. The tile previously read
+                "TOP RECURRING DELAY CAUSE ... (1 events)". See D-111. */}
+            {(delayReasons[0]?.frequency ?? 0) > 1 ? 'Top Recurring Delay Cause' : 'Largest Delay Cause'}
           </span>
           <div className="text-xl font-extrabold text-fg font-mono truncate">
             {delayReasons[0]?.reason ?? 'None logged'}
           </div>
           <span className="text-xs text-danger mt-1 block font-mono">
-            {delayReasons[0] ? `${delayReasons[0].days_lost} days lost (${delayReasons[0].frequency} events)` : '—'}
+            {delayReasons[0]
+              ? `${pluralise(delayReasons[0].days_lost, 'day')} lost (${pluralise(delayReasons[0].frequency, 'event')})`
+              : '—'}
           </span>
         </div>
 
@@ -192,7 +207,7 @@ export default function ExecutiveExecutionInsights() {
         </div>
 
         <span className="text-xs font-mono text-muted">
-          Showing {filteredDistributions.length} types
+          Showing {filteredDistributions.length} highest-impact types
         </span>
       </div>
 
@@ -201,7 +216,7 @@ export default function ExecutiveExecutionInsights() {
         <div className="p-4 border-b border-hair bg-surface/50 flex items-center justify-between">
           <div>
             <h3 className="text-body font-semibold text-heading">
-              Planned vs Actual Durations by Activity Type
+              Five highest-impact execution insights
             </h3>
             <span className="text-label text-muted">
               Comparing authored duration against measured execution speed, with explicit sample count.
@@ -298,6 +313,23 @@ export default function ExecutiveExecutionInsights() {
           </div>
         )}
       </div>
+
+      {noActualsDistributions.length > 0 && (
+        <details className="group rounded-xl bg-raised ring-1 ring-inset ring-hair">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center px-4 py-3 text-sm font-semibold text-fg">
+            Activity types without completed actuals
+            <span className="ml-auto font-mono text-label text-muted">{noActualsDistributions.length} types · Show</span>
+          </summary>
+          <div className="grid gap-2 border-t border-hair p-4 sm:grid-cols-2 lg:grid-cols-3">
+            {noActualsDistributions.map((d) => (
+              <div key={d.activity_type} className="rounded-lg bg-surface px-3 py-2 ring-1 ring-inset ring-hair">
+                <span className="font-mono text-sm font-semibold text-fg">{d.activity_type}</span>
+                <span className="block text-label text-muted">{d.count} planned · no actual duration yet</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
       {/* ── Recurring Delay Causes & Bottlenecks Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

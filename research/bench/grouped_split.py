@@ -48,7 +48,7 @@ GT_OUT = ROOT / "dataset" / "v2" / "ground_truth_v2_grouped.csv"
 META_OUT = ROOT / "dataset" / "v2" / "splits_grouped.json"
 SEED = 20260901
 
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "backend"))
 from matching.schedule_index import ScheduleIndex  # noqa: E402
 from matching.textutils import parse_tag  # noqa: E402
 

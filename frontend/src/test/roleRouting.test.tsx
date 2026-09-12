@@ -104,7 +104,7 @@ afterEach(() => {
 describe('the role decides the application, the viewport never does', () => {
   it('shows the picker when no role is chosen', () => {
     renderApp();
-    expect(screen.getByText(/choose the role you want to see/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose workspace/i)).toBeInTheDocument();
   });
 
   it('shows the picker even on a deep link with ?view=field', () => {
@@ -112,7 +112,7 @@ describe('the role decides the application, the viewport never does', () => {
     // picker renders before the router.
     window.history.pushState({}, '', '/schedule?view=field');
     renderApp();
-    expect(screen.getByText(/choose the role you want to see/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose workspace/i)).toBeInTheDocument();
     window.history.pushState({}, '', '/');
   });
 
@@ -122,8 +122,7 @@ describe('the role decides the application, the viewport never does', () => {
     renderApp();
 
     expect(screen.getByText('Project Manager')).toBeInTheDocument();
-    // "Reconcile" is both a nav item and a panel action on Home.
-    expect(screen.getAllByText('Reconcile').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Review & Reconcile').length).toBeGreaterThan(0);
     // The regression: this is the field lane's header label.
     expect(screen.queryByText('Field Supervisor')).not.toBeInTheDocument();
   });
@@ -134,7 +133,7 @@ describe('the role decides the application, the viewport never does', () => {
     renderApp();
 
     expect(screen.getByText('Senior Management')).toBeInTheDocument();
-    expect(screen.getByText('Exposure')).toBeInTheDocument();
+    expect(screen.getByText('Risks & Delays')).toBeInTheDocument();
     expect(screen.queryByText('Field Supervisor')).not.toBeInTheDocument();
   });
 
@@ -152,7 +151,7 @@ describe('the role decides the application, the viewport never does', () => {
     window.localStorage.setItem('navis.role', 'field');
     renderApp();
 
-    expect(screen.getByText('Field Supervisor')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /field navigation/i })).toBeInTheDocument();
     // ...and none of the planner's screens.
     expect(screen.queryByText('Reconcile')).not.toBeInTheDocument();
     expect(screen.queryByText('Ingest')).not.toBeInTheDocument();

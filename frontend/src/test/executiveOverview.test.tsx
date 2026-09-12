@@ -188,11 +188,16 @@ describe('money', () => {
 
     expect(await screen.findByText(/FIDIC Contractual Dispute Shield/i)).toBeInTheDocument();
     expect(screen.getByText('0 Days')).toBeInTheDocument();
-    expect(screen.getByText('1 Days')).toBeInTheDocument();
+    // One day is one Day. This screen read "1 Days" on every tile that hit a
+    // count of exactly one, which is the live value for contractor delay.
+    // See D-111.
+    // Two places carry it: the KPI strip and the dispute-shield panel.
+    expect(screen.getAllByText('1 Day').length).toBeGreaterThan(0);
+    expect(screen.queryByText('1 Days')).not.toBeInTheDocument();
     expect(
       screen.getByText(/No claim value — no contract sum supplied/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/CONTRACT VALUE NOT SUPPLIED/)).toBeInTheDocument();
+    expect(screen.getByText(/contract value not supplied/i)).toBeInTheDocument();
   });
 
   it('never invents a rupee figure', async () => {
@@ -221,7 +226,7 @@ describe('money', () => {
       },
     });
 
-    expect(await screen.findByText(/CONTRACT BASELINE: ₹180.00 CR/)).toBeInTheDocument();
+    expect(await screen.findByText(/Contract baseline ₹180.00 Cr/)).toBeInTheDocument();
     expect(screen.getByText(/₹0.13 Cr LD Risk/)).toBeInTheDocument();
   });
 });

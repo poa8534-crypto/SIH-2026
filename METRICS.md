@@ -46,7 +46,7 @@ easy to overstate by accident.
 |---|---|
 | **Top-1** | When forced to rank one candidate first, how often is the correct activity ranked #1? |
 | **Recall@20** | How often is the correct activity anywhere inside the top 20 retrieved candidates? |
-| **Recall@k** | How often is the correct activity anywhere inside the top *k* ranked candidates. **k=3 is the one that describes the product**: review items store `decision.candidates[:3]` (`server/main.py:491`) and the Reconcile screen de-duplicates the suggested id against the first alternative (the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`), so a planner is shown exactly **three** activities. k=20 is the retrieval ceiling (`top_k`, `matching/config.py:34`) and nobody ever sees it. |
+| **Recall@k** | How often is the correct activity anywhere inside the top *k* ranked candidates. **k=3 is the one that describes the product**: review items store `decision.candidates[:3]` (`backend/server/main.py:491`) and the Reconcile screen de-duplicates the suggested id against the first alternative (the `candidates` useMemo in `frontend/src/pages/Reconcile.tsx`), so a planner is shown exactly **three** activities. k=20 is the retrieval ceiling (`top_k`, `backend/matching/config.py:34`) and nobody ever sees it. |
 | **Auto-link precision** | When NAVIS is confident enough to auto-link without human review, how often is that auto-link correct? |
 | **Coverage** | What percentage of cases NAVIS handles automatically at the selected precision requirement. |
 | **Near-miss** | Deliberately ambiguous mentions where several sibling activities are plausible because the discriminating token was **removed**. |
@@ -70,18 +70,18 @@ settings and their numbers are not interchangeable.
 
 Baseline **v1** (`baseline_schedule.json`, 120 activities, sha256 `1bfde358dc0e`).
 Hand-set feature blend. No learned ranker, no calibrator — `production(sha)`
-refuses the fitted artefacts because they were fitted against v2, and `eval.py`
+refuses the fitted artefacts because they were fitted against v2, and `backend/eval.py`
 builds the engine through that same call, so this measures the engine the
 server runs.
 
-Thresholds are `matching/config.py :: SHIPPED_THRESHOLDS`
-(**tau_high 0.80, tau_low 0.40, margin 0.03**), which `server/main.py` imports
+Thresholds are `backend/matching/config.py :: SHIPPED_THRESHOLDS`
+(**tau_high 0.80, tau_low 0.40, margin 0.03**), which `backend/server/main.py` imports
 as `MATCHING_THRESHOLDS`. They were chosen on the **dev** split alone and these
 figures are measured on the **held-out test** split — 154 mentions no threshold
 was tuned against.
 
 ```bash
-python eval.py
+python backend/eval.py
 ```
 
 | Metric | Value | Detail |
@@ -96,7 +96,7 @@ python eval.py
 
 > **What changed on 2026-09-05, and why the old numbers were wrong.**
 > This row previously read *100% auto-link precision, 50.4% coverage, 87.2%
-> top-1*, over 254 mentions with **no split** — `eval.py` grid-searched
+> top-1*, over 254 mentions with **no split** — `backend/eval.py` grid-searched
 > thresholds on exactly the rows it then scored, so the 100% was a property of
 > numbers fitted to the evaluation set rather than a measurement.
 >
@@ -113,8 +113,8 @@ python eval.py
 > claimed 50.4% to a measured 43.5%; that is the price of the constraint this
 > project actually makes. See D-093.
 
-`python eval.py --calibrate` runs the old grid search on dev and labels its
-output a proposal, not a description of the build. `python eval.py --cv`
+`python backend/eval.py --calibrate` runs the old grid search on dev and labels its
+output a proposal, not a description of the build. `python backend/eval.py --cv`
 cross-validates.
 
 ### 3.2 HELD-OUT EVALUATION — the honest research number
@@ -162,7 +162,7 @@ median-threshold issue corrected below. The pooled figures agree with the
 held-out ones in §3.2: retrieval reaches everything by k=20, and the gap between
 that and k=3 is entirely near-misses.
 
-> **Correction, 2026-09-01.** `eval.py --cv` prints **99.8%** auto-link
+> **Correction, 2026-09-01.** `backend/eval.py --cv` prints **99.8%** auto-link
 > precision and 53.1% coverage. That figure is slightly optimistic and should
 > not be quoted. `run_cv` computes a threshold per fold, then takes the
 > **median** of the five and re-evaluates *every* pooled row with it — so each
@@ -181,7 +181,7 @@ over all 814 mentions, and it is the more demanding of the two.
 
 Baseline v2. Extra features + a pointwise logistic ranker fitted on **train** +
 isotonic calibration fitted on **dev**. Artefacts exist in
-`matching/artifacts/`. **The server does not load these** (see §4).
+`backend/matching/artifacts/`. **The server does not load these** (see §4).
 
 | Metric | Baseline (§3.2) | Experimental | Note |
 |---|---|---|---|
@@ -195,7 +195,7 @@ isotonic calibration fitted on **dev**. Artefacts exist in
 | ECE / Brier | 0.129 / 0.122 | **0.042 / 0.084** | isotonic; Platt makes ECE *worse* (0.179) |
 | Latency | 2.07 ms/ev | 2.50 ms/ev | +0.42 |
 
-Reproduce: `python eval.py --production --schedule dataset/baseline_schedule_v2.json --ground-truth dataset/v2/ground_truth_v2.csv`
+Reproduce: `python backend/eval.py --production --schedule dataset/baseline_schedule_v2.json --ground-truth dataset/v2/ground_truth_v2.csv`
 
 ### 3.4a WHAT THE EVALUATION DOES **NOT** ESTABLISH
 
@@ -281,11 +281,11 @@ baseline hash.
 
 | Component | Status in the running server | Evidence |
 |---|---|---|
-| Baseline loaded | **v1**, 120 activities, sha `1bfde358dc0e` | `server/main.py:DEFAULT_BASELINE_PATH` |
+| Baseline loaded | **v1**, 120 activities, sha `1bfde358dc0e` | `backend/server/main.py:DEFAULT_BASELINE_PATH` |
 | Feature blend | **hand-set weights** (`FEATURE_WEIGHTS`) | `production(sha)` returns `DEFAULT` |
 | Learned logistic ranker | **NOT live** | artefacts are v2-only; hash guard refuses them |
 | Isotonic calibration | **NOT live** | same guard |
-| Extra features | **NOT live** (`extra_features=False`) | `matching/config.py` |
+| Extra features | **NOT live** (`extra_features=False`) | `backend/matching/config.py` |
 | Retrieval channels active | **TAG, BM25, DENSE** | `channel_weights` = 1.0 / 0.7 / 0.7 |
 | Char n-gram channel | present, **off** (`w_ngram=0.0`) | measured +0.00 top-1 |
 | Alias channel | present, **off** (`w_alias=0.0`) | and no caller supplies a lexicon — see §5 |
@@ -307,7 +307,7 @@ any of them — it is not in the ranking loop at all.
 
 | Field | Where it comes from when the LLM is ON | Guard |
 |---|---|---|
-| `activity_id` | **MatchingEngine only.** Never the model. | D-006; regression-tested in `server/test_agent_llm.py::TestD006EndToEnd` |
+| `activity_id` | **MatchingEngine only.** Never the model. | D-006; regression-tested in `backend/server/test_agent_llm.py::TestD006EndToEnd` |
 | `confidence` | **MatchingEngine only.** | same |
 | `tags` | Regex pre-pass only | D-006 |
 | dates | Deterministic date parser only | D-015 |
@@ -341,7 +341,7 @@ no key and no base URL in the response.
 
 This has been documented inconsistently. The code says, unambiguously:
 
-- **Written:** yes. `server/main.py:_upsert_alias` inserts an `AliasLexicon`
+- **Written:** yes. `backend/server/main.py:_upsert_alias` inserts an `AliasLexicon`
   row on every planner confirm / reassign / new-activity resolve. Three call
   sites.
 - **Read at match time:** **no.** `HybridRetriever.alias_channel()` exists and
@@ -375,15 +375,15 @@ not, yet.
 ```bash
 python -m pytest -q                         # 912 passed
 cd frontend && npx vitest run                # 101 passed (1013 total)
-python eval.py                               # §3.1
-python eval.py --cv                          # §3.1 (identical)
-python eval.py --schedule dataset/baseline_schedule_v2.json \
+python backend/eval.py                               # §3.1
+python backend/eval.py --cv                          # §3.1 (identical)
+python backend/eval.py --schedule dataset/baseline_schedule_v2.json \
                --ground-truth dataset/v2/ground_truth_v2.csv          # §3.2
-python eval.py --cv --schedule dataset/baseline_schedule_v2.json \
+python backend/eval.py --cv --schedule dataset/baseline_schedule_v2.json \
                --ground-truth dataset/v2/ground_truth_v2.csv          # §3.3
-python eval.py --production --schedule dataset/baseline_schedule_v2.json \
+python backend/eval.py --production --schedule dataset/baseline_schedule_v2.json \
                --ground-truth dataset/v2/ground_truth_v2.csv          # §3.4
-python scripts/reset_demo.py                 # §1 row D, and DEMO.md's table
+python backend/scripts/reset_demo.py                 # §1 row D, and DEMO.md's table
 python research/bench/ablation.py --quick    # the full ablation
 python research/bench/profile_latency.py     # latency
 ```
@@ -431,7 +431,7 @@ moved and why.
 - ❌ Quoting 100.0% auto-link precision and 99.5% as if one supersedes the
   other — they are different evaluation settings (§3.2 vs §3.3). And do not
   quote **99.8%** at all; it is the optimistic median-threshold figure that
-  `eval.py --cv` prints (§3.3 correction).
+  `backend/eval.py --cv` prints (§3.3 correction).
 - ❌ "74.1% is our held-out result." — the configuration that produces it was
   **selected on the test split** (§3.4a). Say "test-selected" or do not use it.
 - ❌ Any claim about performance on a **new project** or an **unseen
@@ -442,7 +442,7 @@ moved and why.
   unplanned scope sets them on that new row.
 - ❌ Quoting **Recall@20 = 100%** to mean "the planner can always fix it from
   the queue". The queue shows **three** candidates, not twenty
-  (`server/main.py:491`; the `candidates` useMemo in `Reconcile.tsx`). The honest figure is
+  (`backend/server/main.py:491`; the `candidates` useMemo in `Reconcile.tsx`). The honest figure is
   **Recall@3 = 88.1%** overall and **67.6% on near-misses** (§3.2): on roughly
   a third of near-miss items the correct activity is **not in front of the
   planner at all**, and resolving it needs the search/reassign path rather
