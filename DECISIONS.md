@@ -11590,3 +11590,92 @@ header pill reports a measured link, and the connection panel shows round trip
 `frontend/src/lib/api.ts` · `frontend/src/types.ts` ·
 `frontend/src/test/fieldCrew.test.tsx` (new) · `frontend/src/test/roleRouting.test.tsx` ·
 `.claude/launch.json`
+
+---
+
+## 2026-09-12 / D-119 — The Project Manager gets a Workforce workspace and a Capture Health screen, and attendance becomes delay evidence
+
+### Status
+
+Active. The planner surface for [D-117](#2026-09-12--d-117--manpower-becomes-a-first-class-subject-one-crew-model-behind-attendance-capacity-and-allocation),
+following the field lane in [D-118](#2026-09-12--d-118--the-field-supervisor-gets-one-crew-tab-and-the-offline-toggle-becomes-a-real-offline-system).
+
+### Decision
+
+**Two nav items, not three.** `/workforce` carries the register and the
+allocation board as tabs — they are the same subject asked two ways (*what
+happened* versus *what is meant to happen*). `/capture-health` is separate
+because connectivity is a different subject, and because it is the screen that
+audits NAVIS's own central claim; burying it inside a manpower page would hide
+the one place the product checks itself.
+
+`/workforce` sits **before** Delay Analysis in the sidebar, because the register
+is an input to it.
+
+**Attendance becomes delay evidence, above the liability controls.**
+`components/ManpowerEvidence.tsx` is rendered in the Delay Analysis
+adjudication panel, immediately under the impact strip and *before* the
+liability buttons. `delay_taxonomy.MANPOWER` maps to `NON_COMPENSABLE` — the
+most consequential ruling in the taxonomy — and a planner should see whether
+the register corroborates it *before* choosing, not after.
+
+Three answers, and the third is not a weaker second:
+
+    supported     the crews were short, and here are the days
+    refuted       the crews were there — this was not a manpower problem
+    no register   nobody wrote down whether the crews were there
+
+Collapsing the third into the second would turn an absence of evidence into
+evidence of absence, on a screen whose output is a liability ruling. When the
+endpoint fails the component renders **nothing** rather than an error: it must
+never block an adjudication it cannot inform.
+
+**Every screen on this page withholds rather than fabricates.** Any dashboard
+can render a number; these are only trustworthy because they decline to when
+the data cannot support one, and somebody will move a crew on whatever is
+shown.
+
+| Situation | Rendered as |
+|---|---|
+| Nothing contracted that day (rest day) | "not contracted" — never 0% |
+| Contractor with fewer than five musters | "Not measured" — never "Under strength" |
+| Discipline with one unmeasured crew | supply badged "Nominal" |
+| Activity type with no productivity norm | named in a disclosure, contributes zero |
+| Nothing online | worst band absent — "no link to band", not an outage |
+
+**A rest day is drawn as a gap in the day-by-day curve**, not as a zero-height
+bar on the axis. A rest day and a total no-show must not look alike.
+
+**The decision waiting on the PM goes above four weeks of arithmetic.**
+Proposals render first on the allocation tab. The PM can commit a *different*
+number than was asked for — a supervisor asks for six and there are four to
+spare — and the audit row keeps both (`proposed:6 → committed:4`).
+
+### Verification
+
+```
+cd frontend && npx tsc --noEmit    clean
+cd frontend && npx vitest run      293 passed (275 + 18 new)
+```
+
+End-to-end against the running application and the live API:
+
+- `/workforce` register — 86.1% attendance, 1,147 man-days, 185 shortfall, 0
+  contested, over 112 musters; contractor ranking spreads 82.5% → 88.1%.
+- `/workforce` allocation — committed the seeded proposal through the UI and
+  confirmed the write: the assignment moved to `committed` and
+  `GET /audit/recent` shows `resource_assignment  proposed:8 → committed:8`,
+  `source=planner_review`.
+- `/capture-health` — 1/2 devices reaching the server, median capture lag
+  **9.1 h** computed retroactively from the existing corpus, and per-discipline
+  rows flagging "11 days ago".
+- `/delay` — the evidence panel renders inside the adjudication: *"Crews fielded
+  94.0% of contracted strength across 24 musters. The register does NOT support
+  a MANPOWER cause — the manpower was there."*
+
+### Affected Areas
+
+`frontend/src/pages/Workforce.tsx` (new) · `frontend/src/pages/CaptureHealth.tsx` (new) ·
+`frontend/src/components/ManpowerEvidence.tsx` (new) · `frontend/src/pages/Delay.tsx` ·
+`frontend/src/App.tsx` · `frontend/src/lib/role.ts` ·
+`frontend/src/test/workforcePlanner.test.tsx` (new)

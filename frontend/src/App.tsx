@@ -15,6 +15,8 @@ import {
   FileSearch,
   Scale,
   Sparkles,
+  Users,
+  Radio,
   TrendingUp,
   FileText,
   Menu,
@@ -33,6 +35,8 @@ import Memory from './pages/Memory';
 import Raid from './pages/Raid';
 import Delay from './pages/Delay';
 import Home from './pages/Home';
+import Workforce from './pages/Workforce';
+import CaptureHealth from './pages/CaptureHealth';
 import FieldReports from './pages/FieldReports';
 import FieldClarifications from './pages/FieldClarifications';
 import FieldProfile from './pages/FieldProfile';
@@ -404,6 +408,11 @@ const PLANNER_NAV: NavItem[] = [
   { path: '/reconcile', label: 'Review & Reconcile', icon: ListTodo },
   { path: '/schedule', label: 'Schedule', icon: CalendarDays },
   { path: '/ingest', label: 'Field Data', icon: Upload },
+  // Manpower (D-117/D-118). Placed after the capture screens and before the
+  // analysis ones, because the register is an input to Delay Analysis: an
+  // attendance shortfall is the evidence behind a MANPOWER classification.
+  { path: '/workforce', label: 'Workforce', icon: Users },
+  { path: '/capture-health', label: 'Capture Health', icon: Radio },
   { path: '/raid', label: 'Risk & Exposure', icon: ShieldAlert },
   { path: '/delay', label: 'Delay Analysis', icon: Scale },
   { path: '/memory', label: 'Project Knowledge', icon: Database },
@@ -523,6 +532,8 @@ export default function App() {
           <Route path="/reconcile" element={<Reconcile />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/ingest" element={<Ingest />} />
+          <Route path="/workforce" element={<Workforce />} />
+          <Route path="/capture-health" element={<CaptureHealth />} />
           <Route path="/raid" element={<Raid />} />
           <Route path="/delay" element={<Delay />} />
           <Route path="/memory" element={<Memory />} />

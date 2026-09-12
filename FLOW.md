@@ -1292,7 +1292,7 @@ python backend/eval.py | head -20             expect the line:
 ## Current Modification Area
 
 **Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built the FIELD role surface on top of it. Planner and Executive surfaces follow.
-**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field lane)
+**Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field lane), D-119 (planner lane)
 
 ```
 THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
@@ -1494,6 +1494,44 @@ THE FIELD LANE                                                (D-118)
         already marked          -> supersedes_id set; card says the first
                                    reading is never overwritten
         rest day                -> rest_day:true, present 0, no reasons
+```
+
+```
+THE PLANNER LANE                                              (D-119)
+
+  PLANNER_NAV  +/workforce  +/capture-health
+  lib/role.ts  planner allows[] extended with both, or a deep link bounces
+
+  pages/Workforce.tsx
+    tab "Register"    GET /workforce/attendance/summary?start&end
+        MetricCards, by-discipline, by-contractor, day-by-day curve
+        withholding rules, all rendered as stated absences:
+          attendance_pct === null      -> "not contracted"  (never 0%)
+          reliable === null            -> "Not measured"    (never a verdict)
+          planned_strength === 0 (day) -> drawn as a GAP    (never a 0 bar)
+    tab "Allocation"  GET /workforce/allocation-board?week_start&weeks=4
+        proposals FIRST (the only actionable thing on the page)
+        POST /workforce/assignments/{id}/decide   <- the only commit path
+            allocated_strength may differ from what was asked for;
+            audit row keeps both: 'proposed:6' -> 'committed:4'
+        demand_not_derivable -> named in a disclosure, never absorbed
+        supply_basis 'nominal' -> badged, because one unmeasured crew makes
+                                  the whole discipline part-assumption
+
+  pages/CaptureHealth.tsx      polls link-health every 10s
+    GET /connectivity/link-health      devices, offline first
+    GET /connectivity/reporting-lag    per discipline; >=3 days flagged
+    GET /connectivity/capture-coverage three readings a PM acts on differently:
+        silent                       -> "a capture question"
+        mustered, no progress        -> "a work question"
+        progress                     -> "Reporting"
+
+  pages/Delay.tsx  <ManpowerEvidence activityId={selected.activity_id}/>
+    placed ABOVE the liability controls, under the impact strip
+    GET /workforce/activity/{id}/shortfall-evidence
+        true  -> supports (warn)   false -> refutes (ok)   null -> no register
+    on error renders NOTHING — it must never block an adjudication it
+    cannot inform
 ```
 
 ### Database changes

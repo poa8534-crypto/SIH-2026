@@ -31,6 +31,7 @@ import {
   X,
 } from 'lucide-react';
 
+import { ManpowerEvidence } from '../components/ManpowerEvidence';
 import { api, errorDetail } from '../lib/api';
 import { usePageHeader } from '../hooks/usePageHeader';
 import type { ConcurrentDelayPair, DelayEvent, Liability } from '../types';
@@ -972,6 +973,15 @@ export default function Delay() {
                     Cause: &ldquo;{selected.phrase}&rdquo;
                   </span>
                 </div>
+
+                {/* ── Manpower evidence (D-117) ──
+                    Placed above the liability controls, not below them: the
+                    register either corroborates a MANPOWER ruling, refutes
+                    it, or says no register was kept, and a planner should see
+                    which BEFORE choosing, not after. */}
+                {selected.activity_id && (
+                  <ManpowerEvidence activityId={selected.activity_id} />
+                )}
 
                 {/* ── Section B: 4-Metric Delay Impact Strip ── */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-label font-mono">
