@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { api, errorDetail } from './lib/api';
 import { useTheme } from './hooks/useTheme';
+import { useScrollReset } from './hooks/useScrollReset';
 import { PageHeaderContext, type PageHeader } from './hooks/usePageHeader';
 import { AskNavisChat } from './components/AskNavisChat';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
@@ -87,6 +88,9 @@ function DesktopShell({
 }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  // The scrolling element is this shell's <main>, not the document, so a route
+  // change has to reset it explicitly (see useScrollReset).
+  const mainRef = useScrollReset<HTMLElement>();
 
   // Whatever the current page published via usePageHeader. Null until the
   // page's effect runs, and for any route that has not adopted the hook.
@@ -305,7 +309,12 @@ function DesktopShell({
         </header>
 
         <PageHeaderContext.Provider value={setPageHeader}>
-          <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-4 md:p-6 lg:p-8 w-full max-w-full min-w-0">{children}</main>
+          <main
+            ref={mainRef}
+            className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y p-4 md:p-6 lg:p-8 w-full max-w-full min-w-0"
+          >
+            {children}
+          </main>
         </PageHeaderContext.Provider>
       </div>
 

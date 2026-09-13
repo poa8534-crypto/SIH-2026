@@ -12243,3 +12243,91 @@ footer copy), `frontend/src/test/fieldCrew.test.tsx` (`REST_DAY` /
 No route was added or removed, so the healthcheck's pinned endpoint count is
 unchanged. No stored data changes shape — this reads a column the register has
 written since D-117.
+
+---
+
+## 2026-09-13 / D-126 — A route change returns the workspace to the top
+
+### Status
+
+Active.
+
+### Context
+
+Scroll to the bottom of Workforce, click Schedule, and Schedule opens already
+scrolled past its own heading — somewhere in the middle of the activity table,
+with no title and no context. Reported from the planner lane; the field lane
+had the same defect.
+
+This is the standard single-page-application omission. A full page load starts
+at the top because the document navigated. A client-side route change does not
+navigate the document, so nothing resets, and the offset that survives belongs
+to the page the user just left. It reads as a screen that failed to load, which
+is the worst possible reading: the data is fine and the user thinks it is
+broken.
+
+### Decision
+
+**`react-router`'s `<ScrollRestoration>` does not apply here, and reaching for
+`window.scrollTo` would have silently done nothing.** Neither shell scrolls the
+document. Both pin the viewport —
+
+```
+App.tsx::DesktopShell          <div class="h-[100dvh] ... overflow-hidden">
+FieldWorkspaceShell.tsx        <div class="h-[100dvh] ... overflow-hidden">
+```
+
+— and scroll an inner `<main class="overflow-y-auto">`. The scrolling element
+is therefore a specific DOM node, and it has to be reset by hand.
+(`<ScrollRestoration>` is also data-router-only, and these shells mount
+`<BrowserRouter>`.)
+
+**One hook, returning a ref, used by both shells.** `hooks/useScrollReset.ts`
+watches `useLocation().pathname` and sets the referenced element's `scrollTop`
+to 0. `DesktopShell` serves the planner and Senior Management; the field lane
+has its own shell; there is no third. Putting the reset in a shared hook rather
+than in each page keeps every current and future route covered by default,
+which is the property that matters — a scroll bug on one screen out of fifteen
+is not a screen the author will think to fix.
+
+**Keyed on `pathname` only, never on `search` or `hash`.** A changing query
+string is the same screen re-querying itself — the Workforce window switching
+between 7, 14 and 30 days — and a hash points at an anchor *inside* the current
+page. Resetting on either would throw the reader back to the top while they are
+reading, which is a worse bug than the one being fixed. There is a test for
+this specifically, not just for the happy path.
+
+**`scrollTop = 0`, not `scrollTo({ behavior: 'smooth' })`.** Animating a scroll
+through content the user has not seen is motion with nothing to read, and it
+delays the heading they navigated for. Assigning the property also works under
+jsdom, where `Element.prototype.scrollTo` is not implemented.
+
+### Verification
+
+```
+cd frontend && npx vitest run        309 passed (2 new)
+cd frontend && npx tsc --noEmit      clean
+```
+
+The test is a real guard: stubbing out the `scrollTop = 0` assignment fails the
+path-change case and leaves the query-string case passing, which is the correct
+signature — the second test exists to catch an over-correction, so it must pass
+either way.
+
+Confirmed in the running app, both shells, by reading the live element rather
+than by eye:
+
+```
+planner   /workforce  scrollTop 900 -> click Schedule   -> /schedule    scrollTop 0
+field     /field/crew scrollTop 700 -> click Updates    -> /field/reports scrollTop 0
+```
+
+### Affected Areas
+
+`frontend/src/hooks/useScrollReset.ts` (new), `frontend/src/App.tsx`
+(`DesktopShell`), `frontend/src/pages/field/FieldWorkspaceShell.tsx`,
+`frontend/src/test/scrollReset.test.tsx` (new).
+
+Noted in passing, not changed: `App.tsx::MobileShell` is defined and never
+referenced. It has its own scroll container and would need the same hook if it
+were ever mounted, so it is left alone rather than half-fixed.

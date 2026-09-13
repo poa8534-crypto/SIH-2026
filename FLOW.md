@@ -1291,8 +1291,8 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Renamed the crew roster from "Gang" to "Team" across every role — crew id, display name, tests and demo scripts — widened the seeded register so it always covers today, and stopped a rest day rendering as a total walkout on the field muster card.
-**Date:** 2026-09-13 · **Decisions:** D-124 (roster rename + register window), D-125 (rest-day display)
+**Task:** Reset each workspace's scroll position on route change (D-126), on top of: renamed the crew roster from "Gang" to "Team" across every role — crew id, display name, tests and demo scripts — widened the seeded register so it always covers today, and stopped a rest day rendering as a total walkout on the field muster card.
+**Date:** 2026-09-13 · **Decisions:** D-124 (roster rename + register window), D-125 (rest-day display), D-126 (scroll reset)
 **Scope:** `backend/server/seed_workforce.py` (roster, `window_end()`, assignment plan),
 `backend/server/schemas.py` + `main.py::list_crews` (`today_planned`),
 `frontend/src/pages/field/CrewScreen.tsx` (`markedRestDay`), `frontend/src/types.ts`,
@@ -1457,6 +1457,21 @@ THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
   Sundays: contracted 0, present 0 -> attendance_pct None, out of every
   reliability figure. Recording them as "18 due, 0 came" made all three
   contractors read unreliable at ~71%; that was the calendar, not them.
+
+  SWITCHING TABS STARTS AT THE TOP                            (D-126)
+  hooks/useScrollReset.ts :: useScrollReset<T>()
+      useLocation().pathname changes
+          |
+          +-- effect sets ref.current.scrollTop = 0
+          +-- search/hash changes do NOT fire it: same screen, and a hash
+                  points at an anchor inside it
+      ref is attached to the element that actually scrolls, which is NOT the
+      document — both shells pin the viewport with h-[100dvh] overflow-hidden
+      and scroll an inner <main class="overflow-y-auto">:
+          App.tsx::DesktopShell        planner + Senior Management
+          field/FieldWorkspaceShell    field
+      so window.scrollTo and <ScrollRestoration> would both be no-ops here.
+      App.tsx::MobileShell is never mounted and is deliberately not wired.
 
   A REST DAY IS NOT A WALKOUT                                 (D-125)
   GET /workforce/crews  -> server/main.py::list_crews

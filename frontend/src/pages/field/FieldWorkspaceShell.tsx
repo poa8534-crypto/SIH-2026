@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LogOut, MapPin, Moon, Sparkles, Sun } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTheme } from '../../hooks/useTheme';
+import { useScrollReset } from '../../hooks/useScrollReset';
 import { useSession } from '../../hooks/useSession';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useTranslation } from '../../lib/i18n';
@@ -14,6 +15,9 @@ import { LinkStatusPill } from '../../components/LinkStatus';
 
 export function FieldWorkspaceShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
+  // The scrolling element is this shell's <main>, not the document, so a tab
+  // change has to reset it explicitly (see useScrollReset).
+  const mainRef = useScrollReset<HTMLElement>();
   const { signOut } = useSession();
   const speech = useSpeech();
   const { t, lang, setLang, languages } = useTranslation();
@@ -71,7 +75,12 @@ export function FieldWorkspaceShell({ children }: { children: React.ReactNode })
 
         <div className="flex min-h-0 flex-1">
           <FieldNav desktop />
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-surface">{children}</main>
+          <main
+            ref={mainRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-surface"
+          >
+            {children}
+          </main>
         </div>
         <FieldNav />
       </div>
