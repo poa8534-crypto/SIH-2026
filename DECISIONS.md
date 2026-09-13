@@ -11948,3 +11948,70 @@ Demo figures re-verified against the live API         14 of 14 match
 `DEMO_VIDEO_SCRIPT.md` · `DEMO.md` · `DEMO_VIDEO_SCRIPT_3DEVICE.md` ·
 `demo_script.md` · `frontend/vitest.config.ts` ·
 `frontend/src/test/delay.test.tsx` · `CLAUDE.md`
+
+---
+
+## 2026-09-13 / D-123 — Reconcile stops spending warning colour on things that are not warnings
+
+### Status
+
+Active. Component-level only. **No theme token was touched** — `index.css` is
+byte-identical.
+
+### Context
+
+The Reconcile screen was carrying eight amber elements at once: the pending
+count, the FIELD REPORT badge, the filter tab, the row's left border, the origin
+line, the matched-span highlight, the evidence-gap notice, and the confidence
+band. On a dark surface that reads as a screen full of alarms.
+
+**Worth recording accurately, because the assumption was that a recent change
+caused it: it did not.** `git log` shows the last change to `Reconcile.tsx` was
+`a942f14 feat(ui): redesign all role workspaces`, and checking `a942f14^` shows
+the screen was **more** amber before that redesign, not less — the FIELD REPORT
+badge was a hardcoded `bg-amber-500/15 text-amber-600` with an amber border, and
+priority was `text-amber-500`. Restoring "how it was" would have made the
+problem worse. The redesign had already moved some of it onto the `--warn`
+token; what it had not done was ask whether each element was a warning at all.
+
+### Decision
+
+**Colour is a signal, and a signal spent on everything signals nothing.** Each
+amber element was assessed for whether it actually warns:
+
+| Element | Was | Now | Why |
+|---|---|---|---|
+| Pending count | `bg-warn/10 text-warn` | `bg-secondary text-muted` | A count is not a warning |
+| FIELD REPORT badge | `bg-warn/10 text-warn` | `bg-selected text-accent` | Provenance, not a caution |
+| Filter tab | `text-amber-600/400` | `text-accent` | A filter, not an alarm |
+| Row left border | `border-l-amber-500/80` | `border-l-accent/70` | Matches its own badge |
+| Origin line | `text-amber-600/400` | `text-accent` | Same provenance, same colour |
+| Matched-span highlight | `bg-mark text-mark-fg` | `bg-accent/15 ring-accent/30` | Still unmistakably marked |
+| Evidence-gap notice | `bg-warn/10 text-warn` | `bg-secondary text-fg` | Guidance for the next click |
+
+**`--mark-bg` / `--mark-text` were left in `index.css` untouched** even though
+`Reconcile.tsx` was their only consumer. Deleting a token to change one
+component would be a theme change by the back door.
+
+**The confidence band keeps its amber and this is deliberate.**
+`ConfidenceBadge` is a three-band traffic light — green ≥ 0.775, amber ≥ 0.5,
+red below — and the amber rung carries meaning that green and red cannot
+express between them. It is the one place on the screen where the colour *is*
+the data. Removing it to make the page uniform would trade a real signal for a
+cosmetic one, so it stays until someone asks for it specifically.
+
+### Verification
+
+```
+cd frontend && npx tsc --noEmit                       clean
+cd frontend && npx vitest run --no-file-parallelism   302 passed
+grep -c "amber" frontend/src/pages/Reconcile.tsx      0
+git diff --stat frontend/src/index.css                (no change)
+```
+
+Verified on screen in dark mode: the only amber left on Reconcile is the
+confidence percentage.
+
+### Affected Areas
+
+`frontend/src/pages/Reconcile.tsx` only.

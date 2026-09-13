@@ -61,7 +61,7 @@ function HighlightedText({ text, highlight }: { text: string; highlight: string 
         <React.Fragment key={i}>
           {part}
           {i < parts.length - 1 && (
-            <span className="bg-mark text-mark-fg px-1">
+            <span className="bg-accent/15 text-fg px-1 rounded-sm ring-1 ring-accent/30">
               {highlight}
             </span>
           )}
@@ -806,7 +806,7 @@ export default function Reconcile() {
           <h1 className="mt-1 text-h2 font-semibold tracking-[-0.03em] text-heading">Review &amp; reconcile</h1>
           <p className="mt-1 text-body text-muted">Confirm one field update against the schedule, with every write explained.</p>
         </div>
-        <div className="rounded-full bg-warn/10 px-3 py-1.5 text-label font-semibold text-warn">
+        <div className="rounded-full bg-secondary px-3 py-1.5 text-label font-semibold text-muted ring-1 ring-hair">
           {sortedQueue.length} awaiting decision
         </div>
       </div>
@@ -890,7 +890,7 @@ export default function Reconcile() {
                   filter === tab.id
                     ? 'bg-selected text-accent font-semibold'
                     : tab.highlight
-                      ? 'text-amber-600 dark:text-amber-400 font-semibold hover:text-fg hover:bg-selected'
+                      ? 'text-accent font-semibold hover:text-fg hover:bg-selected'
                       : 'text-muted hover:text-fg'
                 }`}
               >
@@ -920,21 +920,21 @@ export default function Reconcile() {
                   isSelected
                     ? 'bg-selected border-l-2 border-l-accent'
                     : item.match_method === 'agent_turn'
-                      ? 'border-l-2 border-l-amber-500/80 bg-amber-500/5 hover:bg-selected'
+                      ? 'border-l-2 border-l-accent/70 bg-accent/5 hover:bg-selected'
                       : 'border-l-2 border-l-transparent hover:bg-selected'
                 }`}
               >
                 <div className="flex justify-between items-center mb-1.5 gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                     {item.match_method === 'agent_turn' && (
-                      <span className="text-label font-semibold px-2 py-0.5 rounded-full bg-warn/10 text-warn flex items-center gap-1 shrink-0">
+                      <span className="text-label font-semibold px-2 py-0.5 rounded-full bg-selected text-accent flex items-center gap-1 shrink-0">
                         <Zap size={10} className="fill-current" />
                         <span>FIELD REPORT</span>
                         {item.reference && <span className="text-fg font-semibold">· #{item.reference}</span>}
                       </span>
                     )}
                     <span className="text-label text-muted font-medium shrink-0">
-                      <strong className={item.priority === 'high' ? 'text-warn font-semibold' : 'text-fg font-semibold'}>{item.priority === 'high' ? 'PRIORITY: HIGH' : item.priority}</strong>
+                      <strong className={item.priority === 'high' ? 'text-heading font-bold' : 'text-fg font-semibold'}>{item.priority === 'high' ? 'PRIORITY: HIGH' : item.priority}</strong>
                     </span>
                   </div>
                   <ConfidenceBadge value={item.confidence} />
@@ -991,7 +991,7 @@ export default function Reconcile() {
                   <span className="text-muted">Origin:</span>
                   <span className="text-fg font-medium">
                     {selectedItem.match_method === 'agent_turn' ? (
-                      <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                      <span className="text-accent font-bold flex items-center gap-1">
                         <Zap size={12} className="fill-current" />
                         Field Supervisor {selectedItem.reference ? `(#${selectedItem.reference})` : ''} · {selectedItem.discipline ? selectedItem.discipline.toUpperCase() : 'GENERAL'}
                       </span>
@@ -1224,7 +1224,7 @@ export default function Reconcile() {
 
             {/* Section 4: ACTIONS */}
             <div className="absolute bottom-0 left-0 right-0 bg-raised/95 backdrop-blur-md border-t border-hair p-4 z-20 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
-              <div className={`mb-3 flex items-start gap-2 rounded-lg px-3 py-2 text-label ring-1 ${confirmationGaps.length > 0 ? 'bg-warn/10 text-warn ring-warn/25' : 'bg-ok/10 text-ok ring-ok/25'}`}>
+              <div className={`mb-3 flex items-start gap-2 rounded-lg px-3 py-2 text-label ring-1 ${confirmationGaps.length > 0 ? 'bg-secondary text-fg ring-hair' : 'bg-ok/10 text-ok ring-ok/25'}`}>
                 <Check size={14} className="mt-0.5 shrink-0" />
                 <span>
                   {confirmationGaps.length > 0
