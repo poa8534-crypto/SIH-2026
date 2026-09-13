@@ -127,8 +127,8 @@ const BOARD = {
 
 const PROPOSAL = {
   id: 'p1',
-  crew_id: 'CIV-GANG-02',
-  crew_name: 'Civil Gang 2',
+  crew_id: 'CIV-TEAM-02',
+  crew_name: 'Civil Team 2',
   discipline: 'civil',
   contractor: 'ABC Infra Pvt Ltd',
   activity_id: 'CIV-SIT-1002',

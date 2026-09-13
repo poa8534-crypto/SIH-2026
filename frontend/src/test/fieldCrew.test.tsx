@@ -57,8 +57,8 @@ async function musterCard(name: string): Promise<HTMLElement> {
 }
 
 const UNMARKED = {
-  crew_id: 'CIV-GANG-01',
-  name: 'Civil Gang 1',
+  crew_id: 'CIV-TEAM-01',
+  name: 'Civil Team 1',
   discipline: 'civil',
   contractor: 'ABC Infra Pvt Ltd',
   trade: 'mason',
@@ -69,24 +69,56 @@ const UNMARKED = {
   today_present: null,
   today_absent: null,
   today_record_id: null,
+  today_planned: null,
   reliability: 0.917,
 };
 
 const MARKED = {
   ...UNMARKED,
-  crew_id: 'PIP-GANG-01',
-  name: 'Piping Gang 1',
+  crew_id: 'PIP-TEAM-01',
+  name: 'Piping Team 1',
   discipline: 'piping',
   planned_strength: 22,
   today_present: 21,
   today_absent: 1,
   today_record_id: 'rec-1',
+  today_planned: 22,
+};
+
+// A rest day, exactly as seed_workforce and POST /workforce/attendance write
+// one: contracted 0, present 0 (D-117). The crew's STANDING strength is still
+// 14 — that is the trap this fixture exists to catch.
+const REST_DAY = {
+  ...UNMARKED,
+  crew_id: 'ELE-TEAM-01',
+  name: 'Electrical Team',
+  discipline: 'electrical',
+  trade: 'electrician',
+  planned_strength: 14,
+  today_present: 0,
+  today_absent: 0,
+  today_record_id: 'rec-rest',
+  today_planned: 0,
+};
+
+// The other way a present count of zero happens: the whole crew was due and
+// none of them came. Same `today_present`, completely different fact.
+const TOTAL_NO_SHOW = {
+  ...REST_DAY,
+  crew_id: 'INS-TEAM-01',
+  name: 'Instrumentation Team',
+  discipline: 'instrumentation',
+  trade: 'instrument_tech',
+  planned_strength: 9,
+  today_record_id: 'rec-noshow',
+  today_absent: 9,
+  today_planned: 9,
 };
 
 const COMMITTED = {
   id: 'a1',
-  crew_id: 'CIV-GANG-01',
-  crew_name: 'Civil Gang 1',
+  crew_id: 'CIV-TEAM-01',
+  crew_name: 'Civil Team 1',
   discipline: 'civil',
   contractor: 'ABC Infra Pvt Ltd',
   activity_id: 'CIV-SIT-1001',
@@ -130,7 +162,7 @@ afterEach(() => {
 describe('the muster distinguishes "not counted" from "nobody came"', () => {
   it('pre-fills an unmarked crew with its contracted strength, not zero', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Civil Gang 1');
+    const panel = await musterCard('Civil Team 1');
     // 18 contracted and nobody has counted yet: the common case is a full
     // turnout and one tap, so the stepper starts at 18 rather than at 0.
     expect(within(panel).getByText('18')).toBeInTheDocument();
@@ -139,7 +171,7 @@ describe('the muster distinguishes "not counted" from "nobody came"', () => {
 
   it('shows an already-marked crew as marked, at the count that was recorded', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Piping Gang 1');
+    const panel = await musterCard('Piping Team 1');
     expect(within(panel).getByText('21')).toBeInTheDocument();
     expect(within(panel).getByText('Marked')).toBeInTheDocument();
   });
@@ -157,7 +189,7 @@ describe('the muster distinguishes "not counted" from "nobody came"', () => {
 describe('correcting a count appends rather than overwrites', () => {
   it('says the first reading is kept', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Piping Gang 1');
+    const panel = await musterCard('Piping Team 1');
     expect(
       within(panel).getByText(/the first is never overwritten/i)
     ).toBeInTheDocument();
@@ -168,7 +200,7 @@ describe('correcting a count appends rather than overwrites', () => {
 
   it('sends supersedes_id so the server chains rather than mutates', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Piping Gang 1');
+    const panel = await musterCard('Piping Team 1');
     fireEvent.click(within(panel).getByRole('button', { name: /correct today/i }));
 
     await waitFor(() => expect(api.markAttendance).toHaveBeenCalled());
@@ -178,11 +210,68 @@ describe('correcting a count appends rather than overwrites', () => {
 
   it('a first muster carries no supersedes_id', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Civil Gang 1');
+    const panel = await musterCard('Civil Team 1');
     fireEvent.click(within(panel).getByRole('button', { name: /save muster/i }));
 
     await waitFor(() => expect(api.markAttendance).toHaveBeenCalled());
     expect(vi.mocked(api.markAttendance).mock.calls[0][0].supersedes_id).toBeNull();
+  });
+});
+
+// ── A rest day is not a no-show ────────────────────────────────────────────
+
+describe('a rest day and a total no-show both read zero present', () => {
+  beforeEach(() => {
+    vi.spyOn(api, 'getCrews').mockResolvedValue([REST_DAY, TOTAL_NO_SHOW] as never);
+  });
+
+  it('does not report the whole crew missing on a rest day', async () => {
+    wrap(<CrewScreen />);
+    const panel = await musterCard('Electrical Team');
+    // The bug this guards: absent was computed as planned_strength - present,
+    // which on a rest day is 14 - 0, so every Sunday rendered as a total
+    // walkout with fourteen unexplained absences.
+    expect(within(panel).queryByText(/missing/i)).toBeNull();
+    expect(within(panel).queryByText(/unexplained/i)).toBeNull();
+  });
+
+  it('shows a rest day as a rest day, with the box already ticked', async () => {
+    wrap(<CrewScreen />);
+    const panel = await musterCard('Electrical Team');
+    expect(within(panel).getByRole('checkbox')).toBeChecked();
+    expect(
+      within(panel).getByText(/already marked as a rest day/i)
+    ).toBeInTheDocument();
+  });
+
+  it('still reports a genuine total no-show as missing heads', async () => {
+    wrap(<CrewScreen />);
+    const panel = await musterCard('Instrumentation Team');
+    // 9 contracted that day, nobody present. This one IS a walkout and the
+    // fix must not swallow it.
+    expect(within(panel).getByText(/9 missing/i)).toBeInTheDocument();
+    expect(within(panel).getByRole('checkbox')).not.toBeChecked();
+  });
+
+  it('untucking the rest day offers the full crew, not the stored zero', async () => {
+    wrap(<CrewScreen />);
+    const panel = await musterCard('Electrical Team');
+    fireEvent.click(within(panel).getByRole('checkbox'));
+    // A supervisor correcting a wrongly-marked rest day starts from a full
+    // turnout, the same place an unmarked crew starts.
+    expect(within(panel).getByText('14')).toBeInTheDocument();
+  });
+
+  it('a rest day still sends rest_day and supersedes the stored reading', async () => {
+    wrap(<CrewScreen />);
+    const panel = await musterCard('Electrical Team');
+    fireEvent.click(within(panel).getByRole('button', { name: /correct today/i }));
+
+    await waitFor(() => expect(api.markAttendance).toHaveBeenCalled());
+    const body = vi.mocked(api.markAttendance).mock.calls[0][0];
+    expect(body.rest_day).toBe(true);
+    expect(body.present).toBe(0);
+    expect(body.supersedes_id).toBe('rec-rest');
   });
 });
 
@@ -191,7 +280,7 @@ describe('correcting a count appends rather than overwrites', () => {
 describe('the headcount and the reasons reconcile', () => {
   it('attributes unexplained absences to "other" rather than dropping them', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Civil Gang 1');
+    const panel = await musterCard('Civil Team 1');
 
     // 18 contracted, drop to 15 present -> 3 missing, none explained.
     const minus = within(panel).getByLabelText('One fewer');
@@ -211,7 +300,7 @@ describe('the headcount and the reasons reconcile', () => {
 
   it('a rest day submits nobody present and nobody absent', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Civil Gang 1');
+    const panel = await musterCard('Civil Team 1');
     fireEvent.click(within(panel).getByRole('checkbox'));
     fireEvent.click(within(panel).getByRole('button', { name: /save muster/i }));
 
@@ -224,7 +313,7 @@ describe('the headcount and the reasons reconcile', () => {
 
   it('explains what a rest day is for, in the supervisor’s terms', async () => {
     wrap(<CrewScreen />);
-    const panel = await musterCard('Civil Gang 1');
+    const panel = await musterCard('Civil Team 1');
     expect(
       within(panel).getByText(/instead of counting it as a no-show/i)
     ).toBeInTheDocument();

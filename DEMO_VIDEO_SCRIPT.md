@@ -299,7 +299,7 @@ shortage without it, and Chapter 9's contractor ranking is built on it.
 **Do:**
 1. Tap **Crew**. Hold on the roster for a beat — eight crews, each showing contracted
    strength and the count already marked.
-2. On **Civil Gang 1**, tap the **−** stepper twice, expand **missing**, tap **No show**
+2. On **Civil Team 1**, tap the **−** stepper twice, expand **missing**, tap **No show**
    twice, and press **Correct today's count**.
 3. Tap the **signal pill** in the header. Hold on the panel.
 

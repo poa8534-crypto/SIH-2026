@@ -72,8 +72,8 @@ beforeEach(() => {
   } as never);
   vi.spyOn(api, 'getCapacity').mockResolvedValue([
     {
-      crew_id: 'CIV-GANG-01',
-      name: 'Civil Gang 1',
+      crew_id: 'CIV-TEAM-01',
+      name: 'Civil Team 1',
       discipline: 'civil',
       contractor: 'ABC',
       planned_strength: 18,

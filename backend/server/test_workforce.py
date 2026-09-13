@@ -54,7 +54,7 @@ def _clean(db_session):
     wipe()
 
 
-def _crew(db, crew_id="CIV-GANG-01", *, discipline="civil", strength=10,
+def _crew(db, crew_id="CIV-TEAM-01", *, discipline="civil", strength=10,
           contractor="ABC Infra Pvt Ltd", trade="mason"):
     crew = Crew(
         crew_id=crew_id,
@@ -125,10 +125,10 @@ def test_correction_writes_a_new_row_and_leaves_the_original_untouched(
     """
     _crew(db_session)
     on = date(2026, 8, 11)
-    first = _mark(client, "CIV-GANG-01", on, 6).json()
+    first = _mark(client, "CIV-TEAM-01", on, 6).json()
 
     corrected = _mark(
-        client, "CIV-GANG-01", on, 9, supersedes_id=first["id"],
+        client, "CIV-TEAM-01", on, 9, supersedes_id=first["id"],
         source="planner_correction",
     )
     assert corrected.status_code == 201
@@ -148,9 +148,9 @@ def test_current_reading_is_derived_not_stored(client, db_session):
     """A chain of corrections resolves to exactly one live reading."""
     _crew(db_session)
     on = date(2026, 8, 11)
-    a = _mark(client, "CIV-GANG-01", on, 4).json()
-    b = _mark(client, "CIV-GANG-01", on, 6, supersedes_id=a["id"]).json()
-    _mark(client, "CIV-GANG-01", on, 8, supersedes_id=b["id"])
+    a = _mark(client, "CIV-TEAM-01", on, 4).json()
+    b = _mark(client, "CIV-TEAM-01", on, 6, supersedes_id=a["id"]).json()
+    _mark(client, "CIV-TEAM-01", on, 8, supersedes_id=b["id"])
 
     live = current_attendance(db_session.query(AttendanceRecord).all())
     assert len(live) == 1 and live[0].present == 8
@@ -159,8 +159,8 @@ def test_current_reading_is_derived_not_stored(client, db_session):
 def test_list_hides_superseded_readings_but_the_audit_view_shows_them(client, db_session):
     _crew(db_session)
     on = date(2026, 8, 11)
-    first = _mark(client, "CIV-GANG-01", on, 5).json()
-    _mark(client, "CIV-GANG-01", on, 7, supersedes_id=first["id"])
+    first = _mark(client, "CIV-TEAM-01", on, 5).json()
+    _mark(client, "CIV-TEAM-01", on, 7, supersedes_id=first["id"])
 
     live = client.get("/workforce/attendance").json()
     assert [r["present"] for r in live] == [7]
@@ -178,9 +178,9 @@ def test_a_correction_outside_the_window_still_supersedes_inside_it(client, db_s
     """
     _crew(db_session)
     old_day, fix_day = date(2026, 8, 3), date(2026, 8, 10)
-    first = _mark(client, "CIV-GANG-01", old_day, 3).json()
+    first = _mark(client, "CIV-TEAM-01", old_day, 3).json()
     # The correction is filed later but is FOR the original date.
-    _mark(client, "CIV-GANG-01", old_day, 8, supersedes_id=first["id"])
+    _mark(client, "CIV-TEAM-01", old_day, 8, supersedes_id=first["id"])
 
     window = workforce.musters(db_session, old_day, old_day)
     assert [r.present for r in window] == [8]
@@ -196,8 +196,8 @@ def test_two_independent_musters_that_disagree_are_reported_not_resolved(
     """
     _crew(db_session)
     on = date(2026, 8, 11)
-    _mark(client, "CIV-GANG-01", on, 6, source="field_app")
-    _mark(client, "CIV-GANG-01", on, 9, source="dpr_extract")
+    _mark(client, "CIV-TEAM-01", on, 6, source="field_app")
+    _mark(client, "CIV-TEAM-01", on, 9, source="dpr_extract")
 
     conflicts = attendance_conflicts(db_session.query(AttendanceRecord).all())
     assert len(conflicts) == 1
@@ -212,8 +212,8 @@ def test_two_independent_musters_that_disagree_are_reported_not_resolved(
 def test_agreeing_musters_are_corroboration_not_conflict(client, db_session):
     _crew(db_session)
     on = date(2026, 8, 11)
-    _mark(client, "CIV-GANG-01", on, 7, source="field_app")
-    _mark(client, "CIV-GANG-01", on, 7, source="dpr_extract")
+    _mark(client, "CIV-TEAM-01", on, 7, source="field_app")
+    _mark(client, "CIV-TEAM-01", on, 7, source="dpr_extract")
     assert attendance_conflicts(db_session.query(AttendanceRecord).all()) == {}
 
 
@@ -223,7 +223,7 @@ def test_resizing_a_crew_does_not_rewrite_a_past_shortfall(client, db_session):
     """The whole reason AttendanceRecord carries its own planned_strength."""
     crew = _crew(db_session, strength=10)
     on = date(2026, 8, 11)
-    _mark(client, "CIV-GANG-01", on, 8)
+    _mark(client, "CIV-TEAM-01", on, 8)
 
     window = "?start=2026-08-01&end=2026-08-30"
     before = client.get(f"/workforce/attendance/summary{window}").json()["totals"]
@@ -242,7 +242,7 @@ def test_counts_beyond_contracted_strength_are_refused_with_the_numbers(
 ):
     _crew(db_session, strength=10)
     r = _mark(
-        client, "CIV-GANG-01", date(2026, 8, 11), 9,
+        client, "CIV-TEAM-01", date(2026, 8, 11), 9,
         absence_reasons={"sick": 4},
     )
     assert r.status_code == 422
@@ -254,7 +254,7 @@ def test_an_unknown_activity_id_is_refused_at_the_muster(client, db_session):
     as a missing man-day denominator, far from its cause."""
     _crew(db_session)
     r = _mark(
-        client, "CIV-GANG-01", date(2026, 8, 11), 8,
+        client, "CIV-TEAM-01", date(2026, 8, 11), 8,
         activity_ids=["NOT-A-REAL-ID"],
     )
     assert r.status_code == 422 and "NOT-A-REAL-ID" in r.json()["detail"]
@@ -268,15 +268,46 @@ def test_an_unmarked_crew_reports_none_not_zero(client, db_session):
     roster = client.get("/workforce/crews").json()
     assert roster[0]["today_present"] is None
 
-    _mark(client, "CIV-GANG-01", date.today(), 0)
+    _mark(client, "CIV-TEAM-01", date.today(), 0)
     roster = client.get("/workforce/crews").json()
     assert roster[0]["today_present"] == 0
+
+
+def test_the_roster_carries_the_musters_own_contracted_strength(client, db_session):
+    """A rest day and a total no-show both read zero present (D-125).
+
+    The only thing that separates them is what was CONTRACTED that day, and
+    that number lives on the muster, not on the roster row: the crew's standing
+    `planned_strength` stays 10 either way. Without `today_planned` beside the
+    reading, a caller can only subtract from the standing figure, and every
+    Sunday reads as a total walkout.
+    """
+    _crew(db_session, strength=10)
+    today = date.today()
+
+    _marked(client, "CIV-TEAM-01", today, 0, rest_day=True)
+    row = client.get("/workforce/crews").json()[0]
+    assert row["planned_strength"] == 10      # the crew is still a crew
+    assert row["today_present"] == 0
+    assert row["today_planned"] == 0          # …but nobody was due
+
+    # Same crew, same day, corrected to a genuine total no-show.
+    _marked(client, "CIV-TEAM-01", today, 0, supersedes_id=row["today_record_id"])
+    row = client.get("/workforce/crews").json()[0]
+    assert row["today_present"] == 0
+    assert row["today_planned"] == 10         # ten were due and none came
+
+
+def test_today_planned_is_none_when_no_muster_was_taken(client, db_session):
+    """Null is "not counted", the same rule `today_present` already follows."""
+    _crew(db_session, strength=10)
+    assert client.get("/workforce/crews").json()[0]["today_planned"] is None
 
 
 def test_attendance_pct_is_none_against_a_zero_planned_strength(client, db_session):
     """A percentage against a zero denominator is a division, not a fact."""
     _crew(db_session, strength=0)
-    _mark(client, "CIV-GANG-01", date(2026, 8, 11), 0)
+    _mark(client, "CIV-TEAM-01", date(2026, 8, 11), 0)
     totals = client.get(
         "/workforce/attendance/summary?start=2026-08-01&end=2026-08-30"
     ).json()["totals"]
@@ -288,7 +319,7 @@ def test_days_with_no_muster_are_rows_not_gaps(client, db_session):
     nobody reported, as though work continued."""
     _crew(db_session)
     start, end = date(2026, 8, 10), date(2026, 8, 14)
-    _mark(client, "CIV-GANG-01", start, 9)
+    _mark(client, "CIV-TEAM-01", start, 9)
     rows = workforce.daily_rollup(db_session, start, end)
     assert len(rows) == 5
     assert rows[0]["musters"] == 1 and rows[1]["musters"] == 0
@@ -299,15 +330,15 @@ def test_days_with_no_muster_are_rows_not_gaps(client, db_session):
 def test_reliability_is_none_below_the_minimum_sample(client, db_session):
     _crew(db_session)
     for i in range(workforce.MIN_MUSTERS_FOR_RELIABILITY - 1):
-        _mark(client, "CIV-GANG-01", date(2026, 8, 10) + timedelta(days=i), 5)
-    assert workforce.crew_reliability(db_session, "CIV-GANG-01") is None
+        _mark(client, "CIV-TEAM-01", date(2026, 8, 10) + timedelta(days=i), 5)
+    assert workforce.crew_reliability(db_session, "CIV-TEAM-01") is None
 
 
 def test_reliability_is_measured_once_the_sample_is_enough(client, db_session):
     _crew(db_session, strength=10)
     for i in range(workforce.MIN_MUSTERS_FOR_RELIABILITY):
-        _mark(client, "CIV-GANG-01", date(2026, 8, 10) + timedelta(days=i), 8)
-    assert workforce.crew_reliability(db_session, "CIV-GANG-01") == 0.8
+        _mark(client, "CIV-TEAM-01", date(2026, 8, 10) + timedelta(days=i), 8)
+    assert workforce.crew_reliability(db_session, "CIV-TEAM-01") == 0.8
 
 
 def test_an_unmeasured_crew_supplies_nominal_capacity_and_says_so(client, db_session):
@@ -315,7 +346,7 @@ def test_an_unmeasured_crew_supplies_nominal_capacity_and_says_so(client, db_ses
     downstream of an unmeasured crew."""
     _crew(db_session, strength=10)
     cap = workforce.crew_capacity(
-        db_session, "CIV-GANG-01", date(2026, 8, 10), date(2026, 8, 16)
+        db_session, "CIV-TEAM-01", date(2026, 8, 10), date(2026, 8, 16)
     )
     assert cap["basis"] == "nominal"
     assert cap["reliability"] is None
@@ -325,9 +356,9 @@ def test_an_unmeasured_crew_supplies_nominal_capacity_and_says_so(client, db_ses
 def test_a_measured_crew_supplies_reliability_adjusted_capacity(client, db_session):
     _crew(db_session, strength=10)
     for i in range(workforce.MIN_MUSTERS_FOR_RELIABILITY):
-        _mark(client, "CIV-GANG-01", date(2026, 8, 1) + timedelta(days=i), 8)
+        _mark(client, "CIV-TEAM-01", date(2026, 8, 1) + timedelta(days=i), 8)
     cap = workforce.crew_capacity(
-        db_session, "CIV-GANG-01", date(2026, 8, 10), date(2026, 8, 16)
+        db_session, "CIV-TEAM-01", date(2026, 8, 10), date(2026, 8, 16)
     )
     assert cap["basis"] == "reliability_adjusted"
     assert cap["supply_man_days"] == 56.0  # 10 × 7 × 0.8
@@ -353,7 +384,7 @@ def test_man_day_rate_divides_measured_quantity_by_mustered_man_days(
     """The rate productivity.py could not compute, on the denominator it wanted."""
     _crew(db_session, strength=12)
     _counted_reading(db_session, CIV, quantity=24, uom="m3")
-    _marked(client, "CIV-GANG-01", date(2026, 8, 11), 12, activity_ids=[CIV])
+    _marked(client, "CIV-TEAM-01", date(2026, 8, 11), 12, activity_ids=[CIV])
 
     result = workforce.man_day_rate(db_session, CIV)
     assert result["man_days"] == 12.0
@@ -371,7 +402,7 @@ def test_a_muster_covering_several_activities_is_declared_a_lower_bound(
     _crew(db_session)
     _counted_reading(db_session, CIV, quantity=24, uom="m3")
     _mark(
-        client, "CIV-GANG-01", date(2026, 8, 11), 10,
+        client, "CIV-TEAM-01", date(2026, 8, 11), 10,
         activity_ids=[CIV, "CIV-FDN-1008"],
     )
     result = workforce.man_day_rate(db_session, CIV)
@@ -383,7 +414,7 @@ def test_a_mustered_activity_with_no_measured_quantity_says_so(client, db_sessio
     """Manpower without a measurement is not zero productivity; it is nothing
     to divide."""
     _crew(db_session)
-    _mark(client, "CIV-GANG-01", date(2026, 8, 11), 10, activity_ids=[CIV])
+    _mark(client, "CIV-TEAM-01", date(2026, 8, 11), 10, activity_ids=[CIV])
     result = workforce.man_day_rate(db_session, CIV)
     assert result["rate"] is None
     assert result["reason"] == "no_measured_quantity"
@@ -407,7 +438,7 @@ def test_a_fielded_crew_refutes_a_manpower_classification(client, db_session):
     activity = db_session.query(Activity).filter(Activity.activity_id == CIV).first()
     for i in range(3):
         _mark(
-            client, "CIV-GANG-01", activity.planned_start + timedelta(days=i), 10,
+            client, "CIV-TEAM-01", activity.planned_start + timedelta(days=i), 10,
             activity_ids=[CIV],
         )
     ev = workforce.shortfall_evidence(db_session, CIV)
@@ -422,7 +453,7 @@ def test_a_short_crew_supports_a_manpower_classification(client, db_session):
     activity = db_session.query(Activity).filter(Activity.activity_id == CIV).first()
     for i in range(3):
         _mark(
-            client, "CIV-GANG-01", activity.planned_start + timedelta(days=i), 4,
+            client, "CIV-TEAM-01", activity.planned_start + timedelta(days=i), 4,
             absence_reasons={"no_show": 6}, activity_ids=[CIV],
         )
     ev = workforce.shortfall_evidence(db_session, CIV)
@@ -433,7 +464,7 @@ def test_a_short_crew_supports_a_manpower_classification(client, db_session):
 
 # ── Allocation: proposal vs commitment ──────────────────────────────────────
 
-def _propose(client, crew_id=CIV and "CIV-GANG-01", activity_id=CIV, strength=6):
+def _propose(client, crew_id=CIV and "CIV-TEAM-01", activity_id=CIV, strength=6):
     return client.post(
         "/workforce/assignments",
         json={
@@ -458,7 +489,7 @@ def test_the_creating_path_cannot_produce_a_committed_assignment(client, db_sess
     r = client.post(
         "/workforce/assignments",
         json={
-            "crew_id": "CIV-GANG-01",
+            "crew_id": "CIV-TEAM-01",
             "activity_id": CIV,
             "from_date": "2026-08-10",
             "to_date": "2026-08-16",
@@ -545,8 +576,8 @@ def test_the_rationale_is_deterministic_tokens_never_prose(client, db_session):
 def test_a_cross_discipline_proposal_is_allowed_but_labelled(client, db_session):
     """Refusing it would be wrong — a civil gang doing piping backfill is real
     — but it must not pass unremarked."""
-    _crew(db_session, crew_id="ELE-GANG-01", discipline="electrical")
-    body = _propose(client, crew_id="ELE-GANG-01").json()
+    _crew(db_session, crew_id="ELE-TEAM-01", discipline="electrical")
+    body = _propose(client, crew_id="ELE-TEAM-01").json()
     assert "discipline_mismatch" in body["rationale"]
 
 
@@ -555,7 +586,7 @@ def test_a_backwards_span_is_refused(client, db_session):
     r = client.post(
         "/workforce/assignments",
         json={
-            "crew_id": "CIV-GANG-01", "activity_id": CIV,
+            "crew_id": "CIV-TEAM-01", "activity_id": CIV,
             "from_date": "2026-08-16", "to_date": "2026-08-10",
             "allocated_strength": 4,
         },
@@ -591,7 +622,7 @@ def test_a_shared_boundary_day_is_a_double_booking(client, db_session):
         row = client.post(
             "/workforce/assignments",
             json={
-                "crew_id": "CIV-GANG-01", "activity_id": activity_id,
+                "crew_id": "CIV-TEAM-01", "activity_id": activity_id,
                 "from_date": span[0], "to_date": span[1],
                 "allocated_strength": 5,
             },
@@ -630,10 +661,10 @@ def test_one_unmeasured_crew_makes_the_whole_discipline_supply_nominal(
 ):
     """The weaker claim must win: a discipline whose supply is part-assumption
     must not be presented as measured."""
-    _crew(db_session, crew_id="CIV-GANG-01", strength=10)
-    _crew(db_session, crew_id="CIV-GANG-02", strength=10)
+    _crew(db_session, crew_id="CIV-TEAM-01", strength=10)
+    _crew(db_session, crew_id="CIV-TEAM-02", strength=10)
     for i in range(workforce.MIN_MUSTERS_FOR_RELIABILITY):
-        _mark(client, "CIV-GANG-01", date(2026, 8, 1) + timedelta(days=i), 8)
+        _mark(client, "CIV-TEAM-01", date(2026, 8, 1) + timedelta(days=i), 8)
 
     board = client.get("/workforce/allocation-board?week_start=2026-08-10&weeks=1").json()
     civil = next(r for r in board["weeks_detail"][0]["rows"] if r["discipline"] == "civil")
@@ -643,7 +674,7 @@ def test_one_unmeasured_crew_makes_the_whole_discipline_supply_nominal(
 def test_headroom_and_gap_can_both_be_non_zero(client, db_session):
     """Not a contradiction — it is the board's most useful statement: the
     manpower exists and is pointed at the wrong discipline."""
-    _crew(db_session, crew_id="CIV-GANG-01", discipline="civil", strength=10)
+    _crew(db_session, crew_id="CIV-TEAM-01", discipline="civil", strength=10)
     board = client.get("/workforce/allocation-board?week_start=2026-08-10&weeks=1").json()
     civil = next(r for r in board["weeks_detail"][0]["rows"] if r["discipline"] == "civil")
     assert civil["headroom_man_days"] == 70.0
@@ -655,7 +686,7 @@ def test_capacity_reports_overcommitment(client, db_session):
     row = client.post(
         "/workforce/assignments",
         json={
-            "crew_id": "CIV-GANG-01", "activity_id": CIV,
+            "crew_id": "CIV-TEAM-01", "activity_id": CIV,
             "from_date": "2026-08-10", "to_date": "2026-08-16",
             "allocated_strength": 20,
         },
@@ -673,7 +704,7 @@ def test_a_contractor_with_too_few_musters_is_unmeasured_not_unreliable(
     client, db_session
 ):
     _crew(db_session, contractor="Thin Data Ltd", strength=10)
-    _mark(client, "CIV-GANG-01", date(2026, 8, 11), 2)
+    _mark(client, "CIV-TEAM-01", date(2026, 8, 11), 2)
     rows = workforce.contractor_reliability(db_session, date(2026, 8, 1), date(2026, 8, 30))
     row = next(r for r in rows if r["contractor"] == "Thin Data Ltd")
     assert row["sample_sufficient"] is False
@@ -696,7 +727,7 @@ class TestARestDayIsNotAShortfall:
         self, client, db_session
     ):
         _crew(db_session, strength=18)
-        _marked(client, "CIV-GANG-01", date(2026, 8, 11), 0,
+        _marked(client, "CIV-TEAM-01", date(2026, 8, 11), 0,
                 absence_reasons={"no_show": 18})
         row = workforce.daily_rollup(
             db_session, date(2026, 8, 11), date(2026, 8, 11)
@@ -709,7 +740,7 @@ class TestARestDayIsNotAShortfall:
         self, client, db_session
     ):
         _crew(db_session, strength=0)
-        _marked(client, "CIV-GANG-01", date(2026, 8, 11), 0)
+        _marked(client, "CIV-TEAM-01", date(2026, 8, 11), 0)
         row = workforce.daily_rollup(
             db_session, date(2026, 8, 11), date(2026, 8, 11)
         )[0]
@@ -732,18 +763,18 @@ class TestARestDayIsNotAShortfall:
         _crew(db_session, strength=10)
         # Five working days at full strength…
         for i in range(workforce.MIN_MUSTERS_FOR_RELIABILITY):
-            _marked(client, "CIV-GANG-01", date(2026, 8, 3) + timedelta(days=i), 10)
+            _marked(client, "CIV-TEAM-01", date(2026, 8, 3) + timedelta(days=i), 10)
         # …and two rest days, contracted at zero.
         for rest in (date(2026, 8, 2), date(2026, 8, 9)):
-            _marked(client, "CIV-GANG-01", rest, 0, rest_day=True)
+            _marked(client, "CIV-TEAM-01", rest, 0, rest_day=True)
 
-        assert workforce.crew_reliability(db_session, "CIV-GANG-01") == 1.0
+        assert workforce.crew_reliability(db_session, "CIV-TEAM-01") == 1.0
 
     def test_a_rest_day_cannot_carry_a_headcount(self, client, db_session):
         """Marking people present on a day nobody was contracted is a
         contradiction, and silently keeping one of the two numbers would make
         the register lie in a way nothing downstream could detect."""
         _crew(db_session, strength=10)
-        r = _mark(client, "CIV-GANG-01", date(2026, 8, 2), 6, rest_day=True)
+        r = _mark(client, "CIV-TEAM-01", date(2026, 8, 2), 6, rest_day=True)
         assert r.status_code == 422
         assert "rest day" in r.json()["detail"].lower()

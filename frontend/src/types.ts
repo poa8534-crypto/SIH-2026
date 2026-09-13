@@ -1158,6 +1158,14 @@ export interface Crew {
   today_present: number | null;
   today_absent: number | null;
   today_record_id: string | null;
+  /**
+   * What TODAY'S MUSTER said was contracted, which is not `planned_strength`
+   * above. `planned_strength` is the crew's standing size; this is what was
+   * actually due on this date, and a rest day is recorded as 0. Subtracting
+   * `today_present` from the standing size instead reports a rest day as a
+   * total no-show.
+   */
+  today_planned: number | null;
   /** `null` below the minimum sample. Never read this as 1.0. */
   reliability: number | null;
 }

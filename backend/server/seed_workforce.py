@@ -49,29 +49,62 @@ SEED = 26122  # the problem statement number, so the constant is traceable
 # baseline: musters for months nobody filed a report about would be fabrication
 # with no counterpart in the evidence.
 WINDOW_START = date(2026, 8, 1)
-WINDOW_END = date(2026, 9, 15)
+CORPUS_WINDOW_END = date(2026, 9, 15)
+
+
+def window_end(on: date | None = None) -> date:
+    """Last day the register covers.
+
+    The corpus window ends 2026-09-15. Stopping there means that on any day
+    after it the field app's muster reads "0 of 12 crews marked" for a reason
+    that has nothing to do with the field: the register simply ran out. The
+    days past the corpus carry the ordinary per-crew band only — no anchored
+    reason, because no source document speaks for them — so they demonstrate
+    the screen without claiming evidence they do not have.
+    """
+    today = on or date.today()
+    return max(CORPUS_WINDOW_END, today)
+
+
+WINDOW_END = window_end()
 
 # One or two gangs per discipline, sized against the discipline's share of the
 # 120-activity baseline. Contractors are the two named in the DPR headers plus
 # one subcontractor, so the contractor-reliability ranking has something real
 # to rank.
 CREWS: tuple[dict, ...] = (
-    dict(crew_id="CIV-GANG-01", name="Civil Gang 1", discipline="civil",
+    dict(crew_id="CIV-TEAM-01", name="Civil Team 1", discipline="civil",
          contractor="ABC Infra Pvt Ltd", trade="mason", planned_strength=18),
-    dict(crew_id="CIV-GANG-02", name="Civil Gang 2", discipline="civil",
+    dict(crew_id="CIV-TEAM-02", name="Civil Team 2", discipline="civil",
          contractor="ABC Infra Pvt Ltd", trade="steel_fixer", planned_strength=12),
-    dict(crew_id="PIP-GANG-01", name="Piping Gang 1", discipline="piping",
+    dict(crew_id="PIP-TEAM-01", name="Piping Team 1", discipline="piping",
          contractor="ABC Infra Pvt Ltd", trade="fitter", planned_strength=22),
-    dict(crew_id="PIP-GANG-02", name="Piping Gang 2", discipline="piping",
+    dict(crew_id="PIP-TEAM-02", name="Piping Team 2", discipline="piping",
          contractor="Northeast Mechanical Works", trade="welder", planned_strength=14),
-    dict(crew_id="EQP-GANG-01", name="Equipment Gang", discipline="static_equipment",
+    dict(crew_id="EQP-TEAM-01", name="Equipment Team", discipline="static_equipment",
          contractor="Northeast Mechanical Works", trade="rigger", planned_strength=16),
-    dict(crew_id="ELE-GANG-01", name="Electrical Gang", discipline="electrical",
+    dict(crew_id="ELE-TEAM-01", name="Electrical Team", discipline="electrical",
          contractor="Brahmaputra Electricals", trade="electrician", planned_strength=14),
-    dict(crew_id="INS-GANG-01", name="Instrumentation Gang", discipline="instrumentation",
+    dict(crew_id="INS-TEAM-01", name="Instrumentation Team", discipline="instrumentation",
          contractor="Brahmaputra Electricals", trade="instrument_tech", planned_strength=9),
-    dict(crew_id="HSE-GANG-01", name="HSE Team", discipline="hse",
+    dict(crew_id="HSE-TEAM-01", name="HSE Team", discipline="hse",
          contractor="ABC Infra Pvt Ltd", trade="safety_steward", planned_strength=6),
+    # Second-wave teams. Same three contractors, distinct trades, so the roster
+    # covers every discipline the 120-activity baseline actually schedules and
+    # the allocation board has spare capacity to move around rather than a
+    # single team per discipline that can only ever be committed once.
+    dict(crew_id="CIV-TEAM-03", name="Civil Team 3", discipline="civil",
+         contractor="Northeast Mechanical Works", trade="shuttering_carpenter",
+         planned_strength=15),
+    dict(crew_id="PIP-TEAM-03", name="Piping Team 3", discipline="piping",
+         contractor="Northeast Mechanical Works", trade="pipe_fabricator",
+         planned_strength=11),
+    dict(crew_id="EQP-TEAM-02", name="Equipment Team 2", discipline="static_equipment",
+         contractor="Brahmaputra Electricals", trade="millwright",
+         planned_strength=10),
+    dict(crew_id="INS-TEAM-02", name="Instrumentation Team 2",
+         discipline="instrumentation", contractor="Brahmaputra Electricals",
+         trade="loop_tester", planned_strength=7),
 )
 
 # Days the corpus itself explains, and the reason each one carries.
@@ -166,15 +199,20 @@ def seed_attendance(db: Session) -> int:
     # contractor performs identically cannot rank contractors, and ranking them
     # is one of the three things the executive lane asks of this data.
     baselines = {
-        "CIV-GANG-01": 0.94, "CIV-GANG-02": 0.90,
-        "PIP-GANG-01": 0.88, "PIP-GANG-02": 0.79,
-        "EQP-GANG-01": 0.92, "ELE-GANG-01": 0.85,
-        "INS-GANG-01": 0.91, "HSE-GANG-01": 0.97,
+        "CIV-TEAM-01": 0.94, "CIV-TEAM-02": 0.90,
+        "PIP-TEAM-01": 0.88, "PIP-TEAM-02": 0.79,
+        "EQP-TEAM-01": 0.92, "ELE-TEAM-01": 0.85,
+        "INS-TEAM-01": 0.91, "HSE-TEAM-01": 0.97,
+        "CIV-TEAM-03": 0.87, "PIP-TEAM-03": 0.93,
+        "EQP-TEAM-02": 0.83, "INS-TEAM-02": 0.95,
     }
 
     written = 0
+    # Recomputed here rather than read off the module constant so a re-seed on
+    # a later day extends the register to that day instead of to import time.
+    end = window_end()
     day = WINDOW_START
-    while day <= WINDOW_END:
+    while day <= end:
         anchored = CORPUS_ANCHORED_DAYS.get(day)
         rest_day = day.weekday() == 6  # Sunday
 
@@ -235,15 +273,24 @@ def seed_assignments(db: Session) -> int:
 
     by_discipline = _activities_by_discipline(db)
     plan = [
-        ("CIV-GANG-01", "civil", 0, "committed", 14, "planner"),
-        ("PIP-GANG-01", "piping", 0, "committed", 18, "planner"),
-        ("PIP-GANG-02", "piping", 1, "committed", 10, "planner"),
-        ("ELE-GANG-01", "electrical", 0, "committed", 11, "planner"),
+        ("CIV-TEAM-01", "civil", 0, "committed", 14, "planner"),
+        ("PIP-TEAM-01", "piping", 0, "committed", 18, "planner"),
+        ("PIP-TEAM-02", "piping", 1, "committed", 10, "planner"),
+        ("ELE-TEAM-01", "electrical", 0, "committed", 11, "planner"),
         # Asked for by the field, still waiting on the PM.
-        ("CIV-GANG-02", "civil", 1, "proposed", 8, None),
+        ("CIV-TEAM-02", "civil", 1, "proposed", 8, None),
         # Asked for and refused. Kept, because "manpower was requested and
         # declined" is exactly the fact a delay claim turns on.
-        ("EQP-GANG-01", "static_equipment", 1, "withdrawn", 12, "planner"),
+        ("EQP-TEAM-01", "static_equipment", 1, "withdrawn", 12, "planner"),
+        # The rest of the board. Every crew appears at most once, so none of
+        # these create the overlapping spans `double_bookings` is meant to
+        # catch — the clash panel stays a real signal rather than seed noise.
+        ("CIV-TEAM-03", "civil", 2, "committed", 12, "planner"),
+        ("EQP-TEAM-02", "static_equipment", 0, "committed", 9, "planner"),
+        ("INS-TEAM-01", "instrumentation", 0, "committed", 7, "planner"),
+        ("HSE-TEAM-01", "hse", 0, "committed", 5, "planner"),
+        ("PIP-TEAM-03", "piping", 2, "proposed", 9, None),
+        ("INS-TEAM-02", "instrumentation", 1, "proposed", 6, None),
     ]
 
     from server.db import _now
@@ -269,7 +316,7 @@ def seed_assignments(db: Session) -> int:
                 crew_id=crew_id,
                 activity_id=activity_id,
                 from_date=max(activity.planned_start, WINDOW_START),
-                to_date=min(activity.planned_finish, WINDOW_END),
+                to_date=min(activity.planned_finish, window_end()),
                 allocated_strength=strength,
                 status=status,
                 rationale=",".join(rationale),

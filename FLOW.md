@@ -1291,7 +1291,15 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Added the manpower layer — attendance, bandwidth (link *and* crew) and human resource allocation — as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, then built ALL THREE role surfaces on top of it.
+**Task:** Renamed the crew roster from "Gang" to "Team" across every role — crew id, display name, tests and demo scripts — widened the seeded register so it always covers today, and stopped a rest day rendering as a total walkout on the field muster card.
+**Date:** 2026-09-13 · **Decisions:** D-124 (roster rename + register window), D-125 (rest-day display)
+**Scope:** `backend/server/seed_workforce.py` (roster, `window_end()`, assignment plan),
+`backend/server/schemas.py` + `main.py::list_crews` (`today_planned`),
+`frontend/src/pages/field/CrewScreen.tsx` (`markedRestDay`), `frontend/src/types.ts`,
+`frontend/src/pages/Workforce.tsx` (two user-facing strings), the test files that
+name crew ids, and the three demo scripts. No route added or removed; no arithmetic changed.
+
+**Previous area** — the manpower layer itself: attendance, bandwidth (link *and* crew) and human resource allocation as four tables, two domain modules, thirteen routes and a corpus-anchored seeder, with ALL THREE role surfaces on top of it.
 **Date:** 2026-09-12 · **Decisions:** D-117 (data layer), D-118 (field), D-119 (planner), D-120 (executive),
 D-121 (coverage fix), D-122 (demo scripts + test-suite reliability)
 
@@ -1449,6 +1457,44 @@ THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
   Sundays: contracted 0, present 0 -> attendance_pct None, out of every
   reliability figure. Recording them as "18 due, 0 came" made all three
   contractors read unreliable at ~71%; that was the calendar, not them.
+
+  A REST DAY IS NOT A WALKOUT                                 (D-125)
+  GET /workforce/crews  -> server/main.py::list_crews
+      workforce.musters(db, on, on, crew_ids)  -> AttendanceRecord rows
+          |
+          +-- CrewResponse.planned_strength  = Crew.planned_strength
+          |       the crew's STANDING size — what the crew is
+          +-- CrewResponse.today_planned     = AttendanceRecord.planned_strength
+          |       what was DUE on this date — 0 on a rest day (D-117)
+          +-- None for both `today_present` and `today_planned` when no muster
+                  exists: null means NOT COUNTED, never zero
+          v
+  pages/field/CrewScreen.tsx :: MusterCard
+      markedRestDay = alreadyMarked && crew.today_planned === 0
+          NOT today_present === 0 — that is ambiguous by construction, and it
+          is what rendered every Sunday as "18 missing · 18 unexplained"
+          |
+          +-- restDay state initialises TRUE -> stepper and missing-heads row
+          |   are not rendered, checkbox arrives ticked
+          +-- present state initialises to crew.planned_strength, so unticking
+          |   the box to correct it starts from a full turnout, not from 0
+          +-- footer: "Already marked as a rest day — nobody was due"
+      undefined/null today_planned === 0 is false, so an older API degrades to
+      the previous behaviour instead of marking every crew a rest day
+
+  ROSTER AND WINDOW                                           (D-124)
+  seed_workforce.CREWS   12 crews, ids *-TEAM-*, names "... Team N"
+                         (HSE Team unchanged; it was already Team)
+  seed_workforce.window_end(on=None) -> max(CORPUS_WINDOW_END, today)
+      CORPUS_WINDOW_END = 2026-09-15, the last day dataset/ speaks for.
+      seed_attendance and seed_assignments CALL it rather than reading the
+      module constant, so a re-seed on a later day extends the register to
+      that day instead of to import time.
+      Days past the corpus get the per-crew band and NO anchored reason:
+      CORPUS_ANCHORED_DAYS is keyed by date and simply does not match them.
+  seed_assignments  11 rows; every crew_id appears at most once, so none of
+                    them create the overlapping spans workforce.double_bookings
+                    reports to the planner.
 ```
 
 ```

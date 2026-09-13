@@ -768,7 +768,7 @@ class Crew(Base):
 
     __tablename__ = "crews"
 
-    crew_id = Column(String, primary_key=True)          # e.g. CIV-GANG-01
+    crew_id = Column(String, primary_key=True)          # e.g. CIV-TEAM-01
     name = Column(String, nullable=False, default="")
     # Matches Activity.discipline so attendance can be rolled up the same way
     # progress is. Same vocabulary, same spellings — see matching/terminology.py.

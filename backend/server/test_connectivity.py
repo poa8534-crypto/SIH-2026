@@ -253,9 +253,9 @@ def test_coverage_counts_disciplines_that_have_crews_not_ones_that_reported(
 ):
     """The failure this endpoint exists to catch: with a reported-only
     denominator, a totally silent site scores 100% coverage."""
-    db_session.add(Crew(crew_id="PIP-GANG-01", name="pip", discipline="piping",
+    db_session.add(Crew(crew_id="PIP-TEAM-01", name="pip", discipline="piping",
                         planned_strength=8))
-    db_session.add(Crew(crew_id="CIV-GANG-01", name="civ", discipline="civil",
+    db_session.add(Crew(crew_id="CIV-TEAM-01", name="civ", discipline="civil",
                         planned_strength=10))
     db_session.commit()
 
@@ -273,13 +273,13 @@ def test_no_work_and_no_signal_are_distinguishable(client, db_session):
     all: no muster, no progress. That is a CAPTURE question. Those two rows
     lead a planner to opposite actions and the board must not merge them.
     """
-    db_session.add(Crew(crew_id="CIV-GANG-01", name="civ", discipline="civil",
+    db_session.add(Crew(crew_id="CIV-TEAM-01", name="civ", discipline="civil",
                         planned_strength=10))
-    db_session.add(Crew(crew_id="PIP-GANG-01", name="pip", discipline="piping",
+    db_session.add(Crew(crew_id="PIP-TEAM-01", name="pip", discipline="piping",
                         planned_strength=8))
     db_session.commit()
     client.post("/workforce/attendance",
-                json={"crew_id": "CIV-GANG-01", "present": 10})
+                json={"crew_id": "CIV-TEAM-01", "present": 10})
 
     result = client.get("/connectivity/capture-coverage").json()
     civil = next(r for r in result["rows"] if r["discipline"] == "civil")
@@ -305,9 +305,9 @@ class TestCoverageCountsOnlyWhatItCanBeAccountableFor:
     """
 
     def _crews(self, db):
-        db.add(Crew(crew_id="CIV-GANG-01", name="civ", discipline="civil",
+        db.add(Crew(crew_id="CIV-TEAM-01", name="civ", discipline="civil",
                     planned_strength=10))
-        db.add(Crew(crew_id="PIP-GANG-01", name="pip", discipline="piping",
+        db.add(Crew(crew_id="PIP-TEAM-01", name="pip", discipline="piping",
                     planned_strength=8))
         db.commit()
 

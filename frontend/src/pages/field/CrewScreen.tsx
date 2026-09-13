@@ -171,11 +171,21 @@ function MusterCard({
   // the contracted strength because a full turnout is the common case and the
   // whole point is one tap.
   const alreadyMarked = crew.today_present !== null;
+  // A rest day is stored as contracted 0, present 0 (D-117). `today_planned`
+  // is the muster's own contracted figure, so zero-while-marked is the only
+  // thing that shape can be — a real total no-show records the crew's full
+  // strength as contracted and nobody present. Without this the card reads
+  // today's roster size, subtracts a present count of zero, and renders every
+  // Sunday as "18 missing · 18 unexplained" (D-125).
+  const markedRestDay = alreadyMarked && crew.today_planned === 0;
   const [present, setPresent] = useState<number>(
-    crew.today_present ?? crew.planned_strength
+    // On a rest day the stored reading is 0 by definition, which would be a
+    // useless starting point if the supervisor unticks the box to correct it.
+    // Fall back to the standing strength, same as an unmarked crew.
+    markedRestDay ? crew.planned_strength : crew.today_present ?? crew.planned_strength
   );
   const [reasons, setReasons] = useState<Record<string, number>>({});
-  const [restDay, setRestDay] = useState(false);
+  const [restDay, setRestDay] = useState(markedRestDay);
   const [open, setOpen] = useState(false);
   const [queued, setQueued] = useState(false);
 
@@ -368,8 +378,10 @@ function MusterCard({
 
       {alreadyMarked && !done && (
         <p className="mt-2 text-label leading-5 text-muted">
-          Already marked at {crew.today_present} present. Saving again keeps
-          both readings — the first is never overwritten.
+          {markedRestDay
+            ? 'Already marked as a rest day — nobody was due.'
+            : `Already marked at ${crew.today_present} present.`}{' '}
+          Saving again keeps both readings — the first is never overwritten.
         </p>
       )}
     </div>

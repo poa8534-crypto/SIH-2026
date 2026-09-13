@@ -1434,6 +1434,13 @@ class CrewResponse(BaseModel):
     today_present: Optional[int] = None
     today_absent: Optional[int] = None
     today_record_id: Optional[str] = None
+    # What the MUSTER said was contracted that day, which is not the same
+    # number as `planned_strength` above. The roster figure is the crew's
+    # standing size; this one is what was actually due on this date, and a rest
+    # day writes it as 0 (D-117). A caller that subtracts `today_present` from
+    # the roster figure reports a rest day as a total no-show, so the honest
+    # denominator has to travel with the reading it belongs to (D-125).
+    today_planned: Optional[int] = None
     # Historical fraction of contracted strength fielded. None below the
     # minimum sample; callers must not read that as 1.0.
     reliability: Optional[float] = None

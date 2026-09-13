@@ -5799,6 +5799,12 @@ def list_crews(
     as "not marked yet". That is deliberately distinct from a marked attendance
     of zero: "nobody has counted" and "nobody turned up" are different facts and
     a nullable integer is the only honest way to carry both.
+
+    `today_planned` carries the muster's OWN contracted strength beside the
+    reading, which is the third fact: a rest day is written as planned 0,
+    present 0 (D-117), and without it a caller can only subtract `present` from
+    the roster's standing `planned_strength` and conclude the whole crew failed
+    to turn up. See D-125.
     """
     on = on or date.today()
     q = db.query(Crew)
@@ -5826,6 +5832,9 @@ def list_crews(
             today_present=(today[c.crew_id].present if c.crew_id in today else None),
             today_absent=(today[c.crew_id].absent if c.crew_id in today else None),
             today_record_id=(today[c.crew_id].id if c.crew_id in today else None),
+            today_planned=(
+                today[c.crew_id].planned_strength if c.crew_id in today else None
+            ),
             reliability=workforce.crew_reliability(db, c.crew_id, on),
         )
         for c in crews
@@ -5837,7 +5846,7 @@ def upsert_crew(payload: CrewUpsertRequest, db: Session = Depends(get_db)):
     """Create or update a crew. The Project Manager's register.
 
     Upsert rather than separate create/update: a crew id is a site-assigned
-    code (`CIV-GANG-01`), not a surrogate key, so the caller always knows it and
+    code (`CIV-TEAM-01`), not a surrogate key, so the caller always knows it and
     a 409 on re-submit would only make the client do the GET itself.
 
     Re-sizing a crew does NOT rewrite history: every muster snapshotted the

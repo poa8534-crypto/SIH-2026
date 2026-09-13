@@ -93,7 +93,7 @@ Re-seed with a reset, or POST one back:
 ```bash
 curl -X POST http://localhost:8000/workforce/assignments \
   -H "Content-Type: application/json" \
-  -d '{"crew_id":"CIV-GANG-02","activity_id":"CIV-SIT-1002","from_date":"2026-09-14","to_date":"2026-09-20","allocated_strength":6,"note":"Backfill at the rack trenches is running slow","requested_by":"field"}'
+  -d '{"crew_id":"CIV-TEAM-02","activity_id":"CIV-SIT-1002","from_date":"2026-09-14","to_date":"2026-09-20","allocated_strength":6,"note":"Backfill at the rack trenches is running slow","requested_by":"field"}'
 ```
 
 Note `Crew` survives a reset by design — the roster is reference data — so a
@@ -178,7 +178,7 @@ Film this **before** the transition — Acts 2 and 3 both call back to it, and
 neither lands if the audience has not watched the number being created.
 
 **ON SCREEN**
-Tap **Crew**. Eight gangs, contracted strength on each. On **Civil Gang 1**,
+Tap **Crew**. Twelve teams, contracted strength on each. On **Civil Team 1**,
 press **−** twice, expand **2 missing · 2 unexplained**, tap **No show** twice,
 press **Correct today's count**. Then tap the **signal pill** in the header and
 hold on the panel for three seconds.

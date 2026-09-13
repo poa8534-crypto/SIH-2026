@@ -12015,3 +12015,231 @@ confidence percentage.
 ### Affected Areas
 
 `frontend/src/pages/Reconcile.tsx` only.
+
+---
+
+## 2026-09-13 / D-124 — The roster says "Team", not "Gang", and the register never runs out
+
+### Status
+
+Active.
+
+### Context
+
+Two problems with the seeded workforce register, both visible on the deployed
+field app.
+
+**The word.** Every crew was named and keyed as a *gang*: `CIV-GANG-01` /
+"Civil Gang 1". "Gang" is the accurate P6/EPC term and it is what a scheduler
+says out loud, but it is not what this audience reads. The crew id is not an
+internal detail either — the planner's double-booking panel
+(`frontend/src/pages/Workforce.tsx`) renders `d.crew_id` verbatim, so a
+half-rename that changed only the display name would have left `CIV-GANG-01`
+on screen underneath a card headed "Civil Team 1".
+
+**The window.** `seed_attendance` stopped at `2026-09-15`, the last day the DPR
+corpus covers. On any day after that the field app's muster header reads
+"0 of 12 crews marked for today" — not because the field failed to report, but
+because the register simply ended. A demo run after the corpus window looks
+like a broken product.
+
+**The roster was also thin.** Eight crews, six assignments, and one crew per
+discipline in most cases. A board where each discipline has exactly one team
+cannot demonstrate re-allocation, because there is nothing to re-allocate to.
+
+### Decision
+
+**The rename is total: id, display name, tests, and demo scripts.**
+`GANG` → `TEAM` in every crew id and `Gang` → `Team` in every crew name.
+`HSE Team` was already correct and is unchanged. The identifier moved with the
+label precisely because the identifier is rendered; leaving `CIV-GANG-01`
+visible beside "Civil Team 1" would have been a worse state than either name
+alone.
+
+Deliberately **not** renamed:
+
+- `server/main.py`'s manpower keyword vocabulary (`... crew gang shift ...`).
+  That list is matching input, not output. A supervisor still dictates "gang",
+  and removing the token would make the extractor deaf to the word the site
+  actually uses.
+- Internal docstrings in `db.py` / `schemas.py` that use "gang" as a domain
+  noun. They describe the concept, not the label.
+
+The two *user-facing* strings in `Workforce.tsx` that said "gang" — the
+contested-reading detail line and the double-booking explanation — were changed
+to "team", because they sit beside cards that now say Team.
+
+**The register's end date is `max(corpus end, today)`, computed at call time.**
+`window_end()` replaces the `WINDOW_END` constant inside `seed_attendance` and
+`seed_assignments` so a re-seed on a later day extends the register to that day
+rather than to whenever the module was imported. `WINDOW_START` and the three
+corpus-anchored days (`HOLIDAY`, `RAIN_DAY`, `SHORT_LABOUR_DAY`) are untouched:
+days past the corpus get the ordinary per-crew band and **no anchored reason**,
+because no source document speaks for them. That preserves the property the
+module was built around — every *explained* absence traces to something a DPR
+actually says — while removing the failure mode where the screen is empty for a
+reason the screen cannot state.
+
+**Four more teams, six more assignments.** `CIV-TEAM-03`, `PIP-TEAM-03`,
+`EQP-TEAM-02` and `INS-TEAM-02`, with their own reliability baselines (0.83 –
+0.95) spread across the same three contractors, so the contractor ranking keeps
+a real distribution. Every new assignment names a crew that appears **at most
+once** on the board, so none of them manufacture the overlapping spans
+`double_bookings` exists to detect — the clash panel stays a signal rather than
+seed noise.
+
+### Known limitation at the time of writing
+
+On a Sunday the register writes a rest-day row with **contracted 0, present 0**
+(the D-117 shape that stopped every contractor scoring ~71%). `GET /crews`
+returned only `today_present`, so the field card computed
+`absent = crew.planned_strength - 0` and a rest day rendered as
+"18 missing · 18 unexplained". The data was right and the display was wrong.
+**Fixed in D-125.**
+
+### Verification
+
+```
+python -m pytest -q                                   1271 passed
+cd frontend && npx vitest run                          302 passed
+cd frontend && npx tsc --noEmit                        clean
+seed into a throwaway DB                               12 crews, 552 musters,
+                                                       11 assignments; last
+                                                       muster 2026-09-15
+grep -rn "GANG-0" (code, tests, docs)                  0 hits
+```
+
+### Affected Areas
+
+`backend/server/seed_workforce.py`, `backend/server/test_workforce.py`,
+`backend/server/test_connectivity.py`, `backend/server/main.py` (docstring),
+`backend/server/db.py` (comment), `frontend/src/pages/Workforce.tsx`,
+`frontend/src/test/{fieldCrew,workforcePlanner,executiveWorkforce}.test.tsx`,
+`DEMO.md`, `DEMO_VIDEO_SCRIPT.md`, `DEMO_VIDEO_SCRIPT_3DEVICE.md`.
+
+The deployed SQLite file is gitignored and rebuilt by `render-build.sh` on
+every deploy, so the rename reaches the live site with no migration. An
+existing **local** `dataset/epc_progress.db` keeps its old `*-GANG-*` rows.
+`scripts/reset_demo.py` does **not** clear them — `clear_progress` leaves
+`Crew` alone on purpose, because the roster is reference data like the baseline
+schedule — and `seed_crews` is idempotent by `crew_id`, so a re-seed adds the
+TEAM rows *alongside* the GANG rows instead of replacing them. A local database
+seeded before this change must be deleted and rebuilt:
+
+```
+del dataset\epc_progress.db
+python backend\scripts\seed.py
+```
+
+---
+
+## 2026-09-13 / D-125 — The muster's own contracted strength travels with the reading, so a rest day stops reading as a walkout
+
+### Status
+
+Active. Resolves the limitation recorded in D-124.
+
+### Context
+
+D-117 settled how a rest day is stored. Three shapes were possible and only one
+is honest:
+
+| Shape | Means |
+|---|---|
+| planned 18, present 0 | the crew was due and nobody came — a shortfall |
+| planned 0, present 0 | nothing was due — **not** a shortfall |
+| no row at all | nobody counted — neither of the above |
+
+Rest days are written as the second shape, and that is what dropped the
+contractor reliability figures off a false ~71%.
+
+The field card never learned the distinction. `GET /workforce/crews` returned
+`today_present` and the roster's standing `planned_strength`, and
+`CrewScreen.tsx` computed:
+
+```ts
+const absent = Math.max(0, crew.planned_strength - present);
+```
+
+On a Sunday that is `18 - 0`. Every crew rendered as
+**"18 missing · 18 unexplained"**, with the rest-day checkbox sitting unticked
+directly beneath it. Observed live on `navis-yuvf.onrender.com/field/crew` on
+2026-09-13, itself a Sunday.
+
+The reading was never wrong. The card was subtracting from the wrong number.
+
+### Decision
+
+**`planned_strength` is two different facts and they needed two different
+fields.** The roster's figure is the crew's *standing* size — what the crew is.
+The muster's figure is what was *due on that date* — what the crew owed that
+day. They agree on an ordinary day and diverge on exactly the day that matters,
+so the second one now travels beside the reading it belongs to:
+
+```
+CrewResponse.today_planned: Optional[int]        server/schemas.py
+    = today[crew_id].planned_strength            server/main.py::list_crews
+    None when no muster exists — same null-means-not-counted rule
+    today_present already follows
+```
+
+**The client detects a rest day as `alreadyMarked && today_planned === 0`, not
+as `today_present === 0`.** Zero present is ambiguous by construction; zero
+*contracted* while a muster exists is not — a genuine total no-show records the
+full strength as contracted and nobody present, which is the fixture
+`TOTAL_NO_SHOW` pins in the test suite. The card now initialises its rest-day
+checkbox from that, so a rest day arrives already ticked, the stepper and the
+missing-heads row are hidden, and the footer reads "Already marked as a rest
+day — nobody was due" instead of "Already marked at 0 present".
+
+**Unticking it pre-fills the standing strength, not the stored zero.** A
+supervisor correcting a wrongly-marked rest day wants to start from a full
+turnout — the same place an unmarked crew starts — not from zero and eighteen
+taps.
+
+**No arithmetic anywhere else changed.** `workforce.py` already read
+`AttendanceRecord.planned_strength` directly for every rollup, percentage and
+reliability figure; it never had this bug. This is one field added to one
+response model and one boolean corrected in one component.
+
+**A missing `today_planned` degrades to the old behaviour on purpose.**
+`crew.today_planned === 0` is false for `undefined` and for `null`, so a
+frontend built against an older API keeps working rather than treating every
+unmarked crew as a rest day.
+
+### Verification
+
+```
+python -m pytest -q                                  1273 passed (2 new)
+cd frontend && npx vitest run                         307 passed (5 new)
+cd frontend && npx tsc --noEmit                       clean
+```
+
+The frontend tests were confirmed to be real guards, not decoration: forcing
+`markedRestDay = false` fails 4 of the 5. The fifth —
+"still reports a genuine total no-show as missing heads" — passes either way by
+design, because its job is to catch an over-correction that swallows real
+absences.
+
+Live check against a `TestClient` with an actual rest-day muster:
+
+```
+planned_strength : 14      the crew is still a crew
+today_present    : 0
+today_planned    : 0       nobody was due
+old UI would show: 14 missing
+new UI shows     : rest day, 0 missing
+```
+
+### Affected Areas
+
+`backend/server/schemas.py` (`CrewResponse.today_planned`),
+`backend/server/main.py` (`list_crews`), `backend/server/test_workforce.py`
+(2 tests), `frontend/src/types.ts` (`Crew.today_planned`),
+`frontend/src/pages/field/CrewScreen.tsx` (`markedRestDay`, present pre-fill,
+footer copy), `frontend/src/test/fieldCrew.test.tsx` (`REST_DAY` /
+`TOTAL_NO_SHOW` fixtures, 5 tests).
+
+No route was added or removed, so the healthcheck's pinned endpoint count is
+unchanged. No stored data changes shape — this reads a column the register has
+written since D-117.

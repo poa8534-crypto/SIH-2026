@@ -205,7 +205,7 @@ function Register() {
           value={summary.data.conflicts.length}
           detail={
             summary.data.conflicts.length
-              ? 'Two sources counted the same gang differently'
+              ? 'Two sources counted the same team differently'
               : 'No source disagrees with another'
           }
           tone={summary.data.conflicts.length ? 'danger' : 'ok'}
@@ -514,7 +514,7 @@ function Allocation() {
             {board.data.double_bookings.length} crew double-booked
           </h3>
           <p className="mt-1 text-label leading-5 text-muted">
-            Committed to two activities over overlapping days. A gang cannot be
+            Committed to two activities over overlapping days. A team cannot be
             in two places in one shift.
           </p>
           <ul className="mt-3 flex flex-col gap-1.5">

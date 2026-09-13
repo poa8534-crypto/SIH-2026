@@ -489,7 +489,7 @@ rather than a feature:
 
 **Allocation.** The waiting decision is deliberately above four weeks of
 arithmetic, because a PM should not scroll past a table to find the thing asking
-for them. One open request from the field: **Civil Gang 2 → CIV-SIT-1002**, six
+for them. One open request from the field: **Civil Team 2 → CIV-SIT-1002**, six
 people asked for, with the deterministic rationale chips `discipline_match`,
 `trade:steel_fixer`, `activity_not_started`, `reliability_measured` — feature
 names, never model prose, same rule as the matcher's rationale (D-003).
@@ -799,7 +799,7 @@ one-handed, in the sun, with gloves on.* So the present count opens pre-filled a
 case should be one tap. Steppers are 44px. Absence reasons only appear once
 somebody is actually missing.
 
-**Do this on camera:** drop Civil Gang 1 by two, expand **2 missing · 2
+**Do this on camera:** drop Civil Team 1 by two, expand **2 missing · 2
 unexplained**, tap **No show** twice, press **Correct today's count**.
 
 Two sentences on that screen are the point, not decoration:
