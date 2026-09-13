@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "navis-api",
-      "runtimeExecutable": ".venv/bin/python",
+      "runtimeExecutable": "python",
       "runtimeArgs": [
         "-m",
         "uvicorn",

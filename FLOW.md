@@ -1492,9 +1492,12 @@ THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
       that day instead of to import time.
       Days past the corpus get the per-crew band and NO anchored reason:
       CORPUS_ANCHORED_DAYS is keyed by date and simply does not match them.
-  seed_assignments  11 rows; every crew_id appears at most once, so none of
-                    them create the overlapping spans workforce.double_bookings
-                    reports to the planner.
+  seed_assignments  12 rows against the real 120-activity baseline; a planned
+                    row is SKIPPED when its discipline has too few activities
+                    to reach the requested offset, so the count is a function
+                    of the schedule, not a constant. Every crew_id appears at
+                    most once, so none of them create the overlapping spans
+                    workforce.double_bookings reports to the planner.
 ```
 
 ```

@@ -12080,7 +12080,7 @@ module was built around — every *explained* absence traces to something a DPR
 actually says — while removing the failure mode where the screen is empty for a
 reason the screen cannot state.
 
-**Four more teams, six more assignments.** `CIV-TEAM-03`, `PIP-TEAM-03`,
+**Four more teams, six more assignment rows.** `CIV-TEAM-03`, `PIP-TEAM-03`,
 `EQP-TEAM-02` and `INS-TEAM-02`, with their own reliability baselines (0.83 –
 0.95) spread across the same three contractors, so the contractor ranking keeps
 a real distribution. Every new assignment names a crew that appears **at most
@@ -12103,8 +12103,8 @@ returned only `today_present`, so the field card computed
 python -m pytest -q                                   1271 passed
 cd frontend && npx vitest run                          302 passed
 cd frontend && npx tsc --noEmit                        clean
-seed into a throwaway DB                               12 crews, 552 musters,
-                                                       11 assignments; last
+python backend/scripts/seed.py (real schedule)         12 crews, 552 musters,
+                                                       12 assignments; last
                                                        muster 2026-09-15
 grep -rn "GANG-0" (code, tests, docs)                  0 hits
 ```
