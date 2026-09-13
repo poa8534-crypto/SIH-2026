@@ -12331,3 +12331,79 @@ field     /field/crew scrollTop 700 -> click Updates    -> /field/reports scroll
 Noted in passing, not changed: `App.tsx::MobileShell` is defined and never
 referenced. It has its own scroll container and would need the same hook if it
 were ever mounted, so it is left alone rather than half-fixed.
+
+---
+
+## 2026-09-13 / D-127 — Picking a role starts at that role's home screen
+
+### Status
+
+Active.
+
+### Context
+
+Close the tab on Review & Reconcile, reopen the site, click Project Manager —
+and land on Review & Reconcile rather than the Overview. The click appears to
+have been ignored.
+
+The cause is an interaction between two reasonable pieces of code. `App` renders
+the picker **before** `<BrowserRouter>`:
+
+```tsx
+if (!role) return <Login onPick={signIn} />;   // App.tsx, before the router
+```
+
+and `signIn` only wrote the role and flipped React state:
+
+```tsx
+const signIn = (next: Role) => { writeRole(next); setRole(next); };
+```
+
+Nothing touched the URL. So the router mounted at whatever path the browser was
+on — and a browser restoring a session reopens the last URL. `/reconcile` is a
+path the planner is **allowed** to open, so no guard fired and no redirect
+corrected it. The app did exactly what the address bar said, which was not what
+the user had asked for.
+
+### Decision
+
+**Signing in rewrites the URL to `ROLE_PROFILES[role].home` before the router
+mounts.** The landing route per role already existed and was already the single
+source of truth for this — `/field`, `/home`, `/executive` — so this is the
+existing contract being honoured rather than a new one being invented.
+
+`window.history.replaceState`, not `pushState`: the pre-sign-in URL is not
+somewhere the Back button should return to, because signing out is what put the
+visitor there. It cannot be `useNavigate`, because at this point in the tree
+there is no router to navigate.
+
+**This deliberately discards a deep link, and that is the right trade here.**
+The alternative — honour the restored URL when `roleAllows(role, path)` — is
+strictly worse for the reported problem, because `/reconcile` *is* allowed for a
+planner and the bug would survive unchanged. Choosing a role is starting a
+session, and a session starts at the beginning. A shared link costs one click
+from the home screen; the broken-looking start cost confidence in the app.
+
+### Verification
+
+```
+cd frontend && npx vitest run        312 passed (3 new)
+cd frontend && npx tsc --noEmit      clean
+```
+
+The test reproduces the real sequence — `replaceState` to `/reconcile`, clear
+the stored role, render `App`, pick a role — for all three roles, and it is a
+real guard: stubbing out the `replaceState` line fails the planner case.
+
+Confirmed in the running app, reading `location.pathname` rather than judging by
+eye:
+
+```
+no role, URL /reconcile  ->  pick Project Manager  ->  /home
+```
+
+### Affected Areas
+
+`frontend/src/App.tsx` (`signIn`), `frontend/src/test/signInLanding.test.tsx`
+(new). No change to `lib/role.ts` — `home` was already there and already meant
+this.

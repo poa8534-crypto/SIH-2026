@@ -1291,8 +1291,8 @@ python backend/eval.py | head -20             expect the line:
 
 ## Current Modification Area
 
-**Task:** Reset each workspace's scroll position on route change (D-126), on top of: renamed the crew roster from "Gang" to "Team" across every role — crew id, display name, tests and demo scripts — widened the seeded register so it always covers today, and stopped a rest day rendering as a total walkout on the field muster card.
-**Date:** 2026-09-13 · **Decisions:** D-124 (roster rename + register window), D-125 (rest-day display), D-126 (scroll reset)
+**Task:** Land on the role's home screen when a role is picked (D-127) and reset each workspace's scroll position on route change (D-126), on top of: renamed the crew roster from "Gang" to "Team" across every role — crew id, display name, tests and demo scripts — widened the seeded register so it always covers today, and stopped a rest day rendering as a total walkout on the field muster card.
+**Date:** 2026-09-13 · **Decisions:** D-124 (roster rename + register window), D-125 (rest-day display), D-126 (scroll reset), D-127 (sign-in landing route)
 **Scope:** `backend/server/seed_workforce.py` (roster, `window_end()`, assignment plan),
 `backend/server/schemas.py` + `main.py::list_crews` (`today_planned`),
 `frontend/src/pages/field/CrewScreen.tsx` (`markedRestDay`), `frontend/src/types.ts`,
@@ -1457,6 +1457,22 @@ THE THREE SYSTEMS, AND WHERE EACH ONE'S ARITHMETIC LIVES      (D-117)
   Sundays: contracted 0, present 0 -> attendance_pct None, out of every
   reliability figure. Recording them as "18 due, 0 came" made all three
   contractors read unreliable at ~71%; that was the calendar, not them.
+
+  PICKING A ROLE STARTS AT ITS HOME SCREEN                    (D-127)
+  App.tsx::App()
+      readRole() -> null   ->  <Login onPick={signIn}/>   rendered BEFORE
+                               <BrowserRouter>, so no route can be deep-linked
+                               past the picker
+      signIn(next)
+          writeRole(next)
+          window.history.replaceState(null, '', ROLE_PROFILES[next].home)
+              field '/field' · planner '/home' · executive '/executive'
+              replaceState, not push: the pre-sign-in URL is not a Back target
+              NOT useNavigate: there is no router mounted at this point
+          setRole(next)  ->  the lane's <BrowserRouter> mounts at that home
+      Without the replaceState the router mounted at whatever URL the browser
+      restored, and /reconcile is a path roleAllows() permits for a planner, so
+      nothing downstream corrected it.
 
   SWITCHING TABS STARTS AT THE TOP                            (D-126)
   hooks/useScrollReset.ts :: useScrollReset<T>()

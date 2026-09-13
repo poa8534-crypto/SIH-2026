@@ -451,6 +451,24 @@ export default function App() {
 
   const signIn = (next: Role) => {
     writeRole(next);
+    // Picking a role starts at that role's home screen, always.
+    //
+    // The picker is rendered BEFORE <BrowserRouter>, so the router mounts at
+    // whatever path the browser happens to be on — and a browser restoring a
+    // session reopens the last URL. Closing the tab on /reconcile and coming
+    // back therefore dropped a Project Manager straight onto Review &
+    // Reconcile the moment they picked their role, with no way to tell that
+    // the app had not simply started there.
+    //
+    // replaceState rather than push: the pre-sign-in URL is not a place the
+    // Back button should return to, because signing out is what put the
+    // visitor there.
+    //
+    // This deliberately discards a deep link. /reconcile is a path the planner
+    // is ALLOWED to open, so honouring the restored URL would reproduce the
+    // exact complaint; a shared link is the rarer case and it survives one
+    // click from the home screen.
+    window.history.replaceState(null, '', ROLE_PROFILES[next].home);
     setRole(next);
   };
   const signOut = () => {
